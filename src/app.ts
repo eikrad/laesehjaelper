@@ -1,4 +1,5 @@
 // Læsehjælper – App-Logik (Oberfläche, Texterkennung, Bücherregal).
+import { wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
 import { silben } from "./silben";
 import { cleanOcr, parasFromOcr } from "./layout";
 import { detectPage, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
@@ -202,6 +203,8 @@ const Lib = { detectPage, warpPage, orderCorners };
     r.setProperty("--font", S.font);
     r.setProperty("--size", S.size + "px");
     r.setProperty("--ls", S.ls + "em");
+    r.setProperty("--ws", wordSpacing(S.ls, WORD_BASE_FLOW) + "em");
+    r.setProperty("--ws-box", wordSpacing(S.ls, WORD_BASE_BOX) + "em");
     r.setProperty("--lh", String(S.lh));
     const [c0, c1] = S.colors.split(",");
     r.setProperty("--s0", c0); r.setProperty("--s1", c1);
@@ -789,10 +792,10 @@ const Lib = { detectPage, warpPage, orderCorners };
 html, body { margin: 0; padding: 0; }
 .page { position: relative; overflow: hidden; background: ${S.bg}; color: #1d1d1f; font-family: ${S.font}; }
 .bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-.tbox { position: absolute; overflow: hidden; line-height: ${Math.min(S.lh, 1.6)}; letter-spacing: ${S.ls}em; word-spacing: .12em; }
+.tbox { position: absolute; overflow: hidden; line-height: ${Math.min(S.lh, 1.6)}; letter-spacing: ${S.ls}em; word-spacing: ${wordSpacing(S.ls, WORD_BASE_BOX)}em; }
 .tbox p, .flow p { margin: 0 0 .35em; }
 .busy { border-radius: 12px; padding: 0 .3em; }
-.flow { position: absolute; left: 70px; right: 70px; top: 70px; line-height: ${S.lh}; letter-spacing: ${S.ls}em; word-spacing: .25em; }
+.flow { position: absolute; left: 70px; right: 70px; top: 70px; line-height: ${S.lh}; letter-spacing: ${S.ls}em; word-spacing: ${wordSpacing(S.ls, WORD_BASE_FLOW)}em; }
 .flow p { margin-bottom: .8em; }
 .w { white-space: nowrap; }
 ${colors ? `.s0 { color: ${c0}; } .s1 { color: ${c1}; }` : ""}

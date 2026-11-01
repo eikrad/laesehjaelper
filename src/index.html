@@ -35,6 +35,7 @@
   --size: 32px;
   --ls: 0.04em;
   --ws: 0.25em;
+  --ws-box: 0.12em;
   --lh: 1.9;
   --ui: "Atkinson Hyperlegible", system-ui, sans-serif;
 }
@@ -174,7 +175,7 @@ body.editing .thumbs { padding-bottom: 14px; gap: 20px; }
 .reader .origfull { display: block; width: 100%; }
 .pageview { position: relative; line-height: 0; }
 .pageview > img { width: 100%; display: block; }
-.tbox { position: absolute; overflow: hidden; line-height: min(var(--lh), 1.6); word-spacing: .12em; }
+.tbox { position: absolute; overflow: hidden; line-height: min(var(--lh), 1.6); word-spacing: var(--ws-box); }
 .tbox p { margin: 0 0 .35em; max-width: none; }
 .tbox p:last-child { margin-bottom: 0; }
 .tbox.busy { border-radius: 12px; padding: 0 .3em; }
