@@ -23,6 +23,7 @@ fs.writeFileSync(`${out}/index.html`, html);
 
 const copy = (from, to) => fs.copyFileSync(from, `${out}/${to}`);
 copy(`${nm}/tesseract.js/dist/tesseract.min.js`, "tesseract.min.js");
+copy(`${nm}/@techstark/opencv-js/dist/opencv.js`, "opencv.js");
 // Fehler in tesseract.js 5 umgehen: bei mitgelieferten Sprachdaten wird beim Initialisieren
 // t.data statt t.code verwendet. Wir laden die Sprachdaten selbst, daher hier korrigieren.
 const worker = fs.readFileSync(`${nm}/tesseract.js/dist/worker.min.js`, "utf8");

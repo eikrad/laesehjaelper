@@ -202,6 +202,21 @@ input[type=range] { width: 100%; accent-color: var(--blue); }
 .swatches button { width: 38px; height: 38px; border-radius: 50%; border: 0; box-shadow: inset 0 0 0 1.5px var(--line); }
 .swatches button.on { box-shadow: inset 0 0 0 1.5px var(--line), 0 0 0 3px #fff, 0 0 0 5.5px var(--ink); }
 
+/* Zuschnitt */
+.crop { position: fixed; inset: 0; z-index: 40; background: #14171f; color: #fff; display: flex; flex-direction: column; }
+.crop-head { padding: max(14px, env(safe-area-inset-top)) 18px 10px; }
+.crop-head strong { display: block; font-size: 18px; }
+.crop-head span { display: block; font-size: 15px; opacity: .75; margin-top: 2px; }
+.crop-stage { position: relative; flex: 1; margin: 6px 14px; touch-action: none; }
+.crop-stage canvas { position: absolute; display: block; }
+.crop-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.crop-stage polygon { fill: rgba(46,79,209,.12); stroke: #fff; stroke-width: 2; }
+.crop-stage .h { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; touch-action: none; cursor: grab; }
+.crop-stage .h::after { content: ""; position: absolute; inset: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px var(--blue); }
+.crop-foot { display: flex; justify-content: space-between; gap: 12px; padding: 12px 18px max(16px, env(safe-area-inset-bottom)); }
+.crop-foot .btn-ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.5); }
+.cta-sm { border: 0; background: #fff; color: var(--ink); border-radius: 12px; padding: 11px 22px; font-weight: 700; }
+.recrop { margin-top: 12px; }
 .fhint { font-size: 14px; color: var(--muted); margin: 8px 0 0; }
 .own { display: inline-flex; gap: 8px; margin-left: 6px; padding-left: 14px; border-left: 1.5px solid var(--line); }
 .pick { display: inline-flex; align-items: center; gap: 6px; background: var(--sky); border-radius: 999px; padding: 4px 12px 4px 4px; font-size: 14px; font-weight: 700; cursor: pointer; }
@@ -235,6 +250,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
   <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
+  <symbol id="i-crop" viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14"/></symbol>
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6c-2-1.5-5-2-8-1.5V19c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5C17 4 14 4.5 12 6zM12 6v14.5"/></symbol>
 </svg>
 <div class="wrap">
@@ -287,6 +303,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
         <summary><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></summary>
         <textarea id="text" spellcheck="true"></textarea>
         <p class="hint" data-th="editHint"></p>
+        <button class="btn-ghost recrop" id="recropBtn"><svg class="i"><use href="#i-crop"/></svg><span data-t="cropAgain"></span></button>
       </details>
     </article>
     <div class="thumbs" id="thumbs"></div>
@@ -391,6 +408,19 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
     </div>
   </div>
 </div>
+<div class="crop" id="crop" hidden>
+  <div class="crop-head">
+    <div><strong data-t="cropTitle"></strong><span id="cropMsg"></span></div>
+  </div>
+  <div class="crop-stage" id="cropStage">
+    <canvas id="cropCanvas"></canvas>
+    <svg id="cropSvg"><polygon id="cropPoly"/></svg>
+  </div>
+  <div class="crop-foot">
+    <button class="btn-ghost" id="cropWhole" data-t="cropWhole"></button>
+    <button class="cta-sm" id="cropOk" data-t="cropUse"></button>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script src="tesseract.min.js"></script>
@@ -435,7 +465,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
       waiting: "Venter på genkendelse …", recognizing: "Teksten genkendes …", loadingCore: "Genkendelsen indlæses …",
       loadingLang: "Sprogdata indlæses …", preparing: "Gøres klar …",
       imgError: "Billedet kunne ikke åbnes.", noSpeech: "Oplæsning understøttes ikke af denne browser.",
-      example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", resume: "Fortsæt med siderne ({n})",
+      example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", resume: "Fortsæt med siderne ({n})", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", cropOf: "Billede {a} af {b}",
     },
     de: {
       brand1: "Lese", brand2: "helfer", docTitle: "Lesehelfer",
@@ -464,7 +494,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
       waiting: "Wartet auf Erkennung …", recognizing: "Text wird erkannt …", loadingCore: "Erkennung wird geladen …",
       loadingLang: "Sprachdaten werden geladen …", preparing: "Wird vorbereitet …",
       imgError: "Bild konnte nicht geöffnet werden.", noSpeech: "Vorlesen wird von diesem Browser nicht unterstützt.",
-      example: "Beispiel", addPages: "Seiten hinzufügen", toStart: "Zur Startseite", resume: "Weiter mit den Seiten ({n})",
+      example: "Beispiel", addPages: "Seiten hinzufügen", toStart: "Zur Startseite", resume: "Weiter mit den Seiten ({n})", cropTitle: "Seite zuschneiden", cropFound: "Seite gefunden. Zieh an den Ecken, falls es nicht passt.", cropNone: "Zieh die Ecken an die Ränder der Seite.", cropLoading: "Seite wird gesucht …", cropUse: "Übernehmen", cropWhole: "Ganzes Bild", cropAgain: "Seite neu zuschneiden", cropOf: "Bild {a} von {b}",
     },
   };
   const t = (k, vars = {}) => (T[S.ui] || T.da)[k]?.replace(/\{(\w+)\}/g, (_, v) => vars[v]) ?? k;
@@ -655,9 +685,29 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
     const W = c.width, H = c.height;
     const px = canvas.getContext("2d").getImageData(0, 0, W, H).data;
     const med = (a) => { a.sort((x, y) => x - y); return a[a.length >> 1]; };
+    // Zeilenenden: Tinte, die direkt an eine erkannte Zeile anschließt (unsicher erkannte Wortendung,
+    // Komma), gehört mit zum Text und wird mit übermalt.
+    const lum = (x, y) => { const i = (y * W + x) * 4; return 0.3 * px[i] + 0.59 * px[i + 1] + 0.11 * px[i + 2]; };
+    function tails(l, h) {
+      const out = [];
+      const y0 = Math.max(0, Math.round(l.y0)), y1 = Math.min(H - 1, Math.round(l.y1));
+      let bg = 0, n = 0;
+      for (let y = y0; y <= y1; y += 2) for (const x of [l.x0, l.x1]) { if (x >= 0 && x < W) { bg = Math.max(bg, lum(Math.round(x), y)); n++; } }
+      const inkCol = (x) => { for (let y = y0; y <= y1; y += 2) if (lum(x, y) < bg - 70) return true; return false; };
+      for (const dir of [1, -1]) {
+        let x = dir > 0 ? Math.round(l.x1) + 1 : Math.round(l.x0) - 1, gap = 0, last = null;
+        while (x > 0 && x < W - 1 && gap < 0.6 * h && Math.abs(x - (dir > 0 ? l.x1 : l.x0)) < 2.5 * h) {
+          if (inkCol(x)) { last = x; gap = 0; } else gap++;
+          x += dir;
+        }
+        if (last != null) out.push(dir > 0 ? { x0: l.x1, y0: l.y0, x1: last, y1: l.y1 } : { x0: last, y0: l.y0, x1: l.x0, y1: l.y1 });
+      }
+      return out;
+    }
     for (const pa of paras) {
       let spreadMax = 0, bgs = [];
-      for (const l of (pa.words || pa.lines)) {
+      const extraBoxes = (pa.lines || []).flatMap(l => tails(l, pa.lh));
+      for (const l of [...(pa.words || pa.lines), ...extraBoxes]) {
         const pad = Math.round(pa.lh * 0.28) + 3;
         const x0 = Math.max(0, l.x0 - pad), y0 = Math.max(0, l.y0 - pad);
         const x1 = Math.min(W - 1, l.x1 + pad), y1 = Math.min(H - 1, l.y1 + pad);
@@ -757,6 +807,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
     $("count").textContent = t("pageOf", { a: cur + 1, b: pages.length });
     $("prev").disabled = cur === 0; $("next").disabled = cur >= pages.length - 1;
     if (pg.img) $("origImg").src = pg.img;
+    $("recropBtn").hidden = !pg.photo;
     stopSpeech();
     if (pg.status === "done") {
       renderContent(pg);
@@ -831,17 +882,104 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
     if (!list.length) return;
     showApp();
     const first = pages.length;
-    for (const f of list) {
+    for (const [n, f] of list.entries()) {
       try {
-        const { dataUrl, canvas } = await loadImage(f);
-        const pg = { img: dataUrl, canvas, lang: S.lang, text: "", status: "wait", progress: 0 };
+        const { canvas: photo } = await loadImage(f);
+        const { canvas, corners } = await cropFlow(photo, null, list.length > 1 ? t("cropOf", { a: n + 1, b: list.length }) : "");
+        const pg = { photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: S.lang, text: "", status: "wait", progress: 0 };
         pages.push(pg); queue.push(pg);
+        if (n === 0) { cur = pages.length - 1; render(); }
+        runQueue();
       } catch (e) { toast(e.message); }
     }
+    if (!pages.length) return;
     cur = Math.min(first, pages.length - 1);
     render();
-    runQueue();
   }
+
+  // ---------- Seite zuschneiden ----------
+  // OpenCV (ca. 13 MB) wird erst beim ersten Foto geladen und dann vom Browser zwischengespeichert.
+  let cvP = null;
+  function getCv() {
+    if (!cvP) cvP = loadScript("opencv.js").then(async () => {
+      let cv = window.cv;
+      if (cv instanceof Promise) cv = await cv;
+      else if (!cv.Mat) await new Promise(r => { cv.onRuntimeInitialized = r; });
+      return cv;
+    });
+    cvP.catch(() => { cvP = null; });
+    return cvP;
+  }
+
+  // Dialog: Ecken zeigen (automatischer Vorschlag oder Bildrand), verschieben lassen, entzerren.
+  function cropFlow(photo, startCorners, counter) {
+    return new Promise(async (resolve) => {
+      const W = photo.width, H = photo.height;
+      const full = [[0, 0], [W, 0], [W, H], [0, H]];
+      let corners = startCorners ? startCorners.map(p => [...p]) : full.map(p => [...p]);
+      const dlg = $("crop"), stage = $("cropStage"), cnv = $("cropCanvas");
+      dlg.hidden = false;
+      $("cropMsg").textContent = (counter ? counter + " · " : "") + t("cropLoading");
+      let scale = 1, ox = 0, oy = 0;
+      const handles = corners.map(() => { const h = document.createElement("div"); h.className = "h"; stage.append(h); return h; });
+      function layout() {
+        const sw = stage.clientWidth, sh = stage.clientHeight;
+        scale = Math.min(sw / W, sh / H);
+        const dw = W * scale, dh = H * scale; ox = (sw - dw) / 2; oy = (sh - dh) / 2;
+        cnv.width = Math.round(dw * devicePixelRatio); cnv.height = Math.round(dh * devicePixelRatio);
+        Object.assign(cnv.style, { left: ox + "px", top: oy + "px", width: dw + "px", height: dh + "px" });
+        cnv.getContext("2d").drawImage(photo, 0, 0, cnv.width, cnv.height);
+        draw();
+      }
+      function draw() {
+        corners.forEach(([x, y], i) => { handles[i].style.left = ox + x * scale + "px"; handles[i].style.top = oy + y * scale + "px"; });
+        $("cropPoly").setAttribute("points", corners.map(([x, y]) => `${ox + x * scale},${oy + y * scale}`).join(" "));
+      }
+      handles.forEach((h, i) => {
+        h.onpointerdown = (e) => {
+          h.setPointerCapture(e.pointerId);
+          const r = stage.getBoundingClientRect();
+          h.onpointermove = (ev) => {
+            corners[i] = [Math.min(W, Math.max(0, (ev.clientX - r.left - ox) / scale)), Math.min(H, Math.max(0, (ev.clientY - r.top - oy) / scale))];
+            draw();
+          };
+          h.onpointerup = () => { h.onpointermove = null; };
+        };
+      });
+      const ro = new ResizeObserver(layout); ro.observe(stage);
+      layout();
+
+      let cv = null;
+      try {
+        cv = await getCv();
+        if (!startCorners) {
+          const found = Lib.detectPage(cv, photo);
+          if (found) { corners = found; draw(); }
+          $("cropMsg").textContent = (counter ? counter + " · " : "") + t(found ? "cropFound" : "cropNone");
+        } else $("cropMsg").textContent = (counter ? counter + " · " : "") + t("cropNone");
+      } catch (e) {
+        console.error(e);
+        $("cropMsg").textContent = (counter ? counter + " · " : "") + t("cropNone");
+      }
+      const finish = (useCorners) => {
+        ro.disconnect(); handles.forEach(h => h.remove()); dlg.hidden = true;
+        $("cropOk").onclick = $("cropWhole").onclick = null;
+        const isFull = !useCorners || useCorners.every((p, i) => Math.hypot(p[0] - full[i][0], p[1] - full[i][1]) < 2);
+        if (isFull || !cv) return resolve({ canvas: photo, corners: null });
+        resolve({ canvas: Lib.warpPage(cv, photo, useCorners), corners: useCorners });
+      };
+      $("cropOk").onclick = () => finish(Lib.orderCorners(corners));
+      $("cropWhole").onclick = () => finish(null);
+    });
+  }
+
+  $("recropBtn").onclick = async () => {
+    const pg = pages[cur];
+    if (!pg || !pg.photo) return;
+    const { canvas, corners } = await cropFlow(pg.photo, pg.corners || null, "");
+    Object.assign(pg, { canvas, corners, img: canvas.toDataURL("image/jpeg", 0.88), status: "wait", progress: 0, paras: null, clean: null });
+    queue.push(pg); render(); runQueue();
+  };
 
   // ---------- Texterkennung ----------
   const workers = {}; let active = null;

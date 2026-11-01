@@ -53,12 +53,17 @@ function lineUnits(line) {
     };
     while (ws.length && !edgeOk(ws[ws.length - 1], 55) && !closeRight()) ws.pop();
     if (!ws.length) continue;
-    units.push({ ws, pre: pre.filter((w) => WORDLIKE.test(w.text)), h });
+    // Reste direkt daneben (z. B. eine unsicher erkannte Wortendung) nicht anzeigen, aber übermalen
+    const i0 = part.indexOf(ws[0]), i1 = part.indexOf(ws[ws.length - 1]);
+    const extra = [];
+    for (let i = i1 + 1; i < part.length && part[i].bbox.x0 - part[i - 1].bbox.x1 < 1.0 * h; i++) extra.push(part[i]);
+    for (let i = i0 - 1; i >= 0 && part[i + 1].bbox.x0 - part[i].bbox.x1 < 1.0 * h && !pre.includes(part[i]); i--) extra.push(part[i]);
+    units.push({ ws, pre: pre.filter((w) => WORDLIKE.test(w.text)), h, extra });
   }
   return units;
 }
 
-const finishUnit = (u) => ({ ...u, bbox: union(u.ws.map((w) => w.bbox)), words: u.ws.map((w) => w.bbox), text: u.ws.map((w) => w.text).join(" ") });
+const finishUnit = (u) => ({ ...u, bbox: union(u.ws.map((w) => w.bbox)), words: [...u.ws, ...(u.extra || [])].map((w) => w.bbox), text: u.ws.map((w) => w.text).join(" ") });
 
 // Links abgeschnittene Wörter zurückholen, wenn sie am gemeinsamen linken Rand der Gruppe beginnen.
 function rescueLeft(group) {
