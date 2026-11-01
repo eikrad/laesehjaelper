@@ -145,9 +145,11 @@ function dedupe(units: Unit[]): Unit[] {
 
 // Ergebnis: Textgruppen mit Position, Zeilen- und Wortflächen (zum Übermalen) und Text.
 // Den Text (g.text) setzt der Aufrufer mit cleanOcr(g.raw, Optionen), damit Einstellungen ohne neue Erkennung wirken.
-export function parasFromOcr(data: OcrData): Para[] {
+// Mehrere Erkennungsläufe (z. B. Originalbild und Bild mit ausgeglichenem Hintergrund) lassen sich
+// kombinieren: Überlappende Zeilen werden zusammengeführt, die sicherere gewinnt.
+export function parasFromOcr(...runs: OcrData[]): Para[] {
   const units: Unit[] = [];
-  for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || []) units.push(...lineUnits(l).map(finishUnit));
+  for (const data of runs) for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || []) units.push(...lineUnits(l).map(finishUnit));
   return groupUnits(dedupe(units)).map(rescueLeft).map((ls) => {
     const hs = ls.map((l) => l.h).sort((a, b) => a - b);
     return {

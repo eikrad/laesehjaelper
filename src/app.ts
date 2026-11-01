@@ -4,6 +4,7 @@ import { cleanOcr, parasFromOcr } from "./layout";
 import { detectPage, warpPage, orderCorners } from "./pagedetect";
 import type { CV } from "./pagedetect";
 import { DB } from "./db";
+import { flattenBackground, rotateLike } from "./prep";
 import type { Box, Corners, OcrData, Para, Point } from "./types";
 
 declare const Tesseract: {
@@ -11,7 +12,7 @@ declare const Tesseract: {
 };
 interface TessWorker {
   setParameters(p: Record<string, string>): Promise<unknown>;
-  recognize(image: HTMLCanvasElement | Blob, options?: Record<string, unknown>, output?: Record<string, boolean>): Promise<{ data: OcrData }>;
+  recognize(image: HTMLCanvasElement | Blob, options?: Record<string, unknown>, output?: Record<string, boolean>): Promise<{ data: OcrData & { rotateRadians?: number } }>;
 }
 declare global { interface Window { cv: unknown; TRAINEDDATA: Record<string, string> } }
 
@@ -97,7 +98,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       foot: "Alt foregår på din egen telefon eller computer. Billederne bliver ikke sendt nogen steder hen.",
       noText: "Der blev ikke fundet nogen tekst på denne side.<br>Åbn „Tjek og ret teksten“ og skriv den selv.",
       ocrFailed: "Genkendelsen mislykkedes.",
-      waiting: "Venter på genkendelse …", recognizing: "Teksten genkendes …", loadingCore: "Genkendelsen indlæses …",
+      waiting: "Venter på genkendelse …", recognizing: "Teksten genkendes …", recognizing2: "Teksten tjekkes en gang til …", loadingCore: "Genkendelsen indlæses …",
       loadingLang: "Sprogdata indlæses …", preparing: "Gøres klar …",
       imgError: "Billedet kunne ikke åbnes.", noSpeech: "Oplæsning understøttes ikke af denne browser.",
       example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", shelfTitle: "Dine bøger", pagesN: "{n} sider", page1: "1 side", untitled: "Bog uden titel", titlePh: "Bogens titel", editPages: "Rediger sider", done: "Færdig", deleteBook: "Slet bogen", confirmDelete: "Tryk igen for at slette bogen", moveLeft: "Flyt til venstre", moveRight: "Flyt til højre", deletePage: "Slet side", aboutTitle: "Om Læsehjælper og ansvarsfraskrivelse", aboutText: "Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl – tjek derfor altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.<br><br>Billeder og bøger bliver kun behandlet og gemt på din egen enhed og bliver ikke sendt til nogen server. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug. Del ikke omdannede bøger med andre, medmindre du har rettighederne.<br><br>Brug sker på eget ansvar og uden garanti. Kildekoden er åben: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Bøgerne kan ikke gemmes i denne browser.", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", cropOf: "Billede {a} af {b}", install: "Installér som app på denne enhed", compare: "Vis den oprindelige tekst", compareOff: "Vis den nye tekst",
@@ -126,7 +127,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       foot: "Everything happens on your own phone or computer. Your photos are not sent anywhere.",
       noText: "No text was found on this page.<br>Open “Check and correct the text” and type it in yourself.",
       ocrFailed: "Recognition failed.",
-      waiting: "Waiting for recognition …", recognizing: "Recognising text …", loadingCore: "Loading text recognition …",
+      waiting: "Waiting for recognition …", recognizing: "Recognising text …", recognizing2: "Double-checking the text …", loadingCore: "Loading text recognition …",
       loadingLang: "Loading language data …", preparing: "Getting ready …",
       imgError: "The photo could not be opened.", noSpeech: "Reading aloud is not supported in this browser.",
       example: "Sample", addPages: "Add pages", toStart: "Back to start", shelfTitle: "Your books", pagesN: "{n} pages", page1: "1 page", untitled: "Untitled book", titlePh: "Book title", editPages: "Edit pages", done: "Done", deleteBook: "Delete book", confirmDelete: "Tap again to delete the book", moveLeft: "Move left", moveRight: "Move right", deletePage: "Delete page", aboutTitle: "About Læsehjælper and disclaimer", aboutText: "Læsehjælper is a free hobby project, not a finished product. Text recognition and syllable splitting make mistakes, so always check the text before a child reads it. The app does not replace teaching, reading support or a dyslexia assessment.<br><br>Photos and books are processed and stored only on your own device and are never sent to a server. Books are protected by copyright: only use Læsehjælper for books you have access to, and only for private use. Do not share converted books unless you hold the rights.<br><br>Use at your own risk and without warranty. The source code is open: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Books cannot be saved in this browser.", cropTitle: "Adjust the page", cropFound: "Page found. Drag the corners if it doesn't fit.", cropNone: "Drag the corners to the edges of the page.", cropLoading: "Looking for the page …", cropUse: "Use", cropWhole: "Whole photo", cropAgain: "Crop the page again", cropOf: "Photo {a} of {b}", install: "Install as an app on this device", compare: "Show the original text", compareOff: "Show the new text",
@@ -155,7 +156,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       foot: "Alles passiert auf deinem eigenen Handy oder Computer. Die Fotos werden nirgendwohin geschickt.",
       noText: "Auf dieser Seite wurde kein Text gefunden.<br>Öffne „Text prüfen“ und tippe ihn selbst ein.",
       ocrFailed: "Die Erkennung hat nicht geklappt.",
-      waiting: "Wartet auf Erkennung …", recognizing: "Text wird erkannt …", loadingCore: "Erkennung wird geladen …",
+      waiting: "Wartet auf Erkennung …", recognizing: "Text wird erkannt …", recognizing2: "Text wird ein zweites Mal geprüft …", loadingCore: "Erkennung wird geladen …",
       loadingLang: "Sprachdaten werden geladen …", preparing: "Wird vorbereitet …",
       imgError: "Bild konnte nicht geöffnet werden.", noSpeech: "Vorlesen wird von diesem Browser nicht unterstützt.",
       example: "Beispiel", addPages: "Seiten hinzufügen", toStart: "Zur Startseite", shelfTitle: "Deine Bücher", pagesN: "{n} Seiten", page1: "1 Seite", untitled: "Buch ohne Titel", titlePh: "Titel des Buchs", editPages: "Seiten bearbeiten", done: "Fertig", deleteBook: "Buch löschen", confirmDelete: "Zum Löschen noch einmal tippen", moveLeft: "Nach links", moveRight: "Nach rechts", deletePage: "Seite löschen", aboutTitle: "Über Læsehjælper und Haftungsausschluss", aboutText: "Læsehjælper ist ein kostenloses Hobbyprojekt und kein fertiges Produkt. Texterkennung und Silbentrennung machen Fehler – prüfe den Text deshalb immer, bevor ein Kind ihn liest. Die App ersetzt keinen Unterricht, keine Leseförderung und keine Diagnostik bei Legasthenie.<br><br>Fotos und Bücher werden nur auf deinem eigenen Gerät verarbeitet und gespeichert und an keinen Server geschickt. Bücher sind urheberrechtlich geschützt: Nutze Læsehjælper nur für Bücher, auf die du selbst Zugriff hast, und nur privat. Gib umgewandelte Bücher nicht weiter, außer du hast die Rechte dazu.<br><br>Nutzung auf eigene Verantwortung und ohne Gewähr. Der Quellcode ist offen: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "In diesem Browser können keine Bücher gespeichert werden.", cropTitle: "Seite zuschneiden", cropFound: "Seite gefunden. Zieh an den Ecken, falls es nicht passt.", cropNone: "Zieh die Ecken an die Ränder der Seite.", cropLoading: "Seite wird gesucht …", cropUse: "Übernehmen", cropWhole: "Ganzes Bild", cropAgain: "Seite neu zuschneiden", cropOf: "Bild {a} von {b}", install: "Als App auf diesem Gerät installieren", compare: "Originaltext anzeigen", compareOff: "Neuen Text anzeigen",
@@ -845,8 +846,9 @@ const Lib = { detectPage, warpPage, orderCorners };
         cacheMethod: "none",
         logger: (m: { status: string; progress: number }) => {
           if (!active) return;
-          active.stage = STAGES[m.status] || active.stage;
-          active.progress = m.status === "recognizing text" ? m.progress : (active.progress || 0);
+          const second = active.stage === "recognizing2";
+          if (!second) active.stage = STAGES[m.status] || active.stage;
+          if (m.status === "recognizing text") active.progress = second ? 0.5 + m.progress / 2 : m.progress / 2;
           if (pages[cur] === active) {
             const bar = document.querySelector<HTMLElement>(".status .bar i");
             const st = document.querySelector(".status");
@@ -872,10 +874,16 @@ const Lib = { detectPage, warpPage, orderCorners };
         // rotateAuto: schräg fotografierte Seiten gerade drehen; die Positionen beziehen sich dann
         // auf das gedrehte Bild, das wir als imageColor zurückbekommen.
         const input = pg.canvas || await blobToCanvas(pg.inputBlob!);
-        const { data } = await w.recognize(input, { rotateAuto: true }, { text: true, blocks: true, imageColor: true });
-        const work = data.imageColor ? await toCanvas(data.imageColor) : input;
+        // Erkennung auf dem Bild mit ausgeglichenem Hintergrund; Anzeige und Übermalen auf dem Farbbild,
+        // das wir genauso drehen wie Tesseract.
+        // Zwei Läufe: das gerade gedrehte Originalbild und dieselbe Seite mit ausgeglichenem Hintergrund
+        // (hilft bei Text auf getönten Bildern oder ungleichmäßigem Licht). Pro Zeile gewinnt der sicherere.
+        const { data } = await w.recognize(input, { rotateAuto: true }, { text: true, blocks: true });
+        const work = rotateLike(input, data.rotateRadians || 0);
+        pg.stage = "recognizing2";
+        const { data: flat } = await w.recognize(flattenBackground(work), {}, { blocks: true });
         pg.workW = work.width; pg.workH = work.height;
-        pg.paras = Layout.parasFromOcr(data);
+        pg.paras = Layout.parasFromOcr(data, flat);
         pg.rawText = data.text || "";
         retext(pg);
         const cleanCanvas = pg.paras.length ? eraseText(work, pg.paras) : null;
