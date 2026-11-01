@@ -9,7 +9,7 @@ fs.mkdirSync(`${out}/core`, { recursive: true });
 fs.mkdirSync(`${out}/lang`, { recursive: true });
 
 const silben = await build({
-  entryPoints: ["src/silben.js"], bundle: true, minify: true, format: "iife", write: false,
+  entryPoints: ["src/lib.js"], bundle: true, minify: true, format: "iife", write: false,
 });
 const b64 = (p) => fs.readFileSync(p).toString("base64");
 const od = `${nm}/@fontsource/opendyslexic/files/opendyslexic-latin`;

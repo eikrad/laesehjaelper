@@ -18,6 +18,8 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Fonts: Andika, OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Adjustable font size, letter spacing, line spacing and background color
 - Tap a word to hear it read aloud, or read the whole page with word-by-word highlighting
+- “Hyphens in the book” setting: for early readers that split words into syllables with hyphens themselves (“sko-le”)
+- Tilted photos are straightened, and “text” that OCR finds inside illustrations is filtered out
 - Correct the recognized text; set your own syllable breaks with `·` (e.g. `hun·den`)
 - Focus mode: just the text, full screen
 
@@ -34,7 +36,9 @@ Every push to `main` builds the app and deploys it to GitHub Pages automatically
 ## Structure
 
 - `src/index.html`: UI and app logic
-- `src/silben.js`: syllable splitting (bundled with esbuild)
+- `src/silben.js`: syllable splitting
+- `src/layout.js`: turns raw OCR output into clean text lines and paragraphs with positions (filters illustration noise)
+- `src/lib.js`: bundle entry (esbuild)
 - `build.mjs`: builds `dist/`, inlines the syllable code and the OpenDyslexic font, and copies the Tesseract files and language data
 
 ## Known limitations

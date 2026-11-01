@@ -18,6 +18,8 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Skrifttyper: Andika, OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Justerbar skriftstørrelse, bogstavafstand, linjeafstand og baggrundsfarve
 - Tryk på et ord for at få det læst op, eller få hele siden læst op med markering af hvert ord
+- Indstilling „Bindestreger i bogen“: til læsebøger, der selv deler ord i stavelser med bindestreg („sko-le“)
+- Skæve fotos bliver rettet op, og „tekst“, som tekstgenkendelsen finder i tegningerne, bliver sorteret fra
 - Ret den genkendte tekst; sæt selv stavelsesgrænser med `·` (f.eks. `hun·den`)
 - Læsetilstand: kun teksten, i fuld skærm
 
@@ -34,7 +36,9 @@ Ved hvert push til `main` bliver appen automatisk bygget og udgivet på GitHub P
 ## Opbygning
 
 - `src/index.html`: brugerflade og app-logik
-- `src/silben.js`: stavelsesdeling (samles med esbuild)
+- `src/silben.js`: stavelsesdeling
+- `src/layout.js`: gør det rå OCR-resultat til rene tekstlinjer og afsnit med position (sorterer støj fra tegninger fra)
+- `src/lib.js`: samlet bundt (esbuild)
 - `build.mjs`: bygger `dist/`, indlejrer stavelseskoden og skrifttypen OpenDyslexic og kopierer Tesseract-filer og sprogdata
 
 ## Kendte begrænsninger

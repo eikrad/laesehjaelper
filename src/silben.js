@@ -11,5 +11,3 @@ export function silben(wort, sprache = "da") {
   const h = trenner[sprache] || da;
   return h(wort, { hyphenChar: SHY, minWordLength: 3 }).split(SHY).filter(Boolean);
 }
-
-window.Silben = { silben };
