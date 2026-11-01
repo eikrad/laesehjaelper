@@ -6,98 +6,116 @@
 <title>Læsehjælper</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@400;600&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@400;600&family=Bricolage+Grotesque:opsz,wght@12..96,400..800&display=swap" rel="stylesheet">
 <style>
 @font-face { font-family: "OpenDyslexic"; font-weight: 400; src: url(data:font/woff2;base64,%%OD_400%%) format("woff2"); }
 @font-face { font-family: "OpenDyslexic"; font-weight: 700; src: url(data:font/woff2;base64,%%OD_700%%) format("woff2"); }
 
 :root {
-  --ink: #23262f;
-  --muted: #6b7080;
-  --line: #e4e1d8;
-  --panel: #ffffff;
-  --app-bg: #f6f3ec;
-  --accent: #2f6fd6;
-  --accent-soft: #e7effc;
-  --s0: #1f5fd1;   /* Silbe 1: blau */
-  --s1: #d13a2f;   /* Silbe 2: rot */
-  --page-bg: #fffbf0;
+  /* Farben */
+  --sky: #eef1ff;        /* App-Hintergrund, kühles Papier */
+  --ink: #17193b;        /* Text, tiefes Marineblau */
+  --muted: #5d6185;
+  --line: #d9ddf5;
+  --surface: #ffffff;
+  --blue: #2f3fe0;       /* Hauptfarbe = erste Silbe */
+  --red: #e5412d;        /* zweite Silbe */
+  --sun: #ffc83d;        /* Hervorhebung, Hauptknopf */
+  --sun-ink: #3b2a00;
+  /* Silben im Lesetext (einstellbar) */
+  --s0: var(--blue);
+  --s1: var(--red);
+  --page-bg: #ffffff;
   --font: "Andika", sans-serif;
   --size: 32px;
   --ls: 0.04em;
   --ws: 0.25em;
   --lh: 1.9;
-  --radius: 14px;
+  --ui: "Bricolage Grotesque", system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
-  font-family: "Nunito", system-ui, sans-serif;
+  font-family: var(--ui);
+  font-size: 17px;
+  line-height: 1.5;
   color: var(--ink);
-  background: var(--app-bg);
+  background: var(--sky);
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 button, select, input, textarea { font: inherit; color: inherit; }
-.wrap { max-width: 980px; margin: 0 auto; padding: 16px 16px 80px; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--blue); outline-offset: 2px; border-radius: 10px; }
+svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.wrap { max-width: 760px; margin: 0 auto; padding: 14px 18px 120px; }
 
-header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 14px; }
-.brand { display: flex; align-items: center; gap: 10px; }
-.brand h1 { font-size: 22px; margin: 0; font-weight: 800; letter-spacing: -0.01em; }
-.brand h1 .b { color: var(--s0); } .brand h1 .r { color: var(--s1); }
-.logo { width: 34px; height: 34px; }
+/* Kopfzeile */
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 8px; }
+.brand { display: flex; align-items: center; gap: 9px; cursor: pointer; border-radius: 10px; }
+.brand .name { font-size: 19px; font-weight: 750; letter-spacing: -0.01em; }
+.logo { width: 30px; height: 30px; }
+.pill { display: inline-flex; background: #fff; border-radius: 999px; padding: 3px; box-shadow: inset 0 0 0 1.5px var(--line); }
+.pill button { border: 0; background: none; border-radius: 999px; padding: 6px 14px; font-weight: 650; font-size: 15px; color: var(--muted); }
+.pill button.on { background: var(--ink); color: #fff; }
 
-.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 9px 16px; cursor: pointer; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
-.btn:hover { border-color: #cfcabd; }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn.primary:hover { background: #255fbf; }
-.btn:disabled { opacity: .45; cursor: default; }
-.btn.icon { padding: 9px 12px; }
+/* Startseite */
+.hero { padding: 34px 0 8px; }
+.hero h1 {
+  font-size: clamp(54px, 15vw, 104px); line-height: 1; letter-spacing: -0.035em; font-weight: 800;
+  margin: 0 0 22px; font-variation-settings: "opsz" 96;
+}
+.hero h1 { padding-bottom: .22em; }
+.hero h1 .s { position: relative; display: inline-block; }
+.hero h1 .s0 { color: var(--blue); } .hero h1 .s1 { color: var(--red); }
+.hero h1 .s::after {
+  content: ""; position: absolute; left: 10%; right: 10%; bottom: -.26em; height: .18em;
+  border: .055em solid currentColor; border-top: 0; border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  transform-origin: center; animation: arc .5s cubic-bezier(.3,1.4,.6,1) both;
+}
+.hero h1 .s:nth-child(2)::after { animation-delay: .12s; }
+.hero h1 .s:nth-child(3)::after { animation-delay: .24s; }
+.hero h1 .s:nth-child(4)::after { animation-delay: .36s; }
+@keyframes arc { from { transform: scaleX(0); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .hero h1 .s::after { animation: none; } }
+.hero p.lead { font-size: 20px; line-height: 1.45; max-width: 30ch; margin: 0 0 28px; color: var(--ink); }
 
-/* Start */
-.start { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 28px 22px; text-align: center; }
-.start h2 { font-size: 26px; margin: 4px 0 8px; }
-.start p { color: var(--muted); margin: 0 auto 20px; max-width: 520px; line-height: 1.5; }
-.drop { border: 2px dashed #cfcabd; border-radius: 16px; padding: 28px 16px; display: block; cursor: pointer; transition: background .15s, border-color .15s; }
-.drop.over, .drop:hover { background: var(--accent-soft); border-color: var(--accent); }
-.drop strong { display: block; font-size: 18px; margin-bottom: 4px; }
-.drop span { color: var(--muted); font-size: 14px; }
-.drop input { display: none; }
-.uiseg { min-width: 0; }
-.uiseg button { padding: 6px 10px; font-size: 13px; }
-.brand { cursor: pointer; }
-.resume { margin: 16px 0 0; }
-.langpick { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 16px 0 0; flex-wrap: wrap; color: var(--muted); font-size: 15px; }
-.langpick .seg { min-width: 240px; }
-.or { margin: 14px 0 0; color: var(--muted); font-size: 14px; }
-.linkbtn { background: none; border: 0; color: var(--accent); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0; }
-.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; text-align: left; }
-.how div { background: var(--app-bg); border-radius: 12px; padding: 12px; font-size: 14px; color: var(--muted); line-height: 1.4; }
-.how b { display: block; color: var(--ink); margin-bottom: 2px; }
-@media (max-width: 620px) { .how { grid-template-columns: 1fr; } }
+.cta {
+  display: flex; align-items: center; gap: 16px; width: 100%;
+  background: var(--sun); color: var(--sun-ink); border-radius: 26px; padding: 20px 22px;
+  box-shadow: 0 3px 0 #d9a21c; cursor: pointer; transition: transform .1s, box-shadow .1s;
+}
+.cta:active { transform: translateY(3px); box-shadow: 0 0 0 #d9a21c; }
+.cta.over { outline: 3px dashed var(--ink); outline-offset: 4px; }
+.cta .ic { width: 56px; height: 56px; border-radius: 18px; background: rgba(255,255,255,.55); display: grid; place-items: center; flex: none; }
+.cta .ic svg { width: 30px; height: 30px; }
+.cta strong { display: block; font-size: 21px; font-weight: 750; line-height: 1.2; }
+.cta span.sub { display: block; font-size: 15px; opacity: .8; margin-top: 2px; }
+.cta input { display: none; }
 
-/* Werkzeugleiste */
-.toolbar { position: sticky; top: 0; z-index: 5; background: var(--app-bg); padding: 8px 0 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.pager { display: flex; align-items: center; gap: 6px; margin-right: auto; }
-.pager .count { font-weight: 800; min-width: 92px; text-align: center; }
+.startrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; margin: 18px 0 0; }
+.startrow .lbl { font-size: 15px; color: var(--muted); margin-right: 8px; }
+.linkbtn { background: none; border: 0; padding: 4px 0; color: var(--blue); font-weight: 650; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 2px; }
+.resume { margin: 14px 0 0; }
+.btn-ghost { display: inline-flex; align-items: center; gap: 10px; border: 0; background: var(--ink); color: #fff; border-radius: 999px; padding: 12px 20px; font-weight: 650; }
 
-.settings { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 14px; display: none; }
-.settings.open { display: block; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px 20px; }
-.field label { display: block; font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
-.field select, .field input[type=range] { width: 100%; }
-.field select { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: #fff; }
-.seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-.seg button { flex: 1; border: 0; background: #fff; padding: 8px 6px; cursor: pointer; font-weight: 700; font-size: 14px; }
-.seg button + button { border-left: 1px solid var(--line); }
-.seg button.on { background: var(--accent-soft); color: var(--accent); }
-.swatches { display: flex; gap: 8px; }
-.swatches button { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; }
-.swatches button.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.how { list-style: none; counter-reset: s; margin: 44px 0 0; padding: 0; display: grid; gap: 14px; }
+.how li { counter-increment: s; display: grid; grid-template-columns: 40px 1fr; gap: 14px; align-items: start; }
+.how li::before {
+  content: counter(s); width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  font-weight: 800; color: #fff; background: var(--blue);
+}
+.how li:nth-child(2)::before { background: var(--red); }
+.how li:nth-child(3)::before { background: var(--ink); }
+.how b { display: block; font-size: 17px; }
+.how span { color: var(--muted); font-size: 16px; }
 
-/* Seite */
-.pagecard { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
-.orig { display: flex; justify-content: center; background: #efebe1; padding: 12px; border-bottom: 1px solid var(--line); }
-.orig img { max-width: 100%; max-height: 300px; border-radius: 8px; display: block; }
+.foot { color: var(--muted); font-size: 14px; margin: 48px 0 0; max-width: 52ch; }
+
+/* Leseansicht */
+.pagecard { background: var(--page-bg); border-radius: 28px; overflow: hidden; box-shadow: 0 1px 0 var(--line), 0 18px 40px -24px rgba(23,25,59,.35); }
+.orig { display: flex; justify-content: center; background: #e3e7fb; padding: 14px; }
+.orig img { max-width: 100%; max-height: 280px; border-radius: 12px; display: block; }
 .orig.hidden { display: none; }
 
 .reader {
@@ -107,15 +125,15 @@ header.top { display: flex; align-items: center; justify-content: space-between;
   letter-spacing: var(--ls);
   word-spacing: var(--ws);
   line-height: var(--lh);
-  padding: 28px 28px 34px;
-  min-height: 220px;
+  padding: 30px 26px 36px;
+  min-height: 240px;
   color: #1d1d1f;
 }
-.reader p { margin: 0 0 0.8em; max-width: 32em; }
+.reader p { margin: 0 0 0.8em; max-width: 30em; }
 .reader p:last-child { margin-bottom: 0; }
-.w { white-space: nowrap; cursor: pointer; border-radius: 6px; transition: background .12s; padding: 0 .02em; }
-.w:hover { background: rgba(47,111,214,.08); }
-.w.speaking { background: #ffe58a; }
+.w { white-space: nowrap; cursor: pointer; border-radius: 8px; transition: background .12s; padding: 0 .02em; }
+.w:hover { background: rgba(47,63,224,.08); }
+.w.speaking { background: var(--sun); }
 .mode-farbe .s0 { color: var(--s0); }
 .mode-farbe .s1 { color: var(--s1); }
 .mode-boegen .w .s { position: relative; display: inline-block; padding-bottom: .12em; }
@@ -123,172 +141,239 @@ header.top { display: flex; align-items: center; justify-content: space-between;
   content: ""; position: absolute; left: 6%; right: 6%; bottom: -.02em; height: .28em;
   border: .07em solid #555; border-top: 0; border-radius: 0 0 50% 50% / 0 0 100% 100%;
 }
+.mode-boegen .w .s.tiny::after { left: -10%; right: -10%; }
 .mode-boegen.mode-farbe .w .s0::after { border-color: var(--s0); }
 .mode-boegen.mode-farbe .w .s1::after { border-color: var(--s1); }
 
-.status { padding: 40px 20px; text-align: center; color: var(--muted); font-family: "Nunito", sans-serif; font-size: 16px; }
-.bar { height: 8px; background: #eee9dc; border-radius: 99px; overflow: hidden; max-width: 320px; margin: 12px auto 0; }
-.bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+.status { padding: 48px 20px; text-align: center; color: var(--muted); font-family: var(--ui); font-size: 17px; }
+.bar { height: 10px; background: var(--sky); border-radius: 99px; overflow: hidden; max-width: 280px; margin: 14px auto 0; }
+.bar i { display: block; height: 100%; width: 0; background: var(--blue); border-radius: 99px; transition: width .2s; }
 
-.edit { border-top: 1px solid var(--line); padding: 12px 16px 16px; }
-.edit summary { cursor: pointer; font-weight: 700; color: var(--muted); }
-.edit textarea { width: 100%; min-height: 140px; margin-top: 10px; padding: 12px; border-radius: 10px; border: 1px solid var(--line); font-family: "Nunito", sans-serif; font-size: 16px; line-height: 1.5; resize: vertical; }
-.edit .hint { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+.edit { border-top: 1.5px solid var(--line); padding: 14px 22px 18px; font-family: var(--ui); background: #fff; }
+.edit summary { cursor: pointer; font-weight: 650; color: var(--ink); display: flex; align-items: center; gap: 10px; list-style: none; }
+.edit summary::-webkit-details-marker { display: none; }
+.edit textarea { width: 100%; min-height: 150px; margin-top: 12px; padding: 14px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--sky); font-size: 17px; line-height: 1.5; resize: vertical; }
+.edit .hint { font-size: 14px; color: var(--muted); margin: 8px 0 0; }
 
-.thumbs { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 2px; }
-.thumbs button { flex: 0 0 auto; border: 2px solid transparent; border-radius: 8px; padding: 0; background: none; cursor: pointer; position: relative; }
-.thumbs button.on { border-color: var(--accent); }
-.thumbs img { width: 54px; height: 72px; object-fit: cover; border-radius: 6px; display: block; }
-.thumbs .add { width: 58px; height: 76px; border: 2px dashed #cfcabd; border-radius: 8px; display: grid; place-items: center; font-size: 26px; color: var(--muted); background: transparent; }
-.thumbs .demo { width: 54px; height: 72px; border-radius: 6px; background: var(--page-bg); display: grid; place-items: center; font-size: 12px; color: var(--muted); }
+.thumbs { display: flex; gap: 10px; overflow-x: auto; padding: 16px 2px 4px; }
+.thumbs button { flex: 0 0 auto; border: 0; border-radius: 12px; padding: 0; background: none; box-shadow: 0 0 0 2px transparent; }
+.thumbs button.on { box-shadow: 0 0 0 3px var(--blue); }
+.thumbs img, .thumbs .demo { width: 56px; height: 74px; object-fit: cover; border-radius: 12px; display: grid; place-items: center; }
+.thumbs .demo { background: #fff; font-size: 12px; color: var(--muted); }
+.thumbs .add { width: 56px; height: 74px; border-radius: 12px; border: 2px dashed #b7bde6; display: grid; place-items: center; color: var(--muted); cursor: pointer; flex: none; }
+
+/* Werkzeugleiste unten */
+.dock {
+  position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 20;
+  display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 999px;
+  background: var(--ink); color: #fff; box-shadow: 0 14px 34px -10px rgba(23,25,59,.6);
+  max-width: calc(100vw - 20px);
+}
+.dock button { border: 0; background: none; color: inherit; height: 46px; min-width: 46px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; font-weight: 650; }
+.dock button:hover:not(:disabled) { background: rgba(255,255,255,.12); }
+.dock button:disabled { opacity: .35; cursor: default; }
+.dock button.on { background: rgba(255,255,255,.18); }
+.dock .read { background: var(--sun); color: var(--sun-ink); padding: 0 18px; }
+.dock .read:hover:not(:disabled) { background: #ffd566; }
+.dock .count { font-weight: 650; font-size: 15px; min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; }
+.dock .sep { width: 1px; height: 24px; background: rgba(255,255,255,.2); margin: 0 2px; }
+@media (max-width: 440px) { .dock .read span, .dock .hide-sm { display: none; } .dock .read { padding: 0 14px; } .dock .count { min-width: 50px; } }
+
+/* Einstellungen als Blatt über der Leiste */
+.settings {
+  position: fixed; left: 50%; transform: translate(-50%, 16px); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 70px); z-index: 19;
+  width: min(560px, calc(100vw - 20px)); max-height: 66vh; overflow-y: auto;
+  background: #fff; border-radius: 28px; padding: 20px 20px 22px;
+  box-shadow: 0 24px 60px -18px rgba(23,25,59,.45);
+  opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
+}
+.settings.open { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+@media (prefers-reduced-motion: reduce) { .settings { transition: none; } }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 20px; }
+.grid .wide { grid-column: 1 / -1; }
+@media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
+.field > label, .field > .flabel { display: block; font-size: 15px; font-weight: 650; margin-bottom: 8px; }
+.field select { width: 100%; padding: 11px 12px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--sky); }
+input[type=range] { width: 100%; accent-color: var(--blue); }
+.seg { display: flex; background: var(--sky); border-radius: 14px; padding: 3px; gap: 3px; }
+.seg button { flex: 1; border: 0; background: none; border-radius: 11px; padding: 9px 6px; font-weight: 650; font-size: 15px; color: var(--muted); }
+.seg button.on { background: #fff; color: var(--ink); box-shadow: 0 1px 3px rgba(23,25,59,.18); }
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.swatches button { width: 38px; height: 38px; border-radius: 50%; border: 0; box-shadow: inset 0 0 0 1.5px var(--line); }
+.swatches button.on { box-shadow: inset 0 0 0 1.5px var(--line), 0 0 0 3px #fff, 0 0 0 5.5px var(--ink); }
+
+.own { display: inline-flex; gap: 8px; margin-left: 6px; padding-left: 14px; border-left: 1.5px solid var(--line); }
+.pick { display: inline-flex; align-items: center; gap: 6px; background: var(--sky); border-radius: 999px; padding: 4px 12px 4px 4px; font-size: 14px; font-weight: 650; cursor: pointer; }
+.pick input { width: 30px; height: 30px; border: 0; padding: 0; border-radius: 50%; background: none; cursor: pointer; }
+.pick input::-webkit-color-swatch-wrapper { padding: 0; }
+.pick input::-webkit-color-swatch { border: 0; border-radius: 50%; }
+.pick input::-moz-color-swatch { border: 0; border-radius: 50%; }
+@media (max-width: 480px) { .own { margin-left: 0; padding-left: 0; border-left: 0; } }
 
 /* Lesemodus: nur der Text */
-body.focus .toolbar > :not(.keep), body.focus .settings, body.focus .orig, body.focus .edit, body.focus .thumbs, body.focus header.top { display: none !important; }
+body.focus header.top, body.focus .orig, body.focus .edit, body.focus .thumbs, body.focus .settings, body.focus .foot, body.focus .dock > :not(.keep) { display: none !important; }
 body.focus .wrap { max-width: none; padding: 0; }
-body.focus .pagecard { border-radius: 0; border: 0; min-height: 100vh; }
-body.focus .toolbar { position: fixed; top: 10px; right: 10px; background: transparent; padding: 0; }
-body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
+body.focus .pagecard { border-radius: 0; box-shadow: none; min-height: 100vh; }
+body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
 
-.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #23262f; color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw; }
+.toast { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 16px; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw; z-index: 30; }
 .toast.show { opacity: 1; }
-.foot { color: var(--muted); font-size: 13px; text-align: center; margin-top: 22px; line-height: 1.5; }
+[hidden] { display: none !important; }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/></symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-speak" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9a4 4 0 0 1 0 6M19.5 6.5a7.5 7.5 0 0 1 0 11"/></symbol>
+  <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5"/></symbol>
+  <symbol id="i-aa" viewBox="0 0 24 24"><path d="M3 18 8 6l5 12M4.8 14h6.4M15 18v-4.5a2.5 2.5 0 0 1 5 0V18M15 15.5h5"/></symbol>
+  <symbol id="i-focus" viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6c-2-1.5-5-2-8-1.5V19c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5C17 4 14 4.5 12 6zM12 6v14.5"/></symbol>
+</svg>
 <div class="wrap">
   <header class="top">
     <div class="brand" id="home" role="button" tabindex="0">
-      <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="7" width="16" height="26" rx="3" fill="#1f5fd1"/><rect x="21" y="7" width="16" height="26" rx="3" fill="#d13a2f"/><path d="M8 26 q3.5 4 7 0 M26 26 q3.5 4 7 0" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
-      <h1><span class="b" data-t="brand1"></span><span class="r" data-t="brand2"></span></h1>
+      <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="2" y="6" width="17" height="28" rx="5" fill="#2f3fe0"/><rect x="21" y="6" width="17" height="28" rx="5" fill="#e5412d"/><path d="M6.5 26.5q4 4.5 8 0M25.5 26.5q4 4.5 8 0" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round"/></svg>
+      <span class="name" data-t="docTitle"></span>
     </div>
-    <div class="seg uiseg" id="uiLang" aria-label="Sprog / Sprache">
+    <div class="pill" id="uiLang" aria-label="Sprog / Sprache">
       <button data-v="da">DA</button>
       <button data-v="de">DE</button>
     </div>
   </header>
 
-  <!-- Startansicht -->
-  <section class="start" id="start">
-    <h2 data-t="startTitle"></h2>
-    <p data-t="startIntro"></p>
-    <label class="drop" id="drop">
-      <input type="file" id="file" accept="image/*" multiple>
-      <strong data-t="dropMain"></strong>
-      <span data-t="dropSub"></span>
-    </label>
-    <div class="langpick" id="langStart">
-      <span data-t="bookLangColon"></span>
-      <div class="seg">
-        <button data-v="da" data-t="langDaFlag"></button>
-        <button data-v="de" data-t="langDeFlag"></button>
-      </div>
-    </div>
-    <p class="resume" id="resumeWrap" hidden><button class="btn primary" id="resumeBtn"></button></p>
-    <p class="or"><span data-t="noBook"></span> <button class="linkbtn" id="demoBtn" data-t="demo"></button></p>
-    <div class="how">
-      <div><b data-t="how1t"></b><span data-t="how1"></span></div>
-      <div><b data-t="how2t"></b><span data-t="how2"></span></div>
-      <div><b data-t="how3t"></b><span data-t="how3"></span></div>
-    </div>
-  </section>
-
-  <!-- Leseansicht -->
-  <section id="app" hidden>
-    <div class="toolbar">
-      <button class="btn icon" id="homeBtn" data-ta="toStart">⌂</button>
-      <div class="pager">
-        <button class="btn icon" id="prev" data-ta="prevPage">◀</button>
-        <span class="count" id="count"></span>
-        <button class="btn icon" id="next" data-ta="nextPage">▶</button>
-      </div>
-      <button class="btn" id="readBtn"></button>
-      <button class="btn" id="setBtn" data-t="adjust"></button>
-      <button class="btn keep" id="focusBtn"></button>
-    </div>
-
-    <div class="settings" id="settings">
-      <div class="grid">
-        <div class="field">
-          <label data-t="bookLang"></label>
-          <div class="seg" id="langSet">
+  <!-- Startseite -->
+  <section id="start">
+    <div class="hero">
+      <h1 id="heroWord"></h1>
+      <p class="lead" data-t="startIntro"></p>
+      <label class="cta" id="drop">
+        <input type="file" id="file" accept="image/*" multiple>
+        <span class="ic"><svg class="i"><use href="#i-camera"/></svg></span>
+        <span><strong data-t="dropMain"></strong><span class="sub" data-t="dropSub"></span></span>
+      </label>
+      <p class="resume" id="resumeWrap" hidden><button class="btn-ghost" id="resumeBtn"></button></p>
+      <div class="startrow">
+        <div id="langStart"><span class="lbl" data-t="bookLangColon"></span>
+          <div class="pill">
             <button data-v="da" data-t="langDa"></button>
             <button data-v="de" data-t="langDe"></button>
           </div>
         </div>
-        <div class="field">
-          <label for="font" data-t="font"></label>
-          <select id="font">
-            <option value='"Andika", sans-serif' data-t="andika"></option>
-            <option value='"OpenDyslexic", sans-serif'>OpenDyslexic</option>
-            <option value='"Atkinson Hyperlegible", sans-serif'>Atkinson Hyperlegible</option>
-            <option value='"Lexend", sans-serif'>Lexend</option>
-            <option value='Verdana, "DejaVu Sans", sans-serif'>Verdana</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="size" data-t="size"></label>
-          <input type="range" id="size" min="18" max="64" step="1">
-        </div>
-        <div class="field">
-          <label for="ls" data-t="letterSp"></label>
-          <input type="range" id="ls" min="0" max="0.25" step="0.01">
-        </div>
-        <div class="field">
-          <label for="lh" data-t="lineSp"></label>
-          <input type="range" id="lh" min="1.3" max="3" step="0.1">
-        </div>
-        <div class="field">
-          <label data-t="syllables"></label>
-          <div class="seg" id="mode">
-            <button data-v="aus" data-t="off"></button>
-            <button data-v="farbe" data-t="color"></button>
-            <button data-v="boegen" data-t="arcs"></button>
-            <button data-v="beides" data-t="both"></button>
-          </div>
-        </div>
-        <div class="field">
-          <label data-t="sylColors"></label>
-          <div class="swatches" id="colors">
-            <button data-v="#1f5fd1,#d13a2f" style="background:linear-gradient(90deg,#1f5fd1 50%,#d13a2f 50%)" data-ta="cBlueRed"></button>
-            <button data-v="#1f5fd1,#111111" style="background:linear-gradient(90deg,#1f5fd1 50%,#111 50%)" data-ta="cBlueBlack"></button>
-            <button data-v="#c0392b,#111111" style="background:linear-gradient(90deg,#c0392b 50%,#111 50%)" data-ta="cRedBlack"></button>
-            <button data-v="#7a3fc2,#16804a" style="background:linear-gradient(90deg,#7a3fc2 50%,#16804a 50%)" data-ta="cPurpleGreen"></button>
-          </div>
-        </div>
-        <div class="field">
-          <label data-t="background"></label>
-          <div class="swatches" id="bg">
-            <button data-v="#ffffff" style="background:#fff" data-ta="bWhite"></button>
-            <button data-v="#fffbf0" style="background:#fffbf0" data-ta="bCream"></button>
-            <button data-v="#fdf3c7" style="background:#fdf3c7" data-ta="bYellow"></button>
-            <button data-v="#e6f0fb" style="background:#e6f0fb" data-ta="bBlue"></button>
-            <button data-v="#e9f5e6" style="background:#e9f5e6" data-ta="bGreen"></button>
-          </div>
-        </div>
-        <div class="field">
-          <label data-t="original"></label>
-          <div class="seg" id="origToggle">
-            <button data-v="an" data-t="show"></button>
-            <button data-v="aus" data-t="hide"></button>
-          </div>
-        </div>
+        <button class="linkbtn" id="demoBtn" data-t="demo"></button>
       </div>
     </div>
+    <ol class="how">
+      <li><div><b data-t="how1t"></b><span data-t="how1"></span></div></li>
+      <li><div><b data-t="how2t"></b><span data-t="how2"></span></div></li>
+      <li><div><b data-t="how3t"></b><span data-t="how3"></span></div></li>
+    </ol>
+    <p class="foot" data-t="foot"></p>
+  </section>
 
+  <!-- Leseansicht -->
+  <section id="app" hidden>
     <article class="pagecard">
       <div class="orig" id="orig"><img id="origImg" alt=""></div>
       <div class="reader" id="reader"></div>
       <details class="edit" id="edit">
-        <summary data-t="editSummary"></summary>
+        <summary><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></summary>
         <textarea id="text" spellcheck="true"></textarea>
         <p class="hint" data-th="editHint"></p>
       </details>
     </article>
-
     <div class="thumbs" id="thumbs"></div>
   </section>
+</div>
 
-  <p class="foot" data-t="foot"></p>
+<nav class="dock" id="dock" hidden>
+  <button id="homeBtn" data-ta="toStart"><svg class="i"><use href="#i-home"/></svg></button>
+  <span class="sep hide-sm"></span>
+  <button id="prev" data-ta="prevPage"><svg class="i"><use href="#i-prev"/></svg></button>
+  <span class="count" id="count"></span>
+  <button id="next" data-ta="nextPage"><svg class="i"><use href="#i-next"/></svg></button>
+  <button class="read keep" id="readBtn"></button>
+  <button id="setBtn" data-ta="adjust"><svg class="i"><use href="#i-aa"/></svg></button>
+  <button class="keep" id="focusBtn"></button>
+</nav>
+
+<div class="settings" id="settings">
+  <div class="grid">
+    <div class="field wide">
+      <span class="flabel" data-t="syllables"></span>
+      <div class="seg" id="mode">
+        <button data-v="aus" data-t="off"></button>
+        <button data-v="farbe" data-t="color"></button>
+        <button data-v="boegen" data-t="arcs"></button>
+        <button data-v="beides" data-t="both"></button>
+      </div>
+    </div>
+    <div class="field wide">
+      <label for="font" data-t="font"></label>
+      <select id="font">
+        <option value='"Andika", sans-serif' data-t="andika"></option>
+        <option value='"OpenDyslexic", sans-serif'>OpenDyslexic</option>
+        <option value='"Atkinson Hyperlegible", sans-serif'>Atkinson Hyperlegible</option>
+        <option value='"Lexend", sans-serif'>Lexend</option>
+        <option value='Verdana, "DejaVu Sans", sans-serif'>Verdana</option>
+      </select>
+    </div>
+    <div class="field wide">
+      <label for="size" data-t="size"></label>
+      <input type="range" id="size" min="18" max="64" step="1">
+    </div>
+    <div class="field">
+      <label for="ls" data-t="letterSp"></label>
+      <input type="range" id="ls" min="0" max="0.25" step="0.01">
+    </div>
+    <div class="field">
+      <label for="lh" data-t="lineSp"></label>
+      <input type="range" id="lh" min="1.3" max="3" step="0.1">
+    </div>
+    <div class="field wide">
+      <span class="flabel" data-t="sylColors"></span>
+      <div class="swatches" id="colors">
+        <button data-v="#2f3fe0,#e5412d" style="background:linear-gradient(90deg,#2f3fe0 50%,#e5412d 50%)" data-ta="cBlueRed"></button>
+        <button data-v="#2f3fe0,#17193b" style="background:linear-gradient(90deg,#2f3fe0 50%,#17193b 50%)" data-ta="cBlueBlack"></button>
+        <button data-v="#e5412d,#17193b" style="background:linear-gradient(90deg,#e5412d 50%,#17193b 50%)" data-ta="cRedBlack"></button>
+        <button data-v="#7a3fc2,#16804a" style="background:linear-gradient(90deg,#7a3fc2 50%,#16804a 50%)" data-ta="cPurpleGreen"></button>
+        <span class="own">
+          <label class="pick"><input type="color" id="c0"><span data-t="syl1"></span></label>
+          <label class="pick"><input type="color" id="c1"><span data-t="syl2"></span></label>
+        </span>
+      </div>
+    </div>
+    <div class="field">
+      <span class="flabel" data-t="background"></span>
+      <div class="swatches" id="bg">
+        <button data-v="#ffffff" style="background:#fff" data-ta="bWhite"></button>
+        <button data-v="#fff8e6" style="background:#fff8e6" data-ta="bCream"></button>
+        <button data-v="#fdf0b8" style="background:#fdf0b8" data-ta="bYellow"></button>
+        <button data-v="#e6ecff" style="background:#e6ecff" data-ta="bBlue"></button>
+        <button data-v="#e4f5e3" style="background:#e4f5e3" data-ta="bGreen"></button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="flabel" data-t="bookLang"></span>
+      <div class="seg" id="langSet">
+        <button data-v="da" data-t="langDa"></button>
+        <button data-v="de" data-t="langDe"></button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="flabel" data-t="original"></span>
+      <div class="seg" id="origToggle">
+        <button data-v="an" data-t="show"></button>
+        <button data-v="aus" data-t="hide"></button>
+      </div>
+    </div>
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -300,7 +385,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   const abs = (p) => new URL(p, location.href).href;
 
   // ---------- Einstellungen ----------
-  const defaults = { font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#1f5fd1,#d13a2f", bg: "#fffbf0", orig: "an", lang: "da", ui: "da" };
+  const defaults = { font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", lang: "da", ui: "da" };
   let S = { ...defaults };
   try { Object.assign(S, JSON.parse(localStorage.getItem("lesehelfer") || "{}")); } catch (e) {}
   const save = () => { try { localStorage.setItem("lesehelfer", JSON.stringify(S)); } catch (e) {} };
@@ -310,63 +395,70 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     da: {
       brand1: "Læse", brand2: "hjælper", docTitle: "Læsehjælper",
       startTitle: "Gør bogsider lettere at læse",
-      startIntro: "Tag et billede af en side i børnebogen. Teksten bliver genkendt og sat op på ny: i en letlæselig skrift, stor, med god afstand og farvede stavelser.",
-      dropMain: "📷 Tag et billede eller vælg billeder",
-      dropSub: "Flere sider på én gang · Genkendelsen foregår kun på din enhed",
-      bookLangColon: "Bogens sprog:", bookLang: "Bogens sprog",
+      heroWord: "Læ·se·hjæl·per", startIntro: "Børnebøger sat op, så de er lettere at læse: stor skrift, god luft og farvede stavelser.",
+      dropMain: "Tag et billede af en side",
+      dropSub: "eller vælg flere billeder på én gang",
+      bookLangColon: "Bogen er på", bookLang: "Bogens sprog",
       langDaFlag: "🇩🇰 Dansk", langDeFlag: "🇩🇪 Tysk", langDa: "Dansk", langDe: "Tysk",
-      noBook: "Ingen bog ved hånden?", demo: "Se en eksempelside",
-      how1t: "1. Billede", how1: "Fotografér siden lige og i godt lys, helst uden skygger.",
-      how2t: "2. Tjek", how2: "Se de genkendte ord igennem og ret eventuelle fejl.",
-      how3t: "3. Læs", how3: "Tryk på et ord for at høre det. Tilpas skrift og farver.",
-      prevPage: "Forrige side", nextPage: "Næste side", page: "Side", pageOf: "Side {a} / {b}",
-      read: "🔊 Læs op", stop: "⏹ Stop", adjust: "Aa Tilpas", focus: "⛶ Læsetilstand", close: "✕ Luk",
+      demo: "Prøv med en eksempelside",
+      how1t: "Tag et billede", how1: "Fotografér siden lige og i godt lys, helst uden skygger.",
+      how2t: "Tjek teksten", how2: "Se de genkendte ord igennem og ret eventuelle fejl.",
+      how3t: "Læs", how3: "Tryk på et ord for at høre det. Tilpas skrift og farver.",
+      prevPage: "Forrige side", nextPage: "Næste side", page: "Side", pageOf: "{a} / {b}",
+      read: "Læs op", stop: "Stop", adjust: "Tilpas", focus: "Læsetilstand", close: "Luk læsetilstand",
       font: "Skrift", andika: "Andika (til begyndere)", size: "Skriftstørrelse", letterSp: "Bogstavafstand", lineSp: "Linjeafstand",
       syllables: "Stavelser", off: "Fra", color: "Farve", arcs: "Buer", both: "Begge",
-      sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn",
+      sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse",
       background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
       original: "Originalside", show: "Vis", hide: "Skjul", origAlt: "Originalside",
-      editSummary: "✏️ Tjek og ret teksten",
+      editSummary: "Tjek og ret teksten",
       editHint: "Tom linje = nyt afsnit. Du kan selv sætte stavelsesgrænser med ·, f.eks. <b>hun·den</b>.",
-      foot: "Tekstgenkendelse med Tesseract, orddeling med TeX-mønstre (dansk, tysk). Alt kører lokalt i browseren – ingen billeder bliver uploadet.",
+      foot: "Alt foregår på din egen telefon eller computer. Billederne bliver ikke sendt nogen steder hen.",
       noText: "Der blev ikke fundet nogen tekst på denne side.<br>Åbn „Tjek og ret teksten“ og skriv den selv.",
       ocrFailed: "Genkendelsen mislykkedes.",
       waiting: "Venter på genkendelse …", recognizing: "Teksten genkendes …", loadingCore: "Genkendelsen indlæses …",
       loadingLang: "Sprogdata indlæses …", preparing: "Gøres klar …",
       imgError: "Billedet kunne ikke åbnes.", noSpeech: "Oplæsning understøttes ikke af denne browser.",
-      example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", resume: "📖 Fortsæt med siderne ({n})",
+      example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", resume: "Fortsæt med siderne ({n})",
     },
     de: {
       brand1: "Lese", brand2: "helfer", docTitle: "Lesehelfer",
       startTitle: "Buchseiten leichter lesbar machen",
-      startIntro: "Fotografiere eine Seite aus dem Kinderbuch. Der Text wird erkannt und neu gesetzt: in einer gut lesbaren Schrift, groß, mit Abstand und farbigen Silben.",
-      dropMain: "📷 Seite fotografieren oder Bilder wählen",
-      dropSub: "Mehrere Seiten auf einmal möglich · Erkennung läuft nur auf deinem Gerät",
-      bookLangColon: "Sprache des Buchs:", bookLang: "Sprache des Buchs",
+      heroWord: "Le·se·hel·fer", startIntro: "Kinderbücher so gesetzt, dass sie leichter zu lesen sind: große Schrift, viel Luft und farbige Silben.",
+      dropMain: "Eine Seite fotografieren",
+      dropSub: "oder mehrere Bilder auf einmal wählen",
+      bookLangColon: "Das Buch ist auf", bookLang: "Sprache des Buchs",
       langDaFlag: "🇩🇰 Dänisch", langDeFlag: "🇩🇪 Deutsch", langDa: "Dänisch", langDe: "Deutsch",
-      noBook: "Kein Buch zur Hand?", demo: "Beispielseite ansehen",
-      how1t: "1. Foto", how1: "Seite gerade und hell fotografieren, möglichst ohne Schatten.",
-      how2t: "2. Prüfen", how2: "Erkannte Wörter kurz kontrollieren und Fehler korrigieren.",
-      how3t: "3. Lesen", how3: "Wort antippen zum Vorlesen. Schrift und Farben anpassen.",
-      prevPage: "Vorherige Seite", nextPage: "Nächste Seite", page: "Seite", pageOf: "Seite {a} / {b}",
-      read: "🔊 Vorlesen", stop: "⏹ Stopp", adjust: "Aa Anpassen", focus: "⛶ Lesemodus", close: "✕ Schließen",
+      demo: "Mit einer Beispielseite ausprobieren",
+      how1t: "Foto machen", how1: "Seite gerade und hell fotografieren, möglichst ohne Schatten.",
+      how2t: "Text prüfen", how2: "Erkannte Wörter kurz kontrollieren und Fehler korrigieren.",
+      how3t: "Lesen", how3: "Wort antippen zum Vorlesen. Schrift und Farben anpassen.",
+      prevPage: "Vorherige Seite", nextPage: "Nächste Seite", page: "Seite", pageOf: "{a} / {b}",
+      read: "Vorlesen", stop: "Stopp", adjust: "Anpassen", focus: "Lesemodus", close: "Lesemodus schließen",
       font: "Schrift", andika: "Andika (für Leseanfänger)", size: "Schriftgröße", letterSp: "Buchstabenabstand", lineSp: "Zeilenabstand",
       syllables: "Silben", off: "Aus", color: "Farbe", arcs: "Bögen", both: "Beides",
-      sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün",
+      sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe",
       background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
       original: "Originalseite", show: "Zeigen", hide: "Verbergen", origAlt: "Originalseite",
-      editSummary: "✏️ Text prüfen und korrigieren",
+      editSummary: "Text prüfen und korrigieren",
       editHint: "Leere Zeile = neuer Absatz. Eigene Silbengrenzen mit · setzen, z.&nbsp;B. <b>O·ma</b>.",
-      foot: "Texterkennung mit Tesseract, Silbentrennung mit TeX-Trennmustern (Dänisch, Deutsch). Alles läuft lokal im Browser, es werden keine Fotos hochgeladen.",
+      foot: "Alles passiert auf deinem eigenen Handy oder Computer. Die Fotos werden nirgendwohin geschickt.",
       noText: "Auf dieser Seite wurde kein Text gefunden.<br>Öffne „Text prüfen“ und tippe ihn selbst ein.",
       ocrFailed: "Die Erkennung hat nicht geklappt.",
       waiting: "Wartet auf Erkennung …", recognizing: "Text wird erkannt …", loadingCore: "Erkennung wird geladen …",
       loadingLang: "Sprachdaten werden geladen …", preparing: "Wird vorbereitet …",
       imgError: "Bild konnte nicht geöffnet werden.", noSpeech: "Vorlesen wird von diesem Browser nicht unterstützt.",
-      example: "Beispiel", addPages: "Seiten hinzufügen", toStart: "Zur Startseite", resume: "📖 Weiter mit den Seiten ({n})",
+      example: "Beispiel", addPages: "Seiten hinzufügen", toStart: "Zur Startseite", resume: "Weiter mit den Seiten ({n})",
     },
   };
   const t = (k, vars = {}) => (T[S.ui] || T.da)[k]?.replace(/\{(\w+)\}/g, (_, v) => vars[v]) ?? k;
+  const icon = (n) => `<svg class="i"><use href="#i-${n}"/></svg>`;
+  function setReadBtn() { $("readBtn").innerHTML = icon(reading ? "stop" : "speak") + `<span>${t(reading ? "stop" : "read")}</span>`; }
+  function setFocusBtn() {
+    const on = document.body.classList.contains("focus");
+    $("focusBtn").innerHTML = icon(on ? "close" : "focus");
+    $("focusBtn").setAttribute("aria-label", t(on ? "close" : "focus")); $("focusBtn").title = t(on ? "close" : "focus");
+  }
   function applyTexts() {
     document.documentElement.lang = S.ui;
     document.title = t("docTitle");
@@ -374,9 +466,11 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     document.querySelectorAll("[data-th]").forEach(el => el.innerHTML = t(el.dataset.th));
     document.querySelectorAll("[data-ta]").forEach(el => { el.setAttribute("aria-label", t(el.dataset.ta)); el.title = t(el.dataset.ta); });
     $("origImg").alt = t("origAlt");
-    $("readBtn").textContent = reading ? t("stop") : t("read");
-    $("focusBtn").textContent = document.body.classList.contains("focus") ? t("close") : t("focus");
-    $("resumeBtn").textContent = t("resume", { n: pages.length });
+    setReadBtn(); setFocusBtn();
+    const hw = $("heroWord"); hw.innerHTML = "";
+    t("heroWord").split("·").forEach((x, i) => { const s = document.createElement("span"); s.className = "s s" + (i % 2); s.textContent = x; hw.append(s); });
+    hw.setAttribute("aria-label", t("docTitle"));
+    $("resumeBtn").innerHTML = icon("book") + t("resume", { n: pages.length });
     if (pages.length) render();
   }
 
@@ -388,6 +482,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     r.setProperty("--lh", S.lh);
     const [c0, c1] = S.colors.split(",");
     r.setProperty("--s0", c0); r.setProperty("--s1", c1);
+    $("c0").value = c0; $("c1").value = c1;
     r.setProperty("--page-bg", S.bg);
     const rd = $("reader");
     rd.classList.toggle("mode-farbe", S.mode === "farbe" || S.mode === "beides");
@@ -406,10 +501,12 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
       if (key === "ui") applyTexts();
       if (key === "lang" && pages[cur] && pages[cur].lang !== S.lang) relang(pages[cur]);
     } };
-  $("setBtn").onclick = () => $("settings").classList.toggle("open");
+  $("setBtn").onclick = () => $("setBtn").classList.toggle("on", $("settings").classList.toggle("open"));
+  for (const [i, id] of ["c0", "c1"].entries())
+    $(id).oninput = e => { const c = S.colors.split(","); c[i] = e.target.value; S.colors = c.join(","); applySettings(); };
   $("focusBtn").onclick = () => {
     const on = document.body.classList.toggle("focus");
-    $("focusBtn").textContent = on ? t("close") : t("focus");
+    setFocusBtn();
     window.scrollTo(0, 0);
   };
 
@@ -462,7 +559,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
         w.className = "w"; w.dataset.word = word; w.dataset.i = wordIndex++;
         parts.forEach((sil, i) => {
           const s = document.createElement("span");
-          s.className = "s s" + (i % 2); s.textContent = sil;
+          s.className = "s s" + (i % 2) + (sil.length < 2 ? " tiny" : ""); s.textContent = sil;
           w.append(s);
         });
         p.append(w);
@@ -518,7 +615,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
       box.append(b);
     });
     const add = document.createElement("label");
-    add.className = "add"; add.title = t("addPages"); add.innerHTML = `+<input type="file" accept="image/*" multiple hidden>`;
+    add.className = "add"; add.title = t("addPages"); add.innerHTML = icon("plus") + `<input type="file" accept="image/*" multiple hidden>`;
     add.querySelector("input").onchange = e => addFiles(e.target.files);
     box.append(add);
   }
@@ -655,9 +752,10 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     synth.speak(u);
   }
   function clearHighlight() { document.querySelectorAll(".w.speaking").forEach(x => x.classList.remove("speaking")); }
-  function stopSpeech() { if (synth) synth.cancel(); clearHighlight(); reading = false; $("readBtn").textContent = t("read"); }
+  function stopSpeech() { if (synth) synth.cancel(); clearHighlight(); reading = false; setReadBtn(); }
 
   $("reader").onclick = e => {
+    if ($("settings").classList.contains("open")) { $("settings").classList.remove("open"); $("setBtn").classList.remove("on"); return; }
     const w = e.target.closest(".w"); if (!w) return;
     stopSpeech();
     w.classList.add("speaking");
@@ -669,13 +767,13 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     if (reading) { stopSpeech(); return; }
     const sp = $("reader")._speech; if (!sp) return;
     const spans = [...$("reader").querySelectorAll(".w")];
-    reading = true; $("readBtn").textContent = t("stop");
+    reading = true; setReadBtn();
     speak(sp.full, ev => {
       if (ev.name && ev.name !== "word") return;
       const hit = sp.wordPos.find(p => ev.charIndex >= p.start && ev.charIndex < p.end) || sp.wordPos.find(p => p.start >= ev.charIndex);
       clearHighlight();
       if (hit && spans[hit.i]) spans[hit.i].classList.add("speaking");
-    }, () => { reading = false; clearHighlight(); $("readBtn").textContent = t("read"); });
+    }, () => { reading = false; clearHighlight(); setReadBtn(); });
   };
 
   const DEMO = {
@@ -695,13 +793,13 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   }
 
   // ---------- Start ----------
-  function showApp() { $("start").hidden = true; $("app").hidden = false; window.scrollTo(0, 0); }
+  function showApp() { $("start").hidden = true; $("app").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0); }
   function showStart() {
     stopSpeech();
     if (document.body.classList.contains("focus")) $("focusBtn").click();
-    $("app").hidden = true; $("start").hidden = false;
+    $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; $("settings").classList.remove("open");
     $("resumeWrap").hidden = !pages.length;
-    $("resumeBtn").textContent = t("resume", { n: pages.length });
+    $("resumeBtn").innerHTML = icon("book") + t("resume", { n: pages.length });
     window.scrollTo(0, 0);
   }
   $("homeBtn").onclick = showStart;
