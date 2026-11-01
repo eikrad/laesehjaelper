@@ -61,3 +61,7 @@ Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenken
 Billeder og bøger bliver kun behandlet og gemt på brugerens egen enhed. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug, og del ikke omdannede bøger uden at have rettighederne.
 
 Softwaren stilles til rådighed, som den er, uden nogen form for garanti.
+
+## Licens
+
+Koden er udgivet under [MIT-licensen](LICENSE). Komponenter fra tredjepart har deres egne licenser, se [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

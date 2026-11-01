@@ -61,3 +61,7 @@ Læsehjælper is a free hobby project, not a finished product. Text recognition 
 Photos and books are processed and stored only on the user's own device. Books are protected by copyright: only use Læsehjælper for books you have access to, for private use, and do not share converted books unless you hold the rights.
 
 The software is provided as is, without warranty of any kind.
+
+## License
+
+The code is released under the [MIT License](LICENSE). Third-party components have their own licenses, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
