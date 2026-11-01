@@ -273,6 +273,8 @@ body.focus .wrap { max-width: none; padding: 0; }
 body.focus .pagecard { border-radius: 0; box-shadow: none; min-height: 100vh; }
 body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
 
+.yourturn { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 20px; background: var(--mark); color: var(--ink); font-weight: 700; font-size: 17px; }
+.yourturn[hidden] { display: none; }
 .toast { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 16px; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw; z-index: 30; }
 .toast.show { opacity: 1; }
 [hidden] { display: none !important; }
@@ -358,6 +360,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
     <article class="pagecard">
       <div class="orig" id="orig"><img id="origImg" alt=""></div>
       <div class="reader" id="reader"></div>
+      <div class="yourturn" id="yourTurn" hidden><span data-t="yourTurn"></span><button class="btn-ghost small" id="againBtn"><svg class="i"><use href="#i-speak"/></svg><span data-t="again"></span></button></div>
       <details class="edit" id="edit">
         <summary><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></summary>
         <textarea id="text" spellcheck="true"></textarea>
@@ -469,6 +472,20 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
       <div class="seg" id="origToggle">
         <button data-v="an" data-t="show"></button>
         <button data-v="aus" data-t="hide"></button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="flabel" data-t="rateLabel"></span>
+      <div class="seg" id="rateSet">
+        <button data-v="langsom" data-t="rateSlow"></button>
+        <button data-v="normal" data-t="rateNormal"></button>
+      </div>
+    </div>
+    <div class="field">
+      <span class="flabel" data-t="turnLabel"></span>
+      <div class="seg" id="turnSet">
+        <button data-v="an" data-t="turnOn"></button>
+        <button data-v="aus" data-t="turnOff"></button>
       </div>
     </div>
     <div class="field wide">
