@@ -53,3 +53,11 @@ Ved hvert push til `main` bliver appen automatisk bygget og udgivet på GitHub P
 - Bedre fjernelse af tekst på illustrationer (inpainting)
 - Gem bøger lokalt, eksport som PDF
 - Læselineal, linje-for-linje-tilstand
+
+## Ansvarsfraskrivelse
+
+Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl, så tjek altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.
+
+Billeder og bøger bliver kun behandlet og gemt på brugerens egen enhed. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug, og del ikke omdannede bøger uden at have rettighederne.
+
+Softwaren stilles til rådighed, som den er, uden nogen form for garanti.

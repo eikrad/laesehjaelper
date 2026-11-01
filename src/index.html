@@ -94,7 +94,29 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .startrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; margin: 18px 0 0; }
 .startrow .lbl { font-size: 15px; color: var(--muted); margin-right: 8px; }
 .linkbtn { background: none; border: 0; padding: 4px 0; color: var(--blue); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
-.resume { margin: 14px 0 0; }
+/* Bücherregal */
+.shelf { margin: 44px 0 0; }
+.shelf h2 { font-size: 20px; margin: 0 0 14px; }
+.books { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px 16px; }
+.book { border: 0; background: none; padding: 0; text-align: left; }
+.book .cover { aspect-ratio: 3 / 4; border-radius: 10px; background: #fff center / cover no-repeat; box-shadow: 0 0 0 1px var(--line), 0 6px 16px -10px rgba(29,33,49,.4); }
+.book b { display: block; margin-top: 8px; font-size: 16px; line-height: 1.3; }
+.book span { display: block; font-size: 14px; color: var(--muted); }
+.bookbar { display: flex; gap: 10px; align-items: center; margin: 4px 0 12px; }
+.bookbar input { flex: 1; min-width: 0; font-size: 22px; font-weight: 700; border: 0; background: transparent; padding: 6px 2px; border-bottom: 1.5px solid transparent; border-radius: 0; }
+.bookbar input:hover, .bookbar input:focus { border-bottom-color: var(--line); outline: none; }
+.btn-ghost.small { padding: 8px 14px; font-size: 15px; white-space: nowrap; }
+.editbar { display: none; margin-top: 14px; }
+body.editing .editbar { display: block; }
+.btn-danger { border: 1.5px solid #c9372c; color: #c9372c; background: #fff; border-radius: 12px; padding: 10px 16px; font-weight: 700; }
+.btn-danger.armed { background: #c9372c; color: #fff; }
+.thumb { position: relative; flex: 0 0 auto; }
+.thumb .ctl { display: none; position: absolute; left: 0; right: 0; bottom: -2px; justify-content: space-between; }
+body.editing .thumb .ctl { display: flex; }
+.thumb .ctl button { width: 24px; height: 24px; border-radius: 50%; border: 0; background: var(--ink); color: #fff; font-size: 13px; line-height: 24px; padding: 0; box-shadow: none; }
+.thumb .ctl .x { background: #c9372c; }
+body.editing .thumbs { padding-bottom: 14px; gap: 20px; }
+.thumb .ctl { left: -8px; right: -8px; }
 .btn-ghost { display: inline-flex; align-items: center; gap: 10px; border: 1.5px solid var(--ink); background: #fff; color: var(--ink); border-radius: 12px; padding: 11px 18px; font-weight: 700; }
 
 .how { list-style: none; counter-reset: s; margin: 48px 0 0; padding: 22px 0 0; display: grid; gap: 16px; border-top: 1px solid var(--line); }
@@ -103,7 +125,10 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .how b { display: block; font-size: 17px; }
 .how span { color: var(--muted); font-size: 16px; }
 
-.foot { color: var(--muted); font-size: 14px; margin: 48px 0 0; max-width: 52ch; }
+.foot { color: var(--muted); font-size: 14px; margin: 48px 0 0; max-width: 60ch; }
+.foot p { margin: 0 0 10px; }
+.disclaimer summary { cursor: pointer; font-weight: 700; color: var(--ink); }
+.disclaimer p { margin-top: 8px; line-height: 1.55; }
 
 /* Leseansicht */
 .pagecard { background: var(--page-bg); border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
@@ -275,7 +300,6 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
         <span class="ic"><svg class="i"><use href="#i-camera"/></svg></span>
         <span><strong data-t="dropMain"></strong><span class="sub" data-t="dropSub"></span></span>
       </label>
-      <p class="resume" id="resumeWrap" hidden><button class="btn-ghost" id="resumeBtn"></button></p>
       <div class="startrow">
         <div id="langStart"><span class="lbl" data-t="bookLangColon"></span>
           <div class="pill">
@@ -286,16 +310,27 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
         <button class="linkbtn" id="demoBtn" data-t="demo"></button>
       </div>
     </div>
+    <section class="shelf" id="shelf" hidden>
+      <h2 data-t="shelfTitle"></h2>
+      <div class="books" id="books"></div>
+    </section>
     <ol class="how">
       <li><div><b data-t="how1t"></b><span data-t="how1"></span></div></li>
       <li><div><b data-t="how2t"></b><span data-t="how2"></span></div></li>
       <li><div><b data-t="how3t"></b><span data-t="how3"></span></div></li>
     </ol>
-    <p class="foot" data-t="foot"></p>
+    <div class="foot">
+      <p data-t="foot"></p>
+      <details class="disclaimer"><summary data-t="aboutTitle"></summary><p data-th="aboutText"></p></details>
+    </div>
   </section>
 
   <!-- Leseansicht -->
   <section id="app" hidden>
+    <div class="bookbar">
+      <input id="bookTitle" autocomplete="off" data-tp="titlePh">
+      <button class="btn-ghost small" id="editPagesBtn" data-t="editPages"></button>
+    </div>
     <article class="pagecard">
       <div class="orig" id="orig"><img id="origImg" alt=""></div>
       <div class="reader" id="reader"></div>
@@ -307,6 +342,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
       </details>
     </article>
     <div class="thumbs" id="thumbs"></div>
+    <div class="editbar" id="editbar"><button class="btn-danger" id="delBookBtn" data-t="deleteBook"></button></div>
   </section>
 </div>
 
@@ -465,7 +501,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
       waiting: "Venter på genkendelse …", recognizing: "Teksten genkendes …", loadingCore: "Genkendelsen indlæses …",
       loadingLang: "Sprogdata indlæses …", preparing: "Gøres klar …",
       imgError: "Billedet kunne ikke åbnes.", noSpeech: "Oplæsning understøttes ikke af denne browser.",
-      example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", resume: "Fortsæt med siderne ({n})", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", cropOf: "Billede {a} af {b}",
+      example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", shelfTitle: "Dine bøger", pagesN: "{n} sider", page1: "1 side", untitled: "Bog uden titel", titlePh: "Bogens titel", editPages: "Rediger sider", done: "Færdig", deleteBook: "Slet bogen", confirmDelete: "Tryk igen for at slette bogen", moveLeft: "Flyt til venstre", moveRight: "Flyt til højre", deletePage: "Slet side", aboutTitle: "Om Læsehjælper og ansvarsfraskrivelse", aboutText: "Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl – tjek derfor altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.<br><br>Billeder og bøger bliver kun behandlet og gemt på din egen enhed og bliver ikke sendt til nogen server. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug. Del ikke omdannede bøger med andre, medmindre du har rettighederne.<br><br>Brug sker på eget ansvar og uden garanti. Kildekoden er åben: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Bøgerne kan ikke gemmes i denne browser.", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", cropOf: "Billede {a} af {b}",
     },
     de: {
       brand1: "Lese", brand2: "helfer", docTitle: "Lesehelfer",
@@ -494,7 +530,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
       waiting: "Wartet auf Erkennung …", recognizing: "Text wird erkannt …", loadingCore: "Erkennung wird geladen …",
       loadingLang: "Sprachdaten werden geladen …", preparing: "Wird vorbereitet …",
       imgError: "Bild konnte nicht geöffnet werden.", noSpeech: "Vorlesen wird von diesem Browser nicht unterstützt.",
-      example: "Beispiel", addPages: "Seiten hinzufügen", toStart: "Zur Startseite", resume: "Weiter mit den Seiten ({n})", cropTitle: "Seite zuschneiden", cropFound: "Seite gefunden. Zieh an den Ecken, falls es nicht passt.", cropNone: "Zieh die Ecken an die Ränder der Seite.", cropLoading: "Seite wird gesucht …", cropUse: "Übernehmen", cropWhole: "Ganzes Bild", cropAgain: "Seite neu zuschneiden", cropOf: "Bild {a} von {b}",
+      example: "Beispiel", addPages: "Seiten hinzufügen", toStart: "Zur Startseite", shelfTitle: "Deine Bücher", pagesN: "{n} Seiten", page1: "1 Seite", untitled: "Buch ohne Titel", titlePh: "Titel des Buchs", editPages: "Seiten bearbeiten", done: "Fertig", deleteBook: "Buch löschen", confirmDelete: "Zum Löschen noch einmal tippen", moveLeft: "Nach links", moveRight: "Nach rechts", deletePage: "Seite löschen", aboutTitle: "Über Læsehjælper und Haftungsausschluss", aboutText: "Læsehjælper ist ein kostenloses Hobbyprojekt und kein fertiges Produkt. Texterkennung und Silbentrennung machen Fehler – prüfe den Text deshalb immer, bevor ein Kind ihn liest. Die App ersetzt keinen Unterricht, keine Leseförderung und keine Diagnostik bei Legasthenie.<br><br>Fotos und Bücher werden nur auf deinem eigenen Gerät verarbeitet und gespeichert und an keinen Server geschickt. Bücher sind urheberrechtlich geschützt: Nutze Læsehjælper nur für Bücher, auf die du selbst Zugriff hast, und nur privat. Gib umgewandelte Bücher nicht weiter, außer du hast die Rechte dazu.<br><br>Nutzung auf eigene Verantwortung und ohne Gewähr. Der Quellcode ist offen: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "In diesem Browser können keine Bücher gespeichert werden.", cropTitle: "Seite zuschneiden", cropFound: "Seite gefunden. Zieh an den Ecken, falls es nicht passt.", cropNone: "Zieh die Ecken an die Ränder der Seite.", cropLoading: "Seite wird gesucht …", cropUse: "Übernehmen", cropWhole: "Ganzes Bild", cropAgain: "Seite neu zuschneiden", cropOf: "Bild {a} von {b}",
     },
   };
   const t = (k, vars = {}) => (T[S.ui] || T.da)[k]?.replace(/\{(\w+)\}/g, (_, v) => vars[v]) ?? k;
@@ -516,7 +552,9 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
     const hw = $("heroWord"); hw.innerHTML = "";
     t("heroWord").split("·").forEach((x, i) => { const s = document.createElement("span"); s.className = "s s" + (i % 2); s.textContent = x; hw.append(s); });
     hw.setAttribute("aria-label", t("docTitle"));
-    $("resumeBtn").innerHTML = icon("book") + t("resume", { n: pages.length });
+    document.querySelectorAll("[data-tp]").forEach(el => el.placeholder = t(el.dataset.tp));
+    $("editPagesBtn").textContent = t(document.body.classList.contains("editing") ? "done" : "editPages");
+    if (!$("start").hidden) renderShelf();
     if (pages.length) render();
   }
 
@@ -567,6 +605,161 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
   // ---------- Seiten ----------
   const pages = [];   // { img: dataURL|null, text: string, status: 'wait'|'ocr'|'done'|'error', progress }
   let cur = 0;
+
+  // ---------- Bücher speichern (IndexedDB, nur auf diesem Gerät) ----------
+  const DB = (() => {
+    let dbp = null;
+    const open = () => dbp || (dbp = new Promise((res, rej) => {
+      const r = indexedDB.open("laesehjaelper", 1);
+      r.onupgradeneeded = () => {
+        const d = r.result;
+        d.createObjectStore("books", { keyPath: "id" });
+        d.createObjectStore("pages", { keyPath: "id" }).createIndex("book", "bookId");
+      };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    }));
+    const run = async (store, mode, fn) => {
+      const d = await open();
+      return new Promise((res, rej) => {
+        const tx = d.transaction(store, mode);
+        const req = fn(tx.objectStore(store));
+        tx.oncomplete = () => res(req ? req.result : undefined);
+        tx.onerror = () => rej(tx.error);
+      });
+    };
+    return {
+      put: (st, v) => run(st, "readwrite", o => o.put(v)),
+      del: (st, k) => run(st, "readwrite", o => o.delete(k)),
+      all: (st) => run(st, "readonly", o => o.getAll()),
+      pagesOf: (id) => run("pages", "readonly", o => o.index("book").getAll(id)),
+    };
+  })();
+  let storageWarned = false;
+  const storageFail = (e) => { console.error(e); if (!storageWarned) { storageWarned = true; toast(t("noStorage")); } };
+
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const canvasBlob = (c, q = 0.85) => new Promise(r => c.toBlob(r, "image/jpeg", q));
+  const blobToCanvas = (blob) => new Promise((res, rej) => {
+    const url = URL.createObjectURL(blob), img = new Image();
+    img.onload = () => { const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext("2d").drawImage(img, 0, 0); URL.revokeObjectURL(url); res(c); };
+    img.onerror = rej; img.src = url;
+  });
+
+  let book = null;   // { id, title, pageIds, lastPage, cover, created, updated, demo? }
+  function newBook(demo = false) {
+    book = { id: uid(), title: "", pageIds: [], lastPage: 0, cover: null, created: Date.now(), demo };
+    pages.length = 0; cur = 0;
+    document.body.classList.remove("editing");
+  }
+
+  async function saveBook() {
+    if (!book || book.demo || !pages.length) return;
+    book.pageIds = pages.map(p => p.id).filter(Boolean);
+    book.lastPage = cur;
+    book.updated = Date.now();
+    const first = pages[0];
+    if (first && first.canvas && !book.cover) {
+      const c = document.createElement("canvas"), k = 240 / Math.max(first.canvas.width, first.canvas.height);
+      c.width = Math.round(first.canvas.width * k); c.height = Math.round(first.canvas.height * k);
+      c.getContext("2d").drawImage(first.canvas, 0, 0, c.width, c.height);
+      book.cover = c.toDataURL("image/jpeg", 0.8);
+    }
+    try { await DB.put("books", { ...book }); } catch (e) { storageFail(e); }
+  }
+
+  async function savePage(pg) {
+    if (!pg) return;
+    const bookId = pg.bookId || (book && !book.demo ? (pg.bookId = book.id) : null);
+    if (!bookId) return;
+    pg.id = pg.id || uid();
+    try {
+      if (pg.canvas && !pg.inputBlob) pg.inputBlob = await canvasBlob(pg.canvas);
+      if (pg.photo && !pg.photoBlob) pg.photoBlob = await canvasBlob(pg.photo, 0.8);
+      await DB.put("pages", {
+        id: pg.id, bookId, lang: pg.lang, status: pg.status === "done" ? "done" : "wait",
+        text: pg.text, rawText: pg.rawText, paras: pg.paras || null, workW: pg.workW, workH: pg.workH,
+        corners: pg.corners || null, inputBlob: pg.inputBlob || null, photoBlob: pg.photoBlob || null, cleanBlob: pg.cleanBlob || null,
+      });
+    } catch (e) { storageFail(e); }
+  }
+
+  function pageFromRecord(r) {
+    const pg = { ...r, progress: 0 };
+    pg.img = r.inputBlob ? URL.createObjectURL(r.inputBlob) : null;
+    pg.clean = r.cleanBlob ? URL.createObjectURL(r.cleanBlob) : null;
+    if (pg.status !== "done") pg.status = "wait";
+    return pg;
+  }
+
+  async function openBook(b) {
+    newBook();
+    book = b;
+    let recs = [];
+    try { recs = await DB.pagesOf(b.id); } catch (e) { storageFail(e); }
+    const byId = Object.fromEntries(recs.map(r => [r.id, r]));
+    const ordered = (b.pageIds || []).map(id => byId[id]).filter(Boolean);
+    recs.forEach(r => { if (!ordered.includes(r)) ordered.push(r); });
+    pages.push(...ordered.map(pageFromRecord));
+    cur = Math.min(b.lastPage || 0, Math.max(0, pages.length - 1));
+    pages.filter(p => p.status === "wait").forEach(p => queue.push(p));
+    showApp(); render(); runQueue();
+  }
+
+  async function renderShelf() {
+    let books = [];
+    try { books = await DB.all("books"); } catch (e) { /* kein Speicher: Regal bleibt leer */ }
+    books.sort((a, b) => (b.updated || 0) - (a.updated || 0));
+    $("shelf").hidden = !books.length;
+    const box = $("books"); box.innerHTML = "";
+    for (const b of books) {
+      const el = document.createElement("button");
+      el.className = "book";
+      const n = (b.pageIds || []).length;
+      const title = b.title || t("untitled");
+      el.innerHTML = `<div class="cover"></div><b></b><span>${n === 1 ? t("page1") : t("pagesN", { n })}</span>`;
+      if (b.cover) el.querySelector(".cover").style.backgroundImage = `url(${b.cover})`;
+      el.querySelector("b").textContent = title;
+      el.onclick = () => openBook(b);
+      box.append(el);
+    }
+  }
+
+  async function deletePage(i) {
+    const [pg] = pages.splice(i, 1);
+    if (pg && pg.id && !book.demo) { try { await DB.del("pages", pg.id); } catch (e) { storageFail(e); } }
+    if (i === 0 && book) book.cover = null;
+    if (!pages.length) { await deleteBook(); return; }
+    cur = Math.min(cur, pages.length - 1);
+    await saveBook(); render();
+  }
+  function movePage(i, d) {
+    const j = i + d;
+    if (j < 0 || j >= pages.length) return;
+    [pages[i], pages[j]] = [pages[j], pages[i]];
+    if (cur === i) cur = j; else if (cur === j) cur = i;
+    if (i === 0 || j === 0) book.cover = null;
+    saveBook(); render();
+  }
+  async function deleteBook() {
+    if (book && !book.demo) {
+      try { for (const pg of pages) if (pg.id) await DB.del("pages", pg.id); await DB.del("books", book.id); } catch (e) { storageFail(e); }
+    }
+    pages.length = 0; book = null; showStart();
+  }
+
+  $("bookTitle").oninput = e => { if (book) { book.title = e.target.value.trim(); clearTimeout(saveBook._t); saveBook._t = setTimeout(saveBook, 400); } };
+  $("editPagesBtn").onclick = () => {
+    const on = document.body.classList.toggle("editing");
+    $("editPagesBtn").textContent = t(on ? "done" : "editPages");
+    $("delBookBtn").classList.remove("armed"); $("delBookBtn").textContent = t("deleteBook");
+    renderThumbs();
+  };
+  $("delBookBtn").onclick = () => {
+    const b = $("delBookBtn");
+    if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = t("confirmDelete"); return; }
+    deleteBook();
+  };
 
   // Text -> HTML mit Wort- und Silben-Spans. Gleichzeitig Zeichenpositionen für das Vorlesen merken.
   const WORD = /[\p{L}\p{M}·]+(?:-[\p{L}\p{M}·]+)*/gu;
@@ -627,7 +820,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
     rd.classList.toggle("pagemode", page);
     if (!page) { ps.forEach(p => rd.append(p)); return; }
 
-    const W = pg.work.width, H = pg.work.height;
+    const W = pg.workW, H = pg.workH;
     const pv = document.createElement("div"); pv.className = "pageview";
     const img = new Image(); img.src = pg.clean; img.alt = ""; pv.append(img);
     pg.paras.forEach((pa, i) => {
@@ -741,7 +934,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
       pa.rgb = avg;
     }
     growBoxes(ctx.getImageData(0, 0, W, H).data, W, H, paras);
-    return c.toDataURL("image/jpeg", 0.9);
+    return c;
   }
 
   // Textfelder auf ruhigem Hintergrund in den freien Platz daneben und darunter wachsen lassen,
@@ -805,9 +998,11 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
   function render() {
     const pg = pages[cur];
     $("count").textContent = t("pageOf", { a: cur + 1, b: pages.length });
+    if (document.activeElement !== $("bookTitle")) $("bookTitle").value = (book && book.title) || "";
+    $("editPagesBtn").hidden = !book || book.demo;
     $("prev").disabled = cur === 0; $("next").disabled = cur >= pages.length - 1;
     if (pg.img) $("origImg").src = pg.img;
-    $("recropBtn").hidden = !pg.photo;
+    $("recropBtn").hidden = !(pg.photo || pg.photoBlob);
     stopSpeech();
     if (pg.status === "done") {
       renderContent(pg);
@@ -830,11 +1025,17 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
   function renderThumbs() {
     const box = $("thumbs"); box.innerHTML = "";
     pages.forEach((pg, i) => {
+      const wrap = document.createElement("div"); wrap.className = "thumb";
       const b = document.createElement("button");
       b.className = i === cur ? "on" : ""; b.title = t("page") + " " + (i + 1);
       b.innerHTML = pg.img ? `<img src="${pg.img}" alt="">` : `<span class="demo">${t("example")}</span>`;
-      b.onclick = () => { cur = i; render(); };
-      box.append(b);
+      b.onclick = () => { cur = i; render(); saveBook(); };
+      const ctl = document.createElement("div"); ctl.className = "ctl";
+      ctl.innerHTML = `<button title="${t("moveLeft")}">‹</button><button class="x" title="${t("deletePage")}">×</button><button title="${t("moveRight")}">›</button>`;
+      const [l, x, r] = ctl.querySelectorAll("button");
+      l.onclick = () => movePage(i, -1); r.onclick = () => movePage(i, 1); x.onclick = () => deletePage(i);
+      wrap.append(b, ctl);
+      box.append(wrap);
     });
     const add = document.createElement("label");
     add.className = "add"; add.title = t("addPages"); add.innerHTML = icon("plus") + `<input type="file" accept="image/*" multiple hidden>`;
@@ -842,8 +1043,8 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
     box.append(add);
   }
 
-  $("prev").onclick = () => { if (cur > 0) { cur--; render(); } };
-  $("next").onclick = () => { if (cur < pages.length - 1) { cur++; render(); } };
+  $("prev").onclick = () => { if (cur > 0) { cur--; render(); saveBook(); } };
+  $("next").onclick = () => { if (cur < pages.length - 1) { cur++; render(); saveBook(); } };
   document.addEventListener("keydown", e => {
     if (e.target.tagName === "TEXTAREA") return;
     if (e.key === "ArrowLeft") $("prev").click();
@@ -854,7 +1055,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
   let editT;
   $("text").oninput = e => {
     clearTimeout(editT);
-    editT = setTimeout(() => { pages[cur].text = e.target.value; syncParas(pages[cur]); renderContent(pages[cur]); }, 250);
+    editT = setTimeout(() => { pages[cur].text = e.target.value; syncParas(pages[cur]); renderContent(pages[cur]); savePage(pages[cur]); }, 250);
   };
 
   // ---------- Bilder laden ----------
@@ -886,9 +1087,10 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
       try {
         const { canvas: photo } = await loadImage(f);
         const { canvas, corners } = await cropFlow(photo, null, list.length > 1 ? t("cropOf", { a: n + 1, b: list.length }) : "");
-        const pg = { photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: S.lang, text: "", status: "wait", progress: 0 };
+        const pg = { bookId: book && !book.demo ? book.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: S.lang, text: "", status: "wait", progress: 0 };
         pages.push(pg); queue.push(pg);
         if (n === 0) { cur = pages.length - 1; render(); }
+        await savePage(pg); await saveBook();
         runQueue();
       } catch (e) { toast(e.message); }
     }
@@ -975,9 +1177,12 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
 
   $("recropBtn").onclick = async () => {
     const pg = pages[cur];
-    if (!pg || !pg.photo) return;
+    if (!pg || !(pg.photo || pg.photoBlob)) return;
+    if (!pg.photo) pg.photo = await blobToCanvas(pg.photoBlob);
     const { canvas, corners } = await cropFlow(pg.photo, pg.corners || null, "");
-    Object.assign(pg, { canvas, corners, img: canvas.toDataURL("image/jpeg", 0.88), status: "wait", progress: 0, paras: null, clean: null });
+    Object.assign(pg, { canvas, corners, img: canvas.toDataURL("image/jpeg", 0.88), status: "wait", progress: 0, paras: null, clean: null, inputBlob: null, cleanBlob: null });
+    if (pg === pages[0] && book) book.cover = null;
+    savePage(pg); saveBook();
     queue.push(pg); render(); runQueue();
   };
 
@@ -1028,13 +1233,18 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
         const w = await getWorker(pg.lang);
         // rotateAuto: schräg fotografierte Seiten gerade drehen; die Positionen beziehen sich dann
         // auf das gedrehte Bild, das wir als imageColor zurückbekommen.
-        const { data } = await w.recognize(pg.canvas, { rotateAuto: true }, { text: true, blocks: true, imageColor: true });
-        pg.work = data.imageColor ? await toCanvas(data.imageColor) : pg.canvas;
+        const input = pg.canvas || await blobToCanvas(pg.inputBlob);
+        const { data } = await w.recognize(input, { rotateAuto: true }, { text: true, blocks: true, imageColor: true });
+        const work = data.imageColor ? await toCanvas(data.imageColor) : input;
+        pg.workW = work.width; pg.workH = work.height;
         pg.paras = Layout.parasFromOcr(data);
         pg.rawText = data.text || "";
         retext(pg);
-        pg.clean = pg.paras.length ? eraseText(pg.work, pg.paras) : null;
+        const cleanCanvas = pg.paras.length ? eraseText(work, pg.paras) : null;
+        pg.clean = cleanCanvas ? cleanCanvas.toDataURL("image/jpeg", 0.9) : null;
+        pg.cleanBlob = cleanCanvas ? await canvasBlob(cleanCanvas) : null;
         pg.status = "done";
+        savePage(pg);
       } catch (e) {
         console.error(e);
         pg.status = "error"; pg.error = String(e && e.message || e);
@@ -1103,35 +1313,47 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
   // Sprache einer Seite nachträglich ändern: Fotoseiten neu erkennen, Beispielseite austauschen.
   function relang(pg) {
     pg.lang = S.lang;
-    if (pg.canvas) { pg.status = "wait"; pg.progress = 0; queue.push(pg); render(); runQueue(); }
+    if (pg.canvas || pg.inputBlob) { pg.status = "wait"; pg.progress = 0; pg.cleanBlob = null; queue.push(pg); render(); runQueue(); }
     else { if (Object.values(DEMO).includes(pg.text)) pg.text = DEMO[pg.lang]; render(); }
   }
 
   // ---------- Start ----------
-  function showApp() { $("start").hidden = true; $("app").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0); }
-  function showStart() {
+  // Zurück-Taste des Browsers/Tablets: Beim Öffnen eines Buchs legen wir einen Verlaufseintrag (#bog) an.
+  // „Zurück“ führt dann zur Startseite statt aus der Seite hinaus.
+  function showApp() {
+    $("start").hidden = true; $("app").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0);
+    if (location.hash !== "#bog") { try { history.pushState(null, "", "#bog"); } catch (e) {} }
+  }
+  window.addEventListener("popstate", () => {
+    if (!$("crop").hidden) return;
+    if (location.hash !== "#bog" && $("start").hidden) showStart(true);
+  });
+  if (location.hash === "#bog") { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} }
+  function showStart(fromHistory) {
+    if (!fromHistory && location.hash === "#bog") { history.back(); return; } // popstate ruft uns wieder auf
     stopSpeech();
     if (document.body.classList.contains("focus")) $("focusBtn").click();
     $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; $("settings").classList.remove("open");
-    $("resumeWrap").hidden = !pages.length;
-    $("resumeBtn").innerHTML = icon("book") + t("resume", { n: pages.length });
+    document.body.classList.remove("editing");
+    saveBook();
+    renderShelf();
     window.scrollTo(0, 0);
   }
-  $("homeBtn").onclick = showStart;
-  $("home").onclick = showStart;
+  $("homeBtn").onclick = () => showStart();
+  $("home").onclick = () => showStart();
   $("home").onkeydown = e => { if (e.key === "Enter") showStart(); };
-  $("resumeBtn").onclick = () => { showApp(); render(); };
 
   const drop = $("drop");
-  $("file").onchange = e => addFiles(e.target.files);
+  $("file").onchange = e => { newBook(); addFiles(e.target.files); e.target.value = ""; };
   ["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
   ["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
-  drop.addEventListener("drop", e => addFiles(e.dataTransfer.files));
-  document.addEventListener("paste", e => { const f = [...(e.clipboardData?.files || [])]; if (f.length) addFiles(f); });
+  drop.addEventListener("drop", e => { newBook(); addFiles(e.dataTransfer.files); });
+  document.addEventListener("paste", e => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { if ($("app").hidden) newBook(); addFiles(f); } });
 
   $("demoBtn").onclick = () => {
+    newBook(true);
     pages.push({ img: null, status: "done", lang: S.lang, text: DEMO[S.lang] });
-    cur = pages.length - 1; showApp(); render();
+    cur = 0; showApp(); render();
     getWorker(S.lang); // Erkennung im Hintergrund schon vorladen
   };
 

@@ -53,3 +53,11 @@ Every push to `main` builds the app and deploys it to GitHub Pages automatically
 - Better removal of text on illustrations (inpainting)
 - Save books locally, export as PDF
 - Reading ruler, line-by-line mode
+
+## Disclaimer
+
+Læsehjælper is a free hobby project, not a finished product. Text recognition and syllable splitting make mistakes, so always check the text before a child reads it. The app does not replace teaching, reading support or a dyslexia assessment.
+
+Photos and books are processed and stored only on the user's own device. Books are protected by copyright: only use Læsehjælper for books you have access to, for private use, and do not share converted books unless you hold the rights.
+
+The software is provided as is, without warranty of any kind.
