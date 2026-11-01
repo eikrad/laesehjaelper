@@ -64,6 +64,8 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .drop input { display: none; }
 .uiseg { min-width: 0; }
 .uiseg button { padding: 6px 10px; font-size: 13px; }
+.brand { cursor: pointer; }
+.resume { margin: 16px 0 0; }
 .langpick { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 16px 0 0; flex-wrap: wrap; color: var(--muted); font-size: 15px; }
 .langpick .seg { min-width: 240px; }
 .or { margin: 14px 0 0; color: var(--muted); font-size: 14px; }
@@ -155,7 +157,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand">
+    <div class="brand" id="home" role="button" tabindex="0">
       <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="7" width="16" height="26" rx="3" fill="#1f5fd1"/><rect x="21" y="7" width="16" height="26" rx="3" fill="#d13a2f"/><path d="M8 26 q3.5 4 7 0 M26 26 q3.5 4 7 0" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
       <h1><span class="b" data-t="brand1"></span><span class="r" data-t="brand2"></span></h1>
     </div>
@@ -181,6 +183,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
         <button data-v="de" data-t="langDeFlag"></button>
       </div>
     </div>
+    <p class="resume" id="resumeWrap" hidden><button class="btn primary" id="resumeBtn"></button></p>
     <p class="or"><span data-t="noBook"></span> <button class="linkbtn" id="demoBtn" data-t="demo"></button></p>
     <div class="how">
       <div><b data-t="how1t"></b><span data-t="how1"></span></div>
@@ -192,6 +195,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   <!-- Leseansicht -->
   <section id="app" hidden>
     <div class="toolbar">
+      <button class="btn icon" id="homeBtn" data-ta="toStart">⌂</button>
       <div class="pager">
         <button class="btn icon" id="prev" data-ta="prevPage">◀</button>
         <span class="count" id="count"></span>
@@ -330,7 +334,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
       waiting: "Venter på genkendelse …", recognizing: "Teksten genkendes …", loadingCore: "Genkendelsen indlæses …",
       loadingLang: "Sprogdata indlæses …", preparing: "Gøres klar …",
       imgError: "Billedet kunne ikke åbnes.", noSpeech: "Oplæsning understøttes ikke af denne browser.",
-      example: "Eksempel", addPages: "Tilføj sider",
+      example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", resume: "📖 Fortsæt med siderne ({n})",
     },
     de: {
       brand1: "Lese", brand2: "helfer", docTitle: "Lesehelfer",
@@ -359,7 +363,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
       waiting: "Wartet auf Erkennung …", recognizing: "Text wird erkannt …", loadingCore: "Erkennung wird geladen …",
       loadingLang: "Sprachdaten werden geladen …", preparing: "Wird vorbereitet …",
       imgError: "Bild konnte nicht geöffnet werden.", noSpeech: "Vorlesen wird von diesem Browser nicht unterstützt.",
-      example: "Beispiel", addPages: "Seiten hinzufügen",
+      example: "Beispiel", addPages: "Seiten hinzufügen", toStart: "Zur Startseite", resume: "📖 Weiter mit den Seiten ({n})",
     },
   };
   const t = (k, vars = {}) => (T[S.ui] || T.da)[k]?.replace(/\{(\w+)\}/g, (_, v) => vars[v]) ?? k;
@@ -372,6 +376,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     $("origImg").alt = t("origAlt");
     $("readBtn").textContent = reading ? t("stop") : t("read");
     $("focusBtn").textContent = document.body.classList.contains("focus") ? t("close") : t("focus");
+    $("resumeBtn").textContent = t("resume", { n: pages.length });
     if (pages.length) render();
   }
 
@@ -690,7 +695,19 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   }
 
   // ---------- Start ----------
-  function showApp() { $("start").hidden = true; $("app").hidden = false; }
+  function showApp() { $("start").hidden = true; $("app").hidden = false; window.scrollTo(0, 0); }
+  function showStart() {
+    stopSpeech();
+    if (document.body.classList.contains("focus")) $("focusBtn").click();
+    $("app").hidden = true; $("start").hidden = false;
+    $("resumeWrap").hidden = !pages.length;
+    $("resumeBtn").textContent = t("resume", { n: pages.length });
+    window.scrollTo(0, 0);
+  }
+  $("homeBtn").onclick = showStart;
+  $("home").onclick = showStart;
+  $("home").onkeydown = e => { if (e.key === "Enter") showStart(); };
+  $("resumeBtn").onclick = () => { showApp(); render(); };
 
   const drop = $("drop");
   $("file").onchange = e => addFiles(e.target.files);
