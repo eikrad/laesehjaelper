@@ -17,7 +17,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Tekstgenkendelse (dansk, tysk, engelsk) med [Tesseract.js](https://github.com/naptha/tesseract.js)
 - Stavelsesdeling baseret på de danske, tyske og engelske TeX-orddelingsmønstre ([hyphen](https://github.com/ytiurin/hyphen))
 - Stavelser i skiftende farver (blå/rød, farverne kan vælges frit), som buer eller begge dele
-- Skrifttyper: Andika, OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
+- Skrifttyper: Andika (standard), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Justerbar skriftstørrelse, bogstavafstand, linjeafstand og baggrundsfarve
 - Tryk på et ord for at få det læst op, eller få hele siden læst op med markering af hvert ord
 - Indstilling „Bindestreger i bogen“: til læsebøger, der selv deler ord i stavelser med bindestreg („sko-le“)
@@ -59,6 +59,32 @@ Projektet er skrevet i TypeScript (strict).
 - `src/types.ts`: fælles typer
 - `build.ts`: bygger `dist/` med esbuild og kopierer Tesseract-, OpenCV- og sprogfiler
 - `tests/`: unit-tests, end-to-end-tests og selvlavede testsider
+
+## Hvad siger forskningen?
+
+Læsehjælper er et læseværktøj, ikke en behandling. Indstillingerne bygger på det, undersøgelser af børn, der lærer at læse, og af ordblinde børn viser:
+
+- **Afstand:** Mere afstand mellem bogstaverne hjælper mange ordblinde børn med at læse hurtigere og mere præcist (Zorzi m.fl. 2012) – men kun når ordafstanden vokser med (Galliussi m.fl. 2020). Derfor øger Læsehjælper ordafstanden automatisk.
+- **Korte linjer** hjælper nogle ordblinde læsere, især dem med svag visuel opmærksomhed; andre læser bedre med almindelige linjer (Schneps m.fl. 2013).
+- **Skrifttype:** Selve bogstavformen gør næppe en forskel. OpenDyslexic gav ingen fordel, og ingen af børnene foretrak den (Wery & Diliberto 2017; Galliussi m.fl. 2020). Standard er derfor Andika, en almindelig, tydelig skrift; OpenDyslexic kan vælges, hvis barnet kan lide den.
+- **Farvede stavelser** hjælper nogle børn i begyndelsen og andre ikke; bindestreger i ordene gør læsningen langsommere (Häikiö m.fl. 2015; Brügelmann 2025). Prøv, hvad barnet kan lide, og slå farverne fra, når det læser flydende.
+- **Oplæsning** hjælper forståelsen; markering af hvert ord giver ikke ekstra (Keelor m.fl. 2023). At læse den samme tekst flere gange, gerne efter at have hørt den, gør læsningen mere flydende (Lee & Yoon 2017).
+- **Farvet baggrund eller farvede filtre** har ingen påvist effekt ud over placebo (Griffiths m.fl. 2016). Baggrundsfarven er kun et spørgsmål om, hvad der føles rart.
+- **Undervisning:** Systematisk arbejde med bogstaver og lyde er den bedst dokumenterede hjælp ved ordblindhed (Galuschka m.fl. 2014). Dansk er et af de sprog, hvor det tager længst tid at lære at læse sikkert (Seymour m.fl. 2003).
+
+Kilder:
+
+- Zorzi m.fl. 2012, *PNAS* — [doi:10.1073/pnas.1205566109](https://doi.org/10.1073/pnas.1205566109)
+- Galliussi m.fl. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
+- Schneps m.fl. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)
+- Wery & Diliberto 2017, *Annals of Dyslexia* — [doi:10.1007/s11881-016-0127-1](https://doi.org/10.1007/s11881-016-0127-1)
+- Häikiö m.fl. 2015, *Journal of Cognitive Psychology* — [doi:10.1080/20445911.2014.982126](https://doi.org/10.1080/20445911.2014.982126)
+- Brügelmann 2025 — [pedocs.de](https://www.pedocs.de/volltexte/2025/34472/pdf/Bruegelmann_2025_Red_and_blue.pdf)
+- Keelor m.fl. 2023, *Annals of Dyslexia* — [doi:10.1007/s11881-023-00281-9](https://doi.org/10.1007/s11881-023-00281-9)
+- Lee & Yoon 2017, *Journal of Learning Disabilities* — [doi:10.1177/0022219415605194](https://doi.org/10.1177/0022219415605194)
+- Galuschka m.fl. 2014, *PLOS ONE* — [doi:10.1371/journal.pone.0089900](https://doi.org/10.1371/journal.pone.0089900)
+- Griffiths m.fl. 2016, *Ophthalmic & Physiological Optics* — [doi:10.1111/opo.12316](https://doi.org/10.1111/opo.12316)
+- Seymour m.fl. 2003, *British Journal of Psychology* — [doi:10.1348/000712603321661859](https://doi.org/10.1348/000712603321661859)
 
 ## Kendte begrænsninger
 

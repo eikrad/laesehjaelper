@@ -49,3 +49,12 @@ test("Mehr Buchstabenabstand vergrößert auch den Wortabstand", async ({ page }
   await page.locator("#ls").evaluate((el: HTMLInputElement) => { el.value = "0.2"; el.dispatchEvent(new Event("input", { bubbles: true })); });
   expect(await ws()).toBeGreaterThan(before);
 });
+
+test("Einstellungen erklären ehrlich, was belegt hilft", async ({ page }) => {
+  await page.click("#demoBtn");
+  await page.click("#setBtn");
+  const box = page.locator("#evidence");
+  await box.locator("summary").click();
+  await expect(box).toContainText("OpenDyslexic");
+  await expect(box.locator("a[href*='README.md#']")).toHaveCount(1);
+});

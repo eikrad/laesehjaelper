@@ -17,7 +17,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Texterkennung (Dänisch, Deutsch, Englisch) mit [Tesseract.js](https://github.com/naptha/tesseract.js)
 - Silbentrennung auf Basis der TeX-Trennmuster für Dänisch, Deutsch und Englisch ([hyphen](https://github.com/ytiurin/hyphen))
 - Silben in abwechselnden Farben (blau/rot, Farben frei wählbar), als Bögen oder beides
-- Schriften: Andika, OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
+- Schriften: Andika (Standard), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Schriftgröße, Buchstaben- und Zeilenabstand sowie Hintergrundfarbe einstellbar
 - Wort antippen zum Vorlesen oder die ganze Seite vorlesen lassen, mit Markierung des gerade gelesenen Worts
 - Einstellung „Bindestriche im Buch“: für Lesebücher, die Wörter selbst mit Bindestrich in Silben trennen („Scho-ko-la-de“)
@@ -59,6 +59,32 @@ Das Projekt ist in TypeScript geschrieben (strict).
 - `src/types.ts`: gemeinsame Typen
 - `build.ts`: baut `dist/` mit esbuild und kopiert Tesseract-, OpenCV- und Sprachdateien
 - `tests/`: Unit-Tests, End-to-End-Tests und selbst erstellte Testseiten
+
+## Was sagt die Forschung?
+
+Læsehjælper ist ein Lesewerkzeug, keine Behandlung. Die Einstellungen beruhen auf dem, was Studien mit Leseanfängern und Kindern mit Legasthenie zeigen:
+
+- **Abstand:** Mehr Abstand zwischen den Buchstaben hilft vielen Kindern mit Legasthenie, schneller und genauer zu lesen (Zorzi u. a. 2012) – aber nur, wenn der Wortabstand mitwächst (Galliussi u. a. 2020). Læsehjælper vergrößert den Wortabstand deshalb automatisch.
+- **Kurze Zeilen** helfen manchen Kindern mit Legasthenie, vor allem bei schwacher visueller Aufmerksamkeit; andere lesen mit normalen Zeilen besser (Schneps u. a. 2013).
+- **Schrift:** Die Buchstabenform selbst macht kaum einen Unterschied. OpenDyslexic brachte keinen Vorteil, und kein Kind las lieber darin (Wery & Diliberto 2017; Galliussi u. a. 2020). Standard ist deshalb Andika, eine klare, gewöhnliche Schrift; OpenDyslexic lässt sich wählen, wenn das Kind sie mag.
+- **Farbige Silben** helfen manchen Kindern am Anfang, anderen nicht; Bindestriche in den Wörtern bremsen das Lesen (Häikiö u. a. 2015; Brügelmann 2025). Probiere aus, was das Kind mag, und schalte die Farben ab, sobald es flüssig liest.
+- **Vorlesen** hilft beim Verstehen; eine Markierung jedes Worts bringt nichts zusätzlich (Keelor u. a. 2023). Denselben Text mehrmals zu lesen, am besten nachdem man ihn gehört hat, macht das Lesen flüssiger (Lee & Yoon 2017).
+- **Farbiger Hintergrund oder Farbfolien** haben keine nachgewiesene Wirkung über Placebo hinaus (Griffiths u. a. 2016). Die Hintergrundfarbe ist nur eine Frage dessen, was sich angenehm anfühlt.
+- **Unterricht:** Systematisches Üben von Buchstaben und Lauten ist die am besten belegte Hilfe bei Legasthenie (Galuschka u. a. 2014). Dänisch gehört zu den Sprachen, in denen sicheres Lesen am längsten dauert (Seymour u. a. 2003).
+
+Quellen:
+
+- Zorzi u. a. 2012, *PNAS* — [doi:10.1073/pnas.1205566109](https://doi.org/10.1073/pnas.1205566109)
+- Galliussi u. a. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
+- Schneps u. a. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)
+- Wery & Diliberto 2017, *Annals of Dyslexia* — [doi:10.1007/s11881-016-0127-1](https://doi.org/10.1007/s11881-016-0127-1)
+- Häikiö u. a. 2015, *Journal of Cognitive Psychology* — [doi:10.1080/20445911.2014.982126](https://doi.org/10.1080/20445911.2014.982126)
+- Brügelmann 2025 — [pedocs.de](https://www.pedocs.de/volltexte/2025/34472/pdf/Bruegelmann_2025_Red_and_blue.pdf)
+- Keelor u. a. 2023, *Annals of Dyslexia* — [doi:10.1007/s11881-023-00281-9](https://doi.org/10.1007/s11881-023-00281-9)
+- Lee & Yoon 2017, *Journal of Learning Disabilities* — [doi:10.1177/0022219415605194](https://doi.org/10.1177/0022219415605194)
+- Galuschka u. a. 2014, *PLOS ONE* — [doi:10.1371/journal.pone.0089900](https://doi.org/10.1371/journal.pone.0089900)
+- Griffiths u. a. 2016, *Ophthalmic & Physiological Optics* — [doi:10.1111/opo.12316](https://doi.org/10.1111/opo.12316)
+- Seymour u. a. 2003, *British Journal of Psychology* — [doi:10.1348/000712603321661859](https://doi.org/10.1348/000712603321661859)
 
 ## Bekannte Grenzen
 
