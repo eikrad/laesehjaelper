@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lesehelfer</title>
+<title>Læsehjælper</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@400;600&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
@@ -62,6 +62,8 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .drop strong { display: block; font-size: 18px; margin-bottom: 4px; }
 .drop span { color: var(--muted); font-size: 14px; }
 .drop input { display: none; }
+.uiseg { min-width: 0; }
+.uiseg button { padding: 6px 10px; font-size: 13px; }
 .langpick { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 16px 0 0; flex-wrap: wrap; color: var(--muted); font-size: 15px; }
 .langpick .seg { min-width: 240px; }
 .or { margin: 14px 0 0; color: var(--muted); font-size: 14px; }
@@ -155,31 +157,35 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   <header class="top">
     <div class="brand">
       <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="7" width="16" height="26" rx="3" fill="#1f5fd1"/><rect x="21" y="7" width="16" height="26" rx="3" fill="#d13a2f"/><path d="M8 26 q3.5 4 7 0 M26 26 q3.5 4 7 0" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
-      <h1><span class="b">Lese</span><span class="r">helfer</span></h1>
+      <h1><span class="b" data-t="brand1"></span><span class="r" data-t="brand2"></span></h1>
+    </div>
+    <div class="seg uiseg" id="uiLang" aria-label="Sprog / Sprache">
+      <button data-v="da">DA</button>
+      <button data-v="de">DE</button>
     </div>
   </header>
 
   <!-- Startansicht -->
   <section class="start" id="start">
-    <h2>Buchseiten leichter lesbar machen</h2>
-    <p>Fotografiere eine Seite aus dem Kinderbuch. Der Text wird erkannt und neu gesetzt: in einer gut lesbaren Schrift, groß, mit Abstand und farbigen Silben.</p>
+    <h2 data-t="startTitle"></h2>
+    <p data-t="startIntro"></p>
     <label class="drop" id="drop">
       <input type="file" id="file" accept="image/*" multiple>
-      <strong>📷 Seite fotografieren oder Bilder wählen</strong>
-      <span>Mehrere Seiten auf einmal möglich · Erkennung läuft nur auf deinem Gerät</span>
+      <strong data-t="dropMain"></strong>
+      <span data-t="dropSub"></span>
     </label>
     <div class="langpick" id="langStart">
-      <span>Sprache des Buchs:</span>
+      <span data-t="bookLangColon"></span>
       <div class="seg">
-        <button data-v="da">🇩🇰 Dänisch</button>
-        <button data-v="de">🇩🇪 Deutsch</button>
+        <button data-v="da" data-t="langDaFlag"></button>
+        <button data-v="de" data-t="langDeFlag"></button>
       </div>
     </div>
-    <p class="or">Kein Buch zur Hand? <button class="linkbtn" id="demoBtn">Beispielseite ansehen</button></p>
+    <p class="or"><span data-t="noBook"></span> <button class="linkbtn" id="demoBtn" data-t="demo"></button></p>
     <div class="how">
-      <div><b>1. Foto</b>Seite gerade und hell fotografieren, möglichst ohne Schatten.</div>
-      <div><b>2. Prüfen</b>Erkannte Wörter kurz kontrollieren und Fehler korrigieren.</div>
-      <div><b>3. Lesen</b>Wort antippen zum Vorlesen. Schrift und Farben anpassen.</div>
+      <div><b data-t="how1t"></b><span data-t="how1"></span></div>
+      <div><b data-t="how2t"></b><span data-t="how2"></span></div>
+      <div><b data-t="how3t"></b><span data-t="how3"></span></div>
     </div>
   </section>
 
@@ -187,28 +193,28 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   <section id="app" hidden>
     <div class="toolbar">
       <div class="pager">
-        <button class="btn icon" id="prev" aria-label="Vorherige Seite">◀</button>
-        <span class="count" id="count">Seite 1 / 1</span>
-        <button class="btn icon" id="next" aria-label="Nächste Seite">▶</button>
+        <button class="btn icon" id="prev" data-ta="prevPage">◀</button>
+        <span class="count" id="count"></span>
+        <button class="btn icon" id="next" data-ta="nextPage">▶</button>
       </div>
-      <button class="btn" id="readBtn">🔊 Vorlesen</button>
-      <button class="btn" id="setBtn">Aa Anpassen</button>
-      <button class="btn keep" id="focusBtn">⛶ Lesemodus</button>
+      <button class="btn" id="readBtn"></button>
+      <button class="btn" id="setBtn" data-t="adjust"></button>
+      <button class="btn keep" id="focusBtn"></button>
     </div>
 
     <div class="settings" id="settings">
       <div class="grid">
         <div class="field">
-          <label>Sprache des Buchs</label>
+          <label data-t="bookLang"></label>
           <div class="seg" id="langSet">
-            <button data-v="da">Dänisch</button>
-            <button data-v="de">Deutsch</button>
+            <button data-v="da" data-t="langDa"></button>
+            <button data-v="de" data-t="langDe"></button>
           </div>
         </div>
         <div class="field">
-          <label for="font">Schrift</label>
+          <label for="font" data-t="font"></label>
           <select id="font">
-            <option value='"Andika", sans-serif'>Andika (für Leseanfänger)</option>
+            <option value='"Andika", sans-serif' data-t="andika"></option>
             <option value='"OpenDyslexic", sans-serif'>OpenDyslexic</option>
             <option value='"Atkinson Hyperlegible", sans-serif'>Atkinson Hyperlegible</option>
             <option value='"Lexend", sans-serif'>Lexend</option>
@@ -216,69 +222,69 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
           </select>
         </div>
         <div class="field">
-          <label for="size">Schriftgröße</label>
+          <label for="size" data-t="size"></label>
           <input type="range" id="size" min="18" max="64" step="1">
         </div>
         <div class="field">
-          <label for="ls">Buchstabenabstand</label>
+          <label for="ls" data-t="letterSp"></label>
           <input type="range" id="ls" min="0" max="0.25" step="0.01">
         </div>
         <div class="field">
-          <label for="lh">Zeilenabstand</label>
+          <label for="lh" data-t="lineSp"></label>
           <input type="range" id="lh" min="1.3" max="3" step="0.1">
         </div>
         <div class="field">
-          <label>Silben</label>
+          <label data-t="syllables"></label>
           <div class="seg" id="mode">
-            <button data-v="aus">Aus</button>
-            <button data-v="farbe">Farbe</button>
-            <button data-v="boegen">Bögen</button>
-            <button data-v="beides">Beides</button>
+            <button data-v="aus" data-t="off"></button>
+            <button data-v="farbe" data-t="color"></button>
+            <button data-v="boegen" data-t="arcs"></button>
+            <button data-v="beides" data-t="both"></button>
           </div>
         </div>
         <div class="field">
-          <label>Silbenfarben</label>
+          <label data-t="sylColors"></label>
           <div class="swatches" id="colors">
-            <button data-v="#1f5fd1,#d13a2f" style="background:linear-gradient(90deg,#1f5fd1 50%,#d13a2f 50%)" aria-label="Blau und Rot"></button>
-            <button data-v="#1f5fd1,#111111" style="background:linear-gradient(90deg,#1f5fd1 50%,#111 50%)" aria-label="Blau und Schwarz"></button>
-            <button data-v="#c0392b,#111111" style="background:linear-gradient(90deg,#c0392b 50%,#111 50%)" aria-label="Rot und Schwarz"></button>
-            <button data-v="#7a3fc2,#16804a" style="background:linear-gradient(90deg,#7a3fc2 50%,#16804a 50%)" aria-label="Lila und Grün"></button>
+            <button data-v="#1f5fd1,#d13a2f" style="background:linear-gradient(90deg,#1f5fd1 50%,#d13a2f 50%)" data-ta="cBlueRed"></button>
+            <button data-v="#1f5fd1,#111111" style="background:linear-gradient(90deg,#1f5fd1 50%,#111 50%)" data-ta="cBlueBlack"></button>
+            <button data-v="#c0392b,#111111" style="background:linear-gradient(90deg,#c0392b 50%,#111 50%)" data-ta="cRedBlack"></button>
+            <button data-v="#7a3fc2,#16804a" style="background:linear-gradient(90deg,#7a3fc2 50%,#16804a 50%)" data-ta="cPurpleGreen"></button>
           </div>
         </div>
         <div class="field">
-          <label>Hintergrund</label>
+          <label data-t="background"></label>
           <div class="swatches" id="bg">
-            <button data-v="#ffffff" style="background:#fff" aria-label="Weiß"></button>
-            <button data-v="#fffbf0" style="background:#fffbf0" aria-label="Creme"></button>
-            <button data-v="#fdf3c7" style="background:#fdf3c7" aria-label="Gelb"></button>
-            <button data-v="#e6f0fb" style="background:#e6f0fb" aria-label="Hellblau"></button>
-            <button data-v="#e9f5e6" style="background:#e9f5e6" aria-label="Hellgrün"></button>
+            <button data-v="#ffffff" style="background:#fff" data-ta="bWhite"></button>
+            <button data-v="#fffbf0" style="background:#fffbf0" data-ta="bCream"></button>
+            <button data-v="#fdf3c7" style="background:#fdf3c7" data-ta="bYellow"></button>
+            <button data-v="#e6f0fb" style="background:#e6f0fb" data-ta="bBlue"></button>
+            <button data-v="#e9f5e6" style="background:#e9f5e6" data-ta="bGreen"></button>
           </div>
         </div>
         <div class="field">
-          <label>Originalseite</label>
+          <label data-t="original"></label>
           <div class="seg" id="origToggle">
-            <button data-v="an">Zeigen</button>
-            <button data-v="aus">Verbergen</button>
+            <button data-v="an" data-t="show"></button>
+            <button data-v="aus" data-t="hide"></button>
           </div>
         </div>
       </div>
     </div>
 
     <article class="pagecard">
-      <div class="orig" id="orig"><img id="origImg" alt="Originalseite"></div>
+      <div class="orig" id="orig"><img id="origImg" alt=""></div>
       <div class="reader" id="reader"></div>
       <details class="edit" id="edit">
-        <summary>✏️ Text prüfen und korrigieren</summary>
-        <textarea id="text" spellcheck="true" lang="de"></textarea>
-        <p class="hint">Leere Zeile = neuer Absatz. Für eine eigene Silbentrennung Bindestriche mit · setzen, z.&nbsp;B. <b>O·ma</b>.</p>
+        <summary data-t="editSummary"></summary>
+        <textarea id="text" spellcheck="true"></textarea>
+        <p class="hint" data-th="editHint"></p>
       </details>
     </article>
 
     <div class="thumbs" id="thumbs"></div>
   </section>
 
-  <p class="foot">Texterkennung mit Tesseract, Silbentrennung mit TeX-Trennmustern (Dänisch, Deutsch). Alles läuft lokal im Browser, es werden keine Fotos hochgeladen.</p>
+  <p class="foot" data-t="foot"></p>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -290,10 +296,84 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   const abs = (p) => new URL(p, location.href).href;
 
   // ---------- Einstellungen ----------
-  const defaults = { font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#1f5fd1,#d13a2f", bg: "#fffbf0", orig: "an", lang: "da" };
+  const defaults = { font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#1f5fd1,#d13a2f", bg: "#fffbf0", orig: "an", lang: "da", ui: "da" };
   let S = { ...defaults };
   try { Object.assign(S, JSON.parse(localStorage.getItem("lesehelfer") || "{}")); } catch (e) {}
   const save = () => { try { localStorage.setItem("lesehelfer", JSON.stringify(S)); } catch (e) {} };
+
+  // ---------- Texte (Oberfläche) ----------
+  const T = {
+    da: {
+      brand1: "Læse", brand2: "hjælper", docTitle: "Læsehjælper",
+      startTitle: "Gør bogsider lettere at læse",
+      startIntro: "Tag et billede af en side i børnebogen. Teksten bliver genkendt og sat op på ny: i en letlæselig skrift, stor, med god afstand og farvede stavelser.",
+      dropMain: "📷 Tag et billede eller vælg billeder",
+      dropSub: "Flere sider på én gang · Genkendelsen foregår kun på din enhed",
+      bookLangColon: "Bogens sprog:", bookLang: "Bogens sprog",
+      langDaFlag: "🇩🇰 Dansk", langDeFlag: "🇩🇪 Tysk", langDa: "Dansk", langDe: "Tysk",
+      noBook: "Ingen bog ved hånden?", demo: "Se en eksempelside",
+      how1t: "1. Billede", how1: "Fotografér siden lige og i godt lys, helst uden skygger.",
+      how2t: "2. Tjek", how2: "Se de genkendte ord igennem og ret eventuelle fejl.",
+      how3t: "3. Læs", how3: "Tryk på et ord for at høre det. Tilpas skrift og farver.",
+      prevPage: "Forrige side", nextPage: "Næste side", page: "Side", pageOf: "Side {a} / {b}",
+      read: "🔊 Læs op", stop: "⏹ Stop", adjust: "Aa Tilpas", focus: "⛶ Læsetilstand", close: "✕ Luk",
+      font: "Skrift", andika: "Andika (til begyndere)", size: "Skriftstørrelse", letterSp: "Bogstavafstand", lineSp: "Linjeafstand",
+      syllables: "Stavelser", off: "Fra", color: "Farve", arcs: "Buer", both: "Begge",
+      sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn",
+      background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
+      original: "Originalside", show: "Vis", hide: "Skjul", origAlt: "Originalside",
+      editSummary: "✏️ Tjek og ret teksten",
+      editHint: "Tom linje = nyt afsnit. Du kan selv sætte stavelsesgrænser med ·, f.eks. <b>hun·den</b>.",
+      foot: "Tekstgenkendelse med Tesseract, orddeling med TeX-mønstre (dansk, tysk). Alt kører lokalt i browseren – ingen billeder bliver uploadet.",
+      noText: "Der blev ikke fundet nogen tekst på denne side.<br>Åbn „Tjek og ret teksten“ og skriv den selv.",
+      ocrFailed: "Genkendelsen mislykkedes.",
+      waiting: "Venter på genkendelse …", recognizing: "Teksten genkendes …", loadingCore: "Genkendelsen indlæses …",
+      loadingLang: "Sprogdata indlæses …", preparing: "Gøres klar …",
+      imgError: "Billedet kunne ikke åbnes.", noSpeech: "Oplæsning understøttes ikke af denne browser.",
+      example: "Eksempel", addPages: "Tilføj sider",
+    },
+    de: {
+      brand1: "Lese", brand2: "helfer", docTitle: "Lesehelfer",
+      startTitle: "Buchseiten leichter lesbar machen",
+      startIntro: "Fotografiere eine Seite aus dem Kinderbuch. Der Text wird erkannt und neu gesetzt: in einer gut lesbaren Schrift, groß, mit Abstand und farbigen Silben.",
+      dropMain: "📷 Seite fotografieren oder Bilder wählen",
+      dropSub: "Mehrere Seiten auf einmal möglich · Erkennung läuft nur auf deinem Gerät",
+      bookLangColon: "Sprache des Buchs:", bookLang: "Sprache des Buchs",
+      langDaFlag: "🇩🇰 Dänisch", langDeFlag: "🇩🇪 Deutsch", langDa: "Dänisch", langDe: "Deutsch",
+      noBook: "Kein Buch zur Hand?", demo: "Beispielseite ansehen",
+      how1t: "1. Foto", how1: "Seite gerade und hell fotografieren, möglichst ohne Schatten.",
+      how2t: "2. Prüfen", how2: "Erkannte Wörter kurz kontrollieren und Fehler korrigieren.",
+      how3t: "3. Lesen", how3: "Wort antippen zum Vorlesen. Schrift und Farben anpassen.",
+      prevPage: "Vorherige Seite", nextPage: "Nächste Seite", page: "Seite", pageOf: "Seite {a} / {b}",
+      read: "🔊 Vorlesen", stop: "⏹ Stopp", adjust: "Aa Anpassen", focus: "⛶ Lesemodus", close: "✕ Schließen",
+      font: "Schrift", andika: "Andika (für Leseanfänger)", size: "Schriftgröße", letterSp: "Buchstabenabstand", lineSp: "Zeilenabstand",
+      syllables: "Silben", off: "Aus", color: "Farbe", arcs: "Bögen", both: "Beides",
+      sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün",
+      background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
+      original: "Originalseite", show: "Zeigen", hide: "Verbergen", origAlt: "Originalseite",
+      editSummary: "✏️ Text prüfen und korrigieren",
+      editHint: "Leere Zeile = neuer Absatz. Eigene Silbengrenzen mit · setzen, z.&nbsp;B. <b>O·ma</b>.",
+      foot: "Texterkennung mit Tesseract, Silbentrennung mit TeX-Trennmustern (Dänisch, Deutsch). Alles läuft lokal im Browser, es werden keine Fotos hochgeladen.",
+      noText: "Auf dieser Seite wurde kein Text gefunden.<br>Öffne „Text prüfen“ und tippe ihn selbst ein.",
+      ocrFailed: "Die Erkennung hat nicht geklappt.",
+      waiting: "Wartet auf Erkennung …", recognizing: "Text wird erkannt …", loadingCore: "Erkennung wird geladen …",
+      loadingLang: "Sprachdaten werden geladen …", preparing: "Wird vorbereitet …",
+      imgError: "Bild konnte nicht geöffnet werden.", noSpeech: "Vorlesen wird von diesem Browser nicht unterstützt.",
+      example: "Beispiel", addPages: "Seiten hinzufügen",
+    },
+  };
+  const t = (k, vars = {}) => (T[S.ui] || T.da)[k]?.replace(/\{(\w+)\}/g, (_, v) => vars[v]) ?? k;
+  function applyTexts() {
+    document.documentElement.lang = S.ui;
+    document.title = t("docTitle");
+    document.querySelectorAll("[data-t]").forEach(el => el.textContent = t(el.dataset.t));
+    document.querySelectorAll("[data-th]").forEach(el => el.innerHTML = t(el.dataset.th));
+    document.querySelectorAll("[data-ta]").forEach(el => { el.setAttribute("aria-label", t(el.dataset.ta)); el.title = t(el.dataset.ta); });
+    $("origImg").alt = t("origAlt");
+    $("readBtn").textContent = reading ? t("stop") : t("read");
+    $("focusBtn").textContent = document.body.classList.contains("focus") ? t("close") : t("focus");
+    if (pages.length) render();
+  }
 
   function applySettings() {
     const r = document.documentElement.style;
@@ -308,22 +388,23 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     rd.classList.toggle("mode-farbe", S.mode === "farbe" || S.mode === "beides");
     rd.classList.toggle("mode-boegen", S.mode === "boegen" || S.mode === "beides");
     $("font").value = S.font; $("size").value = S.size; $("ls").value = S.ls; $("lh").value = S.lh;
-    for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"]])
+    for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"]])
       $(id).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === S[key]));
     $("orig").classList.toggle("hidden", S.orig === "aus" || !pages[cur]?.img);
     save();
   }
   $("font").onchange = e => { S.font = e.target.value; applySettings(); };
   for (const k of ["size", "ls", "lh"]) $(k).oninput = e => { S[k] = parseFloat(e.target.value); applySettings(); };
-  for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"]])
+  for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"]])
     $(id).onclick = e => { const b = e.target.closest("button"); if (b) {
       S[key] = b.dataset.v; applySettings();
+      if (key === "ui") applyTexts();
       if (key === "lang" && pages[cur] && pages[cur].lang !== S.lang) relang(pages[cur]);
     } };
   $("setBtn").onclick = () => $("settings").classList.toggle("open");
   $("focusBtn").onclick = () => {
     const on = document.body.classList.toggle("focus");
-    $("focusBtn").textContent = on ? "✕ Schließen" : "⛶ Lesemodus";
+    $("focusBtn").textContent = on ? t("close") : t("focus");
     window.scrollTo(0, 0);
   };
 
@@ -400,7 +481,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
 
   function render() {
     const pg = pages[cur];
-    $("count").textContent = `Seite ${cur + 1} / ${pages.length}`;
+    $("count").textContent = t("pageOf", { a: cur + 1, b: pages.length });
     $("prev").disabled = cur === 0; $("next").disabled = cur >= pages.length - 1;
     if (pg.img) $("origImg").src = pg.img;
     stopSpeech();
@@ -409,13 +490,13 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
       $("text").value = pg.text;
       $("edit").hidden = false;
       $("readBtn").disabled = !pg.text;
-      if (!pg.text) showStatus("Auf dieser Seite wurde kein Text gefunden.<br>Öffne „Text prüfen“ und tippe ihn selbst ein.");
+      if (!pg.text) showStatus(t("noText"));
     } else if (pg.status === "error") {
-      showStatus("Die Erkennung hat nicht geklappt.<br>" + (pg.error || ""));
+      showStatus(t("ocrFailed") + "<br>" + (pg.error || ""));
       $("text").value = ""; $("readBtn").disabled = true;
     } else {
       const pct = Math.round((pg.progress || 0) * 100);
-      showStatus(`${pg.status === "wait" ? "Wartet auf Erkennung …" : pg.stage || "Text wird erkannt …"}<div class="bar"><i style="width:${pct}%"></i></div>`);
+      showStatus(`<span>${t(pg.status === "wait" ? "waiting" : pg.stage || "recognizing")}</span><div class="bar"><i style="width:${pct}%"></i></div>`);
       $("readBtn").disabled = true;
     }
     applySettings();
@@ -423,18 +504,18 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   }
 
   function renderThumbs() {
-    const t = $("thumbs"); t.innerHTML = "";
+    const box = $("thumbs"); box.innerHTML = "";
     pages.forEach((pg, i) => {
       const b = document.createElement("button");
-      b.className = i === cur ? "on" : ""; b.title = "Seite " + (i + 1);
-      b.innerHTML = pg.img ? `<img src="${pg.img}" alt="">` : `<span class="demo">Beispiel</span>`;
+      b.className = i === cur ? "on" : ""; b.title = t("page") + " " + (i + 1);
+      b.innerHTML = pg.img ? `<img src="${pg.img}" alt="">` : `<span class="demo">${t("example")}</span>`;
       b.onclick = () => { cur = i; render(); };
-      t.append(b);
+      box.append(b);
     });
     const add = document.createElement("label");
-    add.className = "add"; add.title = "Seiten hinzufügen"; add.innerHTML = `+<input type="file" accept="image/*" multiple hidden>`;
+    add.className = "add"; add.title = t("addPages"); add.innerHTML = `+<input type="file" accept="image/*" multiple hidden>`;
     add.querySelector("input").onchange = e => addFiles(e.target.files);
-    t.append(add);
+    box.append(add);
   }
 
   $("prev").onclick = () => { if (cur > 0) { cur--; render(); } };
@@ -466,7 +547,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
         URL.revokeObjectURL(url);
         res({ dataUrl: c.toDataURL("image/jpeg", 0.88), canvas: c });
       };
-      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("Bild konnte nicht geöffnet werden.")); };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error(t("imgError"))); };
       img.src = url;
     });
   }
@@ -509,13 +590,13 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
         cacheMethod: "none",
         logger: m => {
           if (!active) return;
-          const names = { "loading tesseract core": "Erkennung wird geladen …", "loading language traineddata": "Sprachdaten werden geladen …", "initializing api": "Wird vorbereitet …", "recognizing text": "Text wird erkannt …" };
+          const names = { "loading tesseract core": "loadingCore", "loading language traineddata": "loadingLang", "initializing api": "preparing", "recognizing text": "recognizing" };
           active.stage = names[m.status] || active.stage;
           active.progress = m.status === "recognizing text" ? m.progress : (active.progress || 0);
           if (pages[cur] === active) {
             const bar = document.querySelector(".status .bar i");
             const st = document.querySelector(".status");
-            if (st && st.firstChild) st.firstChild.textContent = active.stage;
+            if (st && st.firstChild) st.firstChild.textContent = t(active.stage);
             if (bar) bar.style.width = Math.round(active.progress * 100) + "%";
           }
         },
@@ -530,7 +611,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     if (running) return; running = true;
     while (queue.length) {
       const pg = queue.shift();
-      active = pg; pg.status = "ocr"; pg.stage = "Erkennung wird geladen …";
+      active = pg; pg.status = "ocr"; pg.stage = "loadingCore";
       if (pages[cur] === pg) render();
       try {
         const w = await getWorker(pg.lang);
@@ -558,7 +639,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   if (synth) synth.getVoices();
 
   function speak(text, onBoundary, onEnd) {
-    if (!synth) { toast("Vorlesen wird von diesem Browser nicht unterstützt."); return; }
+    if (!synth) { toast(t("noSpeech")); return; }
     synth.cancel();
     const u = new SpeechSynthesisUtterance(text);
     const lang = pages[cur]?.lang || S.lang;
@@ -569,7 +650,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     synth.speak(u);
   }
   function clearHighlight() { document.querySelectorAll(".w.speaking").forEach(x => x.classList.remove("speaking")); }
-  function stopSpeech() { if (synth) synth.cancel(); clearHighlight(); $("readBtn").textContent = "🔊 Vorlesen"; reading = false; }
+  function stopSpeech() { if (synth) synth.cancel(); clearHighlight(); reading = false; $("readBtn").textContent = t("read"); }
 
   $("reader").onclick = e => {
     const w = e.target.closest(".w"); if (!w) return;
@@ -583,13 +664,13 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     if (reading) { stopSpeech(); return; }
     const sp = $("reader")._speech; if (!sp) return;
     const spans = [...$("reader").querySelectorAll(".w")];
-    reading = true; $("readBtn").textContent = "⏹ Stopp";
+    reading = true; $("readBtn").textContent = t("stop");
     speak(sp.full, ev => {
       if (ev.name && ev.name !== "word") return;
       const hit = sp.wordPos.find(p => ev.charIndex >= p.start && ev.charIndex < p.end) || sp.wordPos.find(p => p.start >= ev.charIndex);
       clearHighlight();
       if (hit && spans[hit.i]) spans[hit.i].classList.add("speaking");
-    }, () => { reading = false; clearHighlight(); $("readBtn").textContent = "🔊 Vorlesen"; });
+    }, () => { reading = false; clearHighlight(); $("readBtn").textContent = t("read"); });
   };
 
   const DEMO = {
@@ -625,6 +706,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   };
 
   applySettings();
+  applyTexts();
 })();
 </script>
 </body>

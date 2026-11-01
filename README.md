@@ -1,13 +1,14 @@
-# Lesehelfer
+# Læsehjælper
 
-Fotografierte Kinderbuchseiten leichter lesbar machen: Der Text wird per OCR erkannt und neu gesetzt, in gut lesbarer Schrift, groß, mit mehr Abstand und mit farbigen Silben oder Silbenbögen.
+Fotografierte Kinderbuchseiten (Dänisch und Deutsch) leichter lesbar machen: Der Text wird per OCR erkannt und neu gesetzt, in gut lesbarer Schrift, groß, mit mehr Abstand und mit farbigen Silben oder Silbenbögen.
 
 Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 
 ## Funktionen
 
-- Texterkennung (Deutsch) mit [Tesseract.js](https://github.com/naptha/tesseract.js)
-- Silbentrennung mit den deutschen TeX-Trennmustern ([hyphen](https://github.com/ytiurin/hyphen))
+- Oberfläche auf Dänisch oder Deutsch
+- Texterkennung (Dänisch, Deutsch) mit [Tesseract.js](https://github.com/naptha/tesseract.js)
+- Silbentrennung mit den dänischen und deutschen TeX-Trennmustern ([hyphen](https://github.com/ytiurin/hyphen))
 - Silben farbig (blau/rot), als Bögen oder beides
 - Schriften: Andika, OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Schriftgröße, Buchstaben- und Zeilenabstand, Hintergrundfarbe einstellbar
