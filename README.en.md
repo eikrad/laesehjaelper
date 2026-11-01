@@ -32,11 +32,13 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 
 ```bash
 npm install
-npm run build      # outputs dist/
-npx serve dist     # or any other static web server
+npm run build       # outputs dist/
+npm run typecheck   # TypeScript (strict)
+npm test            # unit tests (Vitest)
+npm run test:e2e    # end-to-end tests in Chromium (Playwright)
 ```
 
-Every push to `main` builds the app and deploys it to GitHub Pages automatically.
+CI (`.github/workflows/ci.yml`) runs the type check, unit tests, build and end-to-end tests on every push and pull request. `main` is only deployed to GitHub Pages when everything passes.
 
 ## Structure
 

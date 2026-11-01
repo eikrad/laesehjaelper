@@ -1,3 +1,5 @@
 node_modules/
 dist/
 private-testbilder/
+test-results/
+playwright-report/

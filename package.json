@@ -4,7 +4,9 @@
   "description": "Børnebogssider lettere at læse: OCR, læsevenlig skrift og farvede stavelser",
   "scripts": {
     "build": "node build.ts",
-    "typecheck": "tsc && tsc -p tsconfig.sw.json"
+    "typecheck": "tsc && tsc -p tsconfig.sw.json",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "license": "MIT",
   "dependencies": {
@@ -22,7 +24,10 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/node": "^26.6.6",
-    "typescript": "^5.9.3"
+    "fake-indexeddb": "^6.2.7",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
   }
 }

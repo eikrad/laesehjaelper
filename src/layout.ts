@@ -74,7 +74,7 @@ const finishUnit = (u: RawUnit): Unit => ({ ...u, bbox: union(u.ws.map((w) => w.
 // Links abgeschnittene Wörter zurückholen, wenn sie am gemeinsamen linken Rand der Gruppe beginnen.
 function rescueLeft(group: Unit[]): Unit[] {
   const xs = group.map((u) => u.bbox.x0).sort((a, b) => a - b);
-  const margin = xs[xs.length >> 1];
+  const margin = xs[(xs.length - 1) >> 1]; // bei gerader Anzahl der linkere der beiden mittleren Werte
   return group.map((u) => {
     if (!u.pre.length) return u;
     for (let i = 0; i < u.pre.length; i++) {

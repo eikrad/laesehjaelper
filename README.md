@@ -32,11 +32,13 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 
 ```bash
 npm install
-npm run build      # bygger dist/
-npx serve dist     # eller en anden statisk webserver
+npm run build       # bygger dist/
+npm run typecheck   # TypeScript (strict)
+npm test            # unit-tests (Vitest)
+npm run test:e2e    # end-to-end-tests i Chromium (Playwright)
 ```
 
-Ved hvert push til `main` bliver appen automatisk bygget og udgivet på GitHub Pages.
+CI (`.github/workflows/ci.yml`) kører typecheck, unit-tests, build og end-to-end-tests ved hvert push og pull request. Kun når alt er grønt, bliver `main` udgivet på GitHub Pages.
 
 ## Opbygning
 
