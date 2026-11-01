@@ -19,7 +19,8 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Stavelser i skiftende farver (blå/rød, farverne kan vælges frit), som buer eller begge dele
 - Skrifttyper: Andika (standard), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Justerbar skriftstørrelse, bogstavafstand, linjeafstand og baggrundsfarve
-- Tryk på et ord for at få det læst op, eller få hele siden læst op med markering af hvert ord
+- Tryk på et ord for at høre det – først helt, så langsomt stavelse for stavelse, så helt igen
+- Få hele siden læst op med markering af hvert ord, langsomt eller normalt; bagefter er det barnets tur („Hør igen“)
 - Indstilling „Bindestreger i bogen“: til læsebøger, der selv deler ord i stavelser med bindestreg („sko-le“)
 - Skæve fotos bliver rettet op, og „tekst“, som tekstgenkendelsen finder i tegningerne, bliver sorteret fra
 - Hver side genkendes to gange (som den er og med udlignet baggrund), så også tekst på farvede billeder bliver fundet

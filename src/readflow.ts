@@ -17,3 +17,18 @@ export function speechRate(choice: string): number {
 export function showYourTurn(how: "end" | "stop", turn: string): boolean {
   return how === "end" && turn === "an";
 }
+
+/** Ein Schritt beim Vorlesen eines angetippten Worts. `part` = Index der Silbe, null = ganzes Wort. */
+export interface WordStep { text: string; part: number | null; slow: boolean }
+
+/**
+ * Angetipptes Wort: erst ganz, dann langsam Silbe für Silbe, dann wieder ganz —
+ * so wird die Verbindung von Buchstaben und Lauten hörbar (systematische
+ * Buchstabe-Laut-Arbeit ist die am besten belegte Hilfe, Galuschka et al. 2014,
+ * PLOS ONE, doi:10.1371/journal.pone.0089900).
+ */
+export function wordSteps(word: string, parts: string[]): WordStep[] {
+  const whole: WordStep = { text: word, part: null, slow: false };
+  const syl = parts.map((p, i) => ({ text: p.replace(/[^\p{L}\p{M}]/gu, ""), part: i, slow: true })).filter(s => s.text);
+  return syl.length > 1 ? [whole, ...syl, { ...whole }] : [whole];
+}

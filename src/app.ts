@@ -1,5 +1,5 @@
 // Læsehjælper – App-Logik (Oberfläche, Texterkennung, Bücherregal).
-import { speechRate, showYourTurn } from "./readflow";
+import { speechRate, showYourTurn, wordSteps } from "./readflow";
 import { wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
 import { silben } from "./silben";
 import { cleanOcr, parasFromOcr } from "./layout";
@@ -1124,18 +1124,19 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   }
   if (synth) synth.getVoices();
 
-  function speak(text: string, onBoundary: ((ev: SpeechSynthesisEvent) => void) | null, onEnd?: () => void) {
+  function speak(text: string, onBoundary: ((ev: SpeechSynthesisEvent) => void) | null, onEnd?: () => void, slow = false) {
     if (!synth) { toast(t("noSpeech")); return; }
     synth.cancel();
     const u = new SpeechSynthesisUtterance(text);
     const lang = pages[cur]?.lang || S.lang;
     u.lang = SPEECH[lang]; const voice = pickVoice(lang); if (voice) u.voice = voice;
     u.rate = speechRate(S.rate);
+    if (slow) u.rate *= 0.75;
     if (onBoundary) u.onboundary = onBoundary;
     u.onend = u.onerror = () => onEnd && onEnd();
     synth.speak(u);
   }
-  function clearHighlight() { document.querySelectorAll(".w.speaking").forEach(x => x.classList.remove("speaking")); }
+  function clearHighlight() { document.querySelectorAll(".w.speaking, .s.speaking").forEach(x => x.classList.remove("speaking")); }
   let readId = 0;   // verwirft onend von abgebrochenen Vorlese-Durchgängen
   function stopSpeech() { readId++; if (synth) synth.cancel(); clearHighlight(); reading = false; setReadBtn(); $("yourTurn").hidden = true; }
 
@@ -1143,9 +1144,22 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     if ($("settings").classList.contains("open")) { $("settings").classList.remove("open"); $<HTMLButtonElement>("setBtn").classList.remove("on"); return; }
     const w = (e.target as HTMLElement).closest<HTMLElement>(".w"); if (!w) return;
     stopSpeech();
-    w.classList.add("speaking");
-    speak(w.dataset.word || "", null, () => w.classList.remove("speaking"));
+    sayWord(w);
   };
+  /** Angetipptes Wort: ganz, dann langsam in Silben (jeweils markiert), dann wieder ganz. */
+  function sayWord(w: HTMLElement) {
+    const parts = [...w.querySelectorAll<HTMLElement>(".s")];
+    const steps = wordSteps(w.dataset.word || "", parts.map(p => p.textContent || ""));
+    const my = readId;
+    const step = (i: number) => {
+      clearHighlight();
+      if (my !== readId || i >= steps.length) return;
+      const st = steps[i];
+      (st.part === null ? w : parts[st.part]).classList.add("speaking");
+      speak(st.text, null, () => { if (my === readId) step(i + 1); }, st.slow);
+    };
+    step(0);
+  }
 
   let reading = false;
   function readPage() {

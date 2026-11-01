@@ -17,3 +17,25 @@ describe("showYourTurn", () => {
     expect(showYourTurn("end", "aus")).toBe(false);
   });
 });
+
+import { wordSteps } from "../../src/readflow";
+
+describe("wordSteps", () => {
+  it("liest ganz, dann langsam in Silben, dann wieder ganz", () => {
+    expect(wordSteps("sommerfugl", ["som", "mer", "fugl"])).toEqual([
+      { text: "sommerfugl", part: null, slow: false },
+      { text: "som", part: 0, slow: true },
+      { text: "mer", part: 1, slow: true },
+      { text: "fugl", part: 2, slow: true },
+      { text: "sommerfugl", part: null, slow: false },
+    ]);
+  });
+  it("liest einsilbige Wörter nur einmal", () => {
+    expect(wordSteps("sol", ["sol"])).toEqual([{ text: "sol", part: null, slow: false }]);
+  });
+  it("entfernt Bindestriche und Satzzeichen aus den Silben", () => {
+    const steps = wordSteps("Bjørne-far", ["Bjør", "ne-", "far"]);
+    expect(steps.map(s => s.text)).toEqual(["Bjørne-far", "Bjør", "ne", "far", "Bjørne-far"]);
+    expect(steps.map(s => s.part)).toEqual([null, 0, 1, 2, null]);
+  });
+});
