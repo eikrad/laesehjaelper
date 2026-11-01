@@ -145,6 +145,13 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .mode-boegen.mode-farbe .w .s0::after { border-color: var(--s0); }
 .mode-boegen.mode-farbe .w .s1::after { border-color: var(--s1); }
 
+.reader.pagemode { padding: 0; min-height: 0; }
+.pageview { position: relative; line-height: 0; }
+.pageview > img { width: 100%; display: block; }
+.tbox { position: absolute; overflow: hidden; line-height: min(var(--lh), 1.6); word-spacing: .12em; }
+.tbox p { margin: 0 0 .35em; max-width: none; }
+.tbox p:last-child { margin-bottom: 0; }
+.tbox.busy { border-radius: 12px; padding: 0 .3em; }
 .status { padding: 48px 20px; text-align: center; color: var(--muted); font-family: var(--ui); font-size: 17px; }
 .bar { height: 10px; background: var(--sky); border-radius: 99px; overflow: hidden; max-width: 280px; margin: 14px auto 0; }
 .bar i { display: block; height: 100%; width: 0; background: var(--blue); border-radius: 99px; transition: width .2s; }
@@ -306,6 +313,13 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
 <div class="settings" id="settings">
   <div class="grid">
     <div class="field wide">
+      <span class="flabel" data-t="view"></span>
+      <div class="seg" id="viewSet">
+        <button data-v="side" data-t="viewPage"></button>
+        <button data-v="tekst" data-t="viewText"></button>
+      </div>
+    </div>
+    <div class="field wide">
       <span class="flabel" data-t="syllables"></span>
       <div class="seg" id="mode">
         <button data-v="aus" data-t="off"></button>
@@ -385,7 +399,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
   const abs = (p) => new URL(p, location.href).href;
 
   // ---------- Einstellungen ----------
-  const defaults = { font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", lang: "da", ui: "da" };
+  const defaults = { font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", lang: "da", ui: "da" };
   let S = { ...defaults };
   try { Object.assign(S, JSON.parse(localStorage.getItem("lesehelfer") || "{}")); } catch (e) {}
   const save = () => { try { localStorage.setItem("lesehelfer", JSON.stringify(S)); } catch (e) {} };
@@ -408,7 +422,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
       read: "Læs op", stop: "Stop", adjust: "Tilpas", focus: "Læsetilstand", close: "Luk læsetilstand",
       font: "Skrift", andika: "Andika (til begyndere)", size: "Skriftstørrelse", letterSp: "Bogstavafstand", lineSp: "Linjeafstand",
       syllables: "Stavelser", off: "Fra", color: "Farve", arcs: "Buer", both: "Begge",
-      sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse",
+      sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse", view: "Visning", viewPage: "Bogens side", viewText: "Kun teksten",
       background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
       original: "Originalside", show: "Vis", hide: "Skjul", origAlt: "Originalside",
       editSummary: "Tjek og ret teksten",
@@ -437,7 +451,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
       read: "Vorlesen", stop: "Stopp", adjust: "Anpassen", focus: "Lesemodus", close: "Lesemodus schließen",
       font: "Schrift", andika: "Andika (für Leseanfänger)", size: "Schriftgröße", letterSp: "Buchstabenabstand", lineSp: "Zeilenabstand",
       syllables: "Silben", off: "Aus", color: "Farbe", arcs: "Bögen", both: "Beides",
-      sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe",
+      sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe", view: "Ansicht", viewPage: "Buchseite", viewText: "Nur Text",
       background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
       original: "Originalseite", show: "Zeigen", hide: "Verbergen", origAlt: "Originalseite",
       editSummary: "Text prüfen und korrigieren",
@@ -488,17 +502,19 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
     rd.classList.toggle("mode-farbe", S.mode === "farbe" || S.mode === "beides");
     rd.classList.toggle("mode-boegen", S.mode === "boegen" || S.mode === "beides");
     $("font").value = S.font; $("size").value = S.size; $("ls").value = S.ls; $("lh").value = S.lh;
-    for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"]])
+    for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"], ["viewSet", "view"]])
       $(id).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === S[key]));
-    $("orig").classList.toggle("hidden", S.orig === "aus" || !pages[cur]?.img);
+    $("orig").classList.toggle("hidden", S.orig === "aus" || !pages[cur]?.img || isPageMode(pages[cur]));
+    if ($("reader").classList.contains("pagemode")) requestAnimationFrame(fitBoxes);
     save();
   }
   $("font").onchange = e => { S.font = e.target.value; applySettings(); };
   for (const k of ["size", "ls", "lh"]) $(k).oninput = e => { S[k] = parseFloat(e.target.value); applySettings(); };
-  for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"]])
+  for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"], ["viewSet", "view"]])
     $(id).onclick = e => { const b = e.target.closest("button"); if (b) {
       S[key] = b.dataset.v; applySettings();
       if (key === "ui") applyTexts();
+      if (key === "view" && pages[cur]) render();
       if (key === "lang" && pages[cur] && pages[cur].lang !== S.lang) relang(pages[cur]);
     } };
   $("setBtn").onclick = () => $("setBtn").classList.toggle("on", $("settings").classList.toggle("open"));
@@ -540,9 +556,8 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
 
   // Text -> HTML mit Wort- und Silben-Spans. Gleichzeitig Zeichenpositionen für das Vorlesen merken.
   const WORD = /[\p{L}\p{M}·]+/gu;
-  function renderText(text, lang) {
-    const rd = $("reader");
-    rd.innerHTML = "";
+  function buildText(text, lang) {
+    const ps = [];
     const plainParts = [];
     let offset = 0, wordIndex = 0;
     const wordPos = [];
@@ -566,17 +581,183 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
         last = m.index + raw.length;
       }
       if (last < para.length) p.append(para.slice(last));
-      rd.append(p);
+      ps.push(p);
       plainParts.push(plain);
     });
     // Zeichenpositionen im Vorlesetext
     const full = plainParts.join("\n");
     let idx = 0;
     for (const m of full.matchAll(/[\p{L}\p{M}]+/gu)) wordPos.push({ start: m.index, end: m.index + m[0].length, i: idx++ });
-    rd._speech = { full, wordPos };
+    return { ps, speech: { full, wordPos } };
+  }
+
+  const isPageMode = (pg) => S.view === "side" && pg && pg.clean && pg.paras && pg.paras.length > 0;
+
+  // Inhalt einer fertig erkannten Seite zeigen: als Buchseite oder als reiner Text.
+  function renderContent(pg) {
+    const rd = $("reader");
+    const { ps, speech } = buildText(pg.text, pg.lang);
+    rd.innerHTML = ""; rd._speech = speech;
+    const page = isPageMode(pg);
+    rd.classList.toggle("pagemode", page);
+    if (!page) { ps.forEach(p => rd.append(p)); return; }
+
+    const W = pg.canvas.width, H = pg.canvas.height;
+    const pv = document.createElement("div"); pv.className = "pageview";
+    const img = new Image(); img.src = pg.clean; img.alt = ""; pv.append(img);
+    pg.paras.forEach((pa, i) => {
+      const box = document.createElement("div");
+      box.className = "tbox" + (pa.busy ? " busy" : "");
+      const pad = pa.lh * 0.3, g = pa.grow || pa.bbox;
+      const x0 = Math.max(0, g.x0 - pad), y0 = Math.max(0, g.y0 - pad);
+      const x1 = Math.min(W, g.x1 + pad), y1 = Math.min(H, g.y1 + pad);
+      box.dataset.lh = pa.lh / H;
+      Object.assign(box.style, { left: x0 / W * 100 + "%", top: y0 / H * 100 + "%", width: (x1 - x0) / W * 100 + "%", height: (y1 - y0) / H * 100 + "%" });
+      if (pa.busy) box.style.background = pa.bg;
+      const own = i === pg.paras.length - 1 ? ps.slice(i) : ps.slice(i, i + 1);
+      own.forEach(p => box.append(p));
+      pv.append(box);
+    });
+    rd.append(pv);
+    const go = () => requestAnimationFrame(fitBoxes);
+    if (img.complete) go(); else img.onload = go;
+    if (document.fonts) document.fonts.ready.then(go);
+  }
+
+  // Schriftgröße je Textfeld so wählen, dass der Text genau in die Fläche der alten Schrift passt.
+  function fitBoxes() {
+    document.querySelectorAll(".pageview .tbox").forEach(box => {
+      const h = box.clientHeight, w = box.clientWidth;
+      if (!h || !w) return;
+      // höchstens gut doppelt so groß wie die Originalschrift
+      const maxFs = parseFloat(box.dataset.lh || 1) * box.parentElement.clientHeight * 2.4;
+      let lo = 4, hi = Math.max(8, Math.min(h, maxFs));
+      for (let k = 0; k < 12; k++) {
+        const mid = (lo + hi) / 2;
+        box.style.fontSize = mid + "px";
+        if (box.scrollHeight <= h + 1 && box.scrollWidth <= w + 1) lo = mid; else hi = mid;
+      }
+      box.style.fontSize = lo + "px";
+      box._fs = lo;
+    });
+    // Gleich große Originalschrift soll auch gleich groß bleiben: kleinste passende Größe je Gruppe.
+    const boxes = [...document.querySelectorAll(".pageview .tbox")];
+    boxes.forEach(a => {
+      const la = parseFloat(a.dataset.lh);
+      const same = boxes.filter(b => Math.abs(parseFloat(b.dataset.lh) - la) / la < 0.2);
+      a.style.fontSize = Math.min(...same.map(b => b._fs)) + "px";
+    });
+  }
+  let fitT;
+  new ResizeObserver(() => { clearTimeout(fitT); fitT = setTimeout(fitBoxes, 60); }).observe($("reader"));
+
+  // Alte Schrift aus dem Foto entfernen: jede Zeile mit der Hintergrundfarbe drumherum übermalen.
+  function eraseText(canvas, paras) {
+    const c = document.createElement("canvas");
+    c.width = canvas.width; c.height = canvas.height;
+    const ctx = c.getContext("2d");
+    ctx.drawImage(canvas, 0, 0);
+    const W = c.width, H = c.height;
+    const px = canvas.getContext("2d").getImageData(0, 0, W, H).data;
+    const med = (a) => { a.sort((x, y) => x - y); return a[a.length >> 1]; };
+    for (const pa of paras) {
+      let spreadMax = 0, bgs = [];
+      for (const l of pa.lines) {
+        const pad = Math.round((l.y1 - l.y0) * 0.22) + 3;
+        const x0 = Math.max(0, l.x0 - pad), y0 = Math.max(0, l.y0 - pad);
+        const x1 = Math.min(W - 1, l.x1 + pad), y1 = Math.min(H - 1, l.y1 + pad);
+        const R = [], G = [], B = [];
+        const take = (x, y) => { const i = (y * W + x) * 4; R.push(px[i]); G.push(px[i + 1]); B.push(px[i + 2]); };
+        for (let x = x0; x <= x1; x += 2) { take(x, y0); take(x, y1); }
+        for (let y = y0; y <= y1; y += 2) { take(x0, y); take(x1, y); }
+        const m = [med(R.slice()), med(G.slice()), med(B.slice())];
+        let dev = 0;
+        for (let i = 0; i < R.length; i++) dev += Math.abs(R[i] - m[0]) + Math.abs(G[i] - m[1]) + Math.abs(B[i] - m[2]);
+        spreadMax = Math.max(spreadMax, dev / R.length / 3);
+        bgs.push(m);
+        ctx.fillStyle = `rgb(${m[0]},${m[1]},${m[2]})`;
+        ctx.fillRect(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
+      }
+      // Unruhiger Hintergrund (Text auf einer Illustration): Textfeld bekommt eine eigene Fläche.
+      const avg = [0, 1, 2].map(k => Math.round(bgs.reduce((a, b) => a + b[k], 0) / bgs.length));
+      pa.busy = spreadMax > 26;
+      pa.bg = `rgba(${avg[0]},${avg[1]},${avg[2]},.94)`;
+      pa.rgb = avg;
+    }
+    growBoxes(ctx.getImageData(0, 0, W, H).data, W, H, paras);
+    return c.toDataURL("image/jpeg", 0.9);
+  }
+
+  // Textfelder auf ruhigem Hintergrund in den freien Platz daneben und darunter wachsen lassen,
+  // damit die neue (breitere, größere) Schrift Raum bekommt. Bilder werden dabei nicht überdeckt.
+  function growBoxes(px, W, H, paras) {
+    const plain = (x0, y0, x1, y1, rgb) => {
+      x0 = Math.max(0, Math.round(x0)); y0 = Math.max(0, Math.round(y0));
+      x1 = Math.min(W - 1, Math.round(x1)); y1 = Math.min(H - 1, Math.round(y1));
+      if (x1 <= x0 || y1 <= y0) return false;
+      let n = 0, bad = 0;
+      for (let y = y0; y <= y1; y += 3) for (let x = x0; x <= x1; x += 3) {
+        const i = (y * W + x) * 4; n++;
+        if (Math.abs(px[i] - rgb[0]) + Math.abs(px[i + 1] - rgb[1]) + Math.abs(px[i + 2] - rgb[2]) > 60) bad++;
+      }
+      return bad / n < 0.01;
+    };
+    paras.forEach((pa, i) => {
+      pa.grow = { ...pa.bbox };
+      if (pa.busy) return;
+      const b = pa.grow, gap = pa.lh * 0.8;
+      // nach rechts: höchstens bis zum gleichen Rand wie links
+      const right = Math.max(b.x1, W - b.x0);
+      if (right > b.x1 && plain(b.x1 + 2, b.y0, right, b.y1, pa.rgb)) b.x1 = right;
+      // nach unten: schrittweise, bis Bild, nächster Text oder Seitenrand kommt
+      const others = paras.filter((o, j) => j !== i && o.bbox.y0 > b.y1 && o.bbox.x0 < b.x1 && o.bbox.x1 > b.x0);
+      const limit = Math.min(H - Math.max(b.x0 * 0.6, gap), ...others.map(o => o.bbox.y0 - gap));
+      const step = pa.lh * 0.5;
+      while (b.y1 + step <= limit && plain(b.x0, b.y1 + 2, b.x1, b.y1 + step, pa.rgb)) b.y1 += step;
+    });
+  }
+
+  // Textgruppen mit Position aus dem OCR-Ergebnis holen. Tesseract fasst manchmal Überschrift und Absatz
+  // zusammen; deshalb trennen wir bei großem Zeilenabstand oder deutlich anderer Schriftgröße.
+  // Unsichere Treffer (z. B. Muster in Bildern) und reine Zahlen bleiben unverändert im Bild.
+  function parasFromOcr(data) {
+    const lines = [];
+    for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || []) lines.push(l);
+    const groups = [];
+    let g = null;
+    for (const l of lines) {
+      const h = l.bbox.y1 - l.bbox.y0;
+      const prev = g && g[g.length - 1];
+      const ph = prev && prev.bbox.y1 - prev.bbox.y0;
+      const newGroup = !prev || l.bbox.y0 - prev.bbox.y1 > 0.9 * Math.max(h, ph) || h > ph * 1.35 || ph > h * 1.35 || l.bbox.y0 < prev.bbox.y0;
+      if (newGroup) groups.push(g = []);
+      g.push(l);
+    }
+    const out = [];
+    for (const ls of groups) {
+      const good = ls.flatMap(l => l.words || []).filter(w => /\p{L}{2,}/u.test(w.text));
+      if (!good.length) continue;
+      const conf = good.reduce((a, w) => a + w.confidence, 0) / good.length;
+      if (conf < 55) continue;
+      const text = cleanOcr(ls.map(l => l.text.trim()).join("\n"));
+      if (!text) continue;
+      const bbox = { x0: Math.min(...ls.map(l => l.bbox.x0)), y0: Math.min(...ls.map(l => l.bbox.y0)), x1: Math.max(...ls.map(l => l.bbox.x1)), y1: Math.max(...ls.map(l => l.bbox.y1)) };
+      const hs = ls.map(l => l.bbox.y1 - l.bbox.y0).sort((a, b) => a - b);
+      out.push({ bbox, lines: ls.map(l => l.bbox), lh: hs[hs.length >> 1], text });
+    }
+    return out;
+  }
+
+
+  // Nach dem Korrigieren: Absätze wieder den Textfeldern auf der Seite zuordnen.
+  function syncParas(pg) {
+    if (!pg.paras) return;
+    const parts = pg.text.split(/\n\s*\n/);
+    pg.paras.forEach((pa, i) => { pa.text = parts[i] || ""; });
   }
 
   function showStatus(html) {
+    $("reader").classList.remove("pagemode");
     $("reader").innerHTML = `<div class="status">${html}</div>`;
     $("reader")._speech = null;
   }
@@ -588,7 +769,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
     if (pg.img) $("origImg").src = pg.img;
     stopSpeech();
     if (pg.status === "done") {
-      renderText(pg.text, pg.lang);
+      renderContent(pg);
       $("text").value = pg.text;
       $("edit").hidden = false;
       $("readBtn").disabled = !pg.text;
@@ -632,7 +813,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
   let editT;
   $("text").oninput = e => {
     clearTimeout(editT);
-    editT = setTimeout(() => { pages[cur].text = e.target.value; renderText(pages[cur].text, pages[cur].lang); }, 250);
+    editT = setTimeout(() => { pages[cur].text = e.target.value; syncParas(pages[cur]); renderContent(pages[cur]); }, 250);
   };
 
   // ---------- Bilder laden ----------
@@ -717,8 +898,14 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
       if (pages[cur] === pg) render();
       try {
         const w = await getWorker(pg.lang);
-        const { data } = await w.recognize(pg.canvas);
-        pg.text = cleanOcr(data.text || "");
+        const { data } = await w.recognize(pg.canvas, {}, { text: true, blocks: true });
+        pg.paras = parasFromOcr(data);
+        if (pg.paras.length) {
+          pg.text = pg.paras.map(p => p.text).join("\n\n");
+          pg.clean = eraseText(pg.canvas, pg.paras);
+        } else {
+          pg.text = cleanOcr(data.text || ""); pg.clean = null;
+        }
         pg.status = "done";
       } catch (e) {
         console.error(e);

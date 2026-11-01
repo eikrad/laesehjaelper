@@ -2,7 +2,7 @@
 
 *Danish for "reading helper". · [Dansk](README.md)*
 
-Make photographed children's book pages easier to read. The text is recognized with OCR and re-typeset in a highly legible font, larger, with more spacing, and with colored syllables or syllable arcs. Built for children learning to read and for readers with dyslexia. Supports Danish and German books.
+Make photographed children's book pages easier to read. The text is recognized with OCR and replaced right on the page: the pictures stay where they are, but the text is set in a highly legible font with colored syllables or syllable arcs. Alternatively, the text can be shown on its own, large and with generous spacing. Built for children learning to read and for readers with dyslexia. Supports Danish and German books.
 
 Everything runs locally in the browser. No photos are uploaded anywhere.
 
@@ -10,6 +10,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 
 ## Features
 
+- Two views: the book page with the new text in its original place, or text only
 - Interface in Danish or German
 - Text recognition (Danish, German) with [Tesseract.js](https://github.com/naptha/tesseract.js)
 - Syllable splitting based on the Danish and German TeX hyphenation patterns ([hyphen](https://github.com/ytiurin/hyphen))
@@ -40,11 +41,11 @@ Every push to `main` builds the app and deploys it to GitHub Pages automatically
 
 - The hyphenation patterns don't split off single letters at the start or end of a word, and some Danish splits are off (e.g. `hund-en` instead of `hun-den`). Workaround: fix it in the text with `·`.
 - Text on top of illustrations or in decorative fonts is recognized less reliably.
-- The original page is shown as a photo; illustrations are not yet cropped out automatically.
+- The old text is painted over with the surrounding background color. This looks clean on plain backgrounds; text on top of an illustration gets its own light panel.
+- The new text can only be as large as the page has room for. For really large text, use the text-only view.
 
 ## Ideas
 
-- Automatically crop illustrations and place them next to the text
-- Replace the text directly in the image (inpainting)
+- Better removal of text on illustrations (inpainting)
 - Save books locally, export as PDF
 - Reading ruler, line-by-line mode
