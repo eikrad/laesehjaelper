@@ -23,6 +23,28 @@ html = html
 fs.writeFileSync(`${out}/index.html`, html);
 
 const copy = (from: string, to: string): void => fs.copyFileSync(from, `${out}/${to}`);
+
+// Service Worker mit Versionsnummer, damit jede neue Version den alten Cache ersetzt
+const version = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
+await build({ entryPoints: ["src/sw.ts"], bundle: true, minify: true, format: "iife", outfile: `${out}/sw.js`, define: { VERSION: JSON.stringify(version) } });
+
+// App-Manifest und Symbole
+fs.writeFileSync(`${out}/manifest.webmanifest`, JSON.stringify({
+  name: "Læsehjælper",
+  short_name: "Læsehjælper",
+  description: "Børnebøger sat op, så de er lettere at læse.",
+  start_url: "./",
+  scope: "./",
+  display: "standalone",
+  background_color: "#f2f3f5",
+  theme_color: "#f2f3f5",
+  icons: [
+    { src: "icon-192.png", sizes: "192x192", type: "image/png" },
+    { src: "icon-512.png", sizes: "512x512", type: "image/png" },
+    { src: "icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+  ],
+}, null, 2));
+for (const f of ["icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"]) copy(`assets/${f}`, f);
 copy(`${nm}/tesseract.js/dist/tesseract.min.js`, "tesseract.min.js");
 copy(`${nm}/@techstark/opencv-js/dist/opencv.js`, "opencv.js");
 // Fehler in tesseract.js 5 umgehen: bei mitgelieferten Sprachdaten wird beim Initialisieren

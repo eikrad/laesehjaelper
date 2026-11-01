@@ -3,6 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f2f3f5">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Læsehjælper">
 <title>Læsehjælper</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -244,6 +250,7 @@ input[type=range] { width: 100%; accent-color: var(--blue); }
 .crop-foot .btn-ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.5); }
 .cta-sm { border: 0; background: #fff; color: var(--ink); border-radius: 12px; padding: 11px 22px; font-weight: 700; }
 .recrop { margin-top: 12px; }
+.installrow { margin: 18px 0 0; }
 .fhint { font-size: 14px; color: var(--muted); margin: 8px 0 0; }
 .own { display: inline-flex; gap: 8px; margin-left: 6px; padding-left: 14px; border-left: 1.5px solid var(--line); }
 .pick { display: inline-flex; align-items: center; gap: 6px; background: var(--sky); border-radius: 999px; padding: 4px 12px 4px 4px; font-size: 14px; font-weight: 700; cursor: pointer; }
@@ -314,6 +321,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
         </div>
         <button class="linkbtn" id="demoBtn" data-t="demo"></button>
       </div>
+      <p class="installrow" id="installRow" hidden><button class="btn-ghost" id="installBtn"><svg class="i"><use href="#i-plus"/></svg><span data-t="install"></span></button></p>
     </div>
     <section class="shelf" id="shelf" hidden>
       <h2 data-t="shelfTitle"></h2>
