@@ -751,6 +751,11 @@ const Lib = { detectPage, warpPage, orderCorners };
       let corners: Point[] = (startCorners || full).map((p): Point => [p[0], p[1]]);
       const dlg = $("crop"), stage = $("cropStage"), cnv = $<HTMLCanvasElement>("cropCanvas");
       dlg.hidden = false;
+      // Höhe auf den sichtbaren Bildschirm begrenzen. In eingebetteten Ansichten, die so hoch wie der
+      // Inhalt werden, wäre der Dialog sonst höher als der Bildschirm und die Knöpfe unsichtbar.
+      const visibleH = Math.min(window.innerHeight, window.visualViewport?.height || Infinity, screen.availHeight || Infinity);
+      dlg.style.height = visibleH + "px";
+      dlg.style.top = (window.innerHeight > visibleH * 1.15 ? window.scrollY : 0) + "px";
       $("cropMsg").textContent = (counter ? counter + " · " : "") + t("cropLoading");
       let scale = 1, ox = 0, oy = 0;
       const handles = corners.map(() => { const h = document.createElement("div"); h.className = "h"; stage.append(h); return h; });
