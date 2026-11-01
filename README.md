@@ -24,7 +24,7 @@ npm run build      # erzeugt dist/
 npx serve dist     # oder ein anderer statischer Webserver
 ```
 
-`dist/` ist eine statische Seite und lässt sich z. B. mit GitHub Pages hosten.
+Bei jedem Push auf `main` wird die App automatisch gebaut und unter https://eikrad.github.io/laesehjaelper/ veröffentlicht.
 
 ## Aufbau
 

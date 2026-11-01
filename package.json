@@ -1,8 +1,10 @@
 {
   "name": "laesehjaelper",
   "version": "1.0.0",
-  "description": "",
-  "scripts": {},
+  "description": "Børnebogssider lettere at læse: OCR, læsevenlig skrift og farvede stavelser",
+  "scripts": {
+    "build": "node build.mjs"
+  },
   "license": "ISC",
   "dependencies": {
     "@fontsource/opendyslexic": "^5.3.0",
