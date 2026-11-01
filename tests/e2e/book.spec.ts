@@ -16,10 +16,16 @@ test("Foto → Zuschnitt → Texterkennung → Buchseite", async ({ page }) => {
   await expect(page.locator("#reader .origfull")).toBeVisible();
   await page.click("#compareBtn");
   await expect(page.locator("#reader")).toHaveClass(/pagemode/);
-  // Nur-Text-Ansicht
+  // Nur-Text-Ansicht; erst dort gibt es den Schalter für das Originalfoto, und er wirkt
   await page.click("#setBtn");
+  await expect(page.locator("#origToggle")).toBeHidden();
   await page.click("#viewSet button[data-v=tekst]");
   await expect(page.locator("#reader")).not.toHaveClass(/pagemode/);
+  await expect(page.locator("#orig")).toBeVisible();
+  await page.click("#origToggle button[data-v=aus]");
+  await expect(page.locator("#orig")).toBeHidden();
+  await page.click("#origToggle button[data-v=an]");
+  await expect(page.locator("#orig")).toBeVisible();
 });
 
 test("Text über einer Illustration wird erkannt, die Seitenzahl nicht", async ({ page }) => {

@@ -214,6 +214,9 @@ const Lib = { detectPage, warpPage, orderCorners };
     for (const [id, key] of CHOICES)
       $(id).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === S[key]));
     $("orig").classList.toggle("hidden", S.orig === "aus" || !pages[cur]?.img || isPageMode(pages[cur]));
+    // „Originalseite zeigen/verbergen“ wirkt nur in der Textansicht; in der Buchseiten-Ansicht ist die
+    // Seite selbst das Bild (dort vergleicht man mit dem Augen-Knopf).
+    $("origToggle").closest<HTMLElement>(".field")!.hidden = S.view === "side";
     if ($("reader").classList.contains("pagemode")) requestAnimationFrame(() => fitBoxes());
     save();
   }
