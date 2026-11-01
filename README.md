@@ -68,12 +68,9 @@ Projektet er skrevet i TypeScript (strict).
 - Den nye skrift kan kun blive så stor, som der er plads til på siden. Til rigtig stor skrift er visningen „Kun teksten“ bedre.
 - Buede sider skal indtil videre rettes ud i hånden (se [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
 
-## Idéer
+## Roadmap
 
-- Genkend sidens krumning automatisk ([#1](https://github.com/eikrad/laesehjaelper/issues/1))
-- Bedre fjernelse af tekst på illustrationer (inpainting)
-- Eksport som PDF
-- Læselineal, linje-for-linje-tilstand
+Roadmappen er opdelt i epics og stories (se [CONTRIBUTING.md](CONTRIBUTING.md)). Det, der er planlagt, styres som [issues med mærket `roadmap`](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap). Idéer og fejl meldes som [issue](https://github.com/eikrad/laesehjaelper/issues/new). Vil du bidrage, så læs [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Ansvarsfraskrivelse
 

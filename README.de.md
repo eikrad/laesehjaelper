@@ -68,12 +68,9 @@ Das Projekt ist in TypeScript geschrieben (strict).
 - Der neue Text kann nur so groß werden, wie auf der Seite Platz ist. Für richtig große Schrift ist die Ansicht „Nur Text“ besser.
 - Gewölbte Seiten muss man bisher von Hand glattziehen (siehe [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
 
-## Ideen
+## Roadmap
 
-- Wölbung der Seite automatisch erkennen ([#1](https://github.com/eikrad/laesehjaelper/issues/1))
-- Text auf Illustrationen besser entfernen (Inpainting)
-- Export als PDF
-- Leselineal, Zeile-für-Zeile-Modus
+Die Roadmap ist in Epics und Stories gegliedert (siehe [CONTRIBUTING.md](CONTRIBUTING.md)). Was geplant ist, steht als [Issues mit dem Label `roadmap`](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap) auf GitHub. Ideen und Fehler bitte als [Issue](https://github.com/eikrad/laesehjaelper/issues/new) melden. Wer beitragen möchte: siehe [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Haftungsausschluss
 
