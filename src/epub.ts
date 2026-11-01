@@ -8,7 +8,7 @@
 
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import type { Zippable } from "fflate";
-import type { Corners, Para } from "./types";
+import type { Corners, Frame, Para } from "./types";
 
 /** Eine fertig gesetzte Seite für das EPUB. */
 export interface EpubPage {
@@ -29,7 +29,7 @@ export interface DataPage {
   paras?: Para[] | null;
   workW?: number;
   workH?: number;
-  corners?: Corners | null;
+  corners?: Frame | Corners | null;
   input?: Uint8Array | null;
   clean?: Uint8Array | null;
 }
@@ -158,7 +158,7 @@ export function readEpub(bytes: Uint8Array): DataBook | null {
       paras: (p.paras as Para[] | null) ?? null,
       workW: p.workW as number | undefined,
       workH: p.workH as number | undefined,
-      corners: (p.corners as Corners | null) ?? null,
+      corners: (p.corners as Frame | Corners | null) ?? null,
       input: file(p.input as string | null),
       clean: file(p.clean as string | null),
     })),

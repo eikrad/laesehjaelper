@@ -33,4 +33,8 @@ export interface Para {
 }
 
 export type Point = [number, number];
+/** Vier Ecken: oben links, oben rechts, unten rechts, unten links */
 export type Corners = [Point, Point, Point, Point];
+/** Seitenrahmen: Ecken plus je ein Punkt auf der Mitte jeder Kante (oben, rechts, unten, links),
+ *  mit denen sich gewölbte Kanten nachzeichnen lassen. */
+export interface Frame { corners: Corners; mids: Corners }

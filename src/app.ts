@@ -1,13 +1,13 @@
 // Læsehjælper – App-Logik (Oberfläche, Texterkennung, Bücherregal).
 import { silben } from "./silben";
 import { cleanOcr, parasFromOcr } from "./layout";
-import { detectPage, warpPage, orderCorners } from "./pagedetect";
+import { detectPage, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
 import type { CV } from "./pagedetect";
 import { DB } from "./db";
 import { flattenBackground, rotateLike } from "./prep";
 import { buildEpub, readEpub } from "./epub";
 import type { DataPage, EpubFont, EpubPage } from "./epub";
-import type { Box, Corners, OcrData, Para, Point } from "./types";
+import type { Box, Corners, Frame, OcrData, Para, Point } from "./types";
 
 declare const Tesseract: {
   createWorker(langs: unknown, oem: number, options: Record<string, unknown>): Promise<TessWorker>;
@@ -38,7 +38,7 @@ interface Page {
   paras?: Para[] | null;
   workW?: number;
   workH?: number;
-  corners?: Corners | null;
+  corners?: Frame | Corners | null;
   /** Anzeige der (zugeschnittenen) Seite: data:- oder blob:-URL */
   img: string | null;
   /** Seite mit übermalter Originalschrift */
@@ -915,12 +915,29 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   }
 
   // Dialog: Ecken zeigen (automatischer Vorschlag oder Bildrand), verschieben lassen, entzerren.
-  type CropResult = { canvas: HTMLCanvasElement; corners: Corners | null };
-  function cropFlow(photo: HTMLCanvasElement, startCorners: Corners | null, counter: string): Promise<CropResult> {
+  type CropResult = { canvas: HTMLCanvasElement; corners: Frame | null };
+  // Dialog: Rahmen zeigen (automatischer Vorschlag oder Bildrand), verschieben lassen, entzerren.
+  // Vier Ecken plus je ein Punkt auf jeder Kante: Mit den Kantenpunkten lassen sich gewölbte
+  // Seiten (z. B. zur Buchmitte hin) nachzeichnen.
+  function cropFlow(photo: HTMLCanvasElement, start: Frame | null, counter: string): Promise<CropResult> {
     return new Promise(async (resolve) => {
       const W = photo.width, H = photo.height;
-      const full: Corners = [[0, 0], [W, 0], [W, H], [0, H]];
-      let corners: Point[] = (startCorners || full).map((p): Point => [p[0], p[1]]);
+      const full = frameFromCorners([[0, 0], [W, 0], [W, H], [0, H]]);
+      const init = start || full;
+      // Punkte in Reihenfolge: 4 Ecken, dann 4 Kantenmitten (oben, rechts, unten, links)
+      let pts: Point[] = [...init.corners, ...init.mids].map((p): Point => [p[0], p[1]]);
+      // Kantenmitten, die noch nicht von Hand bewegt wurden, wandern mit den Ecken mit
+      const midMoved = [false, false, false, false];
+      if (start) start.mids.forEach((m, i) => {
+        const a = start.corners[i], b = start.corners[(i + 1) % 4];
+        midMoved[i] = Math.hypot(m[0] - (a[0] + b[0]) / 2, m[1] - (a[1] + b[1]) / 2) > 2;
+      });
+      const followMids = () => {
+        for (let i = 0; i < 4; i++) if (!midMoved[i]) {
+          const a = pts[i], b = pts[(i + 1) % 4];
+          pts[4 + i] = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+        }
+      };
       const dlg = $("crop"), stage = $("cropStage"), cnv = $<HTMLCanvasElement>("cropCanvas");
       dlg.hidden = false;
       // Höhe auf den sichtbaren Bildschirm begrenzen. In eingebetteten Ansichten, die so hoch wie der
@@ -928,28 +945,38 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
       const visibleH = Math.min(window.innerHeight, window.visualViewport?.height || Infinity, screen.availHeight || Infinity);
       dlg.style.height = visibleH + "px";
       dlg.style.top = (window.innerHeight > visibleH * 1.15 ? window.scrollY : 0) + "px";
-      $("cropMsg").textContent = (counter ? counter + " · " : "") + t("cropLoading");
+      const msg = (k: string) => { $("cropMsg").textContent = (counter ? counter + " · " : "") + t(k); };
+      msg("cropLoading");
       let scale = 1, ox = 0, oy = 0;
-      const handles = corners.map(() => { const h = document.createElement("div"); h.className = "h"; stage.append(h); return h; });
+      const handles = pts.map((_, i) => { const h = document.createElement("div"); h.className = i < 4 ? "h" : "h mid"; stage.append(h); return h; });
       function layout() {
         const sw = stage.clientWidth, sh = stage.clientHeight;
         scale = Math.min(sw / W, sh / H);
         const dw = W * scale, dh = H * scale; ox = (sw - dw) / 2; oy = (sh - dh) / 2;
         cnv.width = Math.round(dw * devicePixelRatio); cnv.height = Math.round(dh * devicePixelRatio);
         Object.assign(cnv.style, { left: ox + "px", top: oy + "px", width: dw + "px", height: dh + "px" });
-        cnv.getContext("2d")!.drawImage(photo, 0, 0, cnv.width, cnv.height);
+        ctx2d(cnv).drawImage(photo, 0, 0, cnv.width, cnv.height);
         draw();
       }
+      const sc = (p: Point) => `${(ox + p[0] * scale).toFixed(1)},${(oy + p[1] * scale).toFixed(1)}`;
       function draw() {
-        corners.forEach(([x, y], i) => { handles[i].style.left = ox + x * scale + "px"; handles[i].style.top = oy + y * scale + "px"; });
-        $<SVGPolygonElement>("cropPoly").setAttribute("points", corners.map(([x, y]) => `${ox + x * scale},${oy + y * scale}`).join(" "));
+        pts.forEach(([x, y], i) => { handles[i].style.left = ox + x * scale + "px"; handles[i].style.top = oy + y * scale + "px"; });
+        // Kanten als Kurven durch die Mittelpunkte (gleiche Kurve wie beim Entzerren)
+        let d = `M${sc(pts[0])}`;
+        for (let i = 0; i < 4; i++) {
+          const a = pts[i], b = pts[(i + 1) % 4], m = pts[4 + i];
+          const c: Point = [2 * m[0] - (a[0] + b[0]) / 2, 2 * m[1] - (a[1] + b[1]) / 2];
+          d += ` Q${sc(c)} ${sc(b)}`;
+        }
+        $("cropPoly").setAttribute("d", d + " Z");
       }
       handles.forEach((h, i) => {
         h.onpointerdown = (e) => {
           h.setPointerCapture(e.pointerId);
           const r = stage.getBoundingClientRect();
           h.onpointermove = (ev: PointerEvent) => {
-            corners[i] = [Math.min(W, Math.max(0, (ev.clientX - r.left - ox) / scale)), Math.min(H, Math.max(0, (ev.clientY - r.top - oy) / scale))];
+            pts[i] = [Math.min(W, Math.max(0, (ev.clientX - r.left - ox) / scale)), Math.min(H, Math.max(0, (ev.clientY - r.top - oy) / scale))];
+            if (i >= 4) midMoved[i - 4] = true; else followMids();
             draw();
           };
           h.onpointerup = () => { h.onpointermove = null; };
@@ -961,23 +988,24 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
       let cv: CV = null;
       try {
         cv = await getCv();
-        if (!startCorners) {
+        if (!start) {
           const found = Lib.detectPage(cv, photo);
-          if (found) { corners = found; draw(); }
-          $("cropMsg").textContent = (counter ? counter + " · " : "") + t(found ? "cropFound" : "cropNone");
-        } else $("cropMsg").textContent = (counter ? counter + " · " : "") + t("cropNone");
+          if (found) { pts = [...found, ...frameFromCorners(found).mids]; draw(); }
+          msg(found ? "cropFound" : "cropNone");
+        } else msg("cropNone");
       } catch (e) {
         console.error(e);
-        $("cropMsg").textContent = (counter ? counter + " · " : "") + t("cropNone");
+        msg("cropNone");
       }
-      const finish = (useCorners: Corners | null) => {
+      const finish = (frame: Frame | null) => {
         ro.disconnect(); handles.forEach(h => h.remove()); dlg.hidden = true;
         $<HTMLButtonElement>("cropOk").onclick = $<HTMLButtonElement>("cropWhole").onclick = null;
-        const isFull = !useCorners || useCorners.every((p, i) => Math.hypot(p[0] - full[i][0], p[1] - full[i][1]) < 2);
+        const all = (f: Frame) => [...f.corners, ...f.mids];
+        const isFull = !frame || all(frame).every((p, i) => Math.hypot(p[0] - all(full)[i][0], p[1] - all(full)[i][1]) < 2);
         if (isFull || !cv) return resolve({ canvas: photo, corners: null });
-        resolve({ canvas: Lib.warpPage(cv, photo, useCorners), corners: useCorners });
+        resolve({ canvas: Lib.warpPage(cv, photo, frame!), corners: frame });
       };
-      $<HTMLButtonElement>("cropOk").onclick = () => finish(Lib.orderCorners(corners));
+      $<HTMLButtonElement>("cropOk").onclick = () => finish({ corners: pts.slice(0, 4) as Corners, mids: pts.slice(4, 8) as Corners });
       $<HTMLButtonElement>("cropWhole").onclick = () => finish(null);
     });
   }
@@ -986,7 +1014,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     const pg = pages[cur];
     if (!pg || !(pg.photo || pg.photoBlob)) return;
     if (!pg.photo) pg.photo = await blobToCanvas(pg.photoBlob!);
-    const { canvas, corners } = await cropFlow(pg.photo, pg.corners || null, "");
+    const { canvas, corners } = await cropFlow(pg.photo, toFrame(pg.corners), "");
     Object.assign(pg, { canvas, corners, img: canvas.toDataURL("image/jpeg", 0.88), status: "wait", progress: 0, paras: null, clean: null, inputBlob: null, cleanBlob: null });
     if (pg === pages[0] && book) book.cover = null;
     savePage(pg); saveBook();

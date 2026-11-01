@@ -6,7 +6,7 @@
 // ungefähr rechten Winkeln, geben wir null zurück – dann stellt man die Ecken von Hand ein.
 // Lieber kein Vorschlag als ein falscher.
 
-import type { Corners, Point } from "./types";
+import type { Corners, Frame, Point } from "./types";
 
 // OpenCV.js hat keine brauchbaren Typen; wir nutzen es untypisiert.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -98,21 +98,100 @@ export function detectPage(cv: CV, canvas: HTMLCanvasElement): Corners | null {
   }
 }
 
-// Die Seite aus dem Foto ausschneiden und auf ein gerades Rechteck entzerren.
-export function warpPage(cv: CV, canvas: HTMLCanvasElement, corners: Corners): HTMLCanvasElement {
-  const [tl, tr, br, bl] = corners;
-  const width = Math.round(Math.max(Math.hypot(tr[0] - tl[0], tr[1] - tl[1]), Math.hypot(br[0] - bl[0], br[1] - bl[1])));
-  const height = Math.round(Math.max(Math.hypot(bl[0] - tl[0], bl[1] - tl[1]), Math.hypot(br[0] - tr[0], br[1] - tr[1])));
-  const src = cv.imread(canvas), dst = new cv.Mat();
+const mid = (a: Point, b: Point): Point => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+
+/** Rahmen mit geraden Kanten aus vier Ecken. */
+export function frameFromCorners(c: Corners): Frame {
+  return { corners: c, mids: [mid(c[0], c[1]), mid(c[1], c[2]), mid(c[2], c[3]), mid(c[3], c[0])] };
+}
+
+/** Ältere Daten hatten nur vier Ecken. */
+export function toFrame(x: Frame | Corners | null | undefined): Frame | null {
+  if (!x) return null;
+  return Array.isArray(x) ? frameFromCorners(x) : x;
+}
+
+/** Länge einer Kante über ihren Mittelpunkt (gebogene Kanten sind länger als die Sehne). */
+const edgeLen = (a: Point, m: Point, b: Point) => Math.hypot(m[0] - a[0], m[1] - a[1]) + Math.hypot(b[0] - m[0], b[1] - m[1]);
+
+function applyH(H: number[], [x, y]: Point): Point {
+  const w = H[6] * x + H[7] * y + H[8];
+  return [(H[0] * x + H[1] * y + H[2]) / w, (H[3] * x + H[4] * y + H[5]) / w];
+}
+
+/**
+ * Seite ausschneiden und gerade ziehen.
+ * 1. Perspektive entzerren (die vier Ecken werden zum Rechteck).
+ * 2. Sind Kanten gewölbt, die Fläche zusätzlich glattziehen: Jede Kante wird als Kurve durch ihren
+ *    Mittelpunkt beschrieben, dazwischen wird interpoliert (Coons-Fläche). So werden Textzeilen auf
+ *    gewölbten Seiten wieder gerade.
+ */
+export function warpPage(cv: CV, canvas: HTMLCanvasElement, frame: Frame): HTMLCanvasElement {
+  const [tl, tr, br, bl] = frame.corners;
+  const [mt, mr, mb, ml] = frame.mids;
+  const W = Math.round(Math.max(edgeLen(tl, mt, tr), edgeLen(bl, mb, br)));
+  const H = Math.round(Math.max(edgeLen(tl, ml, bl), edgeLen(tr, mr, br)));
+
+  // Homographie Ecken → Rechteck, um zu sehen, wo die Kantenmitten im entzerrten Bild landen
   const from = cv.matFromArray(4, 1, cv.CV_32FC2, [tl, tr, br, bl].flat());
-  const to = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, width, 0, width, height, 0, height]);
+  const to0 = cv.matFromArray(4, 1, cv.CV_32FC2, [0, 0, W, 0, W, H, 0, H]);
+  const M0 = cv.getPerspectiveTransform(from, to0);
+  const h0: number[] = Array.from(M0.data64F as Float64Array);
+  [to0, M0].forEach((m) => m.delete());
+  const mids = [mt, mr, mb, ml].map((p) => applyH(h0, p));
+  const straight: Point[] = [[W / 2, 0], [W, H / 2], [W / 2, H], [0, H / 2]];
+  const curved = mids.some((p, i) => Math.hypot(p[0] - straight[i][0], p[1] - straight[i][1]) > 2);
+
+  // Rand, damit nach außen gewölbte Teile beim Entzerren nicht abgeschnitten werden
+  const mx = curved ? Math.ceil(Math.max(0, ...mids.map((p) => Math.max(-p[0], p[0] - W)))) + 2 : 0;
+  const my = curved ? Math.ceil(Math.max(0, ...mids.map((p) => Math.max(-p[1], p[1] - H)))) + 2 : 0;
+  const src = cv.imread(canvas), rect = new cv.Mat();
+  const to = cv.matFromArray(4, 1, cv.CV_32FC2, [mx, my, W + mx, my, W + mx, H + my, mx, H + my]);
   const M = cv.getPerspectiveTransform(from, to);
+  const keep = [src, rect, from, to, M];
   try {
-    cv.warpPerspective(src, dst, M, new cv.Size(width, height), cv.INTER_LINEAR, cv.BORDER_REPLICATE);
+    cv.warpPerspective(src, rect, M, new cv.Size(W + 2 * mx, H + 2 * my), cv.INTER_LINEAR, cv.BORDER_REPLICATE);
+    let result = rect;
+    if (curved) {
+      // Quadratische Kurve durch a, m, b (Kontrollpunkt so gewählt, dass sie m bei t = 0,5 trifft)
+      const curve = (a: Point, m: Point, b: Point) => {
+        const c: Point = [2 * m[0] - (a[0] + b[0]) / 2, 2 * m[1] - (a[1] + b[1]) / 2];
+        return (t: number): Point => {
+          const s = 1 - t;
+          return [s * s * a[0] + 2 * s * t * c[0] + t * t * b[0], s * s * a[1] + 2 * s * t * c[1] + t * t * b[1]];
+        };
+      };
+      const A: Point = [mx, my], B: Point = [W + mx, my], C: Point = [W + mx, H + my], D: Point = [mx, H + my];
+      const off = (p: Point): Point => [p[0] + mx, p[1] + my];
+      const top = curve(A, off(mids[0]), B), bottom = curve(D, off(mids[2]), C);
+      const left = curve(A, off(mids[3]), D), right = curve(B, off(mids[1]), C);
+      const mapX = new cv.Mat(H, W, cv.CV_32FC1), mapY = new cv.Mat(H, W, cv.CV_32FC1);
+      keep.push(mapX, mapY);
+      const fx = mapX.data32F as Float32Array, fy = mapY.data32F as Float32Array;
+      const topPts: Point[] = [], botPts: Point[] = [];
+      for (let x = 0; x < W; x++) { const u = x / Math.max(1, W - 1); topPts.push(top(u)); botPts.push(bottom(u)); }
+      for (let y = 0; y < H; y++) {
+        const v = y / Math.max(1, H - 1);
+        const L = left(v), R = right(v);
+        for (let x = 0; x < W; x++) {
+          const u = x / Math.max(1, W - 1);
+          const T = topPts[x], Bt = botPts[x];
+          const i = y * W + x;
+          // Coons-Fläche: Kanten interpolieren, Ecken einmal abziehen
+          fx[i] = (1 - v) * T[0] + v * Bt[0] + (1 - u) * L[0] + u * R[0]
+            - ((1 - u) * (1 - v) * A[0] + u * (1 - v) * B[0] + (1 - u) * v * D[0] + u * v * C[0]);
+          fy[i] = (1 - v) * T[1] + v * Bt[1] + (1 - u) * L[1] + u * R[1]
+            - ((1 - u) * (1 - v) * A[1] + u * (1 - v) * B[1] + (1 - u) * v * D[1] + u * v * C[1]);
+        }
+      }
+      result = new cv.Mat();
+      keep.push(result);
+      cv.remap(rect, result, mapX, mapY, cv.INTER_LINEAR, cv.BORDER_REPLICATE);
+    }
     const out = document.createElement("canvas");
-    cv.imshow(out, dst);
+    cv.imshow(out, result);
     return out;
   } finally {
-    [src, dst, from, to, M].forEach((m) => m.delete());
+    keep.forEach((m) => m.delete());
   }
 }
