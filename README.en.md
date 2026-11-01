@@ -2,7 +2,7 @@
 
 *Danish for "reading helper". · [Dansk](README.md)*
 
-Make photographed children's book pages easier to read. The text is recognized with OCR and replaced right on the page: the pictures stay where they are, but the text is set in a highly legible font with colored syllables or syllable arcs. Alternatively, the text can be shown on its own, large and with generous spacing. Built for children learning to read and for readers with dyslexia. Supports Danish and German books.
+Make photographed children's book pages easier to read. The text is recognized with OCR and replaced right on the page: the pictures stay where they are, but the text is set in a highly legible font with colored syllables or syllable arcs. Alternatively, the text can be shown on its own, large and with generous spacing. Built for children learning to read and for readers with dyslexia. Supports Danish, German and English books.
 
 Everything runs locally in the browser. No photos are uploaded anywhere.
 
@@ -11,8 +11,8 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 ## Features
 
 - Two views: the book page with the new text in its original place, or text only
-- Interface in Danish or German
-- Text recognition (Danish, German) with [Tesseract.js](https://github.com/naptha/tesseract.js)
+- Interface in Danish, German or English
+- Text recognition (Danish, German, English) with [Tesseract.js](https://github.com/naptha/tesseract.js)
 - Syllable splitting based on the Danish and German TeX hyphenation patterns ([hyphen](https://github.com/ytiurin/hyphen))
 - Syllables shown in alternating colors (blue/red), as arcs, or both
 - Fonts: Andika, OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
@@ -22,6 +22,9 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Tilted photos are straightened, and “text” that OCR finds inside illustrations is filtered out
 - Correct the recognized text; set your own syllable breaks with `·` (e.g. `hun·den`)
 - Focus mode: just the text, full screen
+- Show the original text with one tap to spot recognition errors
+- Bookshelf: books are stored on the device, with title, page order and reading position
+- Cropping: the page is found in the photo automatically and straightened; corners can be adjusted
 
 ## Development
 
@@ -35,11 +38,18 @@ Every push to `main` builds the app and deploys it to GitHub Pages automatically
 
 ## Structure
 
-- `src/index.html`: UI and app logic
-- `src/silben.js`: syllable splitting
-- `src/layout.js`: turns raw OCR output into clean text lines and paragraphs with positions (filters illustration noise)
-- `src/lib.js`: bundle entry (esbuild)
-- `build.mjs`: builds `dist/`, inlines the syllable code and the OpenDyslexic font, and copies the Tesseract files and language data
+The project is written in TypeScript (strict).
+
+- `src/index.html`: page HTML and CSS
+- `src/app.ts`: app logic (UI, text recognition, bookshelf)
+- `src/layout.ts`: turns raw OCR output into clean text lines and paragraphs with positions (filters illustration noise)
+- `src/pagedetect.ts`: finds the page in the photo and straightens it (OpenCV)
+- `src/silben.ts`: syllable splitting (Danish, German, English)
+- `src/db.ts`: stores books on the device (IndexedDB)
+- `src/types.ts`: shared types
+- `build.ts`: builds `dist/` with esbuild and copies Tesseract, OpenCV and language files
+
+`npm run typecheck` checks the types.
 
 ## Known limitations
 

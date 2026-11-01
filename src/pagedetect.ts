@@ -6,9 +6,15 @@
 // ungefähr rechten Winkeln, geben wir null zurück – dann stellt man die Ecken von Hand ein.
 // Lieber kein Vorschlag als ein falscher.
 
+import type { Corners, Point } from "./types";
+
+// OpenCV.js hat keine brauchbaren Typen; wir nutzen es untypisiert.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type CV = any;
+
 const SIZE = 500;
 
-function anglesOk(q) {
+function anglesOk(q: Point[]): boolean {
   for (let i = 0; i < 4; i++) {
     const p = q[i], a = q[(i + 3) % 4], b = q[(i + 1) % 4];
     const ax = a[0] - p[0], ay = a[1] - p[1], bx = b[0] - p[0], by = b[1] - p[1];
@@ -18,7 +24,7 @@ function anglesOk(q) {
   return true;
 }
 
-function inside(q, x, y) {
+function inside(q: Point[], x: number, y: number): boolean {
   let s = 0;
   for (let i = 0; i < 4; i++) {
     const [x0, y0] = q[i], [x1, y1] = q[(i + 1) % 4];
@@ -29,14 +35,14 @@ function inside(q, x, y) {
 }
 
 // Ecken ordnen: oben links, oben rechts, unten rechts, unten links
-export function orderCorners(q) {
+export function orderCorners(q: Point[]): Corners {
   const bySum = [...q].sort((a, b) => a[0] + a[1] - (b[0] + b[1]));
   const byDiff = [...q].sort((a, b) => a[0] - a[1] - (b[0] - b[1]));
   return [bySum[0], byDiff[3], bySum[3], byDiff[0]];
 }
 
 // canvas: das Foto. Ergebnis: vier Ecken in Bildkoordinaten oder null.
-export function detectPage(cv, canvas) {
+export function detectPage(cv: CV, canvas: HTMLCanvasElement): Corners | null {
   const k = SIZE / Math.max(canvas.width, canvas.height);
   const src = cv.imread(canvas);
   const sm = new cv.Mat(), hsv = new cv.Mat(), gray = new cv.Mat();
@@ -54,7 +60,7 @@ export function detectPage(cv, canvas) {
     keep.push(channels[1], channels[2]);
     const kernel = cv.Mat.ones(9, 9, cv.CV_8U), small = cv.Mat.ones(3, 3, cv.CV_8U);
     keep.push(kernel, small);
-    let best = null;
+    let best: { score: number; q: Point[] } | null = null;
     for (const c of channels) {
       const b = new cv.Mat(); keep.push(b);
       cv.GaussianBlur(c, b, new cv.Size(5, 5), 0);
@@ -72,7 +78,7 @@ export function detectPage(cv, canvas) {
             cv.approxPolyDP(cnt, ap, 0.02 * peri, true);
             if (ap.rows === 4 && cv.isContourConvex(ap)) {
               const area = cv.contourArea(ap);
-              const q = [0, 1, 2, 3].map((j) => [ap.data32S[j * 2], ap.data32S[j * 2 + 1]]);
+              const q: Point[] = [0, 1, 2, 3].map((j): Point => [ap.data32S[j * 2], ap.data32S[j * 2 + 1]]);
               if (area > 0.15 * w * h && area < 0.98 * w * h && anglesOk(q)) {
                 const centre = inside(q, w / 2, h / 2);
                 const score = area * (centre ? 2 : 1);
@@ -86,14 +92,14 @@ export function detectPage(cv, canvas) {
         e.delete(); cs.delete(); hier.delete();
       }
     }
-    return best ? orderCorners(best.q.map(([x, y]) => [x / k, y / k])) : null;
+    return best ? orderCorners(best.q.map(([x, y]): Point => [x / k, y / k])) : null;
   } finally {
     keep.forEach((m) => m.delete());
   }
 }
 
 // Die Seite aus dem Foto ausschneiden und auf ein gerades Rechteck entzerren.
-export function warpPage(cv, canvas, corners) {
+export function warpPage(cv: CV, canvas: HTMLCanvasElement, corners: Corners): HTMLCanvasElement {
   const [tl, tr, br, bl] = corners;
   const width = Math.round(Math.max(Math.hypot(tr[0] - tl[0], tr[1] - tl[1]), Math.hypot(br[0] - bl[0], br[1] - bl[1])));
   const height = Math.round(Math.max(Math.hypot(bl[0] - tl[0], bl[1] - tl[1]), Math.hypot(br[0] - tr[0], br[1] - tr[1])));

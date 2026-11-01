@@ -1,3 +1,4 @@
+/// <reference types="node" />
 // Baut die App nach dist/: eine index.html plus die Dateien für die Texterkennung.
 import { build } from "esbuild";
 import fs from "node:fs";
@@ -8,20 +9,20 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(`${out}/core`, { recursive: true });
 fs.mkdirSync(`${out}/lang`, { recursive: true });
 
-const silben = await build({
-  entryPoints: ["src/lib.js"], bundle: true, minify: true, format: "iife", write: false,
+const app = await build({
+  entryPoints: ["src/app.ts"], bundle: true, minify: true, format: "iife", write: false,
 });
-const b64 = (p) => fs.readFileSync(p).toString("base64");
+const b64 = (p: string): string => fs.readFileSync(p).toString("base64");
 const od = `${nm}/@fontsource/opendyslexic/files/opendyslexic-latin`;
 
 let html = fs.readFileSync("src/index.html", "utf8");
 html = html
-  .replace("%%SILBEN_JS%%", () => silben.outputFiles[0].text)
+  .replace("%%APP_JS%%", () => app.outputFiles[0].text)
   .replace("%%OD_400%%", () => b64(`${od}-400-normal.woff2`))
   .replace("%%OD_700%%", () => b64(`${od}-700-normal.woff2`));
 fs.writeFileSync(`${out}/index.html`, html);
 
-const copy = (from, to) => fs.copyFileSync(from, `${out}/${to}`);
+const copy = (from: string, to: string): void => fs.copyFileSync(from, `${out}/${to}`);
 copy(`${nm}/tesseract.js/dist/tesseract.min.js`, "tesseract.min.js");
 copy(`${nm}/@techstark/opencv-js/dist/opencv.js`, "opencv.js");
 // Fehler in tesseract.js 5 umgehen: bei mitgelieferten Sprachdaten wird beim Initialisieren
@@ -33,7 +34,7 @@ fs.writeFileSync(`${out}/worker.min.js`, worker.replace(bug, 'return"string"==ty
 for (const f of ["tesseract-core-lstm.wasm.js", "tesseract-core-simd-lstm.wasm.js"])
   copy(`${nm}/tesseract.js-core/${f}`, `core/${f}`);
 // Sprachdaten als JS-Dateien (Base64), weil der Artifact-Host nur bestimmte Dateitypen ausliefert.
-for (const l of ["dan", "deu"])
+for (const l of ["dan", "deu", "eng"])
   fs.writeFileSync(`${out}/lang/${l}.js`, `window.TRAINEDDATA=window.TRAINEDDATA||{};window.TRAINEDDATA.${l}="${b64(`${nm}/@tesseract.js-data/${l}/4.0.0_best_int/${l}.traineddata.gz`)}";`);
 
 console.log("Fertig: dist/");

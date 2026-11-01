@@ -4,33 +4,39 @@
 // und hängt diese „Wörter“ an echte Zeilen an. Echte Wörter erkennt es aber fast immer mit hoher
 // Sicherheit (80–97 %), Bildrauschen mit niedriger. Darauf baut der Filter auf.
 
+import type { Box, OcrData, OcrLine, OcrWord, Para } from "./types";
+
 const LETTER = /\p{L}/u;
 const ONLY_SIGNS = /^[\d.,:;!?»«"'„“”()\-–—]+$/u;
 
-const letters = (t) => (t.match(/\p{L}/gu) || []).length;
+const letters = (t: string): number => (t.match(/\p{L}/gu) || []).length;
 // Sieht wie ein Wort aus (Buchstaben, Silbenstriche, Satzzeichen am Rand)?
 const WORDLIKE = /^[»«"„“(]*\p{L}[\p{L}·.\-‐]*[.,:;!?»«"“”)]*$/u;
 // Innerhalb einer sicheren Zeile reicht es, wie ein Wort auszusehen. Zahlen/Satzzeichen (z. B. „1.“) ab 60 %.
-const usable = (w) => w.text && (WORDLIKE.test(w.text) || (ONLY_SIGNS.test(w.text) && w.confidence >= 60));
+const usable = (w: OcrWord): boolean => !!w.text && (WORDLIKE.test(w.text) || (ONLY_SIGNS.test(w.text) && w.confidence >= 60));
 // Sicheres Wort: daran erkennen wir, dass ein Zeilenstück echter Text ist.
-const strong = (w) => letters(w.text) >= 2 && w.confidence >= 90 && WORDLIKE.test(w.text);
+const strong = (w: OcrWord): boolean => letters(w.text) >= 2 && w.confidence >= 90 && WORDLIKE.test(w.text);
 // Am Rand eines Zeilenstücks muss ein Wort selbst einigermaßen sicher sein (rechts etwas weniger streng).
-const edgeOk = (w, min) => w.confidence >= min && (letters(w.text) >= 2 || (ONLY_SIGNS.test(w.text) && w.confidence >= 85) || /^[IiÅåØøÆæ]$/.test(w.text));
+const edgeOk = (w: OcrWord, min: number): boolean => w.confidence >= min && (letters(w.text) >= 2 || (ONLY_SIGNS.test(w.text) && w.confidence >= 85) || /^[IiÅåØøÆæ]$/.test(w.text));
 
-const union = (bs) => ({
+const union = (bs: Box[]): Box => ({
   x0: Math.min(...bs.map((b) => b.x0)), y0: Math.min(...bs.map((b) => b.y0)),
   x1: Math.max(...bs.map((b) => b.x1)), y1: Math.max(...bs.map((b) => b.y1)),
 });
 
+/** Ein Zeilenstück (Teil einer OCR-Zeile), vor und nach dem Fertigstellen. */
+interface RawUnit { ws: OcrWord[]; pre: OcrWord[]; h: number; extra: OcrWord[] }
+interface Unit extends RawUnit { bbox: Box; words: Box[]; text: string }
+
 // Eine OCR-Zeile in Stücke teilen, wo zwischen Wörtern eine große Lücke ist (z. B. Text links, Bild rechts),
 // und nur Stücke behalten, die nach echtem Text aussehen.
-function lineUnits(line) {
+function lineUnits(line: OcrLine): RawUnit[] {
   const words = (line.words || []).filter((w) => w.text && w.text.trim());
   const hs = words.filter(strong).map((w) => w.bbox.y1 - w.bbox.y0).sort((a, b) => a - b);
   const h = hs[hs.length >> 1] || line.bbox.y1 - line.bbox.y0;
   // 1. an großen Lücken teilen (Lesebücher haben breite Wortabstände, Bilder liegen weiter weg)
-  const parts = [];
-  let cur = [];
+  const parts: OcrWord[][] = [];
+  let cur: OcrWord[] = [];
   for (const w of words) {
     const prev = cur[cur.length - 1];
     if (prev && w.bbox.x0 - prev.bbox.x1 > 2.6 * h) { parts.push(cur); cur = []; }
@@ -40,22 +46,22 @@ function lineUnits(line) {
   // 2. nur Stücke mit sicherem Wort; Unbrauchbares raus; unsichere Wörter am Rand abschneiden.
   //    Links abgeschnittene, wortähnliche Wörter merken wir uns: Stehen sie genau am linken Rand
   //    des Absatzes, gehören sie dazu (Wörter neben Bildern werden oft schlecht bewertet).
-  const units = [];
+  const units: RawUnit[] = [];
   for (const part of parts) {
     if (!part.some(strong)) continue;
     let ws = part.filter(usable);
-    const pre = [];
-    while (ws.length && !edgeOk(ws[0], 75)) pre.push(ws.shift());
+    const pre: OcrWord[] = [];
+    while (ws.length && !edgeOk(ws[0], 75)) pre.push(ws.shift()!);
     // rechts: unsicheres Wort darf bleiben, wenn es wortähnlich ist und dicht am Vorgänger steht
     const closeRight = () => {
       const a = ws[ws.length - 2], b = ws[ws.length - 1];
-      return a && WORDLIKE.test(b.text) && b.confidence >= 40 && b.bbox.x0 - a.bbox.x1 < 1.2 * h;
+      return !!a && WORDLIKE.test(b.text) && b.confidence >= 40 && b.bbox.x0 - a.bbox.x1 < 1.2 * h;
     };
     while (ws.length && !edgeOk(ws[ws.length - 1], 55) && !closeRight()) ws.pop();
     if (!ws.length) continue;
     // Reste direkt daneben (z. B. eine unsicher erkannte Wortendung) nicht anzeigen, aber übermalen
     const i0 = part.indexOf(ws[0]), i1 = part.indexOf(ws[ws.length - 1]);
-    const extra = [];
+    const extra: OcrWord[] = [];
     for (let i = i1 + 1; i < part.length && part[i].bbox.x0 - part[i - 1].bbox.x1 < 1.0 * h; i++) extra.push(part[i]);
     for (let i = i0 - 1; i >= 0 && part[i + 1].bbox.x0 - part[i].bbox.x1 < 1.0 * h && !pre.includes(part[i]); i--) extra.push(part[i]);
     units.push({ ws, pre: pre.filter((w) => WORDLIKE.test(w.text)), h, extra });
@@ -63,10 +69,10 @@ function lineUnits(line) {
   return units;
 }
 
-const finishUnit = (u) => ({ ...u, bbox: union(u.ws.map((w) => w.bbox)), words: [...u.ws, ...(u.extra || [])].map((w) => w.bbox), text: u.ws.map((w) => w.text).join(" ") });
+const finishUnit = (u: RawUnit): Unit => ({ ...u, bbox: union(u.ws.map((w) => w.bbox)), words: [...u.ws, ...(u.extra || [])].map((w) => w.bbox), text: u.ws.map((w) => w.text).join(" ") });
 
 // Links abgeschnittene Wörter zurückholen, wenn sie am gemeinsamen linken Rand der Gruppe beginnen.
-function rescueLeft(group) {
+function rescueLeft(group: Unit[]): Unit[] {
   const xs = group.map((u) => u.bbox.x0).sort((a, b) => a - b);
   const margin = xs[xs.length >> 1];
   return group.map((u) => {
@@ -79,11 +85,11 @@ function rescueLeft(group) {
 }
 
 // Zeilen zu Textgruppen (Absätzen) zusammenfassen: untereinander, ähnlich groß, überlappend, ohne große Lücke.
-function groupUnits(units) {
+function groupUnits(units: Unit[]): Unit[][] {
   units.sort((a, b) => a.bbox.y0 - b.bbox.y0 || a.bbox.x0 - b.bbox.x0);
-  const groups = [];
+  const groups: Unit[][] = [];
   for (const u of units) {
-    let target = null;
+    let target: Unit[] | null = null;
     for (let i = groups.length - 1; i >= 0 && !target; i--) {
       const last = groups[i][groups[i].length - 1];
       const gap = u.bbox.y0 - last.bbox.y1;
@@ -102,7 +108,7 @@ function groupUnits(units) {
 // „mor·gen·en“). Dann werden Bindestriche/Mittelpunkte zwischen Buchstaben zu unserem Silbenzeichen „·“.
 // Ohne die Option bleiben Bindestriche normale Bindestriche („Lille-by“), und ein Trennstrich am
 // Zeilenende wird wie üblich entfernt („Wör-\nter“ → „Wörter“).
-export function cleanOcr(raw, { bookSyllables = false } = {}) {
+export function cleanOcr(raw: string, { bookSyllables = false }: { bookSyllables?: boolean } = {}): string {
   let t = raw.replace(/\r/g, "").replace(/[|]/g, "I");
   if (bookSyllables) {
     t = t
@@ -123,10 +129,10 @@ export function cleanOcr(raw, { bookSyllables = false } = {}) {
 
 // Bei schräg fotografierten Seiten liefert Tesseract manchmal dieselbe Zeile doppelt (als zwei
 // überlappende Zeilen). Dann behalten wir die mit mehr sicheren Wörtern.
-function dedupe(units) {
-  const area = (b) => Math.max(0, b.x1 - b.x0) * Math.max(0, b.y1 - b.y0);
-  const score = (u) => u.ws.filter(strong).length;
-  const kept = [];
+function dedupe(units: Unit[]): Unit[] {
+  const area = (b: Box): number => Math.max(0, b.x1 - b.x0) * Math.max(0, b.y1 - b.y0);
+  const score = (u: Unit): number => u.ws.filter(strong).length;
+  const kept: Unit[] = [];
   for (const u of [...units].sort((a, b) => score(b) - score(a))) {
     const clash = kept.some((k) => {
       const i = { x0: Math.max(u.bbox.x0, k.bbox.x0), y0: Math.max(u.bbox.y0, k.bbox.y0), x1: Math.min(u.bbox.x1, k.bbox.x1), y1: Math.min(u.bbox.y1, k.bbox.y1) };
@@ -139,8 +145,8 @@ function dedupe(units) {
 
 // Ergebnis: Textgruppen mit Position, Zeilen- und Wortflächen (zum Übermalen) und Text.
 // Den Text (g.text) setzt der Aufrufer mit cleanOcr(g.raw, Optionen), damit Einstellungen ohne neue Erkennung wirken.
-export function parasFromOcr(data) {
-  const units = [];
+export function parasFromOcr(data: OcrData): Para[] {
+  const units: Unit[] = [];
   for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || []) units.push(...lineUnits(l).map(finishUnit));
   return groupUnits(dedupe(units)).map(rescueLeft).map((ls) => {
     const hs = ls.map((l) => l.h).sort((a, b) => a - b);

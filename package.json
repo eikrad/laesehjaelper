@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "Børnebogssider lettere at læse: OCR, læsevenlig skrift og farvede stavelser",
   "scripts": {
-    "build": "node build.mjs"
+    "build": "node build.ts",
+    "typecheck": "tsc"
   },
   "license": "MIT",
   "dependencies": {
@@ -11,11 +12,16 @@
     "@techstark/opencv-js": "^5.0.0-release.1",
     "@tesseract.js-data/dan": "^1.0.0",
     "@tesseract.js-data/deu": "^1.0.0",
+    "@tesseract.js-data/eng": "^1.0.0",
     "esbuild": "^0.28.2",
     "hyphen": "^1.14.1",
     "tesseract.js": "^5.1.1",
     "tesseract.js-core": "^5.1.1"
   },
   "private": true,
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^5.9.3"
+  }
 }

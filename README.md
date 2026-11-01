@@ -2,7 +2,7 @@
 
 *[English](README.en.md)*
 
-Gør fotograferede sider fra børnebøger lettere at læse. Teksten bliver genkendt med OCR og erstattet direkte på siden, så billederne bliver, hvor de er, men teksten står i en letlæselig skrift med farvede stavelser eller stavelsesbuer. Alternativt kan teksten vises alene, stor og med god luft. Lavet til børn, der er ved at lære at læse, og til læsere med ordblindhed. Understøtter danske og tyske bøger.
+Gør fotograferede sider fra børnebøger lettere at læse. Teksten bliver genkendt med OCR og erstattet direkte på siden, så billederne bliver, hvor de er, men teksten står i en letlæselig skrift med farvede stavelser eller stavelsesbuer. Alternativt kan teksten vises alene, stor og med god luft. Lavet til børn, der er ved at lære at læse, og til læsere med ordblindhed. Understøtter danske, tyske og engelske bøger.
 
 Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 
@@ -11,8 +11,8 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 ## Funktioner
 
 - To visninger: bogens side med ny skrift på den oprindelige plads, eller kun teksten
-- Brugerflade på dansk eller tysk
-- Tekstgenkendelse (dansk, tysk) med [Tesseract.js](https://github.com/naptha/tesseract.js)
+- Brugerflade på dansk, tysk eller engelsk
+- Tekstgenkendelse (dansk, tysk, engelsk) med [Tesseract.js](https://github.com/naptha/tesseract.js)
 - Stavelsesdeling baseret på de danske og tyske TeX-orddelingsmønstre ([hyphen](https://github.com/ytiurin/hyphen))
 - Stavelser i skiftende farver (blå/rød), som buer eller begge dele
 - Skrifttyper: Andika, OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
@@ -22,6 +22,9 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Skæve fotos bliver rettet op, og „tekst“, som tekstgenkendelsen finder i tegningerne, bliver sorteret fra
 - Ret den genkendte tekst; sæt selv stavelsesgrænser med `·` (f.eks. `hun·den`)
 - Læsetilstand: kun teksten, i fuld skærm
+- Vis den oprindelige tekst med ét tryk for at finde fejl i genkendelsen
+- Bogreol: bøger gemmes på enheden, med titel, rækkefølge og læsestatus
+- Beskæring: siden findes automatisk på fotoet og rettes op; hjørnerne kan justeres
 
 ## Udvikling
 
@@ -35,11 +38,18 @@ Ved hvert push til `main` bliver appen automatisk bygget og udgivet på GitHub P
 
 ## Opbygning
 
-- `src/index.html`: brugerflade og app-logik
-- `src/silben.js`: stavelsesdeling
-- `src/layout.js`: gør det rå OCR-resultat til rene tekstlinjer og afsnit med position (sorterer støj fra tegninger fra)
-- `src/lib.js`: samlet bundt (esbuild)
-- `build.mjs`: bygger `dist/`, indlejrer stavelseskoden og skrifttypen OpenDyslexic og kopierer Tesseract-filer og sprogdata
+Projektet er skrevet i TypeScript (strict).
+
+- `src/index.html`: sidens HTML og CSS
+- `src/app.ts`: app-logik (brugerflade, tekstgenkendelse, bogreol)
+- `src/layout.ts`: gør det rå OCR-resultat til rene tekstlinjer og afsnit med position (sorterer støj fra tegninger fra)
+- `src/pagedetect.ts`: finder siden på fotoet og retter den op (OpenCV)
+- `src/silben.ts`: stavelsesdeling (dansk, tysk, engelsk)
+- `src/db.ts`: lagring af bøger på enheden (IndexedDB)
+- `src/types.ts`: fælles typer
+- `build.ts`: bygger `dist/` med esbuild og kopierer Tesseract-, OpenCV- og sprogfiler
+
+`npm run typecheck` tjekker typerne.
 
 ## Kendte begrænsninger
 
