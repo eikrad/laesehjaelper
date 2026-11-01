@@ -68,12 +68,9 @@ The project is written in TypeScript (strict).
 - The new text can only be as large as the page has room for. For really large text, use the text-only view.
 - Curved pages currently have to be straightened by hand (see [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
 
-## Ideas
+## Roadmap
 
-- Detect page curvature automatically ([#1](https://github.com/eikrad/laesehjaelper/issues/1))
-- Better removal of text on illustrations (inpainting)
-- Export as PDF
-- Reading ruler, line-by-line mode
+What is planned is tracked as [issues labelled `roadmap`](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap). Report ideas and bugs as an [issue](https://github.com/eikrad/laesehjaelper/issues/new). Want to contribute? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Disclaimer
 
