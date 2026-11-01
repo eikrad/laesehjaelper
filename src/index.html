@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesehelfer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&family=Lexend:wght@400;600&family=Nunito:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+@font-face { font-family: "OpenDyslexic"; font-weight: 400; src: url(data:font/woff2;base64,%%OD_400%%) format("woff2"); }
+@font-face { font-family: "OpenDyslexic"; font-weight: 700; src: url(data:font/woff2;base64,%%OD_700%%) format("woff2"); }
+
+:root {
+  --ink: #23262f;
+  --muted: #6b7080;
+  --line: #e4e1d8;
+  --panel: #ffffff;
+  --app-bg: #f6f3ec;
+  --accent: #2f6fd6;
+  --accent-soft: #e7effc;
+  --s0: #1f5fd1;   /* Silbe 1: blau */
+  --s1: #d13a2f;   /* Silbe 2: rot */
+  --page-bg: #fffbf0;
+  --font: "Andika", sans-serif;
+  --size: 32px;
+  --ls: 0.04em;
+  --ws: 0.25em;
+  --lh: 1.9;
+  --radius: 14px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: "Nunito", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--app-bg);
+  -webkit-text-size-adjust: 100%;
+}
+button, select, input, textarea { font: inherit; color: inherit; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 16px 16px 80px; }
+
+header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 14px; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand h1 { font-size: 22px; margin: 0; font-weight: 800; letter-spacing: -0.01em; }
+.brand h1 .b { color: var(--s0); } .brand h1 .r { color: var(--s1); }
+.logo { width: 34px; height: 34px; }
+
+.btn { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 9px 16px; cursor: pointer; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; }
+.btn:hover { border-color: #cfcabd; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primary:hover { background: #255fbf; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.icon { padding: 9px 12px; }
+
+/* Start */
+.start { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: 28px 22px; text-align: center; }
+.start h2 { font-size: 26px; margin: 4px 0 8px; }
+.start p { color: var(--muted); margin: 0 auto 20px; max-width: 520px; line-height: 1.5; }
+.drop { border: 2px dashed #cfcabd; border-radius: 16px; padding: 28px 16px; display: block; cursor: pointer; transition: background .15s, border-color .15s; }
+.drop.over, .drop:hover { background: var(--accent-soft); border-color: var(--accent); }
+.drop strong { display: block; font-size: 18px; margin-bottom: 4px; }
+.drop span { color: var(--muted); font-size: 14px; }
+.drop input { display: none; }
+.or { margin: 14px 0 0; color: var(--muted); font-size: 14px; }
+.linkbtn { background: none; border: 0; color: var(--accent); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0; }
+.how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; text-align: left; }
+.how div { background: var(--app-bg); border-radius: 12px; padding: 12px; font-size: 14px; color: var(--muted); line-height: 1.4; }
+.how b { display: block; color: var(--ink); margin-bottom: 2px; }
+@media (max-width: 620px) { .how { grid-template-columns: 1fr; } }
+
+/* Werkzeugleiste */
+.toolbar { position: sticky; top: 0; z-index: 5; background: var(--app-bg); padding: 8px 0 10px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pager { display: flex; align-items: center; gap: 6px; margin-right: auto; }
+.pager .count { font-weight: 800; min-width: 92px; text-align: center; }
+
+.settings { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 14px; display: none; }
+.settings.open { display: block; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px 20px; }
+.field label { display: block; font-size: 13px; font-weight: 700; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+.field select, .field input[type=range] { width: 100%; }
+.field select { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: #fff; }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.seg button { flex: 1; border: 0; background: #fff; padding: 8px 6px; cursor: pointer; font-weight: 700; font-size: 14px; }
+.seg button + button { border-left: 1px solid var(--line); }
+.seg button.on { background: var(--accent-soft); color: var(--accent); }
+.swatches { display: flex; gap: 8px; }
+.swatches button { width: 34px; height: 34px; border-radius: 50%; border: 2px solid var(--line); cursor: pointer; }
+.swatches button.on { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+
+/* Seite */
+.pagecard { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; overflow: hidden; }
+.orig { display: flex; justify-content: center; background: #efebe1; padding: 12px; border-bottom: 1px solid var(--line); }
+.orig img { max-width: 100%; max-height: 300px; border-radius: 8px; display: block; }
+.orig.hidden { display: none; }
+
+.reader {
+  background: var(--page-bg);
+  font-family: var(--font);
+  font-size: var(--size);
+  letter-spacing: var(--ls);
+  word-spacing: var(--ws);
+  line-height: var(--lh);
+  padding: 28px 28px 34px;
+  min-height: 220px;
+  color: #1d1d1f;
+}
+.reader p { margin: 0 0 0.8em; max-width: 32em; }
+.reader p:last-child { margin-bottom: 0; }
+.w { white-space: nowrap; cursor: pointer; border-radius: 6px; transition: background .12s; padding: 0 .02em; }
+.w:hover { background: rgba(47,111,214,.08); }
+.w.speaking { background: #ffe58a; }
+.mode-farbe .s0 { color: var(--s0); }
+.mode-farbe .s1 { color: var(--s1); }
+.mode-boegen .w .s { position: relative; display: inline-block; padding-bottom: .12em; }
+.mode-boegen .w .s::after {
+  content: ""; position: absolute; left: 6%; right: 6%; bottom: -.02em; height: .28em;
+  border: .07em solid #555; border-top: 0; border-radius: 0 0 50% 50% / 0 0 100% 100%;
+}
+.mode-boegen.mode-farbe .w .s0::after { border-color: var(--s0); }
+.mode-boegen.mode-farbe .w .s1::after { border-color: var(--s1); }
+
+.status { padding: 40px 20px; text-align: center; color: var(--muted); font-family: "Nunito", sans-serif; font-size: 16px; }
+.bar { height: 8px; background: #eee9dc; border-radius: 99px; overflow: hidden; max-width: 320px; margin: 12px auto 0; }
+.bar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+
+.edit { border-top: 1px solid var(--line); padding: 12px 16px 16px; }
+.edit summary { cursor: pointer; font-weight: 700; color: var(--muted); }
+.edit textarea { width: 100%; min-height: 140px; margin-top: 10px; padding: 12px; border-radius: 10px; border: 1px solid var(--line); font-family: "Nunito", sans-serif; font-size: 16px; line-height: 1.5; resize: vertical; }
+.edit .hint { font-size: 13px; color: var(--muted); margin: 6px 0 0; }
+
+.thumbs { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 2px; }
+.thumbs button { flex: 0 0 auto; border: 2px solid transparent; border-radius: 8px; padding: 0; background: none; cursor: pointer; position: relative; }
+.thumbs button.on { border-color: var(--accent); }
+.thumbs img { width: 54px; height: 72px; object-fit: cover; border-radius: 6px; display: block; }
+.thumbs .add { width: 58px; height: 76px; border: 2px dashed #cfcabd; border-radius: 8px; display: grid; place-items: center; font-size: 26px; color: var(--muted); background: transparent; }
+.thumbs .demo { width: 54px; height: 72px; border-radius: 6px; background: var(--page-bg); display: grid; place-items: center; font-size: 12px; color: var(--muted); }
+
+/* Lesemodus: nur der Text */
+body.focus .toolbar > :not(.keep), body.focus .settings, body.focus .orig, body.focus .edit, body.focus .thumbs, body.focus header.top { display: none !important; }
+body.focus .wrap { max-width: none; padding: 0; }
+body.focus .pagecard { border-radius: 0; border: 0; min-height: 100vh; }
+body.focus .toolbar { position: fixed; top: 10px; right: 10px; background: transparent; padding: 0; }
+body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
+
+.toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #23262f; color: #fff; padding: 10px 16px; border-radius: 12px; font-size: 14px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw; }
+.toast.show { opacity: 1; }
+.foot { color: var(--muted); font-size: 13px; text-align: center; margin-top: 22px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 40 40" aria-hidden="true"><rect x="3" y="7" width="16" height="26" rx="3" fill="#1f5fd1"/><rect x="21" y="7" width="16" height="26" rx="3" fill="#d13a2f"/><path d="M8 26 q3.5 4 7 0 M26 26 q3.5 4 7 0" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>
+      <h1><span class="b">Lese</span><span class="r">helfer</span></h1>
+    </div>
+  </header>
+
+  <!-- Startansicht -->
+  <section class="start" id="start">
+    <h2>Buchseiten leichter lesbar machen</h2>
+    <p>Fotografiere eine Seite aus dem Kinderbuch. Der Text wird erkannt und neu gesetzt: in einer gut lesbaren Schrift, groß, mit Abstand und farbigen Silben.</p>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept="image/*" multiple>
+      <strong>📷 Seite fotografieren oder Bilder wählen</strong>
+      <span>Mehrere Seiten auf einmal möglich · Erkennung läuft nur auf deinem Gerät</span>
+    </label>
+    <p class="or">Kein Buch zur Hand? <button class="linkbtn" id="demoBtn">Beispielseite ansehen</button></p>
+    <div class="how">
+      <div><b>1. Foto</b>Seite gerade und hell fotografieren, möglichst ohne Schatten.</div>
+      <div><b>2. Prüfen</b>Erkannte Wörter kurz kontrollieren und Fehler korrigieren.</div>
+      <div><b>3. Lesen</b>Wort antippen zum Vorlesen. Schrift und Farben anpassen.</div>
+    </div>
+  </section>
+
+  <!-- Leseansicht -->
+  <section id="app" hidden>
+    <div class="toolbar">
+      <div class="pager">
+        <button class="btn icon" id="prev" aria-label="Vorherige Seite">◀</button>
+        <span class="count" id="count">Seite 1 / 1</span>
+        <button class="btn icon" id="next" aria-label="Nächste Seite">▶</button>
+      </div>
+      <button class="btn" id="readBtn">🔊 Vorlesen</button>
+      <button class="btn" id="setBtn">Aa Anpassen</button>
+      <button class="btn keep" id="focusBtn">⛶ Lesemodus</button>
+    </div>
+
+    <div class="settings" id="settings">
+      <div class="grid">
+        <div class="field">
+          <label for="font">Schrift</label>
+          <select id="font">
+            <option value='"Andika", sans-serif'>Andika (für Leseanfänger)</option>
+            <option value='"OpenDyslexic", sans-serif'>OpenDyslexic</option>
+            <option value='"Atkinson Hyperlegible", sans-serif'>Atkinson Hyperlegible</option>
+            <option value='"Lexend", sans-serif'>Lexend</option>
+            <option value='Verdana, "DejaVu Sans", sans-serif'>Verdana</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="size">Schriftgröße</label>
+          <input type="range" id="size" min="18" max="64" step="1">
+        </div>
+        <div class="field">
+          <label for="ls">Buchstabenabstand</label>
+          <input type="range" id="ls" min="0" max="0.25" step="0.01">
+        </div>
+        <div class="field">
+          <label for="lh">Zeilenabstand</label>
+          <input type="range" id="lh" min="1.3" max="3" step="0.1">
+        </div>
+        <div class="field">
+          <label>Silben</label>
+          <div class="seg" id="mode">
+            <button data-v="aus">Aus</button>
+            <button data-v="farbe">Farbe</button>
+            <button data-v="boegen">Bögen</button>
+            <button data-v="beides">Beides</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Silbenfarben</label>
+          <div class="swatches" id="colors">
+            <button data-v="#1f5fd1,#d13a2f" style="background:linear-gradient(90deg,#1f5fd1 50%,#d13a2f 50%)" aria-label="Blau und Rot"></button>
+            <button data-v="#1f5fd1,#111111" style="background:linear-gradient(90deg,#1f5fd1 50%,#111 50%)" aria-label="Blau und Schwarz"></button>
+            <button data-v="#c0392b,#111111" style="background:linear-gradient(90deg,#c0392b 50%,#111 50%)" aria-label="Rot und Schwarz"></button>
+            <button data-v="#7a3fc2,#16804a" style="background:linear-gradient(90deg,#7a3fc2 50%,#16804a 50%)" aria-label="Lila und Grün"></button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Hintergrund</label>
+          <div class="swatches" id="bg">
+            <button data-v="#ffffff" style="background:#fff" aria-label="Weiß"></button>
+            <button data-v="#fffbf0" style="background:#fffbf0" aria-label="Creme"></button>
+            <button data-v="#fdf3c7" style="background:#fdf3c7" aria-label="Gelb"></button>
+            <button data-v="#e6f0fb" style="background:#e6f0fb" aria-label="Hellblau"></button>
+            <button data-v="#e9f5e6" style="background:#e9f5e6" aria-label="Hellgrün"></button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Originalseite</label>
+          <div class="seg" id="origToggle">
+            <button data-v="an">Zeigen</button>
+            <button data-v="aus">Verbergen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <article class="pagecard">
+      <div class="orig" id="orig"><img id="origImg" alt="Originalseite"></div>
+      <div class="reader" id="reader"></div>
+      <details class="edit" id="edit">
+        <summary>✏️ Text prüfen und korrigieren</summary>
+        <textarea id="text" spellcheck="true" lang="de"></textarea>
+        <p class="hint">Leere Zeile = neuer Absatz. Für eine eigene Silbentrennung Bindestriche mit · setzen, z.&nbsp;B. <b>O·ma</b>.</p>
+      </details>
+    </article>
+
+    <div class="thumbs" id="thumbs"></div>
+  </section>
+
+  <p class="foot">Texterkennung mit Tesseract, Silbentrennung mit TeX-Trennmustern. Alles läuft lokal im Browser, es werden keine Fotos hochgeladen.</p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="tesseract.min.js"></script>
+<script>%%SILBEN_JS%%</script>
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const abs = (p) => new URL(p, location.href).href;
+
+  // ---------- Einstellungen ----------
+  const defaults = { font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#1f5fd1,#d13a2f", bg: "#fffbf0", orig: "an" };
+  let S = { ...defaults };
+  try { Object.assign(S, JSON.parse(localStorage.getItem("lesehelfer") || "{}")); } catch (e) {}
+  const save = () => { try { localStorage.setItem("lesehelfer", JSON.stringify(S)); } catch (e) {} };
+
+  function applySettings() {
+    const r = document.documentElement.style;
+    r.setProperty("--font", S.font);
+    r.setProperty("--size", S.size + "px");
+    r.setProperty("--ls", S.ls + "em");
+    r.setProperty("--lh", S.lh);
+    const [c0, c1] = S.colors.split(",");
+    r.setProperty("--s0", c0); r.setProperty("--s1", c1);
+    r.setProperty("--page-bg", S.bg);
+    const rd = $("reader");
+    rd.classList.toggle("mode-farbe", S.mode === "farbe" || S.mode === "beides");
+    rd.classList.toggle("mode-boegen", S.mode === "boegen" || S.mode === "beides");
+    $("font").value = S.font; $("size").value = S.size; $("ls").value = S.ls; $("lh").value = S.lh;
+    for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"]])
+      $(id).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === S[key]));
+    $("orig").classList.toggle("hidden", S.orig === "aus" || !pages[cur]?.img);
+    save();
+  }
+  $("font").onchange = e => { S.font = e.target.value; applySettings(); };
+  for (const k of ["size", "ls", "lh"]) $(k).oninput = e => { S[k] = parseFloat(e.target.value); applySettings(); };
+  for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"]])
+    $(id).onclick = e => { const b = e.target.closest("button"); if (b) { S[key] = b.dataset.v; applySettings(); } };
+  $("setBtn").onclick = () => $("settings").classList.toggle("open");
+  $("focusBtn").onclick = () => {
+    const on = document.body.classList.toggle("focus");
+    $("focusBtn").textContent = on ? "✕ Schließen" : "⛶ Lesemodus";
+    window.scrollTo(0, 0);
+  };
+
+  function toast(msg, ms = 2600) {
+    const t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), ms);
+  }
+
+  // ---------- Seiten ----------
+  const pages = [];   // { img: dataURL|null, text: string, status: 'wait'|'ocr'|'done'|'error', progress }
+  let cur = 0;
+
+  // ---------- Text aufbereiten ----------
+  // OCR liefert Zeilen so, wie sie im Buch umbrechen. Wir fügen sie zu Absätzen zusammen.
+  function cleanOcr(raw) {
+    return raw
+      .replace(/\r/g, "")
+      .replace(/[|]/g, "I")
+      .replace(/(\p{Ll})[-¬]\n(\p{Ll})/gu, "$1$2")     // Trennstrich am Zeilenende entfernen
+      .split(/\n\s*\n+/)
+      .map(p => p.replace(/\s*\n\s*/g, " ").replace(/\s{2,}/g, " ").trim())
+      .filter(p => p.length > 0 && /\p{L}/u.test(p))
+      // Absatz ohne Satzende am Schluss gehört meist noch zum nächsten Absatz
+      .reduce((acc, p) => {
+        if (acc.length && !/[.!?…:"“”»«]$/.test(acc[acc.length - 1])) acc[acc.length - 1] += " " + p;
+        else acc.push(p);
+        return acc;
+      }, [])
+      .join("\n\n");
+  }
+
+  // Text -> HTML mit Wort- und Silben-Spans. Gleichzeitig Zeichenpositionen für das Vorlesen merken.
+  const WORD = /[\p{L}\p{M}·]+/gu;
+  function renderText(text) {
+    const rd = $("reader");
+    rd.innerHTML = "";
+    const plainParts = [];
+    let offset = 0, wordIndex = 0;
+    const wordPos = [];
+    text.split(/\n\s*\n/).forEach((para, pi) => {
+      const p = document.createElement("p");
+      let last = 0;
+      const plain = para.replace(/\n/g, " ").replace(/·/g, "");
+      for (const m of para.replace(/\n/g, " ").matchAll(WORD)) {
+        if (m.index > last) p.append(para.replace(/\n/g, " ").slice(last, m.index));
+        const raw = m[0];
+        const word = raw.replace(/·/g, "");
+        const parts = raw.includes("·") ? raw.split("·").filter(Boolean) : Silben.silben(word);
+        const w = document.createElement("span");
+        w.className = "w"; w.dataset.word = word; w.dataset.i = wordIndex++;
+        parts.forEach((sil, i) => {
+          const s = document.createElement("span");
+          s.className = "s s" + (i % 2); s.textContent = sil;
+          w.append(s);
+        });
+        p.append(w);
+        last = m.index + raw.length;
+      }
+      if (last < para.length) p.append(para.slice(last));
+      rd.append(p);
+      plainParts.push(plain);
+    });
+    // Zeichenpositionen im Vorlesetext
+    const full = plainParts.join("\n");
+    let idx = 0;
+    for (const m of full.matchAll(/[\p{L}\p{M}]+/gu)) wordPos.push({ start: m.index, end: m.index + m[0].length, i: idx++ });
+    rd._speech = { full, wordPos };
+  }
+
+  function showStatus(html) {
+    $("reader").innerHTML = `<div class="status">${html}</div>`;
+    $("reader")._speech = null;
+  }
+
+  function render() {
+    const pg = pages[cur];
+    $("count").textContent = `Seite ${cur + 1} / ${pages.length}`;
+    $("prev").disabled = cur === 0; $("next").disabled = cur >= pages.length - 1;
+    if (pg.img) $("origImg").src = pg.img;
+    stopSpeech();
+    if (pg.status === "done") {
+      renderText(pg.text);
+      $("text").value = pg.text;
+      $("edit").hidden = false;
+      $("readBtn").disabled = !pg.text;
+      if (!pg.text) showStatus("Auf dieser Seite wurde kein Text gefunden.<br>Öffne „Text prüfen“ und tippe ihn selbst ein.");
+    } else if (pg.status === "error") {
+      showStatus("Die Erkennung hat nicht geklappt.<br>" + (pg.error || ""));
+      $("text").value = ""; $("readBtn").disabled = true;
+    } else {
+      const pct = Math.round((pg.progress || 0) * 100);
+      showStatus(`${pg.status === "wait" ? "Wartet auf Erkennung …" : pg.stage || "Text wird erkannt …"}<div class="bar"><i style="width:${pct}%"></i></div>`);
+      $("readBtn").disabled = true;
+    }
+    applySettings();
+    renderThumbs();
+  }
+
+  function renderThumbs() {
+    const t = $("thumbs"); t.innerHTML = "";
+    pages.forEach((pg, i) => {
+      const b = document.createElement("button");
+      b.className = i === cur ? "on" : ""; b.title = "Seite " + (i + 1);
+      b.innerHTML = pg.img ? `<img src="${pg.img}" alt="">` : `<span class="demo">Beispiel</span>`;
+      b.onclick = () => { cur = i; render(); };
+      t.append(b);
+    });
+    const add = document.createElement("label");
+    add.className = "add"; add.title = "Seiten hinzufügen"; add.innerHTML = `+<input type="file" accept="image/*" multiple hidden>`;
+    add.querySelector("input").onchange = e => addFiles(e.target.files);
+    t.append(add);
+  }
+
+  $("prev").onclick = () => { if (cur > 0) { cur--; render(); } };
+  $("next").onclick = () => { if (cur < pages.length - 1) { cur++; render(); } };
+  document.addEventListener("keydown", e => {
+    if (e.target.tagName === "TEXTAREA") return;
+    if (e.key === "ArrowLeft") $("prev").click();
+    if (e.key === "ArrowRight") $("next").click();
+    if (e.key === "Escape" && document.body.classList.contains("focus")) $("focusBtn").click();
+  });
+
+  let editT;
+  $("text").oninput = e => {
+    clearTimeout(editT);
+    editT = setTimeout(() => { pages[cur].text = e.target.value; renderText(pages[cur].text); }, 250);
+  };
+
+  // ---------- Bilder laden ----------
+  function loadImage(file) {
+    return new Promise((res, rej) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        // Große Handyfotos verkleinern: schneller und für die Erkennung völlig ausreichend.
+        const max = 2200, k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        res({ dataUrl: c.toDataURL("image/jpeg", 0.88), canvas: c });
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error("Bild konnte nicht geöffnet werden.")); };
+      img.src = url;
+    });
+  }
+
+  const queue = [];
+  async function addFiles(files) {
+    const list = [...files].filter(f => f.type.startsWith("image/"));
+    if (!list.length) return;
+    showApp();
+    const first = pages.length;
+    for (const f of list) {
+      try {
+        const { dataUrl, canvas } = await loadImage(f);
+        const pg = { img: dataUrl, text: "", status: "wait", progress: 0 };
+        pages.push(pg); queue.push({ pg, canvas });
+      } catch (e) { toast(e.message); }
+    }
+    cur = Math.min(first, pages.length - 1);
+    render();
+    runQueue();
+  }
+
+  // ---------- Texterkennung ----------
+  let workerP = null, active = null;
+  const loadScript = (src) => new Promise((res, rej) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = res; s.onerror = () => rej(new Error("Datei fehlt: " + src));
+    document.head.append(s);
+  });
+  function getWorker() {
+    if (!workerP) {
+      workerP = loadScript("lang/deu.js")
+        .then(() => Uint8Array.from(atob(window.DEU_TRAINEDDATA), c => c.charCodeAt(0)))
+        .then(bytes => Tesseract.createWorker([{ code: "deu", data: bytes }], 1, {
+        workerPath: abs("worker.min.js"),
+        corePath: abs("core"),
+        workerBlobURL: false,
+        cacheMethod: "none",
+        logger: m => {
+          if (!active) return;
+          const names = { "loading tesseract core": "Erkennung wird geladen …", "loading language traineddata": "Deutsch wird geladen …", "initializing api": "Wird vorbereitet …", "recognizing text": "Text wird erkannt …" };
+          active.stage = names[m.status] || active.stage;
+          active.progress = m.status === "recognizing text" ? m.progress : (active.progress || 0);
+          if (pages[cur] === active) {
+            const bar = document.querySelector(".status .bar i");
+            const st = document.querySelector(".status");
+            if (st && st.firstChild) st.firstChild.textContent = active.stage;
+            if (bar) bar.style.width = Math.round(active.progress * 100) + "%";
+          }
+        },
+      })).then(async w => { await w.setParameters({ preserve_interword_spaces: "1" }); return w; });
+      workerP.catch(() => { workerP = null; });
+    }
+    return workerP;
+  }
+
+  let running = false;
+  async function runQueue() {
+    if (running) return; running = true;
+    while (queue.length) {
+      const { pg, canvas } = queue.shift();
+      active = pg; pg.status = "ocr"; pg.stage = "Erkennung wird geladen …";
+      if (pages[cur] === pg) render();
+      try {
+        const w = await getWorker();
+        const { data } = await w.recognize(canvas);
+        pg.text = cleanOcr(data.text || "");
+        pg.status = "done";
+      } catch (e) {
+        console.error(e);
+        pg.status = "error"; pg.error = String(e && e.message || e);
+      }
+      active = null;
+      if (pages[cur] === pg) render(); else renderThumbs();
+    }
+    running = false;
+  }
+
+  // ---------- Vorlesen ----------
+  const synth = window.speechSynthesis;
+  let voice = null;
+  function pickVoice() {
+    if (!synth) return;
+    const vs = synth.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith("de"));
+    voice = vs.find(v => /google|premium|enhanced|anna|petra|helena|katja/i.test(v.name)) || vs[0] || null;
+  }
+  if (synth) { pickVoice(); synth.onvoiceschanged = pickVoice; }
+
+  function speak(text, onBoundary, onEnd) {
+    if (!synth) { toast("Vorlesen wird von diesem Browser nicht unterstützt."); return; }
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "de-DE"; if (voice) u.voice = voice;
+    u.rate = 0.85;
+    if (onBoundary) u.onboundary = onBoundary;
+    u.onend = u.onerror = () => onEnd && onEnd();
+    synth.speak(u);
+  }
+  function clearHighlight() { document.querySelectorAll(".w.speaking").forEach(x => x.classList.remove("speaking")); }
+  function stopSpeech() { if (synth) synth.cancel(); clearHighlight(); $("readBtn").textContent = "🔊 Vorlesen"; reading = false; }
+
+  $("reader").onclick = e => {
+    const w = e.target.closest(".w"); if (!w) return;
+    stopSpeech();
+    w.classList.add("speaking");
+    speak(w.dataset.word, null, () => w.classList.remove("speaking"));
+  };
+
+  let reading = false;
+  $("readBtn").onclick = () => {
+    if (reading) { stopSpeech(); return; }
+    const sp = $("reader")._speech; if (!sp) return;
+    const spans = [...$("reader").querySelectorAll(".w")];
+    reading = true; $("readBtn").textContent = "⏹ Stopp";
+    speak(sp.full, ev => {
+      if (ev.name && ev.name !== "word") return;
+      const hit = sp.wordPos.find(p => ev.charIndex >= p.start && ev.charIndex < p.end) || sp.wordPos.find(p => p.start >= ev.charIndex);
+      clearHighlight();
+      if (hit && spans[hit.i]) spans[hit.i].classList.add("speaking");
+    }, () => { reading = false; clearHighlight(); $("readBtn").textContent = "🔊 Vorlesen"; });
+  };
+
+  // ---------- Start ----------
+  function showApp() { $("start").hidden = true; $("app").hidden = false; }
+
+  const drop = $("drop");
+  $("file").onchange = e => addFiles(e.target.files);
+  ["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => addFiles(e.dataTransfer.files));
+  document.addEventListener("paste", e => { const f = [...(e.clipboardData?.files || [])]; if (f.length) addFiles(f); });
+
+  $("demoBtn").onclick = () => {
+    pages.push({ img: null, status: "done", text:
+      "Der kleine Igel wohnt unter einem großen Apfelbaum.\n\n" +
+      "Jeden Morgen schnuppert er an den Blumen. Dann sucht er Käfer und Würmer im Garten.\n\n" +
+      "Heute regnet es. Der Igel rollt sich zusammen und schläft ein." });
+    cur = pages.length - 1; showApp(); render();
+    getWorker(); // Erkennung im Hintergrund schon vorladen
+  };
+
+  applySettings();
+})();
+</script>
+</body>
+</html>
