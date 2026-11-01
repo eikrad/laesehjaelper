@@ -70,7 +70,7 @@ Projektet er skrevet i TypeScript (strict).
 
 ## Roadmap
 
-Det, der er planlagt, styres som [issues med mærket `roadmap`](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap). Idéer og fejl meldes som [issue](https://github.com/eikrad/laesehjaelper/issues/new). Vil du bidrage, så læs [CONTRIBUTING.md](CONTRIBUTING.md).
+Roadmappen er opdelt i epics og stories (se [CONTRIBUTING.md](CONTRIBUTING.md)). Det, der er planlagt, styres som [issues med mærket `roadmap`](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap). Idéer og fejl meldes som [issue](https://github.com/eikrad/laesehjaelper/issues/new). Vil du bidrage, så læs [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Ansvarsfraskrivelse
 

@@ -70,7 +70,7 @@ The project is written in TypeScript (strict).
 
 ## Roadmap
 
-What is planned is tracked as [issues labelled `roadmap`](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap). Report ideas and bugs as an [issue](https://github.com/eikrad/laesehjaelper/issues/new). Want to contribute? See [CONTRIBUTING.md](CONTRIBUTING.md).
+The roadmap is organised into epics and stories (see [CONTRIBUTING.md](CONTRIBUTING.md)). What is planned is tracked as [issues labelled `roadmap`](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap). Report ideas and bugs as an [issue](https://github.com/eikrad/laesehjaelper/issues/new). Want to contribute? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Disclaimer
 

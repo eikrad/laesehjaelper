@@ -70,7 +70,7 @@ Das Projekt ist in TypeScript geschrieben (strict).
 
 ## Roadmap
 
-Was geplant ist, steht als [Issues mit dem Label `roadmap`](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap) auf GitHub. Ideen und Fehler bitte als [Issue](https://github.com/eikrad/laesehjaelper/issues/new) melden. Wer beitragen möchte: siehe [CONTRIBUTING.md](CONTRIBUTING.md).
+Die Roadmap ist in Epics und Stories gegliedert (siehe [CONTRIBUTING.md](CONTRIBUTING.md)). Was geplant ist, steht als [Issues mit dem Label `roadmap`](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap) auf GitHub. Ideen und Fehler bitte als [Issue](https://github.com/eikrad/laesehjaelper/issues/new) melden. Wer beitragen möchte: siehe [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Haftungsausschluss
 

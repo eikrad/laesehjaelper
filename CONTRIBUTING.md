@@ -8,9 +8,25 @@ Thanks for wanting to help! Contributions are welcome – bug reports, ideas, tr
 
 Læsehjælper is maintained by [@eikrad](https://github.com/eikrad). Anyone can open issues and pull requests, but **only the maintainer merges into `main`** and decides what goes in. Please don't be discouraged if a pull request is declined or changed – it's about keeping the app simple and focused on young readers.
 
+## Roadmap: epics, stories and bugs
+
+All planning happens in GitHub issues – there is no separate list anywhere else. The [roadmap](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap) is simply every open issue labelled `roadmap`.
+
+| Type | Label | What it is | Who creates it |
+|---|---|---|---|
+| **Epic** | `epic` + `roadmap` | A larger goal from the user's point of view (“As a parent I want …”). Has no code of its own; it is done when its stories are done. | Maintainer |
+| **Story** | `story` (+ `roadmap` when planned) | One deliverable piece of an epic, small enough for one pull request. Linked to its epic as a **sub-issue**. Has acceptance criteria. | Anyone (proposal), maintainer decides |
+| **Bug** | `bug` | Something that does not work as intended. Linked to an epic as a sub-issue when it belongs to one. | Anyone |
+
+Rules:
+
+- Every story and every planned bug belongs to exactly one epic (as a sub-issue).
+- Only the maintainer adds or removes the `roadmap` label – that is what puts something on the roadmap.
+- A pull request closes one story or bug (`Closes #…` in the description). Bigger stories are split into several stories rather than one huge pull request.
+- Use the issue templates (Epic, Story, Bug).
+
 ## Before you start
 
-- **Roadmap:** planned work is tracked as [issues labelled `roadmap`](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap).
 - For anything bigger than a small fix, **open or comment on an issue first** so we can agree on the approach.
 
 ## Making a change
@@ -25,7 +41,7 @@ Læsehjælper is maintained by [@eikrad](https://github.com/eikrad). Anyone can 
    npm run test:e2e    # end-to-end tests (Playwright)
    ```
 4. Add or update tests for what you changed.
-5. Open a pull request against `main` and fill in the template. CI must be green.
+5. Open a pull request against `main`, fill in the template and reference the story or bug it closes. CI must be green.
 
 ## Guidelines
 

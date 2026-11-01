@@ -2,7 +2,7 @@
 
 <!-- Kurz beschreiben, was der Pull Request macht und warum. -->
 
-Gehört zu Issue #
+Closes #  <!-- Story oder Bug, den dieser PR erledigt -->
 
 ## Geprüft
 
