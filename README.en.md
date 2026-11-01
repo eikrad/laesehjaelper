@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/eikrad/laesehjaelper/actions/workflows/ci.yml/badge.svg)](https://github.com/eikrad/laesehjaelper/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-*Danish for "reading helper". · [Dansk](README.md)*
+*Danish for "reading helper". · [Dansk](README.md) · [Deutsch](README.de.md)*
 
 Make photographed children's book pages easier to read. The text is recognized with OCR and replaced right on the page: the pictures stay where they are, but the text is set in a highly legible font with colored syllables or syllable arcs. Alternatively, the text can be shown on its own, large and with generous spacing. Built for children learning to read and for readers with dyslexia. Supports Danish, German and English books.
 
@@ -15,18 +15,19 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Two views: the book page with the new text in its original place, or text only
 - Interface in Danish, German or English
 - Text recognition (Danish, German, English) with [Tesseract.js](https://github.com/naptha/tesseract.js)
-- Syllable splitting based on the Danish and German TeX hyphenation patterns ([hyphen](https://github.com/ytiurin/hyphen))
-- Syllables shown in alternating colors (blue/red), as arcs, or both
+- Syllable splitting based on the Danish, German and English TeX hyphenation patterns ([hyphen](https://github.com/ytiurin/hyphen))
+- Syllables shown in alternating colors (blue/red, colors adjustable), as arcs, or both
 - Fonts: Andika, OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Adjustable font size, letter spacing, line spacing and background color
 - Tap a word to hear it read aloud, or read the whole page with word-by-word highlighting
 - “Hyphens in the book” setting: for early readers that split words into syllables with hyphens themselves (“sko-le”)
 - Tilted photos are straightened, and “text” that OCR finds inside illustrations is filtered out
+- Every page is recognized twice (as is and with a flattened background), so text on tinted pictures is found too
 - Correct the recognized text; set your own syllable breaks with `·` (e.g. `hun·den`)
 - Focus mode: just the text, full screen
 - Show the original text with one tap to spot recognition errors
 - Bookshelf: books are stored on the device, with title, page order and reading position
-- Cropping: the page is found in the photo automatically and straightened; corners can be adjusted
+- Cropping: the page is found in the photo automatically and straightened; corners and edges can be adjusted, including for curved pages
 - E-book: save a book as EPUB 3 (fixed layout, opens in any reading app) and import it again losslessly
 - Installable as an app and usable offline
 
@@ -49,7 +50,7 @@ The project is written in TypeScript (strict).
 - `src/index.html`: page HTML and CSS
 - `src/app.ts`: app logic (UI, text recognition, bookshelf)
 - `src/layout.ts`: turns raw OCR output into clean text lines and paragraphs with positions (filters illustration noise)
-- `src/pagedetect.ts`: finds the page in the photo and straightens it (OpenCV)
+- `src/pagedetect.ts`: finds the page in the photo and straightens it (OpenCV), including curved pages
 - `src/silben.ts`: syllable splitting (Danish, German, English)
 - `src/db.ts`: stores books on the device (IndexedDB)
 - `src/epub.ts`: EPUB export and import
@@ -57,8 +58,7 @@ The project is written in TypeScript (strict).
 - `src/sw.ts`: service worker (offline, installation)
 - `src/types.ts`: shared types
 - `build.ts`: builds `dist/` with esbuild and copies Tesseract, OpenCV and language files
-
-`npm run typecheck` checks the types.
+- `tests/`: unit tests, end-to-end tests and self-made test pages
 
 ## Known limitations
 
@@ -66,11 +66,13 @@ The project is written in TypeScript (strict).
 - Text on top of illustrations or in decorative fonts is recognized less reliably.
 - The old text is painted over with the surrounding background color. This looks clean on plain backgrounds; text on top of an illustration gets its own light panel.
 - The new text can only be as large as the page has room for. For really large text, use the text-only view.
+- Curved pages currently have to be straightened by hand (see [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
 
 ## Ideas
 
+- Detect page curvature automatically ([#1](https://github.com/eikrad/laesehjaelper/issues/1))
 - Better removal of text on illustrations (inpainting)
-- Save books locally, export as PDF
+- Export as PDF
 - Reading ruler, line-by-line mode
 
 ## Disclaimer
