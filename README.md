@@ -25,6 +25,8 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Vis den oprindelige tekst med ét tryk for at finde fejl i genkendelsen
 - Bogreol: bøger gemmes på enheden, med titel, rækkefølge og læsestatus
 - Beskæring: siden findes automatisk på fotoet og rettes op; hjørnerne kan justeres
+- E-bog: gem en bog som EPUB 3 (faste sider, kan åbnes i alle læse-apps) og hent den ind igen uden tab
+- Kan installeres som app og bruges offline
 
 ## Udvikling
 
@@ -46,6 +48,9 @@ Projektet er skrevet i TypeScript (strict).
 - `src/pagedetect.ts`: finder siden på fotoet og retter den op (OpenCV)
 - `src/silben.ts`: stavelsesdeling (dansk, tysk, engelsk)
 - `src/db.ts`: lagring af bøger på enheden (IndexedDB)
+- `src/epub.ts`: eksport og import af EPUB
+- `src/prep.ts`: billedforberedelse til tekstgenkendelse (udligning af baggrund)
+- `src/sw.ts`: service worker (offline, installation)
 - `src/types.ts`: fælles typer
 - `build.ts`: bygger `dist/` med esbuild og kopierer Tesseract-, OpenCV- og sprogfiler
 

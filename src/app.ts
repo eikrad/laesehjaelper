@@ -5,6 +5,8 @@ import { detectPage, warpPage, orderCorners } from "./pagedetect";
 import type { CV } from "./pagedetect";
 import { DB } from "./db";
 import { flattenBackground, rotateLike } from "./prep";
+import { buildEpub, readEpub } from "./epub";
+import type { DataPage, EpubFont, EpubPage } from "./epub";
 import type { Box, Corners, OcrData, Para, Point } from "./types";
 
 declare const Tesseract: {
@@ -101,7 +103,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       waiting: "Venter på genkendelse …", recognizing: "Teksten genkendes …", recognizing2: "Teksten tjekkes en gang til …", loadingCore: "Genkendelsen indlæses …",
       loadingLang: "Sprogdata indlæses …", preparing: "Gøres klar …",
       imgError: "Billedet kunne ikke åbnes.", noSpeech: "Oplæsning understøttes ikke af denne browser.",
-      example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", shelfTitle: "Dine bøger", pagesN: "{n} sider", page1: "1 side", untitled: "Bog uden titel", titlePh: "Bogens titel", editPages: "Rediger sider", done: "Færdig", deleteBook: "Slet bogen", confirmDelete: "Tryk igen for at slette bogen", moveLeft: "Flyt til venstre", moveRight: "Flyt til højre", deletePage: "Slet side", aboutTitle: "Om Læsehjælper og ansvarsfraskrivelse", aboutText: "Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl – tjek derfor altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.<br><br>Billeder og bøger bliver kun behandlet og gemt på din egen enhed og bliver ikke sendt til nogen server. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug. Del ikke omdannede bøger med andre, medmindre du har rettighederne.<br><br>Brug sker på eget ansvar og uden garanti. Kildekoden er åben: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Bøgerne kan ikke gemmes i denne browser.", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", cropOf: "Billede {a} af {b}", install: "Installér som app på denne enhed", compare: "Vis den oprindelige tekst", compareOff: "Vis den nye tekst",
+      example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", shelfTitle: "Dine bøger", pagesN: "{n} sider", page1: "1 side", untitled: "Bog uden titel", titlePh: "Bogens titel", editPages: "Rediger sider", done: "Færdig", deleteBook: "Slet bogen", confirmDelete: "Tryk igen for at slette bogen", moveLeft: "Flyt til venstre", moveRight: "Flyt til højre", deletePage: "Slet side", aboutTitle: "Om Læsehjælper og ansvarsfraskrivelse", aboutText: "Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl – tjek derfor altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.<br><br>Billeder og bøger bliver kun behandlet og gemt på din egen enhed og bliver ikke sendt til nogen server. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug. Del ikke omdannede bøger med andre, medmindre du har rettighederne.<br><br>Brug sker på eget ansvar og uden garanti. Kildekoden er åben: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Bøgerne kan ikke gemmes i denne browser.", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", cropOf: "Billede {a} af {b}", exportBook: "Gem som e-bog", importBook: "Hent en e-bog (EPUB) fra Læsehjælper", exporting: "Laver e-bogen …", exported: "E-bogen er gemt: {name}", importFail: "Filen er ikke en e-bog fra Læsehjælper.", importing: "Henter e-bogen …", notReady: "Vent, til alle sider er genkendt.", install: "Installér som app på denne enhed", compare: "Vis den oprindelige tekst", compareOff: "Vis den nye tekst",
     },
     en: {
       brand1: "Læse", brand2: "hjælper", docTitle: "Læsehjælper",
@@ -130,7 +132,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       waiting: "Waiting for recognition …", recognizing: "Recognising text …", recognizing2: "Double-checking the text …", loadingCore: "Loading text recognition …",
       loadingLang: "Loading language data …", preparing: "Getting ready …",
       imgError: "The photo could not be opened.", noSpeech: "Reading aloud is not supported in this browser.",
-      example: "Sample", addPages: "Add pages", toStart: "Back to start", shelfTitle: "Your books", pagesN: "{n} pages", page1: "1 page", untitled: "Untitled book", titlePh: "Book title", editPages: "Edit pages", done: "Done", deleteBook: "Delete book", confirmDelete: "Tap again to delete the book", moveLeft: "Move left", moveRight: "Move right", deletePage: "Delete page", aboutTitle: "About Læsehjælper and disclaimer", aboutText: "Læsehjælper is a free hobby project, not a finished product. Text recognition and syllable splitting make mistakes, so always check the text before a child reads it. The app does not replace teaching, reading support or a dyslexia assessment.<br><br>Photos and books are processed and stored only on your own device and are never sent to a server. Books are protected by copyright: only use Læsehjælper for books you have access to, and only for private use. Do not share converted books unless you hold the rights.<br><br>Use at your own risk and without warranty. The source code is open: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Books cannot be saved in this browser.", cropTitle: "Adjust the page", cropFound: "Page found. Drag the corners if it doesn't fit.", cropNone: "Drag the corners to the edges of the page.", cropLoading: "Looking for the page …", cropUse: "Use", cropWhole: "Whole photo", cropAgain: "Crop the page again", cropOf: "Photo {a} of {b}", install: "Install as an app on this device", compare: "Show the original text", compareOff: "Show the new text",
+      example: "Sample", addPages: "Add pages", toStart: "Back to start", shelfTitle: "Your books", pagesN: "{n} pages", page1: "1 page", untitled: "Untitled book", titlePh: "Book title", editPages: "Edit pages", done: "Done", deleteBook: "Delete book", confirmDelete: "Tap again to delete the book", moveLeft: "Move left", moveRight: "Move right", deletePage: "Delete page", aboutTitle: "About Læsehjælper and disclaimer", aboutText: "Læsehjælper is a free hobby project, not a finished product. Text recognition and syllable splitting make mistakes, so always check the text before a child reads it. The app does not replace teaching, reading support or a dyslexia assessment.<br><br>Photos and books are processed and stored only on your own device and are never sent to a server. Books are protected by copyright: only use Læsehjælper for books you have access to, and only for private use. Do not share converted books unless you hold the rights.<br><br>Use at your own risk and without warranty. The source code is open: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Books cannot be saved in this browser.", cropTitle: "Adjust the page", cropFound: "Page found. Drag the corners if it doesn't fit.", cropNone: "Drag the corners to the edges of the page.", cropLoading: "Looking for the page …", cropUse: "Use", cropWhole: "Whole photo", cropAgain: "Crop the page again", cropOf: "Photo {a} of {b}", exportBook: "Save as e-book", importBook: "Open a Læsehjælper e-book (EPUB)", exporting: "Creating the e-book …", exported: "E-book saved: {name}", importFail: "This file is not a Læsehjælper e-book.", importing: "Loading the e-book …", notReady: "Wait until all pages have been recognised.", install: "Install as an app on this device", compare: "Show the original text", compareOff: "Show the new text",
     },
     de: {
       brand1: "Lese", brand2: "helfer", docTitle: "Lesehelfer",
@@ -159,7 +161,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       waiting: "Wartet auf Erkennung …", recognizing: "Text wird erkannt …", recognizing2: "Text wird ein zweites Mal geprüft …", loadingCore: "Erkennung wird geladen …",
       loadingLang: "Sprachdaten werden geladen …", preparing: "Wird vorbereitet …",
       imgError: "Bild konnte nicht geöffnet werden.", noSpeech: "Vorlesen wird von diesem Browser nicht unterstützt.",
-      example: "Beispiel", addPages: "Seiten hinzufügen", toStart: "Zur Startseite", shelfTitle: "Deine Bücher", pagesN: "{n} Seiten", page1: "1 Seite", untitled: "Buch ohne Titel", titlePh: "Titel des Buchs", editPages: "Seiten bearbeiten", done: "Fertig", deleteBook: "Buch löschen", confirmDelete: "Zum Löschen noch einmal tippen", moveLeft: "Nach links", moveRight: "Nach rechts", deletePage: "Seite löschen", aboutTitle: "Über Læsehjælper und Haftungsausschluss", aboutText: "Læsehjælper ist ein kostenloses Hobbyprojekt und kein fertiges Produkt. Texterkennung und Silbentrennung machen Fehler – prüfe den Text deshalb immer, bevor ein Kind ihn liest. Die App ersetzt keinen Unterricht, keine Leseförderung und keine Diagnostik bei Legasthenie.<br><br>Fotos und Bücher werden nur auf deinem eigenen Gerät verarbeitet und gespeichert und an keinen Server geschickt. Bücher sind urheberrechtlich geschützt: Nutze Læsehjælper nur für Bücher, auf die du selbst Zugriff hast, und nur privat. Gib umgewandelte Bücher nicht weiter, außer du hast die Rechte dazu.<br><br>Nutzung auf eigene Verantwortung und ohne Gewähr. Der Quellcode ist offen: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "In diesem Browser können keine Bücher gespeichert werden.", cropTitle: "Seite zuschneiden", cropFound: "Seite gefunden. Zieh an den Ecken, falls es nicht passt.", cropNone: "Zieh die Ecken an die Ränder der Seite.", cropLoading: "Seite wird gesucht …", cropUse: "Übernehmen", cropWhole: "Ganzes Bild", cropAgain: "Seite neu zuschneiden", cropOf: "Bild {a} von {b}", install: "Als App auf diesem Gerät installieren", compare: "Originaltext anzeigen", compareOff: "Neuen Text anzeigen",
+      example: "Beispiel", addPages: "Seiten hinzufügen", toStart: "Zur Startseite", shelfTitle: "Deine Bücher", pagesN: "{n} Seiten", page1: "1 Seite", untitled: "Buch ohne Titel", titlePh: "Titel des Buchs", editPages: "Seiten bearbeiten", done: "Fertig", deleteBook: "Buch löschen", confirmDelete: "Zum Löschen noch einmal tippen", moveLeft: "Nach links", moveRight: "Nach rechts", deletePage: "Seite löschen", aboutTitle: "Über Læsehjælper und Haftungsausschluss", aboutText: "Læsehjælper ist ein kostenloses Hobbyprojekt und kein fertiges Produkt. Texterkennung und Silbentrennung machen Fehler – prüfe den Text deshalb immer, bevor ein Kind ihn liest. Die App ersetzt keinen Unterricht, keine Leseförderung und keine Diagnostik bei Legasthenie.<br><br>Fotos und Bücher werden nur auf deinem eigenen Gerät verarbeitet und gespeichert und an keinen Server geschickt. Bücher sind urheberrechtlich geschützt: Nutze Læsehjælper nur für Bücher, auf die du selbst Zugriff hast, und nur privat. Gib umgewandelte Bücher nicht weiter, außer du hast die Rechte dazu.<br><br>Nutzung auf eigene Verantwortung und ohne Gewähr. Der Quellcode ist offen: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "In diesem Browser können keine Bücher gespeichert werden.", cropTitle: "Seite zuschneiden", cropFound: "Seite gefunden. Zieh an den Ecken, falls es nicht passt.", cropNone: "Zieh die Ecken an die Ränder der Seite.", cropLoading: "Seite wird gesucht …", cropUse: "Übernehmen", cropWhole: "Ganzes Bild", cropAgain: "Seite neu zuschneiden", cropOf: "Bild {a} von {b}", exportBook: "Als E-Book speichern", importBook: "E-Book (EPUB) aus Læsehjælper laden", exporting: "E-Book wird erstellt …", exported: "E-Book gespeichert: {name}", importFail: "Die Datei ist kein E-Book aus Læsehjælper.", importing: "E-Book wird geladen …", notReady: "Warte, bis alle Seiten erkannt sind.", install: "Als App auf diesem Gerät installieren", compare: "Originaltext anzeigen", compareOff: "Neuen Text anzeigen",
     },
   };
   const t = (k: string, vars: Record<string, string | number> = {}): string =>
@@ -212,7 +214,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     for (const [id, key] of CHOICES)
       $(id).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === S[key]));
     $("orig").classList.toggle("hidden", S.orig === "aus" || !pages[cur]?.img || isPageMode(pages[cur]));
-    if ($("reader").classList.contains("pagemode")) requestAnimationFrame(fitBoxes);
+    if ($("reader").classList.contains("pagemode")) requestAnimationFrame(() => fitBoxes());
     save();
   }
   $("font").onchange = e => { S.font = val(e); applySettings(); };
@@ -443,6 +445,17 @@ const Lib = { detectPage, warpPage, orderCorners };
     rd.classList.toggle("pagemode", page);
     if (!page) { ps.forEach(p => rd.append(p)); return; }
 
+    const pv = buildPageView(pg, ps);
+    const img = pv.querySelector("img")!;
+    rd.append(pv);
+    const go = () => requestAnimationFrame(() => fitBoxes());
+    if (img.complete) go(); else img.onload = go;
+    if (document.fonts) document.fonts.ready.then(go);
+  }
+
+
+  // Buchseite als Bild (alte Schrift übermalt) mit Textfeldern an den Stellen der alten Schrift
+  function buildPageView(pg: Page, ps: HTMLParagraphElement[]): HTMLDivElement {
     const W = pg.workW!, H = pg.workH!, paras = pg.paras!;
     const pv = document.createElement("div"); pv.className = "pageview";
     const img = new Image(); img.src = pg.clean!; img.alt = ""; pv.append(img);
@@ -459,16 +472,13 @@ const Lib = { detectPage, warpPage, orderCorners };
       own.forEach(p => box.append(p));
       pv.append(box);
     });
-    rd.append(pv);
-    const go = () => requestAnimationFrame(fitBoxes);
-    if (img.complete) go(); else img.onload = go;
-    if (document.fonts) document.fonts.ready.then(go);
+    return pv;
   }
 
   // Schriftgröße je Textfeld so wählen, dass der Text genau in die Fläche der alten Schrift passt.
-  function fitBoxes() {
+  function fitBoxes(root: ParentNode = document) {
     const sizes = new Map<HTMLElement, number>();
-    const boxes = [...document.querySelectorAll<HTMLElement>(".pageview .tbox")];
+    const boxes = [...root.querySelectorAll<HTMLElement>(".pageview .tbox")];
     boxes.forEach(box => {
       const h = box.clientHeight, w = box.clientWidth;
       if (!h || !w) return;
@@ -491,7 +501,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     });
   }
   let fitT = 0;
-  new ResizeObserver(() => { clearTimeout(fitT); fitT = window.setTimeout(fitBoxes, 60); }).observe($("reader"));
+  new ResizeObserver(() => { clearTimeout(fitT); fitT = window.setTimeout(() => fitBoxes(), 60); }).observe($("reader"));
 
   // Alte Schrift aus dem Foto entfernen: jede Zeile mit der Hintergrundfarbe drumherum übermalen.
   function eraseText(canvas: HTMLCanvasElement, paras: Para[]): HTMLCanvasElement {
@@ -624,6 +634,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     $("count").textContent = t("pageOf", { a: cur + 1, b: pages.length });
     if (document.activeElement !== $<HTMLInputElement>("bookTitle")) $<HTMLInputElement>("bookTitle").value = (book && book.title) || "";
     $<HTMLButtonElement>("editPagesBtn").hidden = !book || !!book.demo;
+    $<HTMLButtonElement>("exportBtn").hidden = !book || !!book.demo;
     $<HTMLButtonElement>("prev").disabled = cur === 0; $<HTMLButtonElement>("next").disabled = cur >= pages.length - 1;
     if (pg.img) $<HTMLImageElement>("origImg").src = pg.img;
     $<HTMLButtonElement>("recropBtn").hidden = !(pg.photo || pg.photoBlob);
@@ -731,6 +742,162 @@ const Lib = { detectPage, warpPage, orderCorners };
     cur = Math.min(first, pages.length - 1);
     render();
   }
+
+
+  // ---------- E-Book (EPUB) ----------
+  const blobBytes = async (b: Blob | null | undefined) => (b ? new Uint8Array(await b.arrayBuffer()) : null);
+  const urlBytes = async (u: string | null | undefined) => (u ? new Uint8Array(await (await fetch(u)).arrayBuffer()) : null);
+  const EXPORT_W = 1000;
+
+  // Schrift(en) für das EPUB einbetten: OpenDyslexic steckt schon in der Seite, Google-Schriften laden wir.
+  async function exportFonts(): Promise<EpubFont[]> {
+    const family = (S.font.match(/"([^"]+)"/) || [])[1];
+    if (!family) return [];
+    const fonts: EpubFont[] = [];
+    try {
+      if (family === "OpenDyslexic") {
+        const css = [...document.querySelectorAll("style")].map(x => x.textContent || "").join("\n");
+        for (const m of css.matchAll(/font-family: "OpenDyslexic"; font-weight: (\d+); src: url\((data:font\/woff2;base64,[^)]+)\)/g)) {
+          const data = await urlBytes(m[2]);
+          if (data) fonts.push({ family, weight: Number(m[1]), file: `opendyslexic-${m[1]}.woff2`, data, type: "font/woff2" });
+        }
+      } else {
+        const css = await (await fetch(`https://fonts.googleapis.com/css2?family=${encodeURIComponent(family)}:wght@400;700&display=swap`)).text();
+        let i = 0;
+        for (const block of css.split("@font-face").slice(1)) {
+          if (!/U\+0000-00FF/.test(block)) continue;   // nur lateinische Zeichen (inkl. æ ø å ä ö ü ß)
+          const url = (block.match(/url\((https:[^)]+\.woff2)\)/) || [])[1];
+          const weight = Number((block.match(/font-weight: (\d+)/) || [])[1] || 400);
+          if (!url) continue;
+          const data = await urlBytes(url);
+          if (data) fonts.push({ family, weight, file: `font${i++}.woff2`, data, type: "font/woff2" });
+        }
+      }
+    } catch (e) { console.warn("Schrift nicht eingebettet", e); }
+    return fonts;
+  }
+
+  function exportCss(): string {
+    const [c0, c1] = S.colors.split(",");
+    const colors = S.mode === "farbe" || S.mode === "beides";
+    const arcs = S.mode === "boegen" || S.mode === "beides";
+    return `@page { margin: 0; }
+html, body { margin: 0; padding: 0; }
+.page { position: relative; overflow: hidden; background: ${S.bg}; color: #1d1d1f; font-family: ${S.font}; }
+.bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.tbox { position: absolute; overflow: hidden; line-height: ${Math.min(S.lh, 1.6)}; letter-spacing: ${S.ls}em; word-spacing: .12em; }
+.tbox p, .flow p { margin: 0 0 .35em; }
+.busy { border-radius: 12px; padding: 0 .3em; }
+.flow { position: absolute; left: 70px; right: 70px; top: 70px; line-height: ${S.lh}; letter-spacing: ${S.ls}em; word-spacing: .25em; }
+.flow p { margin-bottom: .8em; }
+.w { white-space: nowrap; }
+${colors ? `.s0 { color: ${c0}; } .s1 { color: ${c1}; }` : ""}
+${arcs ? `.s { position: relative; display: inline-block; padding-bottom: .12em; }
+.s::after { content: ""; position: absolute; left: 6%; right: 6%; bottom: -.02em; height: .28em; border: .07em solid ${colors ? c0 : "#555"}; border-top: 0; border-radius: 0 0 50% 50% / 0 0 100% 100%; }
+${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
+  }
+
+  // Seiten unsichtbar setzen und vermessen, damit die Schriftgrößen im EPUB genau passen
+  async function exportPages(host: HTMLDivElement): Promise<EpubPage[]> {
+    const ser = new XMLSerializer();
+    const out: EpubPage[] = [];
+    for (const pg of pages) {
+      const { ps } = buildText(pg.text, pg.lang);
+      host.innerHTML = "";
+      if (pg.clean && pg.paras && pg.paras.length && pg.workW && pg.workH) {
+        const pv = buildPageView(pg, ps);
+        host.append(pv);
+        const img = pv.querySelector("img")!;
+        try { await img.decode(); } catch { /* Bild fehlt: Textfelder trotzdem setzen */ }
+        fitBoxes(host);
+        img.remove();
+        const boxes = [...pv.querySelectorAll<HTMLElement>(".tbox")].map(b => { b.removeAttribute("data-lh"); return ser.serializeToString(b); });
+        out.push({ width: EXPORT_W, height: Math.round(EXPORT_W * pg.workH / pg.workW), image: (await blobBytes(pg.cleanBlob)) || (await urlBytes(pg.clean)), bodyHtml: boxes.join("\n") });
+      } else {
+        // reine Textseite: Schrift so groß wie möglich, aber die Seite darf nicht überlaufen
+        const height = Math.round(EXPORT_W * 1.414);
+        const flow = document.createElement("div"); flow.className = "flow";
+        Object.assign(flow.style, { position: "absolute", left: "70px", right: "70px", top: "70px" });
+        ps.forEach(p => flow.append(p));
+        host.append(flow);
+        let lo = 16, hi = 90;
+        for (let k = 0; k < 10; k++) { const mid = (lo + hi) / 2; flow.style.fontSize = mid + "px"; if (flow.scrollHeight <= height - 140) lo = mid; else hi = mid; }
+        flow.style.fontSize = lo + "px";
+        flow.removeAttribute("style"); flow.setAttribute("style", `font-size:${lo.toFixed(1)}px`);
+        out.push({ width: EXPORT_W, height, image: null, bodyHtml: ser.serializeToString(flow) });
+      }
+    }
+    return out;
+  }
+
+  async function exportBook() {
+    if (!book || book.demo) return;
+    if (pages.some(p => p.status !== "done")) { toast(t("notReady")); return; }
+    toast(t("exporting"), 60000);
+    const host = document.createElement("div");
+    host.className = $("reader").className.replace(/\bcomparing\b/, "") + " pagemode exporthost";
+    Object.assign(host.style, { position: "fixed", left: "-20000px", top: "0", width: EXPORT_W + "px", fontSize: "32px" });
+    document.body.append(host);
+    try {
+      const epPages = await exportPages(host);
+      const data: DataPage[] = [];
+      for (const pg of pages) {
+        data.push({
+          lang: pg.lang, text: pg.text, rawText: pg.rawText, paras: pg.paras, workW: pg.workW, workH: pg.workH, corners: pg.corners,
+          input: (await blobBytes(pg.inputBlob)) || (pg.canvas ? await blobBytes(await canvasBlob(pg.canvas)) : null),
+          clean: (await blobBytes(pg.cleanBlob)) || (await urlBytes(pg.clean)),
+        });
+      }
+      const title = book.title || t("untitled");
+      const bytes = buildEpub({ id: book.id, title, lang: pages[0]?.lang || S.lang, css: exportCss(), fonts: await exportFonts(), pages: epPages, data: { title, pages: data }, pageLabel: t("page") });
+      const name = (title.replace(/[\\/:*?"<>|]+/g, "").trim() || "laesehjaelper") + ".epub";
+      const blob = new Blob([bytes as BlobPart], { type: "application/epub+zip" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = name;
+      document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+      toast(t("exported", { name }), 4000);
+    } catch (e) {
+      console.error(e); toast(e instanceof Error ? e.message : String(e));
+    } finally { host.remove(); }
+  }
+  $<HTMLButtonElement>("exportBtn").onclick = () => { exportBook(); };
+
+  async function importBook(file: File) {
+    toast(t("importing"), 60000);
+    try {
+      const d = readEpub(new Uint8Array(await file.arrayBuffer()));
+      if (!d || !d.pages.length) { toast(t("importFail")); return; }
+      const b: Book = { id: uid(), title: d.title, pageIds: [], lastPage: 0, cover: null, created: Date.now(), updated: Date.now() };
+      for (const p of d.pages) {
+        const id = uid();
+        const rec: PageRecord = {
+          id, bookId: b.id, lang: p.lang, status: "done", text: p.text, rawText: p.rawText, paras: p.paras || null,
+          workW: p.workW, workH: p.workH, corners: p.corners || null,
+          inputBlob: p.input ? new Blob([p.input as BlobPart], { type: "image/jpeg" }) : null,
+          photoBlob: null,
+          cleanBlob: p.clean ? new Blob([p.clean as BlobPart], { type: "image/jpeg" }) : null,
+        };
+        await DB.put<PageRecord>("pages", rec);
+        b.pageIds.push(id);
+      }
+      const first = d.pages[0].input;
+      if (first) {
+        const c = await blobToCanvas(new Blob([first as BlobPart], { type: "image/jpeg" }));
+        const k = 240 / Math.max(c.width, c.height), sm = document.createElement("canvas");
+        sm.width = Math.round(c.width * k); sm.height = Math.round(c.height * k);
+        ctx2d(sm).drawImage(c, 0, 0, sm.width, sm.height);
+        b.cover = sm.toDataURL("image/jpeg", 0.8);
+      }
+      await DB.put("books", b);
+      toast(d.title || t("untitled"), 2000);
+      await renderShelf();
+      openBook(b);
+    } catch (e) {
+      console.error(e); toast(t("importFail"));
+    }
+  }
+  $<HTMLInputElement>("importFile").onchange = e => { const inp = e.target as HTMLInputElement; if (inp.files?.[0]) importBook(inp.files[0]); inp.value = ""; };
 
   // ---------- Seite zuschneiden ----------
   // OpenCV (ca. 13 MB) wird erst beim ersten Foto geladen und dann vom Browser zwischengespeichert.

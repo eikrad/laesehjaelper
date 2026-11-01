@@ -25,6 +25,8 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Show the original text with one tap to spot recognition errors
 - Bookshelf: books are stored on the device, with title, page order and reading position
 - Cropping: the page is found in the photo automatically and straightened; corners can be adjusted
+- E-book: save a book as EPUB 3 (fixed layout, opens in any reading app) and import it again losslessly
+- Installable as an app and usable offline
 
 ## Development
 
@@ -46,6 +48,9 @@ The project is written in TypeScript (strict).
 - `src/pagedetect.ts`: finds the page in the photo and straightens it (OpenCV)
 - `src/silben.ts`: syllable splitting (Danish, German, English)
 - `src/db.ts`: stores books on the device (IndexedDB)
+- `src/epub.ts`: EPUB export and import
+- `src/prep.ts`: image preparation for OCR (background flattening)
+- `src/sw.ts`: service worker (offline, installation)
 - `src/types.ts`: shared types
 - `build.ts`: builds `dist/` with esbuild and copies Tesseract, OpenCV and language files
 

@@ -7,6 +7,7 @@ Læsehjælper itself is licensed under the MIT License (see `LICENSE`). The buil
 | [tesseract.js](https://github.com/naptha/tesseract.js) and tesseract.js-core | Text recognition | Apache-2.0 |
 | [@tesseract.js-data](https://github.com/naptha/tessdata) (dan, deu) | Language data for text recognition | MIT (data originally from Tesseract, Apache-2.0) |
 | [OpenCV.js](https://opencv.org/) via [@techstark/opencv-js](https://github.com/TechStark/opencv-js) | Page detection and perspective correction | Apache-2.0 |
+| [fflate](https://github.com/101arrowz/fflate) | Creating and reading EPUB (ZIP) files | MIT |
 | [hyphen](https://github.com/ytiurin/hyphen) | Syllable splitting | ISC |
 | TeX hyphenation patterns (Danish, German), included in `hyphen` | Syllable splitting | See the [hyph-utf8 project](https://github.com/hyphenation/tex-hyphen) for the license of each pattern file |
 | [OpenDyslexic](https://opendyslexic.org/) via @fontsource/opendyslexic | Reading font (embedded) | SIL Open Font License 1.1 |
