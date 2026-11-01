@@ -1,13 +1,15 @@
-// Silbentrennung für Deutsch (neue Rechtschreibung) auf Basis der TeX-Trennmuster.
-import { hyphenateSync } from "hyphen/de-1996";
+// Silbentrennung auf Basis der TeX-Trennmuster (Dänisch und Deutsch in neuer Rechtschreibung).
+import { hyphenateSync as da } from "hyphen/da";
+import { hyphenateSync as de } from "hyphen/de-1996";
 
 const SHY = "­";
+const trenner = { da, de };
 
 // Einzelnes Wort in Silben zerlegen. Gibt ein Array von Silben zurück.
-export function silben(wort) {
+export function silben(wort, sprache = "da") {
   if (wort.length < 3) return [wort];
-  const getrennt = hyphenateSync(wort, { hyphenChar: SHY, minWordLength: 3 });
-  return getrennt.split(SHY).filter(Boolean);
+  const h = trenner[sprache] || da;
+  return h(wort, { hyphenChar: SHY, minWordLength: 3 }).split(SHY).filter(Boolean);
 }
 
 window.Silben = { silben };

@@ -31,7 +31,8 @@ if (!worker.includes(bug)) throw new Error("worker.min.js: Patch-Stelle nicht ge
 fs.writeFileSync(`${out}/worker.min.js`, worker.replace(bug, 'return"string"==typeof t?t:t.code}'));
 for (const f of ["tesseract-core-lstm.wasm.js", "tesseract-core-simd-lstm.wasm.js"])
   copy(`${nm}/tesseract.js-core/${f}`, `core/${f}`);
-// Sprachdaten als JS-Datei (Base64), weil der Artifact-Host nur bestimmte Dateitypen ausliefert.
-fs.writeFileSync(`${out}/lang/deu.js`, `window.DEU_TRAINEDDATA="${b64(`${nm}/@tesseract.js-data/deu/4.0.0_best_int/deu.traineddata.gz`)}";`);
+// Sprachdaten als JS-Dateien (Base64), weil der Artifact-Host nur bestimmte Dateitypen ausliefert.
+for (const l of ["dan", "deu"])
+  fs.writeFileSync(`${out}/lang/${l}.js`, `window.TRAINEDDATA=window.TRAINEDDATA||{};window.TRAINEDDATA.${l}="${b64(`${nm}/@tesseract.js-data/${l}/4.0.0_best_int/${l}.traineddata.gz`)}";`);
 
 console.log("Fertig: dist/");

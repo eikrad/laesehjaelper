@@ -62,6 +62,8 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .drop strong { display: block; font-size: 18px; margin-bottom: 4px; }
 .drop span { color: var(--muted); font-size: 14px; }
 .drop input { display: none; }
+.langpick { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 16px 0 0; flex-wrap: wrap; color: var(--muted); font-size: 15px; }
+.langpick .seg { min-width: 240px; }
 .or { margin: 14px 0 0; color: var(--muted); font-size: 14px; }
 .linkbtn { background: none; border: 0; color: var(--accent); font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0; }
 .how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 22px; text-align: left; }
@@ -166,6 +168,13 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
       <strong>📷 Seite fotografieren oder Bilder wählen</strong>
       <span>Mehrere Seiten auf einmal möglich · Erkennung läuft nur auf deinem Gerät</span>
     </label>
+    <div class="langpick" id="langStart">
+      <span>Sprache des Buchs:</span>
+      <div class="seg">
+        <button data-v="da">🇩🇰 Dänisch</button>
+        <button data-v="de">🇩🇪 Deutsch</button>
+      </div>
+    </div>
     <p class="or">Kein Buch zur Hand? <button class="linkbtn" id="demoBtn">Beispielseite ansehen</button></p>
     <div class="how">
       <div><b>1. Foto</b>Seite gerade und hell fotografieren, möglichst ohne Schatten.</div>
@@ -189,6 +198,13 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
 
     <div class="settings" id="settings">
       <div class="grid">
+        <div class="field">
+          <label>Sprache des Buchs</label>
+          <div class="seg" id="langSet">
+            <button data-v="da">Dänisch</button>
+            <button data-v="de">Deutsch</button>
+          </div>
+        </div>
         <div class="field">
           <label for="font">Schrift</label>
           <select id="font">
@@ -262,7 +278,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     <div class="thumbs" id="thumbs"></div>
   </section>
 
-  <p class="foot">Texterkennung mit Tesseract, Silbentrennung mit TeX-Trennmustern. Alles läuft lokal im Browser, es werden keine Fotos hochgeladen.</p>
+  <p class="foot">Texterkennung mit Tesseract, Silbentrennung mit TeX-Trennmustern (Dänisch, Deutsch). Alles läuft lokal im Browser, es werden keine Fotos hochgeladen.</p>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -274,7 +290,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   const abs = (p) => new URL(p, location.href).href;
 
   // ---------- Einstellungen ----------
-  const defaults = { font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#1f5fd1,#d13a2f", bg: "#fffbf0", orig: "an" };
+  const defaults = { font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#1f5fd1,#d13a2f", bg: "#fffbf0", orig: "an", lang: "da" };
   let S = { ...defaults };
   try { Object.assign(S, JSON.parse(localStorage.getItem("lesehelfer") || "{}")); } catch (e) {}
   const save = () => { try { localStorage.setItem("lesehelfer", JSON.stringify(S)); } catch (e) {} };
@@ -292,15 +308,18 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     rd.classList.toggle("mode-farbe", S.mode === "farbe" || S.mode === "beides");
     rd.classList.toggle("mode-boegen", S.mode === "boegen" || S.mode === "beides");
     $("font").value = S.font; $("size").value = S.size; $("ls").value = S.ls; $("lh").value = S.lh;
-    for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"]])
+    for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"]])
       $(id).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === S[key]));
     $("orig").classList.toggle("hidden", S.orig === "aus" || !pages[cur]?.img);
     save();
   }
   $("font").onchange = e => { S.font = e.target.value; applySettings(); };
   for (const k of ["size", "ls", "lh"]) $(k).oninput = e => { S[k] = parseFloat(e.target.value); applySettings(); };
-  for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"]])
-    $(id).onclick = e => { const b = e.target.closest("button"); if (b) { S[key] = b.dataset.v; applySettings(); } };
+  for (const [id, key] of [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"]])
+    $(id).onclick = e => { const b = e.target.closest("button"); if (b) {
+      S[key] = b.dataset.v; applySettings();
+      if (key === "lang" && pages[cur] && pages[cur].lang !== S.lang) relang(pages[cur]);
+    } };
   $("setBtn").onclick = () => $("settings").classList.toggle("open");
   $("focusBtn").onclick = () => {
     const on = document.body.classList.toggle("focus");
@@ -338,7 +357,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
 
   // Text -> HTML mit Wort- und Silben-Spans. Gleichzeitig Zeichenpositionen für das Vorlesen merken.
   const WORD = /[\p{L}\p{M}·]+/gu;
-  function renderText(text) {
+  function renderText(text, lang) {
     const rd = $("reader");
     rd.innerHTML = "";
     const plainParts = [];
@@ -352,7 +371,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
         if (m.index > last) p.append(para.replace(/\n/g, " ").slice(last, m.index));
         const raw = m[0];
         const word = raw.replace(/·/g, "");
-        const parts = raw.includes("·") ? raw.split("·").filter(Boolean) : Silben.silben(word);
+        const parts = raw.includes("·") ? raw.split("·").filter(Boolean) : Silben.silben(word, lang);
         const w = document.createElement("span");
         w.className = "w"; w.dataset.word = word; w.dataset.i = wordIndex++;
         parts.forEach((sil, i) => {
@@ -386,7 +405,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     if (pg.img) $("origImg").src = pg.img;
     stopSpeech();
     if (pg.status === "done") {
-      renderText(pg.text);
+      renderText(pg.text, pg.lang);
       $("text").value = pg.text;
       $("edit").hidden = false;
       $("readBtn").disabled = !pg.text;
@@ -430,7 +449,7 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   let editT;
   $("text").oninput = e => {
     clearTimeout(editT);
-    editT = setTimeout(() => { pages[cur].text = e.target.value; renderText(pages[cur].text); }, 250);
+    editT = setTimeout(() => { pages[cur].text = e.target.value; renderText(pages[cur].text, pages[cur].lang); }, 250);
   };
 
   // ---------- Bilder laden ----------
@@ -461,8 +480,8 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     for (const f of list) {
       try {
         const { dataUrl, canvas } = await loadImage(f);
-        const pg = { img: dataUrl, text: "", status: "wait", progress: 0 };
-        pages.push(pg); queue.push({ pg, canvas });
+        const pg = { img: dataUrl, canvas, lang: S.lang, text: "", status: "wait", progress: 0 };
+        pages.push(pg); queue.push(pg);
       } catch (e) { toast(e.message); }
     }
     cur = Math.min(first, pages.length - 1);
@@ -471,24 +490,26 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   }
 
   // ---------- Texterkennung ----------
-  let workerP = null, active = null;
+  const workers = {}; let active = null;
+  const OCR_LANG = { da: "dan", de: "deu" };
   const loadScript = (src) => new Promise((res, rej) => {
     const s = document.createElement("script");
     s.src = src; s.onload = res; s.onerror = () => rej(new Error("Datei fehlt: " + src));
     document.head.append(s);
   });
-  function getWorker() {
-    if (!workerP) {
-      workerP = loadScript("lang/deu.js")
-        .then(() => Uint8Array.from(atob(window.DEU_TRAINEDDATA), c => c.charCodeAt(0)))
-        .then(bytes => Tesseract.createWorker([{ code: "deu", data: bytes }], 1, {
+  function getWorker(lang) {
+    const code = OCR_LANG[lang] || "dan";
+    if (!workers[code]) {
+      const p = workers[code] = loadScript(`lang/${code}.js`)
+        .then(() => Uint8Array.from(atob(window.TRAINEDDATA[code]), c => c.charCodeAt(0)))
+        .then(bytes => Tesseract.createWorker([{ code, data: bytes }], 1, {
         workerPath: abs("worker.min.js"),
         corePath: abs("core"),
         workerBlobURL: false,
         cacheMethod: "none",
         logger: m => {
           if (!active) return;
-          const names = { "loading tesseract core": "Erkennung wird geladen …", "loading language traineddata": "Deutsch wird geladen …", "initializing api": "Wird vorbereitet …", "recognizing text": "Text wird erkannt …" };
+          const names = { "loading tesseract core": "Erkennung wird geladen …", "loading language traineddata": "Sprachdaten werden geladen …", "initializing api": "Wird vorbereitet …", "recognizing text": "Text wird erkannt …" };
           active.stage = names[m.status] || active.stage;
           active.progress = m.status === "recognizing text" ? m.progress : (active.progress || 0);
           if (pages[cur] === active) {
@@ -499,21 +520,21 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
           }
         },
       })).then(async w => { await w.setParameters({ preserve_interword_spaces: "1" }); return w; });
-      workerP.catch(() => { workerP = null; });
+      p.catch(() => { delete workers[code]; });
     }
-    return workerP;
+    return workers[code];
   }
 
   let running = false;
   async function runQueue() {
     if (running) return; running = true;
     while (queue.length) {
-      const { pg, canvas } = queue.shift();
+      const pg = queue.shift();
       active = pg; pg.status = "ocr"; pg.stage = "Erkennung wird geladen …";
       if (pages[cur] === pg) render();
       try {
-        const w = await getWorker();
-        const { data } = await w.recognize(canvas);
+        const w = await getWorker(pg.lang);
+        const { data } = await w.recognize(pg.canvas);
         pg.text = cleanOcr(data.text || "");
         pg.status = "done";
       } catch (e) {
@@ -528,19 +549,20 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
 
   // ---------- Vorlesen ----------
   const synth = window.speechSynthesis;
-  let voice = null;
-  function pickVoice() {
-    if (!synth) return;
-    const vs = synth.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith("de"));
-    voice = vs.find(v => /google|premium|enhanced|anna|petra|helena|katja/i.test(v.name)) || vs[0] || null;
+  const SPEECH = { da: "da-DK", de: "de-DE" };
+  function pickVoice(lang) {
+    if (!synth) return null;
+    const vs = synth.getVoices().filter(v => v.lang && v.lang.toLowerCase().replace("_", "-").startsWith(lang));
+    return vs.find(v => /google|premium|enhanced|natural/i.test(v.name)) || vs[0] || null;
   }
-  if (synth) { pickVoice(); synth.onvoiceschanged = pickVoice; }
+  if (synth) synth.getVoices();
 
   function speak(text, onBoundary, onEnd) {
     if (!synth) { toast("Vorlesen wird von diesem Browser nicht unterstützt."); return; }
     synth.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = "de-DE"; if (voice) u.voice = voice;
+    const lang = pages[cur]?.lang || S.lang;
+    u.lang = SPEECH[lang]; const voice = pickVoice(lang); if (voice) u.voice = voice;
     u.rate = 0.85;
     if (onBoundary) u.onboundary = onBoundary;
     u.onend = u.onerror = () => onEnd && onEnd();
@@ -570,6 +592,22 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
     }, () => { reading = false; clearHighlight(); $("readBtn").textContent = "🔊 Vorlesen"; });
   };
 
+  const DEMO = {
+    da: "Det lille pindsvin bor under et stort æbletræ.\n\n" +
+        "Hver morgen snuser det til blomsterne. Så leder det efter biller og orme i haven.\n\n" +
+        "I dag regner det. Pindsvinet ruller sig sammen og falder i søvn.",
+    de: "Der kleine Igel wohnt unter einem großen Apfelbaum.\n\n" +
+        "Jeden Morgen schnuppert er an den Blumen. Dann sucht er Käfer und Würmer im Garten.\n\n" +
+        "Heute regnet es. Der Igel rollt sich zusammen und schläft ein.",
+  };
+
+  // Sprache einer Seite nachträglich ändern: Fotoseiten neu erkennen, Beispielseite austauschen.
+  function relang(pg) {
+    pg.lang = S.lang;
+    if (pg.canvas) { pg.status = "wait"; pg.progress = 0; queue.push(pg); render(); runQueue(); }
+    else { if (Object.values(DEMO).includes(pg.text)) pg.text = DEMO[pg.lang]; render(); }
+  }
+
   // ---------- Start ----------
   function showApp() { $("start").hidden = true; $("app").hidden = false; }
 
@@ -581,12 +619,9 @@ body.focus .reader { padding: 48px 6vw; min-height: 100vh; }
   document.addEventListener("paste", e => { const f = [...(e.clipboardData?.files || [])]; if (f.length) addFiles(f); });
 
   $("demoBtn").onclick = () => {
-    pages.push({ img: null, status: "done", text:
-      "Der kleine Igel wohnt unter einem großen Apfelbaum.\n\n" +
-      "Jeden Morgen schnuppert er an den Blumen. Dann sucht er Käfer und Würmer im Garten.\n\n" +
-      "Heute regnet es. Der Igel rollt sich zusammen und schläft ein." });
+    pages.push({ img: null, status: "done", lang: S.lang, text: DEMO[S.lang] });
     cur = pages.length - 1; showApp(); render();
-    getWorker(); // Erkennung im Hintergrund schon vorladen
+    getWorker(S.lang); // Erkennung im Hintergrund schon vorladen
   };
 
   applySettings();
