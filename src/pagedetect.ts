@@ -142,8 +142,13 @@ export function warpPage(cv: CV, canvas: HTMLCanvasElement, frame: Frame): HTMLC
   const M0 = cv.getPerspectiveTransform(from, to0);
   const h0: number[] = Array.from(M0.data64F as Float64Array);
   [to0, M0].forEach((m) => m.delete());
-  const mids = [mt, mr, mb, ml].map((p) => applyH(h0, p));
   const straight: Point[] = [[W / 2, 0], [W, H / 2], [W / 2, H], [0, H / 2]];
+  // Perspektive verschiebt Mittelpunkte auch entlang einer geraden Kante. Nur
+  // die Abweichung quer zur Kante beschreibt Wölbung; längs nicht neu verzerren.
+  const mids = [mt, mr, mb, ml].map((p, i): Point => {
+    const mapped = applyH(h0, p);
+    return i % 2 === 0 ? [W / 2, mapped[1]] : [mapped[0], H / 2];
+  });
   const curved = mids.some((p, i) => Math.hypot(p[0] - straight[i][0], p[1] - straight[i][1]) > 2);
 
   // Rand, damit nach außen gewölbte Teile beim Entzerren nicht abgeschnitten werden
