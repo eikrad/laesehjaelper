@@ -9,7 +9,8 @@
     "test:e2e": "playwright test",
     "coverage:unit": "vitest run --coverage",
     "coverage:e2e": "COVERAGE=1 node build.ts && COVERAGE=1 playwright test",
-    "coverage": "npm run coverage:unit && npm run coverage:e2e && node coverage.ts && npm run build"
+    "coverage": "npm run coverage:unit && npm run coverage:e2e && node coverage.ts && npm run build",
+    "lint": "node lint.ts"
   },
   "license": "MIT",
   "dependencies": {
@@ -27,6 +28,7 @@
   "private": true,
   "type": "module",
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
     "@playwright/test": "^1.64.1",
     "@types/node": "^26.6.6",
     "@vitest/coverage-v8": "^5.0.5",

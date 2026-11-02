@@ -2,8 +2,8 @@
 // und prüfen, dass sie nicht unter die Mindestwerte fällt.
 import { CoverageReport } from "monocart-coverage-reports";
 
-/** Mindestabdeckung in Prozent (etwas unter dem Stand vom 2. 11. 2026: 88,6 / 76,9 / 91,3). */
-const MIN = { lines: 85, branches: 72, functions: 87 };
+/** Mindestabdeckung in Prozent (etwas unter dem Stand vom 2. 11. 2026: 89,5 / 78,4 / 92,5). */
+const MIN = { lines: 88, branches: 76, functions: 90 };
 
 const results = await new CoverageReport({
   name: "Læsehjælper – Testabdeckung gesamt",

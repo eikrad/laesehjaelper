@@ -31,6 +31,7 @@ Node: CI runs on the current Node LTS (26); the minimum for local work is Node 2
 **Dependencies and security:** `npm audit` runs in CI and fails on moderate or worse. Dependabot opens weekly pull requests for npm packages and GitHub Actions. GitHub Actions are pinned to commit SHAs (with the version in a comment) so a hijacked tag cannot change what runs; when updating, take the SHA of the release tag. Check major updates with Context7 and the release notes before merging.
 
 ```bash
+npm run lint           # Biome for source, tests and configuration
 npm run typecheck      # TypeScript, strict
 npm test               # unit tests
 npm run build          # app into dist/
@@ -38,7 +39,7 @@ npm run test:e2e       # end-to-end tests (needs dist/)
 npm run coverage       # unit + e2e coverage, merged, with minimum thresholds
 ```
 
-**Coverage:** `npm run coverage` merges unit and browser coverage (Monocart, V8) and fails below the minimums in `coverage.ts` (lines 85 %, branches 72 %, functions 87 % as of November 2026). CI runs it on every pull request; the HTML report is attached to the run as the `coverage` artifact. Raise the minimums when coverage goes up; never lower them to make a pull request pass.
+**Coverage:** `npm run coverage` merges unit and browser coverage (Monocart, V8) and fails below the minimums in `coverage.ts` (lines 88 %, branches 76 %, functions 90 % as of November 2026). CI runs it on every pull request; the HTML report is attached to the run as the `coverage` artifact. Raise the minimums when coverage goes up; never lower them to make a pull request pass.
 
 ## Conventions
 

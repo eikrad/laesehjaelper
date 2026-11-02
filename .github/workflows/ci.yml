@@ -27,6 +27,8 @@ jobs:
       - run: npm ci
       - name: Bekannte Sicherheitslücken in Abhängigkeiten
         run: npm audit --audit-level=moderate
+      - name: Lint
+        run: npm run lint
       - name: Typ-Check
         run: npm run typecheck
       - name: Unit-Tests (mit Abdeckung)

@@ -44,11 +44,12 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 npm install
 npm run build       # erzeugt dist/
 npm run typecheck   # TypeScript (strict)
+npm run lint        # Biome für TypeScript
 npm test            # Unit-Tests (Vitest)
 npm run test:e2e    # End-to-End-Tests in Chromium (Playwright)
 ```
 
-Die CI (`.github/workflows/ci.yml`) führt bei jedem Push und Pull Request Typ-Check, Unit-Tests, Build und End-to-End-Tests aus. `main` wird nur dann auf GitHub Pages veröffentlicht, wenn alles grün ist.
+Die CI (`.github/workflows/ci.yml`) führt bei jedem Push und Pull Request Lint, Typ-Check, Unit-Tests, Build und End-to-End-Tests aus. `main` wird nur dann auf GitHub Pages veröffentlicht, wenn alles grün ist.
 
 ## Aufbau
 

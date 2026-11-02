@@ -49,7 +49,7 @@ function lineUnits(line: OcrLine): RawUnit[] {
   const units: RawUnit[] = [];
   for (const part of parts) {
     if (!part.some(strong)) continue;
-    let ws = part.filter(usable);
+    const ws = part.filter(usable);
     const pre: OcrWord[] = [];
     while (ws.length && !edgeOk(ws[0], 75)) pre.push(ws.shift()!);
     // rechts: unsicheres Wort darf bleiben, wenn es wortähnlich ist und dicht am Vorgänger steht

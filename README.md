@@ -44,11 +44,12 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 npm install
 npm run build       # bygger dist/
 npm run typecheck   # TypeScript (strict)
+npm run lint        # Biome for TypeScript
 npm test            # unit-tests (Vitest)
 npm run test:e2e    # end-to-end-tests i Chromium (Playwright)
 ```
 
-CI (`.github/workflows/ci.yml`) kører typecheck, unit-tests, build og end-to-end-tests ved hvert push og pull request. Kun når alt er grønt, bliver `main` udgivet på GitHub Pages.
+CI (`.github/workflows/ci.yml`) kører lint, typecheck, unit-tests, build og end-to-end-tests ved hvert push og pull request. Kun når alt er grønt, bliver `main` udgivet på GitHub Pages.
 
 ## Opbygning
 

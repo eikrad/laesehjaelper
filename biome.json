@@ -1,0 +1,45 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.4/schema.json",
+  "files": {
+    "includes": [
+      "**/*.ts",
+      "!!**/dist",
+      "!!**/coverage",
+      "!!**/node_modules",
+      "!!**/playwright-report",
+      "!!**/test-results",
+      "!!**/private-testbilder"
+    ]
+  },
+  "formatter": {
+    "enabled": false
+  },
+  "assist": {
+    "enabled": false
+  },
+  "linter": {
+    "rules": {
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "noUnreachable": "error",
+        "noConstAssign": "error",
+        "noConstantCondition": "error",
+        "noUnsafeFinally": "error"
+      },
+      "suspicious": {
+        "noAsyncPromiseExecutor": "error",
+        "noDuplicateParameters": "error",
+        "noDebugger": "error",
+        "noDuplicateCase": "error",
+        "noDuplicateClassMembers": "error",
+        "noDuplicateObjectKeys": "error",
+        "noGlobalAssign": "error",
+        "noSelfCompare": "error",
+        "noSparseArray": "error",
+        "noUnsafeNegation": "error"
+      },
+      "preset": "none"
+    }
+  }
+}

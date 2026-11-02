@@ -82,14 +82,14 @@ const Lib = { detectPage, warpPage, orderCorners };
   // ---------- Einstellungen ----------
   const defaults: Settings = { font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus" };
   const S: Settings = { ...defaults };
-  try { Object.assign(S, JSON.parse(localStorage.getItem("lesehelfer") || "{}")); } catch (e) {}
+  try { Object.assign(S, JSON.parse(localStorage.getItem("lesehelfer") || "{}")); } catch {}
   const PROFILES = "laesehjaelper-profiles";
   let prof: ProfileStore | null = null;   // wird nach den Texten angelegt (Name des ersten Profils)
   const save = () => {
     try {
       localStorage.setItem("lesehelfer", JSON.stringify(S));
       if (prof) { prof = syncActive(prof, S); localStorage.setItem(PROFILES, JSON.stringify(prof)); }
-    } catch (e) {}
+    } catch {}
   };
 
   // ---------- Texte (Oberfläche) ----------
@@ -184,7 +184,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   };
   const t = (k: string, vars: Record<string, string | number> = {}): string =>
     (T[S.ui] || T.da)[k]?.replace(/\{(\w+)\}/g, (_, v: string) => String(vars[v])) ?? k;
-  try { prof = initProfiles(localStorage.getItem(PROFILES), S, t("reader1")); } catch (e) { prof = initProfiles(null, S, t("reader1")); }
+  try { prof = initProfiles(localStorage.getItem(PROFILES), S, t("reader1")); } catch { prof = initProfiles(null, S, t("reader1")); }
 
   // ---------- Profile (Leseeinstellungen pro Kind) ----------
   function renderProfiles() {
@@ -284,7 +284,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   for (const [i, id] of ["c0", "c1"].entries())
     $(id).oninput = e => { const c = S.colors.split(","); c[i] = val(e); S.colors = c.join(","); applySettings(); };
   $<HTMLButtonElement>("focusBtn").onclick = () => {
-    const on = document.body.classList.toggle("focus");
+    document.body.classList.toggle("focus");
     setFocusBtn();
     window.scrollTo(0, 0);
   };
@@ -382,7 +382,7 @@ const Lib = { detectPage, warpPage, orderCorners };
 
   async function renderShelf() {
     let books: Book[] = [];
-    try { books = await DB.all<Book>("books"); } catch (e) { /* kein Speicher: Regal bleibt leer */ }
+    try { books = await DB.all<Book>("books"); } catch { /* kein Speicher: Regal bleibt leer */ }
     books.sort((a, b) => (b.updated || 0) - (a.updated || 0));
     $("shelf").hidden = !books.length;
     const box = $("books"); box.innerHTML = "";
@@ -721,8 +721,8 @@ const Lib = { detectPage, warpPage, orderCorners };
     function tails(l: Box, h: number): Box[] {
       const out: Box[] = [];
       const y0 = Math.max(0, Math.round(l.y0)), y1 = Math.min(H - 1, Math.round(l.y1));
-      let bg = 0, n = 0;
-      for (let y = y0; y <= y1; y += 2) for (const x of [l.x0, l.x1]) { if (x >= 0 && x < W) { bg = Math.max(bg, lum(Math.round(x), y)); n++; } }
+      let bg = 0;
+      for (let y = y0; y <= y1; y += 2) for (const x of [l.x0, l.x1]) { if (x >= 0 && x < W) bg = Math.max(bg, lum(Math.round(x), y)); }
       const inkCol = (x: number): boolean => { for (let y = y0; y <= y1; y += 2) if (lum(x, y) < bg - 70) return true; return false; };
       for (const dir of [1, -1]) {
         let x = dir > 0 ? Math.round(l.x1) + 1 : Math.round(l.x0) - 1, gap = 0, last: number | null = null;
@@ -735,7 +735,8 @@ const Lib = { detectPage, warpPage, orderCorners };
       return out;
     }
     for (const pa of paras) {
-      let spreadMax = 0, bgs = [];
+      let spreadMax = 0;
+      const bgs: number[][] = [];
       const extraBoxes = (pa.lines || []).flatMap(l => tails(l, pa.lh));
       for (const l of [...(pa.words || pa.lines), ...extraBoxes]) {
         const pad = Math.round(pa.lh * 0.28) + 3;
@@ -813,11 +814,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       pg.text = Layout.cleanOcr(pg.rawText, ocrOpts());
     }
   }
-  const toCanvas = (src: string) => new Promise<HTMLCanvasElement>((res, rej) => {
-    const img = new Image();
-    img.onload = () => { const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext("2d")!.drawImage(img, 0, 0); res(c); };
-    img.onerror = rej; img.src = src;
-  });
+
 
   // Nach dem Korrigieren: Absätze wieder den Textfeldern auf der Seite zuordnen.
   function syncParas(pg: Page) {
@@ -1137,84 +1134,84 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   // Dialog: Rahmen zeigen (automatischer Vorschlag oder Bildrand), verschieben lassen, entzerren.
   // Vier Ecken plus je ein Punkt auf jeder Kante: Mit den Kantenpunkten lassen sich gewölbte
   // Seiten (z. B. zur Buchmitte hin) nachzeichnen.
-  function cropFlow(photo: HTMLCanvasElement, start: Frame | null, counter: string): Promise<CropResult> {
-    return new Promise(async (resolve) => {
-      const W = photo.width, H = photo.height;
-      const full = frameFromCorners([[0, 0], [W, 0], [W, H], [0, H]]);
-      const init = start || full;
-      // Punkte in Reihenfolge: 4 Ecken, dann 4 Kantenmitten (oben, rechts, unten, links)
-      let pts: Point[] = [...init.corners, ...init.mids].map((p): Point => [p[0], p[1]]);
-      // Kantenmitten, die noch nicht von Hand bewegt wurden, wandern mit den Ecken mit
-      const midMoved = [false, false, false, false];
-      if (start) start.mids.forEach((m, i) => {
-        const a = start.corners[i], b = start.corners[(i + 1) % 4];
-        midMoved[i] = Math.hypot(m[0] - (a[0] + b[0]) / 2, m[1] - (a[1] + b[1]) / 2) > 2;
-      });
-      const followMids = () => {
-        for (let i = 0; i < 4; i++) if (!midMoved[i]) {
-          const a = pts[i], b = pts[(i + 1) % 4];
-          pts[4 + i] = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-        }
-      };
-      const dlg = $("crop"), stage = $("cropStage"), cnv = $<HTMLCanvasElement>("cropCanvas");
-      dlg.hidden = false;
-      // Höhe auf den sichtbaren Bildschirm begrenzen. In eingebetteten Ansichten, die so hoch wie der
-      // Inhalt werden, wäre der Dialog sonst höher als der Bildschirm und die Knöpfe unsichtbar.
-      const visibleH = Math.min(window.innerHeight, window.visualViewport?.height || Infinity, screen.availHeight || Infinity);
-      dlg.style.height = visibleH + "px";
-      dlg.style.top = (window.innerHeight > visibleH * 1.15 ? window.scrollY : 0) + "px";
-      const msg = (k: string) => { $("cropMsg").textContent = (counter ? counter + " · " : "") + t(k); };
-      msg("cropLoading");
-      let scale = 1, ox = 0, oy = 0;
-      const handles = pts.map((_, i) => { const h = document.createElement("div"); h.className = i < 4 ? "h" : "h mid"; stage.append(h); return h; });
-      function layout() {
-        const sw = stage.clientWidth, sh = stage.clientHeight;
-        scale = Math.min(sw / W, sh / H);
-        const dw = W * scale, dh = H * scale; ox = (sw - dw) / 2; oy = (sh - dh) / 2;
-        cnv.width = Math.round(dw * devicePixelRatio); cnv.height = Math.round(dh * devicePixelRatio);
-        Object.assign(cnv.style, { left: ox + "px", top: oy + "px", width: dw + "px", height: dh + "px" });
-        ctx2d(cnv).drawImage(photo, 0, 0, cnv.width, cnv.height);
-        draw();
+  async function cropFlow(photo: HTMLCanvasElement, start: Frame | null, counter: string): Promise<CropResult> {
+    const W = photo.width, H = photo.height;
+    const full = frameFromCorners([[0, 0], [W, 0], [W, H], [0, H]]);
+    const init = start || full;
+    // Punkte in Reihenfolge: 4 Ecken, dann 4 Kantenmitten (oben, rechts, unten, links)
+    let pts: Point[] = [...init.corners, ...init.mids].map((p): Point => [p[0], p[1]]);
+    // Kantenmitten, die noch nicht von Hand bewegt wurden, wandern mit den Ecken mit
+    const midMoved = [false, false, false, false];
+    if (start) start.mids.forEach((m, i) => {
+      const a = start.corners[i], b = start.corners[(i + 1) % 4];
+      midMoved[i] = Math.hypot(m[0] - (a[0] + b[0]) / 2, m[1] - (a[1] + b[1]) / 2) > 2;
+    });
+    const followMids = () => {
+      for (let i = 0; i < 4; i++) if (!midMoved[i]) {
+        const a = pts[i], b = pts[(i + 1) % 4];
+        pts[4 + i] = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
       }
-      const sc = (p: Point) => `${(ox + p[0] * scale).toFixed(1)},${(oy + p[1] * scale).toFixed(1)}`;
-      function draw() {
-        pts.forEach(([x, y], i) => { handles[i].style.left = ox + x * scale + "px"; handles[i].style.top = oy + y * scale + "px"; });
-        // Kanten als Kurven durch die Mittelpunkte (gleiche Kurve wie beim Entzerren)
-        let d = `M${sc(pts[0])}`;
-        for (let i = 0; i < 4; i++) {
-          const a = pts[i], b = pts[(i + 1) % 4], m = pts[4 + i];
-          const c: Point = [2 * m[0] - (a[0] + b[0]) / 2, 2 * m[1] - (a[1] + b[1]) / 2];
-          d += ` Q${sc(c)} ${sc(b)}`;
-        }
-        $("cropPoly").setAttribute("d", d + " Z");
+    };
+    const dlg = $("crop"), stage = $("cropStage"), cnv = $<HTMLCanvasElement>("cropCanvas");
+    dlg.hidden = false;
+    // Höhe auf den sichtbaren Bildschirm begrenzen. In eingebetteten Ansichten, die so hoch wie der
+    // Inhalt werden, wäre der Dialog sonst höher als der Bildschirm und die Knöpfe unsichtbar.
+    const visibleH = Math.min(window.innerHeight, window.visualViewport?.height || Infinity, screen.availHeight || Infinity);
+    dlg.style.height = visibleH + "px";
+    dlg.style.top = (window.innerHeight > visibleH * 1.15 ? window.scrollY : 0) + "px";
+    const msg = (k: string) => { $("cropMsg").textContent = (counter ? counter + " · " : "") + t(k); };
+    msg("cropLoading");
+    let scale = 1, ox = 0, oy = 0;
+    const handles = pts.map((_, i) => { const h = document.createElement("div"); h.className = i < 4 ? "h" : "h mid"; stage.append(h); return h; });
+    function layout() {
+      const sw = stage.clientWidth, sh = stage.clientHeight;
+      scale = Math.min(sw / W, sh / H);
+      const dw = W * scale, dh = H * scale; ox = (sw - dw) / 2; oy = (sh - dh) / 2;
+      cnv.width = Math.round(dw * devicePixelRatio); cnv.height = Math.round(dh * devicePixelRatio);
+      Object.assign(cnv.style, { left: ox + "px", top: oy + "px", width: dw + "px", height: dh + "px" });
+      ctx2d(cnv).drawImage(photo, 0, 0, cnv.width, cnv.height);
+      draw();
+    }
+    const sc = (p: Point) => `${(ox + p[0] * scale).toFixed(1)},${(oy + p[1] * scale).toFixed(1)}`;
+    function draw() {
+      pts.forEach(([x, y], i) => { handles[i].style.left = ox + x * scale + "px"; handles[i].style.top = oy + y * scale + "px"; });
+      // Kanten als Kurven durch die Mittelpunkte (gleiche Kurve wie beim Entzerren)
+      let d = `M${sc(pts[0])}`;
+      for (let i = 0; i < 4; i++) {
+        const a = pts[i], b = pts[(i + 1) % 4], m = pts[4 + i];
+        const c: Point = [2 * m[0] - (a[0] + b[0]) / 2, 2 * m[1] - (a[1] + b[1]) / 2];
+        d += ` Q${sc(c)} ${sc(b)}`;
       }
-      handles.forEach((h, i) => {
-        h.onpointerdown = (e) => {
-          h.setPointerCapture(e.pointerId);
-          const r = stage.getBoundingClientRect();
-          h.onpointermove = (ev: PointerEvent) => {
-            pts[i] = [Math.min(W, Math.max(0, (ev.clientX - r.left - ox) / scale)), Math.min(H, Math.max(0, (ev.clientY - r.top - oy) / scale))];
-            if (i >= 4) midMoved[i - 4] = true; else followMids();
-            draw();
-          };
-          h.onpointerup = () => { h.onpointermove = null; };
+      $("cropPoly").setAttribute("d", d + " Z");
+    }
+    handles.forEach((h, i) => {
+      h.onpointerdown = (e) => {
+        h.setPointerCapture(e.pointerId);
+        const r = stage.getBoundingClientRect();
+        h.onpointermove = (ev: PointerEvent) => {
+          pts[i] = [Math.min(W, Math.max(0, (ev.clientX - r.left - ox) / scale)), Math.min(H, Math.max(0, (ev.clientY - r.top - oy) / scale))];
+          if (i >= 4) midMoved[i - 4] = true; else followMids();
+          draw();
         };
-      });
-      const ro = new ResizeObserver(layout); ro.observe(stage);
-      layout();
+        h.onpointerup = () => { h.onpointermove = null; };
+      };
+    });
+    const ro = new ResizeObserver(layout); ro.observe(stage);
+    layout();
 
-      let cv: CV = null;
-      try {
-        cv = await getCv();
-        if (!start) {
-          const found = Lib.detectPage(cv, photo);
-          if (found) { pts = [...found, ...frameFromCorners(found).mids]; draw(); }
-          msg(found ? "cropFound" : "cropNone");
-        } else msg("cropNone");
-      } catch (e) {
-        console.error(e);
-        msg("cropNone");
-      }
+    let cv: CV = null;
+    try {
+      cv = await getCv();
+      if (!start) {
+        const found = Lib.detectPage(cv, photo);
+        if (found) { pts = [...found, ...frameFromCorners(found).mids]; draw(); }
+        msg(found ? "cropFound" : "cropNone");
+      } else msg("cropNone");
+    } catch (e) {
+      console.error(e);
+      msg("cropNone");
+    }
+    return new Promise((resolve) => {
       const finish = (frame: Frame | null) => {
         ro.disconnect(); handles.forEach(h => h.remove()); dlg.hidden = true;
         $<HTMLButtonElement>("cropOk").onclick = $<HTMLButtonElement>("cropWhole").onclick = null;
@@ -1420,13 +1417,13 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   // „Zurück“ führt dann zur Startseite statt aus der Seite hinaus.
   function showApp() {
     $("start").hidden = true; $("app").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0);
-    if (location.hash !== "#bog") { try { history.pushState(null, "", "#bog"); } catch (e) {} }
+    if (location.hash !== "#bog") { try { history.pushState(null, "", "#bog"); } catch {} }
   }
   window.addEventListener("popstate", () => {
     if (!$("crop").hidden) return;
     if (location.hash !== "#bog" && $("start").hidden) showStart(true);
   });
-  if (location.hash === "#bog") { try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} }
+  if (location.hash === "#bog") { try { history.replaceState(null, "", location.pathname + location.search); } catch {} }
   function showStart(fromHistory = false) {
     if (!fromHistory && location.hash === "#bog") { history.back(); return; } // popstate ruft uns wieder auf
     stopSpeech();

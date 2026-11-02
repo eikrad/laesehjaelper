@@ -35,6 +35,7 @@ Rules:
 2. Node 22.15 or newer (CI uses the current LTS, 26). `npm install`, then make your change.
 3. Run the checks:
    ```bash
+   npm run lint        # Biome for TypeScript (including tests and configuration)
    npm run typecheck   # TypeScript (strict), no JavaScript files in the project
    npm test            # unit tests (Vitest)
    npm run build
