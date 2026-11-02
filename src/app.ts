@@ -273,9 +273,9 @@ const Lib = { detectPage, warpPage, orderCorners };
     $(id).onclick = e => { const b = (e.target as HTMLElement).closest("button"); if (b) {
       S[key] = b.dataset.v!; applySettings();
       if (key === "ui") applyTexts();
-      if ((key === "view" || key === "lines") && pages[cur]) render();
+      if ((key === "view" || key === "lines" || key === "mode") && pages[cur]) render();
       if (key === "together") renderTogether();
-      if (key === "hyph") { pages.forEach(pg => { if (pg.status === "done") retext(pg); }); if (pages[cur]) render(); }
+      if (key === "hyph") { pages.forEach(pg => { if (pg.status === "done") { retext(pg); savePage(pg); } }); if (pages[cur]) render(); }
       if (key === "lang" && pages[cur] && pages[cur].lang !== S.lang) relang(pages[cur]);
       if (key === "mode" || key === "lang") morphCheck();
     } };
@@ -298,6 +298,8 @@ const Lib = { detectPage, warpPage, orderCorners };
   // ---------- Seiten ----------
   const pages: Page[] = [];
   let cur = 0;
+  const removedPages = new Set<string>();
+  const isRemoved = (pg: Page) => !!pg.id && removedPages.has(pg.id);
 
   // ---------- Bücher speichern (IndexedDB, nur auf diesem Gerät) ----------
   let storageWarned = false;
@@ -341,13 +343,14 @@ const Lib = { detectPage, warpPage, orderCorners };
   type PageRecord = Pick<Page, "id" | "bookId" | "lang" | "status" | "text" | "rawText" | "paras" | "workW" | "workH" | "corners" | "question" | "inputBlob" | "photoBlob" | "cleanBlob">;
 
   async function savePage(pg: Page | undefined) {
-    if (!pg) return;
+    if (!pg || isRemoved(pg)) return;
     const bookId = pg.bookId || (book && !book.demo ? (pg.bookId = book.id) : null);
     if (!bookId) return;
     pg.id = pg.id || uid();
     try {
       if (pg.canvas && !pg.inputBlob) pg.inputBlob = await canvasBlob(pg.canvas);
       if (pg.photo && !pg.photoBlob) pg.photoBlob = await canvasBlob(pg.photo, 0.8);
+      if (isRemoved(pg)) return; // auch während toBlob() kann die Seite gelöscht worden sein
       await DB.put<PageRecord>("pages", {
         id: pg.id, bookId, lang: pg.lang, status: pg.status === "done" ? "done" : "wait",
         text: pg.text, rawText: pg.rawText, paras: pg.paras || null, workW: pg.workW, workH: pg.workH,
@@ -401,6 +404,7 @@ const Lib = { detectPage, warpPage, orderCorners };
 
   async function deletePage(i: number) {
     const [pg] = pages.splice(i, 1);
+    if (pg?.id) removedPages.add(pg.id);
     if (pg && pg.id && book && !book.demo) { try { await DB.del("pages", pg.id); } catch (e) { storageFail(e); } }
     if (i === 0 && book) book.cover = null;
     if (!pages.length) { await deleteBook(); return; }
@@ -416,6 +420,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     saveBook(); render();
   }
   async function deleteBook() {
+    pages.forEach(pg => { if (pg.id) removedPages.add(pg.id); });
     if (book && !book.demo) {
       try { for (const pg of pages) if (pg.id) await DB.del("pages", pg.id); await DB.del("books", book.id); } catch (e) { storageFail(e); }
     }
@@ -486,7 +491,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     // Zeichenpositionen im Vorlesetext
     const full = plainParts.join("\n");
     let idx = 0;
-    for (const m of full.matchAll(/[\p{L}\p{M}]+/gu)) wordPos.push({ start: m.index!, end: m.index! + m[0].length, i: idx++ });
+    for (const m of full.matchAll(WORD)) wordPos.push({ start: m.index!, end: m.index! + m[0].length, i: idx++ });
     return { ps, speech: { full, wordPos } };
   }
 
@@ -823,7 +828,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   function syncParas(pg: Page) {
     if (!pg.paras) return;
     const parts = pg.text.split(/\n\s*\n/);
-    pg.paras.forEach((pa, i) => { pa.text = parts[i] || ""; });
+    pg.paras.forEach((pa, i) => { pa.text = i === pg.paras!.length - 1 ? parts.slice(i).join("\n\n") : parts[i] || ""; });
   }
 
   function showStatus(html: string) {
@@ -908,14 +913,15 @@ const Lib = { detectPage, warpPage, orderCorners };
 
   let editT = 0;
   $<HTMLTextAreaElement>("text").oninput = e => {
+    const pg = pages[cur]; if (!pg) return;
+    // Seite und Wert sofort festhalten: render() ersetzt beim Blättern das Textfeld.
+    pg.text = val(e); syncParas(pg);
+    pg.rawText = pg.text;
+    pg.paras?.forEach(pa => { pa.raw = pa.text || ""; });
+    savePage(pg);
     clearTimeout(editT);
     editT = window.setTimeout(() => {
-      const pg = pages[cur];
-      pg.text = val(e); syncParas(pg);
-      // Korrektur ist ab jetzt der Rohtext: Einstellungen (z. B. Silbenstriche) wirken weiter, ohne sie zu überschreiben
-      pg.rawText = pg.text;
-      pg.paras?.forEach(pa => { pa.raw = pa.text || ""; });
-      renderContent(pg); savePage(pg);
+      if (pages[cur] === pg) render();
     }, 250);
   };
 
@@ -1292,10 +1298,12 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     if (running) return; running = true;
     while (queue.length) {
       const pg = queue.shift()!;
+      if (isRemoved(pg)) continue;
       active = pg; pg.status = "ocr"; pg.stage = "loadingCore";
       if (pages[cur] === pg) render();
       try {
         const w = await getWorker(pg.lang);
+        if (isRemoved(pg)) { active = null; continue; }
         // rotateAuto: schräg fotografierte Seiten gerade drehen; die Positionen beziehen sich dann
         // auf das gedrehte Bild, das wir als imageColor zurückbekommen.
         const input = pg.canvas || await blobToCanvas(pg.inputBlob!);
@@ -1304,10 +1312,12 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
         // Zwei Läufe: das gerade gedrehte Originalbild und dieselbe Seite mit ausgeglichenem Hintergrund
         // (hilft bei Text auf getönten Bildern oder ungleichmäßigem Licht). Pro Zeile gewinnt der sicherere.
         const { data } = await w.recognize(input, { rotateAuto: true }, { text: true, blocks: true });
+        if (isRemoved(pg)) { active = null; continue; }
         const work = rotateLike(input, data.rotateRadians || 0);
       markBold(data, work);
         pg.stage = "recognizing2";
         const { data: flat } = await w.recognize(flattenBackground(work), {}, { blocks: true });
+        if (isRemoved(pg)) { active = null; continue; }
         pg.workW = work.width; pg.workH = work.height;
         pg.paras = transferPlaces(pg.paras, Layout.parasFromOcr(data, flat));
         pg.rawText = data.text || "";
