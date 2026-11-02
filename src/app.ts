@@ -315,7 +315,12 @@ const Lib = { detectPage, warpPage, orderCorners };
   });
 
   let book: Book | null = null;
+  function releaseImage(src: string | null | undefined) {
+    if (src?.startsWith("blob:")) URL.revokeObjectURL(src);
+  }
+  function releasePageImages(pg: Page) { releaseImage(pg.img); releaseImage(pg.clean); }
   function newBook(demo = false) {
+    pages.forEach(releasePageImages);
     book = { id: uid(), title: "", pageIds: [], lastPage: 0, cover: null, created: Date.now(), demo };
     pages.length = 0; cur = 0;
     document.body.classList.remove("editing");
@@ -405,6 +410,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   async function deletePage(i: number) {
     const [pg] = pages.splice(i, 1);
     if (pg?.id) removedPages.add(pg.id);
+    if (pg) releasePageImages(pg);
     if (pg && pg.id && book && !book.demo) { try { await DB.del("pages", pg.id); } catch (e) { storageFail(e); } }
     if (i === 0 && book) book.cover = null;
     if (!pages.length) { await deleteBook(); return; }
@@ -421,6 +427,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   }
   async function deleteBook() {
     pages.forEach(pg => { if (pg.id) removedPages.add(pg.id); });
+    pages.forEach(releasePageImages);
     if (book && !book.demo) {
       try { for (const pg of pages) if (pg.id) await DB.del("pages", pg.id); await DB.del("books", book.id); } catch (e) { storageFail(e); }
     }
@@ -1239,6 +1246,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     if (!pg || !(pg.photo || pg.photoBlob)) return;
     if (!pg.photo) pg.photo = await blobToCanvas(pg.photoBlob!);
     const { canvas, corners } = await cropFlow(pg.photo, toFrame(pg.corners), "");
+    releasePageImages(pg);
     Object.assign(pg, { canvas, corners, img: canvas.toDataURL("image/jpeg", 0.88), status: "wait", progress: 0, paras: null, clean: null, inputBlob: null, cleanBlob: null });
     if (pg === pages[0] && book) book.cover = null;
     savePage(pg); saveBook();
@@ -1250,6 +1258,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   $<HTMLButtonElement>("reocrBtn").onclick = () => {
     const pg = pages[cur];
     if (!pg || !(pg.canvas || pg.inputBlob) || pg.status === "wait" || pg.status === "ocr") return;
+    releaseImage(pg.clean);
     Object.assign(pg, { status: "wait", progress: 0, paras: null, clean: null, cleanBlob: null });
     savePage(pg);
     queue.push(pg); render(); runQueue();
@@ -1322,6 +1331,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
         pg.rawText = data.text || "";
         retext(pg);
         const cleanCanvas = pg.paras.length ? eraseText(work, pg.paras) : null;
+        releaseImage(pg.clean);
         pg.clean = cleanCanvas ? cleanCanvas.toDataURL("image/jpeg", 0.9) : null;
         pg.cleanBlob = cleanCanvas ? await canvasBlob(cleanCanvas) : null;
         pg.status = "done";
