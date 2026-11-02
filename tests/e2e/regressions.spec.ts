@@ -5,12 +5,15 @@ import { fresh } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
-interface StoredPage { text: string; rawText?: string; paras?: Para[] }
+interface StoredPage { text: string; rawText?: string; paras?: Para[]; image?: boolean }
 const para = (text: string): Para => ({ raw: text, text, bbox: { x0: 10, y0: 10, x1: 300, y1: 150 }, lines: [], words: [], lh: 30 });
 
 /** Kleine eigene Texte im normalen Bücherregal, ohne von OCR-Genauigkeit abhängig zu sein. */
 async function openStoredBook(page: Page, items: StoredPage[]) {
   await page.evaluate(async items => {
+    const canvas = document.createElement("canvas"); canvas.width = canvas.height = 2;
+    canvas.getContext("2d")!.fillRect(0, 0, 2, 2);
+    const image = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, "image/jpeg"));
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const request = indexedDB.open("laesehjaelper", 1);
       request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error);
@@ -18,7 +21,7 @@ async function openStoredBook(page: Page, items: StoredPage[]) {
     const tx = db.transaction(["books", "pages"], "readwrite");
     const ids = items.map((_, i) => `regression-${i}`);
     tx.objectStore("books").put({ id: "regression", title: "Testbog", pageIds: ids, lastPage: 0, created: 1, cover: null });
-    items.forEach((item, i) => tx.objectStore("pages").put({ ...item, rawText: item.rawText ?? item.text, id: ids[i], bookId: "regression", lang: "da", status: "done" }));
+    items.forEach((item, i) => tx.objectStore("pages").put({ ...item, rawText: item.rawText ?? item.text, inputBlob: item.image ? image : null, cleanBlob: item.image ? image : null, id: ids[i], bookId: "regression", lang: "da", status: "done" }));
     await new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); });
     db.close();
   }, items);
@@ -135,4 +138,17 @@ test("Während OCR gelöschte Seite kehrt beim Öffnen nicht zurück", async ({ 
   await waitForText(page);
   await page.click("#homeBtn"); await page.locator(".book").click();
   await expect(page.locator("#count")).toHaveText("1 / 1", { timeout: 1500 });
+});
+
+test("Bilder alter Buchansichten werden beim erneuten Öffnen freigegeben", async ({ page }) => {
+  await openStoredBook(page, [{ text: "En side med billede", image: true }]);
+  const previousUrl = await page.locator("#origImg").getAttribute("src");
+  await page.click("#homeBtn"); await page.locator(".book").click();
+  await expect(page.locator("#text")).toHaveValue("En side med billede");
+  expect(await page.locator("#origImg").getAttribute("src")).not.toBe(previousUrl);
+  const isReadable = (url: string) => page.evaluate(async url => {
+    try { return (await fetch(url)).ok; } catch { return false; }
+  }, url);
+  expect(await isReadable(previousUrl!)).toBe(false);
+  expect(await isReadable((await page.locator("#origImg").getAttribute("src"))!)).toBe(true);
 });
