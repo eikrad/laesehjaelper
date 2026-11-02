@@ -51,3 +51,25 @@ test("Zusätzliche Absätze überstehen Bindestrichwechsel und erneutes Öffnen"
   await page.reload(); await page.locator(".book").click();
   await expect(page.locator("#text")).toHaveValue("Første side\n\nNy ekstra tekst");
 });
+
+test("Bindestrich-Einstellung gilt nach erneutem Öffnen weiterhin", async ({ page }) => {
+  await openStoredBook(page, [{ text: "Vi går i sko-le" }]);
+  await page.click("#setBtn"); await page.click('#hyphSet button[data-v="bog"]');
+  await expect(page.locator("#text")).toHaveValue("Vi går i sko·le");
+  await page.reload(); await page.locator(".book").click();
+  await expect(page.locator('#hyphSet button[data-v="bog"]')).toHaveClass(/on/);
+  await expect(page.locator("#text")).toHaveValue("Vi går i sko·le", { timeout: 1500 });
+});
+
+test("Zusatzabsätze aus bereits gespeicherten älteren Büchern bleiben erhalten", async ({ page }) => {
+  await openStoredBook(page, [{ text: "Første side\n\nNy ekstra tekst", paras: [para("Første side")] }]);
+  await expect(page.locator('#reader .w[data-word="ekstra"]')).toHaveCount(1);
+});
+
+test("Manuelle Zahlenabsätze bleiben beim erneuten Öffnen erhalten", async ({ page }) => {
+  await openStoredBook(page, [{ text: "En side" }]);
+  await page.fill("#text", "En side\n\n42");
+  await expect(page.locator("#reader")).toContainText("42");
+  await page.reload(); await page.locator(".book").click();
+  await expect(page.locator("#text")).toHaveValue("En side\n\n42", { timeout: 1500 });
+});
