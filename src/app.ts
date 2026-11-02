@@ -486,7 +486,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     // Zeichenpositionen im Vorlesetext
     const full = plainParts.join("\n");
     let idx = 0;
-    for (const m of full.matchAll(/[\p{L}\p{M}]+/gu)) wordPos.push({ start: m.index!, end: m.index! + m[0].length, i: idx++ });
+    for (const m of full.matchAll(WORD)) wordPos.push({ start: m.index!, end: m.index! + m[0].length, i: idx++ });
     return { ps, speech: { full, wordPos } };
   }
 

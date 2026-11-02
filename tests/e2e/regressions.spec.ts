@@ -85,3 +85,18 @@ test("Wechsel zwischen Silben und Wortteilen berechnet die Segmente neu", async 
   await page.click('#mode button[data-v="morf"]');
   await expect(parts).toHaveText(["pind", "svin"]);
 });
+
+test("Vorlesemarkierung bleibt nach Bindestrichwörtern beim richtigen Wort", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "speechSynthesis", { value: {
+      getVoices: () => [], cancel: () => {},
+      speak: (u: SpeechSynthesisUtterance) => {
+        setTimeout(() => u.onboundary?.(Object.assign(new Event("boundary"), { name: "word", charIndex: 9 }) as SpeechSynthesisEvent), 10);
+      },
+    }, configurable: true });
+  });
+  await page.reload();
+  await openStoredBook(page, [{ text: "rot-blau ist schön" }]);
+  await page.click("#readBtn");
+  await expect(page.locator("#reader .w.speaking")).toHaveAttribute("data-word", "ist", { timeout: 1500 });
+});
