@@ -1,10 +1,12 @@
 import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
+import type { Para } from "../../src/types";
 import { fresh } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
-interface StoredPage { text: string; rawText?: string }
+interface StoredPage { text: string; rawText?: string; paras?: Para[] }
+const para = (text: string): Para => ({ raw: text, text, bbox: { x0: 10, y0: 10, x1: 300, y1: 150 }, lines: [], words: [], lh: 30 });
 
 /** Kleine eigene Texte im normalen Bücherregal, ohne von OCR-Genauigkeit abhängig zu sein. */
 async function openStoredBook(page: Page, items: StoredPage[]) {
@@ -38,4 +40,14 @@ test("Korrektur bleibt beim sofortigen Weiterblättern erhalten", async ({ page 
   await expect(page.locator("#text")).toHaveValue("Rettet første side", { timeout: 1500 });
   await page.reload(); await page.locator(".book").click();
   await expect(page.locator("#text")).toHaveValue("Rettet første side");
+});
+
+test("Zusätzliche Absätze überstehen Bindestrichwechsel und erneutes Öffnen", async ({ page }) => {
+  await openStoredBook(page, [{ text: "Første side", paras: [para("Første side")] }]);
+  await page.fill("#text", "Første side\n\nNy ekstra tekst");
+  await expect(page.locator('#reader .w[data-word="ekstra"]')).toHaveCount(1);
+  await page.click("#setBtn"); await page.click('#hyphSet button[data-v="bog"]');
+  await expect(page.locator("#text")).toHaveValue("Første side\n\nNy ekstra tekst", { timeout: 1500 });
+  await page.reload(); await page.locator(".book").click();
+  await expect(page.locator("#text")).toHaveValue("Første side\n\nNy ekstra tekst");
 });

@@ -823,7 +823,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   function syncParas(pg: Page) {
     if (!pg.paras) return;
     const parts = pg.text.split(/\n\s*\n/);
-    pg.paras.forEach((pa, i) => { pa.text = parts[i] || ""; });
+    pg.paras.forEach((pa, i) => { pa.text = i === pg.paras!.length - 1 ? parts.slice(i).join("\n\n") : parts[i] || ""; });
   }
 
   function showStatus(html: string) {
