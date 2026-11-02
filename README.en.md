@@ -19,6 +19,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Syllables shown in alternating colors (blue/red, colors adjustable), as arcs, or both
 - Fonts: Andika (default), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Adjustable font size, letter spacing, line spacing and background color
+- Short lines with 2–3 words in the text view (optional)
 - Tap a word to hear it – first whole, then slowly syllable by syllable, then whole again
 - Have the whole page read aloud with word-by-word highlighting, slow or normal; afterwards it's the child's turn ("Listen again")
 - “Hyphens in the book” setting: for early readers that split words into syllables with hyphens themselves (“sko-le”)

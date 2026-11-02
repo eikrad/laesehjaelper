@@ -113,3 +113,17 @@ test("Wort antippen: erst ganz, dann in Silben, Silbe wird markiert", async ({ p
   expect(marked).toEqual(["pinds", "vin"]);
   await expect(page.locator(".speaking")).toHaveCount(0);
 });
+
+test("Kurze Zeilen: höchstens drei Wörter pro Zeile, abschaltbar", async ({ page }) => {
+  await page.click("#demoBtn");
+  const words = await page.locator("#reader .w").count();
+  await page.click("#setBtn");
+  await page.click("#linesSet button[data-v=kort]");
+  await expect(page.locator("#reader br")).not.toHaveCount(0);
+  expect(await page.locator("#reader .w").count()).toBe(words);
+  const most = await page.locator("#reader p").evaluateAll(ps => Math.max(...ps.flatMap(p =>
+    p.innerHTML.split(/<br>/).map(chunk => (chunk.match(/class="w"/g) || []).length))));
+  expect(most).toBeLessThanOrEqual(3);
+  await page.click("#linesSet button[data-v=normal]");
+  await expect(page.locator("#reader br")).toHaveCount(0);
+});

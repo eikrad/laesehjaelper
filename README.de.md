@@ -19,6 +19,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Silben in abwechselnden Farben (blau/rot, Farben frei wählbar), als Bögen oder beides
 - Schriften: Andika (Standard), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Schriftgröße, Buchstaben- und Zeilenabstand sowie Hintergrundfarbe einstellbar
+- Kurze Zeilen mit 2–3 Wörtern in der Textansicht (wählbar)
 - Wort antippen und hören – erst ganz, dann langsam Silbe für Silbe, dann wieder ganz
 - Die ganze Seite vorlesen lassen, mit Markierung des gerade gelesenen Worts, langsam oder normal; danach ist das Kind dran („Noch mal hören“)
 - Einstellung „Bindestriche im Buch“: für Lesebücher, die Wörter selbst mit Bindestrich in Silben trennen („Scho-ko-la-de“)
