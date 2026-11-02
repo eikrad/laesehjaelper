@@ -273,7 +273,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     $(id).onclick = e => { const b = (e.target as HTMLElement).closest("button"); if (b) {
       S[key] = b.dataset.v!; applySettings();
       if (key === "ui") applyTexts();
-      if ((key === "view" || key === "lines") && pages[cur]) render();
+      if ((key === "view" || key === "lines" || key === "mode") && pages[cur]) render();
       if (key === "together") renderTogether();
       if (key === "hyph") { pages.forEach(pg => { if (pg.status === "done") { retext(pg); savePage(pg); } }); if (pages[cur]) render(); }
       if (key === "lang" && pages[cur] && pages[cur].lang !== S.lang) relang(pages[cur]);

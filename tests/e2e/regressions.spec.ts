@@ -73,3 +73,15 @@ test("Manuelle Zahlenabsätze bleiben beim erneuten Öffnen erhalten", async ({ 
   await page.reload(); await page.locator(".book").click();
   await expect(page.locator("#text")).toHaveValue("En side\n\n42", { timeout: 1500 });
 });
+
+test("Wechsel zwischen Silben und Wortteilen berechnet die Segmente neu", async ({ page }) => {
+  await page.click("#demoBtn"); await page.click("#setBtn");
+  const parts = page.locator('#reader .w[data-word="pindsvin"] .s');
+  await expect(parts).toHaveText(["pinds", "vin"]);
+  await page.click('#mode button[data-v="morf"]');
+  await expect(parts).toHaveText(["pind", "svin"]);
+  await page.click('#mode button[data-v="farbe"]');
+  await expect(parts).toHaveText(["pinds", "vin"], { timeout: 1500 });
+  await page.click('#mode button[data-v="morf"]');
+  await expect(parts).toHaveText(["pind", "svin"]);
+});
