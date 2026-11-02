@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { fixture, fresh } from "./helpers";
 
 test("Gewölbte Seite: Kantenpunkt ziehen und glattziehen", async ({ page }) => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { frameFromCorners, orderCorners, toFrame } from "../../src/pagedetect";
+import { anglesOk, frameFromCorners, inside, orderCorners, toFrame } from "../../src/pagedetect";
 import type { Corners } from "../../src/types";
 
 describe("Rahmen-Geometrie", () => {
@@ -16,5 +16,21 @@ describe("Rahmen-Geometrie", () => {
     expect(toFrame(null)).toBeNull();
     const f = frameFromCorners(c);
     expect(toFrame(f)).toBe(f);
+  });
+});
+
+describe("Viereck-Prüfung der Seitenerkennung", () => {
+  const rect: [number, number][] = [[0, 0], [100, 0], [100, 140], [0, 140]];
+  it("akzeptiert Rechtecke und leicht verzerrte Seiten", () => {
+    expect(anglesOk(rect)).toBe(true);
+    expect(anglesOk([[5, 10], [100, 0], [108, 140], [0, 135]])).toBe(true);
+  });
+  it("verwirft stark schiefe Vierecke (z. B. Schatten, Tischkanten)", () => {
+    expect(anglesOk([[0, 0], [100, 0], [160, 100], [60, 100]])).toBe(false);
+  });
+  it("erkennt, ob die Bildmitte in der Seite liegt", () => {
+    expect(inside(rect, 50, 70)).toBe(true);
+    expect(inside(rect, 150, 70)).toBe(false);
+    expect(inside([[0, 0], [0, 140], [100, 140], [100, 0]], 50, 70)).toBe(true);   // andere Umlaufrichtung
   });
 });

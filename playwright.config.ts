@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "tests/e2e",
+  globalTeardown: "./tests/e2e/coverage-teardown.ts",
   timeout: 240_000,
   expect: { timeout: 20_000 },
   fullyParallel: false,

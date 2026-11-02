@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("App lädt nach dem ersten Besuch auch offline", async ({ page, context }) => {
   await page.goto("/");

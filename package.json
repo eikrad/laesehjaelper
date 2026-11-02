@@ -6,7 +6,10 @@
     "build": "node build.ts",
     "typecheck": "tsc && tsc -p tsconfig.sw.json",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "coverage:unit": "vitest run --coverage",
+    "coverage:e2e": "COVERAGE=1 node build.ts && COVERAGE=1 playwright test",
+    "coverage": "npm run coverage:unit && npm run coverage:e2e && node coverage.ts && npm run build"
   },
   "license": "MIT",
   "dependencies": {
@@ -26,9 +29,12 @@
   "devDependencies": {
     "@playwright/test": "^1.63.0",
     "@types/node": "^26.6.6",
+    "@vitest/coverage-v8": "^5.0.5",
     "dictionary-da": "^6.0.0",
     "fake-indexeddb": "^6.2.7",
+    "monocart-coverage-reports": "^3.2.0",
     "typescript": "^5.9.3",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "vitest-monocart-coverage": "^5.0.0"
   }
 }

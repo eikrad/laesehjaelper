@@ -9,8 +9,11 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(`${out}/core`, { recursive: true });
 fs.mkdirSync(`${out}/lang`, { recursive: true });
 
+// COVERAGE=1: unminifiziert mit eingebetteter Source-Map, damit die E2E-Abdeckung den Quelldateien zugeordnet werden kann
+const coverage = !!process.env.COVERAGE;
 const app = await build({
-  entryPoints: ["src/app.ts"], bundle: true, minify: true, format: "iife", write: false,
+  entryPoints: ["src/app.ts"], bundle: true, minify: !coverage, format: "iife", write: false,
+  ...(coverage ? { sourcemap: "inline" as const, sourceRoot: process.cwd() + "/" } : {}),
 });
 const b64 = (p: string): string => fs.readFileSync(p).toString("base64");
 const od = `${nm}/@fontsource/opendyslexic/files/opendyslexic-latin`;

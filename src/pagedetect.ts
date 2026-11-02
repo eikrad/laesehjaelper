@@ -14,7 +14,8 @@ export type CV = any;
 
 const SIZE = 500;
 
-function anglesOk(q: Point[]): boolean {
+/** Alle vier Winkel ungefähr rechtwinklig (70°–110°)? */
+export function anglesOk(q: Point[]): boolean {
   for (let i = 0; i < 4; i++) {
     const p = q[i], a = q[(i + 3) % 4], b = q[(i + 1) % 4];
     const ax = a[0] - p[0], ay = a[1] - p[1], bx = b[0] - p[0], by = b[1] - p[1];
@@ -24,7 +25,8 @@ function anglesOk(q: Point[]): boolean {
   return true;
 }
 
-function inside(q: Point[], x: number, y: number): boolean {
+/** Liegt (x, y) im (konvexen) Viereck? */
+export function inside(q: Point[], x: number, y: number): boolean {
   let s = 0;
   for (let i = 0; i < 4; i++) {
     const [x0, y0] = q[i], [x1, y1] = q[(i + 1) % 4];

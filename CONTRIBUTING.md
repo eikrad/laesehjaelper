@@ -39,8 +39,9 @@ Rules:
    npm test            # unit tests (Vitest)
    npm run build
    npm run test:e2e    # end-to-end tests (Playwright)
+   npm run coverage    # optional locally, runs in CI: merged coverage with minimums
    ```
-4. Add or update tests for what you changed.
+4. Work test-first: write a failing test, then the code (see [`AGENTS.md`](AGENTS.md) for the working rules, which apply to people and AI agents alike).
 5. Open a pull request against `main`, fill in the template and reference the story or bug it closes. CI must be green.
 
 ## Guidelines
