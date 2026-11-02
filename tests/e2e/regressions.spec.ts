@@ -108,3 +108,31 @@ test("Manuell ergänzter Text kann nach leerem OCR-Ergebnis vorgelesen werden", 
   await expect(page.locator('#reader .w[data-word="tekst"]')).toHaveCount(1);
   await expect(page.locator("#readBtn")).toBeEnabled({ timeout: 1500 });
 });
+
+test("Während OCR gelöschte Seite kehrt beim Öffnen nicht zurück", async ({ page }) => {
+  await page.route("**/tesseract.min.js", route => route.fulfill({ contentType: "text/javascript", body: `
+    let first = true;
+    window.Tesseract = { createWorker: async () => ({
+      setParameters: async () => {},
+      recognize: async () => {
+        if (first) { first = false; await new Promise(r => { window.finishRecognition = r; }); }
+        return { data: { text: 'En prøveside', blocks: [{ paragraphs: [{ lines: [{ text: 'En prøveside',
+          bbox: {x0:100,y0:100,x1:350,y1:130}, words: [
+            {text:'En',confidence:97,bbox:{x0:100,y0:100,x1:130,y1:130}},
+            {text:'prøveside',confidence:97,bbox:{x0:150,y0:100,x1:350,y1:130}}
+          ] }] }] }] } };
+      }
+    }) };
+  ` }));
+  await page.reload();
+  const { addPhotos, waitForText } = await import("./helpers");
+  await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
+  await page.waitForFunction(() => "finishRecognition" in window);
+  await page.click("#editPagesBtn");
+  await page.locator(".thumb").first().locator(".ctl .x").click();
+  await expect(page.locator(".thumb")).toHaveCount(1);
+  await page.evaluate(() => (window as unknown as { finishRecognition: () => void }).finishRecognition());
+  await waitForText(page);
+  await page.click("#homeBtn"); await page.locator(".book").click();
+  await expect(page.locator("#count")).toHaveText("1 / 1", { timeout: 1500 });
+});
