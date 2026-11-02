@@ -4,7 +4,7 @@
 export interface Box { x0: number; y0: number; x1: number; y1: number }
 
 /** Die Teile des Tesseract-Ergebnisses, die wir verwenden. */
-export interface OcrWord { text: string; confidence: number; bbox: Box }
+export interface OcrWord { text: string; confidence: number; bbox: Box; /** im Bild fett gedruckt (selbst gemessen) */ bold?: boolean }
 export interface OcrLine { text: string; bbox: Box; words: OcrWord[] }
 export interface OcrData {
   text?: string;

@@ -69,7 +69,16 @@ function lineUnits(line: OcrLine): RawUnit[] {
   return units;
 }
 
-const finishUnit = (u: RawUnit): Unit => ({ ...u, bbox: union(u.ws.map((w) => w.bbox)), words: [...u.ws, ...(u.extra || [])].map((w) => w.bbox), text: u.ws.map((w) => w.text).join(" ") });
+/** Wörter zu Text verbinden; fette Wörter (auch mehrere hintereinander) als *…* markieren. */
+function boldText(ws: OcrWord[]): string {
+  const out: string[] = [];
+  ws.forEach((w, i) => {
+    const open = w.bold && !ws[i - 1]?.bold, close = w.bold && !ws[i + 1]?.bold;
+    out.push((open ? "*" : "") + w.text + (close ? "*" : ""));
+  });
+  return out.join(" ");
+}
+const finishUnit = (u: RawUnit): Unit => ({ ...u, bbox: union(u.ws.map((w) => w.bbox)), words: [...u.ws, ...(u.extra || [])].map((w) => w.bbox), text: boldText(u.ws) });
 
 // Links abgeschnittene Wörter zurückholen, wenn sie am gemeinsamen linken Rand der Gruppe beginnen.
 function rescueLeft(group: Unit[]): Unit[] {

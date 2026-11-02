@@ -28,6 +28,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Schräge Fotos werden gerade gerückt, und vermeintlicher „Text“ in Zeichnungen wird aussortiert
 - Jede Seite wird zweimal erkannt (normal und mit ausgeglichenem Hintergrund), damit auch Text auf getönten Bildern erkannt wird
 - Erkannten Text korrigieren; eigene Silbengrenzen mit `·` setzen (z. B. `O·ma`)
+- Überschriften bleiben größer als der Fließtext, fett Gedrucktes wird erkannt und fett gesetzt (korrigierbar mit `*Wort*`)
 - Mit einem Tipp den Originaltext einblenden, um Erkennungsfehler zu finden
 - Lesemodus: nur der Text, bildschirmfüllend
 - Bücherregal: Bücher werden auf dem Gerät gespeichert, mit Titel, Seitenreihenfolge und Lesestand

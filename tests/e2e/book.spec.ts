@@ -78,3 +78,15 @@ test("Text korrigieren wird gespeichert", async ({ page }) => {
   await waitForText(page);
   await expect(page.locator("#text")).toHaveValue(/Pind·svi·net/);
 });
+
+test("Überschrift bleibt größer, fettes Wort bleibt fett", async ({ page }) => {
+  await addPhotos(page, ["side-overskrift.jpg"]);
+  await waitForText(page);
+  const text = await page.locator("#text").inputValue();
+  expect(text).toContain("*meget*");
+  expect(text).not.toMatch(/\*(Om|Ved|Bjørnens)\b/);
+  await expect(page.locator('#reader .w.b[data-word="meget"]')).toHaveCount(1);
+  await expect(page.locator("#reader .w.b")).toHaveCount(1);
+  const size = (word: string) => page.locator(`#reader .tbox:has(.w[data-word="${word}"])`).evaluate(el => parseFloat(getComputedStyle(el).fontSize));
+  expect(await size("Bjørnens")).toBeGreaterThan((await size("morgenen")) * 1.3);
+});
