@@ -3,7 +3,7 @@ import { addPhotos, fixture, fresh, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
-test("Foto einer Seite auf dem Tisch: Seite wird gefunden und gerade gerückt", async ({ page }) => {
+test("Photo of a page on a table: detect and straighten the page", async ({ page }) => {
   await page.setInputFiles("#file", fixture("foto-bord.jpg"));
   await expect(page.locator("#crop")).toBeVisible();
   await expect(page.locator("#cropMsg")).toHaveText(/Siden er fundet/, { timeout: 120_000 });
@@ -12,11 +12,11 @@ test("Foto einer Seite auf dem Tisch: Seite wird gefunden und gerade gerückt", 
   const text = await page.locator("#text").inputValue();
   expect(text).toContain("Pindsvinet");
   expect(text).toContain("bedste ven");
-  // Ohne Tischkante im Text: die Seite wurde ausgeschnitten
+  // No table-edge noise in the text: the page was cropped.
   expect(text.split(/\n\n/).length).toBeLessThanOrEqual(3);
 });
 
-test("Seite neu zuschneiden und Text neu erkennen", async ({ page }) => {
+test("Crops the page again and reruns text recognition", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
   await page.locator("#edit summary").click();
@@ -31,7 +31,7 @@ test("Seite neu zuschneiden und Text neu erkennen", async ({ page }) => {
   await expect.poll(() => page.locator("#text").inputValue(), { timeout: 200_000 }).toContain("Pindsvinet");
 });
 
-test("Buch mit mehreren Seiten: blättern, Seite hinzufügen, verschieben, löschen", async ({ page }) => {
+test("Book with multiple pages: navigate, add, reorder and delete pages", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await waitForText(page);
   await expect(page.locator("#count")).toHaveText("1 / 2");
@@ -40,15 +40,15 @@ test("Buch mit mehreren Seiten: blättern, Seite hinzufügen, verschieben, lösc
   await expect(page.locator("#next")).toBeDisabled();
   await page.keyboard.press("ArrowLeft");
   await expect(page.locator("#count")).toHaveText("1 / 2");
-  await page.locator(".thumb > button").nth(1).click();        // Vorschaubild
+  await page.locator(".thumb > button").nth(1).click();        // Thumbnail
   await expect(page.locator("#count")).toHaveText("2 / 2");
-  // dritte Seite über das Plus bei den Vorschaubildern
+  // Add a third page using the plus button next to the thumbnails.
   await page.setInputFiles("#thumbs .add input", fixture("side-curved.jpg"));
   await expect(page.locator("#crop")).toBeVisible();
   await expect(page.locator("#cropMsg")).not.toContainText("…", { timeout: 120_000 });
   await page.click("#cropOk");
   await expect(page.locator(".thumb")).toHaveCount(3);
-  // Seiten bearbeiten: erste Seite nach rechts, dann löschen
+  // Edit pages: move the first page to the right, then delete it.
   await page.click("#editPagesBtn");
   const first = await page.locator(".thumb img").first().getAttribute("src");
   await page.locator(".thumb").first().locator(".ctl button").last().click();
@@ -58,7 +58,7 @@ test("Buch mit mehreren Seiten: blättern, Seite hinzufügen, verschieben, lösc
   await page.click("#editPagesBtn");
 });
 
-test("Schrift, Silbenstriche aus dem Buch, Lesemodus", async ({ page }) => {
+test("Font, syllable hyphens in the book and reading mode", async ({ page }) => {
   await page.click("#demoBtn");
   await page.click("#setBtn");
   await page.selectOption("#font", { label: "OpenDyslexic" });
@@ -78,7 +78,7 @@ test("Schrift, Silbenstriche aus dem Buch, Lesemodus", async ({ page }) => {
   await expect(page.locator("body")).not.toHaveClass(/focus/);
 });
 
-test("Vorlesen markiert das gerade gelesene Wort", async ({ page }) => {
+test("Reading aloud highlights the current word", async ({ page }) => {
   await page.addInitScript(() => {
     const fake = {
       speaking: false, getVoices: () => [], cancel: () => {},
@@ -100,7 +100,7 @@ test("Vorlesen markiert das gerade gelesene Wort", async ({ page }) => {
   await expect(page.locator("#reader .speaking")).toHaveCount(0);
 });
 
-test("Zurück zur Startseite über Knopf und Logo", async ({ page }) => {
+test("Returns to the start page using the button and logo", async ({ page }) => {
   await page.click("#demoBtn");
   await page.click("#homeBtn");
   await expect(page.locator("#start")).toBeVisible();
@@ -109,12 +109,12 @@ test("Zurück zur Startseite über Knopf und Logo", async ({ page }) => {
   await expect(page.locator("#start")).toBeVisible();
 });
 
-test("Kaputte Bilddatei gibt einen verständlichen Hinweis", async ({ page }) => {
+test("A broken image file displays a clear message", async ({ page }) => {
   await page.setInputFiles("#file", { name: "side.jpg", mimeType: "image/jpeg", buffer: Buffer.from("kein Bild") });
   await expect(page.locator("#toast")).toHaveText("Billedet kunne ikke åbnes.");
 });
 
-test("Korrekturen bleiben erhalten, wenn man die Silbenstrich-Einstellung umschaltet", async ({ page }) => {
+test("Preserves corrections when switching the syllable-hyphen setting", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
   await page.locator("#edit summary").click();

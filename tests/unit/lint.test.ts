@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { javascriptSources } from "../../lint";
 
-it("findet JavaScript-Quellen, aber keine erzeugten oder privaten Dateien", () => {
+it("Finds JavaScript sources while excluding generated and private files", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "laese-lint-"));
   try {
     for (const file of ["src/old.js", "tests/helper.cjs", "config.mjs", "view.jsx", "src/valid.ts", "dist/app.js", "coverage/report.js", "node_modules/library/index.js", "private-testbilder/local.js"]) {

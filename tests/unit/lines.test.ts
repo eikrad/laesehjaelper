@@ -1,21 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { shortLineBreaks } from "../../src/lines";
 
-// seps[i] = Text nach Wort i (Leerzeichen, Satzzeichen)
+// seps[i] = text after word i, including spaces and punctuation
 describe("shortLineBreaks", () => {
-  it("bricht spätestens nach drei Wörtern um", () => {
+  it("Breaks after at most three words", () => {
     expect(shortLineBreaks([" ", " ", " ", " ", " ", ""])).toEqual([false, false, true, false, false, false]);
   });
-  it("bricht nach Satzzeichen um und zählt danach neu", () => {
+  it("Breaks after punctuation and restarts the count", () => {
     expect(shortLineBreaks([" ", ". ", " ", " ", " ", "."])).toEqual([false, true, false, true, false, false]);
   });
-  it("bricht nie nach dem letzten Wort um", () => {
+  it("Never breaks after the last word", () => {
     expect(shortLineBreaks([" ", " ", ""])).toEqual([false, false, false]);
   });
-  it("verteilt gleichmäßig, damit kein Wort allein steht", () => {
+  it("Distributes words evenly to avoid a single-word line", () => {
     expect(shortLineBreaks([" ", " ", " ", ""])).toEqual([false, true, false, false]);
   });
-  it("erlaubt eine andere Höchstzahl", () => {
+  it("Allows a different maximum word count", () => {
     expect(shortLineBreaks([" ", " ", " ", " ", ""], 2)).toEqual([false, true, false, true, false]);
   });
 });

@@ -1,11 +1,11 @@
 /**
- * Modus „gemeinsam lesen“: ein, zwei offene Fragen pro Seite für den Erwachsenen.
+ * Read-together mode: one or two open questions per page for the adult.
  *
- * Dialogisches Lesen – das Kind erzählt, der Erwachsene fragt offen nach – verbessert
- * den aktiven Wortschatz (d = 0,59; Mol et al. 2008, Early Education and Development,
- * doi:10.1080/10409280701838603). Die Fragen sind allgemein (keine Inhaltsanalyse),
- * folgen den Fragearten des dialogischen Lesens (offen, W-Fragen, Vorhersage, Erinnern,
- * Bezug zum eigenen Leben) und sind bewusst kein Quiz.
+ * Dialogic reading, where the child tells the story and the adult asks open questions, improves
+ * expressive vocabulary (d = 0.59; Mol et al. 2008, Early Education and Development,
+ * doi:10.1080/10409280701838603). The questions are generic (no content analysis),
+ * follow dialogic-reading question types (open-ended, wh-questions, prediction, recall,
+ * personal experience), and are deliberately not a quiz.
  */
 
 export const QUESTIONS: Record<string, string[]> = {
@@ -41,7 +41,7 @@ export const QUESTIONS: Record<string, string[]> = {
   ],
 };
 
-/** Fragen für eine Seite: die eigene Frage (falls vorhanden) zuerst, dann allgemeine, reihum. */
+/** Questions for a page: the custom question first, if any, then generic questions in rotation. */
 export function pageQuestions(lang: string, pageIndex: number, own?: string, n = 2): string[] {
   const qs = QUESTIONS[lang] || QUESTIONS.da;
   const out: string[] = [];

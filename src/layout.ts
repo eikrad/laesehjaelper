@@ -1,8 +1,8 @@
-// Aus dem OCR-Ergebnis von Tesseract die echten Textzeilen und Textgruppen einer Buchseite gewinnen.
+// Extract real text lines and groups from Tesseract OCR results for a book page.
 //
-// Kinderbücher haben viele Zeichnungen. Tesseract hält Schraffuren und Linien darin oft für Buchstaben
-// und hängt diese „Wörter“ an echte Zeilen an. Echte Wörter erkennt es aber fast immer mit hoher
-// Sicherheit (80–97 %), Bildrauschen mit niedriger. Darauf baut der Filter auf.
+// Children’s books contain many illustrations. Tesseract often mistakes shading and lines for letters
+// and appends these "words" to real lines. Real words usually receive high
+// confidence (80–97%), while image noise receives low confidence. The filter uses this distinction.
 
 import type { Box, OcrData, OcrLine, OcrWord, Para } from "./types";
 
@@ -10,13 +10,13 @@ const LETTER = /\p{L}/u;
 const ONLY_SIGNS = /^[\d.,:;!?»«"'„“”()\-–—]+$/u;
 
 const letters = (t: string): number => (t.match(/\p{L}/gu) || []).length;
-// Sieht wie ein Wort aus (Buchstaben, Silbenstriche, Satzzeichen am Rand)?
+// Does this look like a word (letters, syllable separators, punctuation at the edges)?
 const WORDLIKE = /^[»«"'‘’„“(]*\p{L}[\p{L}·.\-‐]*(?:['’]\p{L}[\p{L}·.\-‐]*)*[.,:;!?»«"'‘’“”)]*$/u;
-// Innerhalb einer sicheren Zeile reicht es, wie ein Wort auszusehen. Zahlen/Satzzeichen (z. B. „1.“) ab 60 %.
+// Inside a reliable line, word-like text is enough. Numbers/punctuation (e.g. “1.”) need 60% confidence.
 const usable = (w: OcrWord): boolean => !!w.text && (WORDLIKE.test(w.text) || (ONLY_SIGNS.test(w.text) && w.confidence >= 60));
-// Sicheres Wort: daran erkennen wir, dass ein Zeilenstück echter Text ist.
+// Reliable words establish that a line fragment contains real text.
 const strong = (w: OcrWord): boolean => letters(w.text) >= 2 && w.confidence >= 90 && WORDLIKE.test(w.text);
-// Am Rand eines Zeilenstücks muss ein Wort selbst einigermaßen sicher sein (rechts etwas weniger streng).
+// At the edge of a line fragment, a word needs reasonable confidence (slightly lower on the right).
 const edgeOk = (w: OcrWord, min: number): boolean => w.confidence >= min && (letters(w.text) >= 2 || (ONLY_SIGNS.test(w.text) && w.confidence >= 85) || /^[AaIiÅåØøÆæ][.,:;!?]?$/.test(w.text));
 
 const union = (bs: Box[]): Box => ({
@@ -24,17 +24,17 @@ const union = (bs: Box[]): Box => ({
   x1: Math.max(...bs.map((b) => b.x1)), y1: Math.max(...bs.map((b) => b.y1)),
 });
 
-/** Ein Zeilenstück (Teil einer OCR-Zeile), vor und nach dem Fertigstellen. */
+/** A line fragment (part of an OCR line), before and after finalization. */
 interface RawUnit { ws: OcrWord[]; pre: OcrWord[]; h: number; extra: OcrWord[] }
 interface Unit extends RawUnit { bbox: Box; words: Box[]; text: string }
 
-// Eine OCR-Zeile in Stücke teilen, wo zwischen Wörtern eine große Lücke ist (z. B. Text links, Bild rechts),
-// und nur Stücke behalten, die nach echtem Text aussehen.
+// Split an OCR line at large gaps between words (e.g. text on the left, an image on the right),
+// keeping only fragments that look like real text.
 function lineUnits(line: OcrLine): RawUnit[] {
   const words = (line.words || []).filter((w) => w.text && w.text.trim());
   const hs = words.filter(strong).map((w) => w.bbox.y1 - w.bbox.y0).sort((a, b) => a - b);
   const h = hs[hs.length >> 1] || line.bbox.y1 - line.bbox.y0;
-  // 1. an großen Lücken teilen (Lesebücher haben breite Wortabstände, Bilder liegen weiter weg)
+  // 1. Split at large gaps (beginner readers have wide word spacing; images are farther away)
   const parts: OcrWord[][] = [];
   let cur: OcrWord[] = [];
   for (const w of words) {
@@ -43,23 +43,23 @@ function lineUnits(line: OcrLine): RawUnit[] {
     cur.push(w);
   }
   if (cur.length) parts.push(cur);
-  // 2. nur Stücke mit sicherem Wort; Unbrauchbares raus; unsichere Wörter am Rand abschneiden.
-  //    Links abgeschnittene, wortähnliche Wörter merken wir uns: Stehen sie genau am linken Rand
-  //    des Absatzes, gehören sie dazu (Wörter neben Bildern werden oft schlecht bewertet).
+  // 2. Keep fragments with reliable words, remove unusable content, trim uncertain edge words.
+  //    Retain trimmed word-like fragments on the left: if they align with the left margin
+  //    of the paragraph, they belong to it (words beside images often receive low confidence).
   const units: RawUnit[] = [];
   for (const part of parts) {
     if (!part.some(strong)) continue;
     const ws = part.filter(usable);
     const pre: OcrWord[] = [];
     while (ws.length && !edgeOk(ws[0], 75)) pre.push(ws.shift()!);
-    // rechts: unsicheres Wort darf bleiben, wenn es wortähnlich ist und dicht am Vorgänger steht
+    // On the right, an uncertain word may stay if word-like and close to the preceding word
     const closeRight = () => {
       const a = ws[ws.length - 2], b = ws[ws.length - 1];
       return !!a && WORDLIKE.test(b.text) && b.confidence >= 40 && b.bbox.x0 - a.bbox.x1 < 1.2 * h;
     };
     while (ws.length && !edgeOk(ws[ws.length - 1], 55) && !closeRight()) ws.pop();
     if (!ws.length) continue;
-    // Reste direkt daneben (z. B. eine unsicher erkannte Wortendung) nicht anzeigen, aber übermalen
+    // Paint over nearby fragments (e.g. an uncertain word ending) without displaying them
     const i0 = part.indexOf(ws[0]), i1 = part.indexOf(ws[ws.length - 1]);
     const extra: OcrWord[] = [];
     for (let i = i1 + 1; i < part.length && part[i].bbox.x0 - part[i - 1].bbox.x1 < 1.0 * h; i++) extra.push(part[i]);
@@ -69,7 +69,7 @@ function lineUnits(line: OcrLine): RawUnit[] {
   return units;
 }
 
-/** Wörter zu Text verbinden; fette Wörter (auch mehrere hintereinander) als *…* markieren. */
+/** Join words into text; mark bold words, including consecutive ones, as *…*. */
 function boldText(ws: OcrWord[]): string {
   const out: string[] = [];
   ws.forEach((w, i) => {
@@ -80,10 +80,10 @@ function boldText(ws: OcrWord[]): string {
 }
 const finishUnit = (u: RawUnit): Unit => ({ ...u, bbox: union(u.ws.map((w) => w.bbox)), words: [...u.ws, ...(u.extra || [])].map((w) => w.bbox), text: boldText(u.ws) });
 
-// Links abgeschnittene Wörter zurückholen, wenn sie am gemeinsamen linken Rand der Gruppe beginnen.
+// Restore trimmed left-hand words if they start at the group’s shared left margin.
 function rescueLeft(group: Unit[]): Unit[] {
   const xs = group.map((u) => u.bbox.x0).sort((a, b) => a - b);
-  const margin = xs[(xs.length - 1) >> 1]; // bei gerader Anzahl der linkere der beiden mittleren Werte
+  const margin = xs[(xs.length - 1) >> 1]; // for an even count, use the smaller of the two middle values
   return group.map((u) => {
     if (!u.pre.length) return u;
     for (let i = 0; i < u.pre.length; i++) {
@@ -93,7 +93,7 @@ function rescueLeft(group: Unit[]): Unit[] {
   });
 }
 
-// Zeilen zu Textgruppen (Absätzen) zusammenfassen: untereinander, ähnlich groß, überlappend, ohne große Lücke.
+// Group lines into paragraphs: vertically adjacent, similar in size, overlapping, without a large gap.
 function groupUnits(units: Unit[]): Unit[][] {
   units.sort((a, b) => a.bbox.y0 - b.bbox.y0 || a.bbox.x0 - b.bbox.x0);
   const groups: Unit[][] = [];
@@ -112,11 +112,11 @@ function groupUnits(units: Unit[]): Unit[][] {
   return groups;
 }
 
-// OCR-Text aufräumen. Zeilenumbrüche innerhalb eines Absatzes werden zu Leerzeichen.
-// Option bookSyllables: Manche Lesebücher trennen schwierige Wörter selbst in Silben („sko-le“,
-// „mor·gen·en“). Dann werden Bindestriche/Mittelpunkte zwischen Buchstaben zu unserem Silbenzeichen „·“.
-// Ohne die Option bleiben Bindestriche normale Bindestriche („Lille-by“), und ein Trennstrich am
-// Zeilenende wird wie üblich entfernt („Wör-\nter“ → „Wörter“).
+// Clean up OCR text. Line breaks within a paragraph become spaces.
+// Option bookSyllables: some beginner readers split difficult words into syllables (“sko-le”,
+// “mor·gen·en”). Hyphens/middle dots between letters then become our syllable separator “·”.
+// Without this option, ordinary hyphens remain (“Lille-by”), and a hyphen at the
+// end of a line is removed as usual (“Wör-\nter” → “Wörter”).
 export function cleanOcr(raw: string, { bookSyllables = false }: { bookSyllables?: boolean } = {}): string {
   let t = raw.replace(/\r/g, "").replace(/[|]/g, "I");
   if (bookSyllables) {
@@ -136,8 +136,8 @@ export function cleanOcr(raw: string, { bookSyllables = false }: { bookSyllables
     .join("\n\n");
 }
 
-// Bei schräg fotografierten Seiten liefert Tesseract manchmal dieselbe Zeile doppelt (als zwei
-// überlappende Zeilen). Dann behalten wir die mit mehr sicheren Wörtern.
+// For tilted page photos, Tesseract sometimes returns the same line twice (as two
+// overlapping lines). Keep the one with more reliable words.
 function dedupe(units: Unit[]): Unit[] {
   const area = (b: Box): number => Math.max(0, b.x1 - b.x0) * Math.max(0, b.y1 - b.y0);
   const score = (u: Unit): number => u.ws.filter(strong).length;
@@ -152,10 +152,10 @@ function dedupe(units: Unit[]): Unit[] {
   return kept;
 }
 
-// Ergebnis: Textgruppen mit Position, Zeilen- und Wortflächen (zum Übermalen) und Text.
-// Den Text (g.text) setzt der Aufrufer mit cleanOcr(g.raw, Optionen), damit Einstellungen ohne neue Erkennung wirken.
-// Mehrere Erkennungsläufe (z. B. Originalbild und Bild mit ausgeglichenem Hintergrund) lassen sich
-// kombinieren: Überlappende Zeilen werden zusammengeführt, die sicherere gewinnt.
+// Result: text groups with positions, line and word areas (for painting over), and text.
+// The caller sets g.text using cleanOcr(g.raw, options), so settings work without rerunning OCR.
+// Multiple OCR runs (e.g. the original image and one with a normalized background) can be
+// combined: overlapping lines are merged, keeping the more reliable one.
 export function parasFromOcr(...runs: OcrData[]): Para[] {
   const units: Unit[] = [];
   for (const data of runs) for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || []) units.push(...lineUnits(l).map(finishUnit));
@@ -168,5 +168,5 @@ export function parasFromOcr(...runs: OcrData[]): Para[] {
       lh: hs[hs.length >> 1],
       raw: ls.map((l) => l.text).join("\n"),
     };
-  }).filter((g) => letters(g.raw) >= 4); // winzige Bruchstücke (meist aus Bildern) weglassen
+  }).filter((g) => letters(g.raw) >= 4); // omit tiny fragments (usually from images)
 }

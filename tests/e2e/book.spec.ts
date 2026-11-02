@@ -3,7 +3,7 @@ import { addPhotos, fresh, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
-test("Foto → Zuschnitt → Texterkennung → Buchseite", async ({ page }) => {
+test("Photo → crop → text recognition → book page", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
   const text = await page.locator("#text").inputValue();
@@ -11,12 +11,12 @@ test("Foto → Zuschnitt → Texterkennung → Buchseite", async ({ page }) => {
   expect(text).toContain("haven");
   expect(text).toContain("mus");
   await expect(page.locator("#reader")).toHaveClass(/pagemode/);
-  // Original zum Vergleichen einblenden und zurück
+  // Show the original for comparison, then switch back.
   await page.click("#compareBtn");
   await expect(page.locator("#reader .origfull")).toBeVisible();
   await page.click("#compareBtn");
   await expect(page.locator("#reader")).toHaveClass(/pagemode/);
-  // Nur-Text-Ansicht; erst dort gibt es den Schalter für das Originalfoto, und er wirkt
+  // The original-photo toggle is available and effective only in text-only view.
   await page.click("#setBtn");
   await expect(page.locator("#origToggle")).toBeHidden();
   await page.click("#viewSet button[data-v=tekst]");
@@ -28,7 +28,7 @@ test("Foto → Zuschnitt → Texterkennung → Buchseite", async ({ page }) => {
   await expect(page.locator("#orig")).toBeVisible();
 });
 
-test("Text über einer Illustration wird erkannt, die Seitenzahl nicht", async ({ page }) => {
+test("Recognizes text over an illustration while excluding the page number", async ({ page }) => {
   await addPhotos(page, ["side-illustration.jpg"]);
   await waitForText(page);
   const text = await page.locator("#text").inputValue();
@@ -37,7 +37,7 @@ test("Text über einer Illustration wird erkannt, die Seitenzahl nicht", async (
   expect(text).not.toMatch(/\b12\b/);
 });
 
-test("Bücherregal: speichern, neu laden, sortieren, löschen", async ({ page }) => {
+test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg", "side-illustration.jpg"]);
   await page.fill("#bookTitle", "Min testbog");
   await waitForText(page);
@@ -51,21 +51,21 @@ test("Bücherregal: speichern, neu laden, sortieren, löschen", async ({ page })
   await page.click(".book");
   await waitForText(page);
   await expect(page.locator("#bookTitle")).toHaveValue("Min testbog");
-  await expect(page.locator("#count")).toHaveText("2 / 2");   // weiter, wo man aufgehört hat
+  await expect(page.locator("#count")).toHaveText("2 / 2");   // Resume where reading stopped.
 
   await page.click("#editPagesBtn");
-  await page.locator(".thumb").nth(1).locator(".ctl button").first().click();   // Seite 2 nach links
+  await page.locator(".thumb").nth(1).locator(".ctl button").first().click();   // Move page 2 to the left.
   await expect(page.locator("#count")).toHaveText("1 / 2");
   await expect(page.locator("#text")).toHaveValue(/Søren går en tur/);
-  await page.locator(".thumb").nth(0).locator(".ctl .x").click();               // Seite löschen
+  await page.locator(".thumb").nth(0).locator(".ctl .x").click();               // Delete the page.
   await expect(page.locator("#count")).toHaveText("1 / 1");
   await page.click("#delBookBtn");
-  await page.click("#delBookBtn");                                              // zweimal = bestätigen
+  await page.click("#delBookBtn");                                              // Click twice to confirm.
   await expect(page.locator("#start")).toBeVisible();
   await expect(page.locator("#shelf")).toBeHidden();
 });
 
-test("Text korrigieren wird gespeichert", async ({ page }) => {
+test("Saves text corrections", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
   await page.click("#edit summary");
@@ -79,7 +79,7 @@ test("Text korrigieren wird gespeichert", async ({ page }) => {
   await expect(page.locator("#text")).toHaveValue(/Pind·svi·net/);
 });
 
-test("Überschrift bleibt größer, fettes Wort bleibt fett", async ({ page }) => {
+test("Keeps headings larger and bold words bold", async ({ page }) => {
   await addPhotos(page, ["side-overskrift.jpg"]);
   await waitForText(page);
   const text = await page.locator("#text").inputValue();
@@ -91,7 +91,7 @@ test("Überschrift bleibt größer, fettes Wort bleibt fett", async ({ page }) =
   expect(await size("Bjørnens")).toBeGreaterThan((await size("morgenen")) * 1.3);
 });
 
-test("Textfelder auf der Buchseite verschieben, speichern und zurücksetzen", async ({ page }) => {
+test("Moves, saves and resets text boxes on the book page", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
   await page.locator("#edit summary").click();
@@ -106,7 +106,7 @@ test("Textfelder auf der Buchseite verschieben, speichern und zurücksetzen", as
   await page.mouse.up();
   const top1 = await box.evaluate(el => el.getBoundingClientRect().top - el.parentElement!.getBoundingClientRect().top);
   expect(top1 - top0).toBeGreaterThan(40);
-  // Antippen eines Worts liest im Verschiebe-Modus nicht vor, Größe am Griff ändern
+  // Tapping a word in move mode does not read it aloud; resize using the handle.
   const g = (await box.locator(".grip").boundingBox())!;
   const h0 = r.height;
   await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
@@ -114,13 +114,13 @@ test("Textfelder auf der Buchseite verschieben, speichern und zurücksetzen", as
   await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2 + 50, { steps: 5 });
   await page.mouse.up();
   expect((await box.boundingBox())!.height).toBeGreaterThan(h0 + 30);
-  // bleibt nach Neuladen erhalten
+  // The position survives reloading.
   await page.reload();
   await page.locator(".book").first().click();
   await waitForText(page);
   const top2 = await page.locator("#reader .tbox").first().evaluate(el => el.getBoundingClientRect().top - el.parentElement!.getBoundingClientRect().top);
   expect(Math.abs(top2 - top1)).toBeLessThan(3);
-  // zurücksetzen
+  // Reset the position.
   await page.locator("#edit summary").click();
   await page.click("#resetPlaceBtn");
   const top3 = await page.locator("#reader .tbox").first().evaluate(el => el.getBoundingClientRect().top - el.parentElement!.getBoundingClientRect().top);

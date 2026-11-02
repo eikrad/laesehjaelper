@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { cleanOcr, parasFromOcr } from "../../src/layout";
 import type { OcrData, OcrLine, OcrWord } from "../../src/types";
 
-// Hilfen, um künstliche Tesseract-Ergebnisse zu bauen: Wörter mit Position und Sicherheit.
-const H = 30;   // Zeilenhöhe
+// Helpers for synthetic Tesseract results: words with positions and confidence scores.
+const H = 30;   // Line height
 function line(y: number, words: [string, number][], x0 = 100, gap = 20): OcrLine {
   let x = x0;
   const ws: OcrWord[] = words.map(([text, confidence]) => {
@@ -18,27 +18,27 @@ const page = (...lines: OcrLine[]): OcrData => ({ blocks: [{ paragraphs: [{ line
 const texts = (d: OcrData) => parasFromOcr(d).map((p) => cleanOcr(p.raw));
 
 describe("cleanOcr", () => {
-  it("fügt Zeilen eines Absatzes zusammen und trennt Absätze", () => {
+  it("Joins lines within a paragraph and separates paragraphs", () => {
     expect(cleanOcr("Det er\nen bog\n\nNy linje")).toBe("Det er en bog\n\nNy linje");
   });
-  it("entfernt Trennstriche am Zeilenende", () => {
+  it("Removes line-end hyphenation", () => {
     expect(cleanOcr("Schoko-\nlade")).toBe("Schokolade");
   });
-  it("lässt echte Bindestriche stehen", () => {
+  it("Preserves genuine hyphens", () => {
     expect(cleanOcr("En tur til Lille-by")).toBe("En tur til Lille-by");
   });
-  it("macht aus Silbenstrichen des Buchs Silbenzeichen (Option)", () => {
+  it("Optionally converts syllable hyphens in the book into syllable markers", () => {
     expect(cleanOcr("sko-le og mor·gen-en", { bookSyllables: true })).toBe("sko·le og mor·gen·en");
     expect(cleanOcr("hed.der", { bookSyllables: true })).toBe("hed·der");
     expect(cleanOcr("sko-\nle", { bookSyllables: true })).toBe("sko·le");
   });
-  it("verwirft Absätze ohne Buchstaben", () => {
+  it("Discards paragraphs without letters", () => {
     expect(cleanOcr("42\n\nTekst")).toBe("Tekst");
   });
 });
 
 describe("parasFromOcr", () => {
-  it("behält sichere Zeilen und fasst sie zu einem Absatz zusammen", () => {
+  it("Keeps confident lines and combines them into a paragraph", () => {
     const d = page(
       line(100, [["Det", 96], ["bliver", 97], ["en", 97], ["lang", 96], ["tur", 97]]),
       line(140, [["De", 96], ["ser", 95], ["et", 97], ["egern", 96]]),
@@ -46,26 +46,26 @@ describe("parasFromOcr", () => {
     expect(texts(d)).toEqual(["Det bliver en lang tur De ser et egern"]);
   });
 
-  it("filtert Bildrauschen mit niedriger Sicherheit heraus", () => {
+  it("Filters out low-confidence image noise", () => {
     const d = page(
-      line(100, [["FJ", 20], ["|", 42], ["THR", 24]]),            // nur Rauschen
+      line(100, [["FJ", 20], ["|", 42], ["THR", 24]]),            // Noise only
       line(300, [["Det", 96], ["bliver", 97], ["en", 97], ["lang", 96], ["tur", 97]]),
     );
     expect(texts(d)).toEqual(["Det bliver en lang tur"]);
   });
 
-  it("schneidet Rauschen hinter einer großen Lücke ab", () => {
+  it("Trims noise after a large gap", () => {
     const l = line(100, [["Det", 96], ["bliver", 97], ["en", 97], ["lang", 96], ["tur", 97]]);
     l.words.push({ text: "SK", confidence: 26, bbox: { x0: 900, y0: 100, x1: 950, y1: 130 } });
     expect(texts(page(l))).toEqual(["Det bliver en lang tur"]);
   });
 
-  it("behält unsichere Wörter mitten in einer sicheren Zeile", () => {
+  it("Keeps uncertain words within a confident line", () => {
     const d = page(line(100, [["Når", 97], ["vi", 97], ["spiser", 32], ["vores", 45], ["mad,", 97]]));
     expect(texts(d)).toEqual(["Når vi spiser vores mad,"]);
   });
 
-  it("holt ein unsicheres Wort am linken Absatzrand zurück", () => {
+  it("Recovers an uncertain word at the left paragraph margin", () => {
     const d = page(
       line(100, [["Klassen", 96], ["skal", 97], ["på", 97], ["tur", 97]]),
       line(140, [["klassen", 43], ["er", 96], ["på", 97], ["tur", 96], ["i", 97], ["dag", 96]]),
@@ -73,26 +73,26 @@ describe("parasFromOcr", () => {
     expect(texts(d)[0]).toContain("klassen er på tur");
   });
 
-  it("trennt Überschrift und Text bei anderer Schriftgröße", () => {
+  it("Separates headings and body text with different font sizes", () => {
     const big: OcrLine = line(50, [["Bamse", 97]]);
-    big.words[0].bbox.y1 = 110; big.bbox.y1 = 110;   // doppelt so hoch
+    big.words[0].bbox.y1 = 110; big.bbox.y1 = 110;   // Twice the height
     const d = page(big, line(130, [["Der", 96], ["var", 97], ["engang", 96], ["en", 97], ["bjørn", 96]]));
     expect(texts(d)).toEqual(["Bamse", "Der var engang en bjørn"]);
   });
 
-  it("entfernt doppelt erkannte Zeilen", () => {
+  it("Removes duplicate recognized lines", () => {
     const a = line(100, [["Det", 96], ["bliver", 97], ["en", 97], ["lang", 96], ["tur", 97]]);
     const b = line(102, [["Det", 90], ["bliver", 91], ["en", 92], ["lang", 90], ["tur", 91]]);
     expect(texts(page(a, b))).toEqual(["Det bliver en lang tur"]);
   });
 
-  it("kombiniert mehrere Erkennungsläufe", () => {
+  it("Combines multiple recognition passes", () => {
     const run1 = page(line(100, [["Det", 96], ["bliver", 97], ["en", 97], ["lang", 96], ["tur", 97]]));
     const run2 = page(line(300, [["Bjørne-far", 92], ["var", 95], ["en", 96], ["stor", 95], ["bjørn", 94]]));
     expect(parasFromOcr(run1, run2).map((p) => cleanOcr(p.raw))).toEqual(["Det bliver en lang tur", "Bjørne-far var en stor bjørn"]);
   });
 
-  it("liefert Positionen für das Übermalen", () => {
+  it("Returns positions for painting over text", () => {
     const [p] = parasFromOcr(page(line(100, [["Det", 96], ["bliver", 97], ["en", 97], ["lang", 96]])));
     expect(p.bbox.y0).toBe(100);
     expect(p.words.length).toBe(4);
@@ -100,29 +100,29 @@ describe("parasFromOcr", () => {
   });
 });
 
-describe("Fettdruck", () => {
-  it("markiert fette Wörter mit *…* und fasst aufeinanderfolgende zusammen", () => {
+describe("Bold text", () => {
+  it("Marks bold words with *…* and combines consecutive bold words", () => {
     const l = line(100, [["Der", 95], ["store", 95], ["bjørn", 95], ["sover", 95], ["nu", 95]]);
     l.words[1].bold = true; l.words[2].bold = true; l.words[4].bold = true;
     expect(texts(page(l))).toEqual(["Der *store bjørn* sover *nu*"]);
   });
 });
 
-describe("englische OCR-Wörter", () => {
-  it("behält Kontraktionen und Genitive mit geraden und typografischen Apostrophen", () => {
+describe("English OCR words", () => {
+  it("Keeps contractions and possessives with straight and typographic apostrophes", () => {
     const d = page(line(100, [["We", 97], ["don't", 97], ["like", 97], ["Tom’s", 97], ["raincoat.", 97]]));
     expect(texts(d)).toEqual(["We don't like Tom’s raincoat."]);
   });
 });
 
-it("behält den englischen Artikel am Anfang einer einzelnen Zeile", () => {
+it("Keeps the English article at the start of a single line", () => {
   for (const article of ["A", "a"]) {
     expect(texts(page(line(100, [[article, 97], ["small", 97], ["brown", 97], ["bear.", 97]]))))
       .toEqual([`${article} small brown bear.`]);
   }
 });
 
-it("behält englische Pluralgenitive und einfach zitierte Wörter", () => {
+it("Keeps English plural possessives and single-quoted words", () => {
   expect(texts(page(line(100, [["The", 97], ["dogs’", 97], ["name", 97], ["is", 97], ["'Lucky'.", 97]]))))
     .toEqual(["The dogs’ name is 'Lucky'."]);
 });

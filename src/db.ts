@@ -1,4 +1,4 @@
-// Speicher für Bücher und Seiten im Browser (IndexedDB). Bleibt auf dem Gerät.
+// Browser storage for books and pages (IndexedDB). Data stays on the device.
 
 type StoreName = "books" | "pages";
 

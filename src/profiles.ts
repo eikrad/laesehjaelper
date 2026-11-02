@@ -1,12 +1,12 @@
 /**
- * Leseeinstellungen pro Kind.
+ * Reading settings for each child.
  *
- * Was hilft, ist von Kind zu Kind verschieden (z. B. Silbenfarben: Brügelmann 2025;
- * Abstände und kurze Zeilen: Schneps et al. 2013). Darum hängen die Leseeinstellungen
- * an einem Profil; Oberflächensprache, Buchsprache und Ansicht bleiben gemeinsam.
+ * What helps varies between children (e.g. syllable colors: Brügelmann 2025;
+ * spacing and short lines: Schneps et al. 2013). Reading settings therefore
+ * belong to a profile; interface language, book language, and view remain shared.
  */
 
-/** Einstellungen, die zum Profil gehören. */
+/** Settings that belong to a profile. */
 export const PROFILE_KEYS = ["font", "size", "ls", "lh", "mode", "colors", "bg", "lines", "rate", "turn"] as const;
 export type ProfileKey = typeof PROFILE_KEYS[number];
 
@@ -29,28 +29,28 @@ function valid(x: unknown): x is ProfileStore {
     st.list.some(p => p.id === st.active);
 }
 
-/** Gespeicherte Profile laden; ohne (gültige) Daten ein erstes Profil aus den aktuellen Einstellungen. */
+/** Load saved profiles; if valid data is missing, create the first profile from current settings. */
 export function initProfiles(raw: string | null, S: object, firstName: string): ProfileStore {
   if (raw) {
-    try { const st = JSON.parse(raw); if (valid(st)) return st; } catch { /* neu anlegen */ }
+    try { const st = JSON.parse(raw); if (valid(st)) return st; } catch { /* create a new store */ }
   }
   const id = newId();
   return { active: id, list: [{ id, name: firstName, settings: pick(S) }] };
 }
 
-/** Aktuelle Leseeinstellungen ins aktive Profil schreiben. */
+/** Write current reading settings to the active profile. */
 export function syncActive(st: ProfileStore, S: object): ProfileStore {
   return { ...st, list: st.list.map(p => (p.id === st.active ? { ...p, settings: pick(S) } : p)) };
 }
 
-/** Neues Profil (startet mit den aktuellen Einstellungen) anlegen und aktivieren. */
+/** Create and activate a new profile, starting with the current settings. */
 export function addProfile(st: ProfileStore, name: string, S: object): ProfileStore {
   const synced = syncActive(st, S);
   const id = newId();
   return { active: id, list: [...synced.list, { id, name: name.trim() || "?", settings: pick(S) }] };
 }
 
-/** Zu einem Profil wechseln; schreibt dessen Werte in `S`. */
+/** Switch to a profile, writing its values to `S`. */
 export function switchProfile(st: ProfileStore, id: string, S: object): ProfileStore {
   const synced = syncActive(st, S);
   const p = synced.list.find(x => x.id === id);
@@ -59,7 +59,7 @@ export function switchProfile(st: ProfileStore, id: string, S: object): ProfileS
   return { ...synced, active: id };
 }
 
-/** Profil löschen (nie das letzte); bei Löschen des aktiven wird das erste übrige aktiv. */
+/** Delete a profile, except the last one; deleting the active profile activates the first remaining one. */
 export function removeProfile(st: ProfileStore, id: string, S: object): ProfileStore {
   if (st.list.length <= 1) return st;
   const list = st.list.filter(p => p.id !== id);

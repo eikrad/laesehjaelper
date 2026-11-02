@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 
-test("App lädt nach dem ersten Besuch auch offline", async ({ page, context }) => {
+test("The app loads offline after the first visit", async ({ page, context }) => {
   await page.goto("/");
   await page.waitForFunction(() => navigator.serviceWorker?.controller, null, { timeout: 30_000 }).catch(() => {});
   await page.reload();
@@ -11,7 +11,7 @@ test("App lädt nach dem ersten Besuch auch offline", async ({ page, context }) 
   await context.setOffline(false);
 });
 
-test("Manifest ist vorhanden", async ({ request }) => {
+test("The manifest is available", async ({ request }) => {
   const res = await request.get("/manifest.webmanifest");
   expect(res.ok()).toBe(true);
   const m = await res.json();

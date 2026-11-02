@@ -1,4 +1,4 @@
-// Kleiner statischer Webserver für die End-to-End-Tests (liefert dist/ aus).
+// Small static server for end-to-end tests; serves dist/.
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";

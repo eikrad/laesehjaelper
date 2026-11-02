@@ -4,7 +4,7 @@ Rules for AI coding agents (Claude Code, Codex, Cursor, …) and humans alike. `
 
 ## The project in one paragraph
 
-Læsehjælper is a browser app (PWA, GitHub Pages) that turns a photo of a children's book page into an easier-to-read page: OCR (Tesseract.js), page detection and dewarping (OpenCV.js), the old text painted over and re-set in a legible font with syllable colours, read-aloud, bookshelf (IndexedDB) and EPUB export. Everything runs on the user's device. Primary language Danish; also German and English, for books and UI.
+Læsehjælper is a browser app (PWA, GitHub Pages) that turns a photo of a children's book page into an easier-to-read page: OCR (Tesseract.js), page detection and dewarping (OpenCV.js), the old text painted over and re-set in a legible font with syllable colours, read-aloud, bookshelf (IndexedDB) and EPUB export. Everything runs on the user's device. The app supports Danish, German and English books and UI, with Danish as the default app language.
 
 ## Non-negotiable rules
 
@@ -43,7 +43,8 @@ npm run coverage       # unit + e2e coverage, merged, with minimum thresholds
 
 ## Conventions
 
-- **Languages:** every UI string exists in Danish, German and English (`T` in `src/app.ts`). The three READMEs (`README.md` Danish, `README.de.md`, `README.en.md`) are updated together.
+- **Repository language: English.** Write documentation, code comments, test descriptions, development messages, commits, and GitHub issue/PR titles and bodies in English.
+- **Localization:** every UI string exists in Danish, German and English (`T` in `src/app.ts`). `README.md` is the English default and links to `README.da.md` (Danish) and `README.de.md` (German); update these three together. Localized UI text, README translations, and language-specific test data/examples use their intended language.
 - **Reading-support features are evidence-based.** Cite the study (author, year, DOI) in a code comment and in the README section “What does the research say?”. Features without clear evidence are optional and switched off by default.
 - **Book quirks are settings, not defaults** (e.g. hyphenated syllables in some readers).
 - **Commits:** English, imperative, explain why; end with `Closes #<n>` where it applies.

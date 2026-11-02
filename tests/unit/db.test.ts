@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DB } from "../../src/db";
 
 describe("DB", () => {
-  it("speichert, liest und löscht Bücher und Seiten", async () => {
+  it("Stores, reads and deletes books and pages", async () => {
     await DB.put("books", { id: "b1", title: "Bog" });
     await DB.put("pages", { id: "p1", bookId: "b1", text: "a" });
     await DB.put("pages", { id: "p2", bookId: "b1", text: "b" });
@@ -15,7 +15,7 @@ describe("DB", () => {
   });
 });
 
-it("speichert einen Buchimport vollständig oder gar nicht", async () => {
+it("Saves an imported book completely or not at all", async () => {
   const book = { id: "atomic-import", title: "Testimport" };
   await expect(DB.putBook(book, [
     { id: "import-first", bookId: book.id, text: "Første side" },

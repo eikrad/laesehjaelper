@@ -2,24 +2,24 @@ import { describe, expect, it } from "vitest";
 import { silben } from "../../src/silben";
 
 describe("silben", () => {
-  it("trennt dänische Wörter", () => {
+  it("Splits Danish words", () => {
     expect(silben("sommerfugl", "da")).toEqual(["som", "mer", "fugl"]);
     expect(silben("morgenen", "da")).toEqual(["mor", "ge", "nen"]);
     expect(silben("bedstemor", "da")).toEqual(["bed", "ste", "mor"]);
   });
-  it("trennt deutsche Wörter", () => {
+  it("Splits German words", () => {
     expect(silben("Schokolade", "de")).toEqual(["Scho", "ko", "la", "de"]);
     expect(silben("Apfelbaum", "de").join("")).toBe("Apfelbaum");
     expect(silben("Apfelbaum", "de").length).toBeGreaterThan(1);
   });
-  it("trennt englische Wörter", () => {
+  it("Splits English words", () => {
     expect(silben("hedgehog", "en")).toEqual(["hedge", "hog"]);
   });
-  it("lässt kurze Wörter ganz", () => {
+  it("Keeps short words intact", () => {
     expect(silben("i", "da")).toEqual(["i"]);
     expect(silben("og", "da")).toEqual(["og"]);
   });
-  it("fällt bei unbekannter Sprache auf Dänisch zurück", () => {
+  it("Falls back to Danish for an unknown language", () => {
     expect(silben("sommerfugl", "xx")).toEqual(["som", "mer", "fugl"]);
   });
 });

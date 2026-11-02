@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/eikrad/laesehjaelper/actions/workflows/ci.yml/badge.svg)](https://github.com/eikrad/laesehjaelper/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-*Dänisch für „Lesehelfer“. · [Dansk](README.md) · [English](README.en.md)*
+*Dänisch für „Lesehelfer“. · [Dansk](README.da.md) · [English](README.md)*
 
 Fotografierte Seiten aus Kinderbüchern leichter lesbar machen. Der Text wird per Texterkennung (OCR) erkannt und direkt auf der Seite ersetzt: Die Bilder bleiben, wo sie sind, aber der Text steht in einer gut lesbaren Schrift mit farbigen Silben oder Silbenbögen. Alternativ lässt sich der Text allein anzeigen, groß und mit viel Abstand. Gedacht für Kinder, die lesen lernen, und für Menschen mit Legasthenie. Unterstützt dänische, deutsche und englische Bücher.
 

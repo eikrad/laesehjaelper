@@ -1,10 +1,10 @@
-// Gemeinsame Typen.
+// Shared types.
 
-/** Rechteck in Bildpixeln (wie Tesseract es liefert). */
+/** Rectangle in image pixels, as provided by Tesseract. */
 export interface Box { x0: number; y0: number; x1: number; y1: number }
 
-/** Die Teile des Tesseract-Ergebnisses, die wir verwenden. */
-export interface OcrWord { text: string; confidence: number; bbox: Box; /** im Bild fett gedruckt (selbst gemessen) */ bold?: boolean }
+/** The parts of the Tesseract result that we use. */
+export interface OcrWord { text: string; confidence: number; bbox: Box; /** bold in the image (measured locally) */ bold?: boolean }
 export interface OcrLine { text: string; bbox: Box; words: OcrWord[] }
 export interface OcrData {
   text?: string;
@@ -12,31 +12,31 @@ export interface OcrData {
   imageColor?: string | null;
 }
 
-/** Eine Textgruppe (Absatz) auf der Buchseite. */
+/** A text group (paragraph) on the book page. */
 export interface Para {
   bbox: Box;
   lines: Box[];
-  /** Flächen zum Übermalen (erkannte Wörter und Reste daneben) */
+  /** Areas to paint over (recognized words and nearby fragments) */
   words: Box[];
-  /** mittlere Zeilenhöhe in Pixeln */
+  /** median line height in pixels */
   lh: number;
-  /** OCR-Rohtext, Zeilen mit \n getrennt */
+  /** Raw OCR text, with lines separated by \n */
   raw: string;
-  /** aufbereiteter Text (abhängig von Einstellungen) */
+  /** processed text (depending on settings) */
   text?: string;
-  /** von Hand gesetzte Position und Größe des Textfelds (ersetzt bbox/grow) */
+  /** manually assigned text-box position and size (overrides bbox/grow) */
   place?: Box;
-  /** Hintergrund unruhig (Text auf Bild)? */
+  /** Busy background (text on an image)? */
   busy?: boolean;
   bg?: string;
   rgb?: number[];
-  /** Fläche, in die der neue Text wachsen darf */
+  /** Area into which the replacement text may expand */
   grow?: Box;
 }
 
 export type Point = [number, number];
-/** Vier Ecken: oben links, oben rechts, unten rechts, unten links */
+/** Four corners: top left, top right, bottom right, bottom left */
 export type Corners = [Point, Point, Point, Point];
-/** Seitenrahmen: Ecken plus je ein Punkt auf der Mitte jeder Kante (oben, rechts, unten, links),
- *  mit denen sich gewölbte Kanten nachzeichnen lassen. */
+/** Page frame: corners plus one midpoint on each edge (top, right, bottom, left)
+ *  for tracing curved edges. */
 export interface Frame { corners: Corners; mids: Corners }

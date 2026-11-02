@@ -5,7 +5,7 @@ import { spawnSync } from "node:child_process";
 
 const ignored = new Set([".git", "node_modules", "dist", "coverage", "playwright-report", "test-results", "private-testbilder"]);
 
-/** Quelldateien prüfen; erzeugte Dateien und private Testbilder bleiben außerhalb des Lint-Laufs. */
+/** Check source files while excluding generated files and private test images. */
 export function javascriptSources(root: string): string[] {
   const found: string[] = [];
   function walk(dir: string) {

@@ -11,7 +11,7 @@ export default defineConfig({
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: "http://localhost:4173",
-    viewport: { width: 820, height: 1180 },   // Tablet hochkant
+    viewport: { width: 820, height: 1180 },   // Portrait tablet.
     acceptDownloads: true,
     trace: "retain-on-failure",
   },

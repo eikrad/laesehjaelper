@@ -5,7 +5,7 @@ import { runInNewContext } from "node:vm";
 const origin = "https://reader.test";
 const urlOf = (request: Request | string) => new URL(typeof request === "string" ? request : request.url, origin + "/").href;
 
-/** Cache Storage und Netz sind die Browsergrenzen; der echte Worker führt seine Ereignisse aus. */
+/** Cache Storage and the network form the browser boundaries; the real worker handles its events. */
 async function worker() {
   const stores = new Map<string, Map<string, Response>>();
   const cache = (name: string) => {
@@ -56,7 +56,7 @@ async function worker() {
   } };
 }
 
-it("behält geladene OCR-Ressourcen und Schriften nach einem Offline-Update", async () => {
+it("Keeps loaded OCR resources and fonts after an offline update", async () => {
   const w = await worker();
   await w.fire("install"); await w.fire("activate"); w.goOffline();
   for (const path of ["lang/dan.js", "opencv.js", "core/tesseract-core-lstm.wasm.js"]) {
@@ -66,7 +66,7 @@ it("behält geladene OCR-Ressourcen und Schriften nach einem Offline-Update", as
   expect(await w.caches.keys()).toEqual(["laesehjaelper-new"]);
 });
 
-it("behält den bisherigen Cache, wenn das Auffrischen eines Updates scheitert", async () => {
+it("Keeps the previous cache when refreshing an update fails", async () => {
   const w = await worker(); w.goOffline();
   await expect(w.fire("install")).rejects.toThrow("offline");
   expect(await (await w.caches.match("lang/dan.js"))!.text()).toBe("old lang/dan.js");

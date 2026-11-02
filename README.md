@@ -2,119 +2,119 @@
 
 [![CI](https://github.com/eikrad/laesehjaelper/actions/workflows/ci.yml/badge.svg)](https://github.com/eikrad/laesehjaelper/actions/workflows/ci.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-*[English](README.en.md) · [Deutsch](README.de.md)*
+*Danish for "reading helper". · [Dansk](README.da.md) · [Deutsch](README.de.md)*
 
-Gør fotograferede sider fra børnebøger lettere at læse. Teksten bliver genkendt med OCR og erstattet direkte på siden, så billederne bliver, hvor de er, men teksten står i en letlæselig skrift med farvede stavelser eller stavelsesbuer. Alternativt kan teksten vises alene, stor og med god luft. Lavet til børn, der er ved at lære at læse, og til læsere med ordblindhed. Understøtter danske, tyske og engelske bøger.
+Make photographed children's book pages easier to read. The text is recognized with OCR and replaced right on the page: the pictures stay where they are, but the text is set in a highly legible font with colored syllables or syllable arcs. Alternatively, the text can be shown on its own, large and with generous spacing. Built for children learning to read and for readers with dyslexia. Supports Danish, German and English books.
 
-Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
+Everything runs locally in the browser. No photos are uploaded anywhere.
 
-**Prøv den:** https://eikrad.github.io/laesehjaelper/
+**Try it:** https://eikrad.github.io/laesehjaelper/
 
-## Funktioner
+## Features
 
-- To visninger: bogens side med ny skrift på den oprindelige plads, eller kun teksten
-- Brugerflade på dansk, tysk eller engelsk
-- Tekstgenkendelse (dansk, tysk, engelsk) med [Tesseract.js](https://github.com/naptha/tesseract.js)
-- Stavelsesdeling baseret på de danske, tyske og engelske TeX-orddelingsmønstre ([hyphen](https://github.com/ytiurin/hyphen))
-- Stavelser i skiftende farver (blå/rød, farverne kan vælges frit), som buer eller begge dele
-- Orddele (dansk): sammensatte ord deles i kendte dele, og bøjningsendelser vises dæmpet (f.eks. sommer|fugl|ene)
-- Skrifttyper: Andika (standard), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
-- Justerbar skriftstørrelse, bogstavafstand, linjeafstand og baggrundsfarve
-- Korte linjer med 2–3 ord i tekstvisningen (kan vælges)
-- Flere læsere: hvert barn har sine egne indstillinger for skrift, afstand, stavelser og oplæsning
-- Læs sammen: et par åbne spørgsmål til den voksne for hver side, også egne spørgsmål (kan slås til)
-- Tryk på et ord for at høre det – først helt, så langsomt stavelse for stavelse, så helt igen
-- Få hele siden læst op med markering af hvert ord, langsomt eller normalt; bagefter er det barnets tur („Hør igen“)
-- Indstilling „Bindestreger i bogen“: til læsebøger, der selv deler ord i stavelser med bindestreg („sko-le“)
-- Skæve fotos bliver rettet op, og „tekst“, som tekstgenkendelsen finder i tegningerne, bliver sorteret fra
-- Hver side genkendes to gange (som den er og med udlignet baggrund), så også tekst på farvede billeder bliver fundet
-- Ret den genkendte tekst; sæt selv stavelsesgrænser med `·` (f.eks. `hun·den`)
-- Flyt tekstfelter på bogens side med fingeren, eller ændr deres størrelse (under „Tjek og ret teksten“), f.eks. hvis den nye tekst går ind i et billede
-- Overskrifter forbliver større end brødteksten, og fed skrift bliver fundet og vist med fed (kan rettes med `*ord*`)
-- Læsetilstand: kun teksten, i fuld skærm
-- Vis den oprindelige tekst med ét tryk for at finde fejl i genkendelsen
-- Bogreol: bøger gemmes på enheden, med titel, rækkefølge og læsestatus
-- Beskæring: siden findes automatisk på fotoet og rettes op; hjørner og kanter kan justeres, også på buede sider
-- E-bog: gem en bog som EPUB 3 (faste sider, kan åbnes i alle læse-apps) og hent den ind igen uden tab
-- Kan installeres som app og bruges offline
+- Two views: the book page with the new text in its original place, or text only
+- Interface in Danish, German or English
+- Text recognition (Danish, German, English) with [Tesseract.js](https://github.com/naptha/tesseract.js)
+- Syllable splitting based on the Danish, German and English TeX hyphenation patterns ([hyphen](https://github.com/ytiurin/hyphen))
+- Syllables shown in alternating colors (blue/red, colors adjustable), as arcs, or both
+- Word parts (Danish): compound words are split into known parts, and inflection endings are shown muted (e.g. sommer|fugl|ene)
+- Fonts: Andika (default), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
+- Adjustable font size, letter spacing, line spacing and background color
+- Short lines with 2–3 words in the text view (optional)
+- Several readers: each child has their own settings for font, spacing, syllables and reading aloud
+- Read together: a few open questions per page for the adult, including your own (optional)
+- Tap a word to hear it – first whole, then slowly syllable by syllable, then whole again
+- Have the whole page read aloud with word-by-word highlighting, slow or normal; afterwards it's the child's turn ("Listen again")
+- “Hyphens in the book” setting: for early readers that split words into syllables with hyphens themselves (“sko-le”)
+- Tilted photos are straightened, and “text” that OCR finds inside illustrations is filtered out
+- Every page is recognized twice (as is and with a flattened background), so text on tinted pictures is found too
+- Correct the recognized text; set your own syllable breaks with `·` (e.g. `hun·den`)
+- Move or resize text boxes on the book page with your finger (under “Check and correct the text”), e.g. if the new text runs into a picture
+- Headings stay larger than body text, and bold words are detected and set in bold (editable with `*word*`)
+- Focus mode: just the text, full screen
+- Show the original text with one tap to spot recognition errors
+- Bookshelf: books are stored on the device, with title, page order and reading position
+- Cropping: the page is found in the photo automatically and straightened; corners and edges can be adjusted, including for curved pages
+- E-book: save a book as EPUB 3 (fixed layout, opens in any reading app) and import it again losslessly
+- Installable as an app and usable offline
 
-## Udvikling
+## Development
 
 ```bash
 npm install
-npm run build       # bygger dist/
+npm run build       # outputs dist/
 npm run typecheck   # TypeScript (strict)
 npm run lint        # Biome for TypeScript
-npm test            # unit-tests (Vitest)
-npm run test:e2e    # end-to-end-tests i Chromium (Playwright)
+npm test            # unit tests (Vitest)
+npm run test:e2e    # end-to-end tests in Chromium (Playwright)
 ```
 
-CI (`.github/workflows/ci.yml`) kører lint, typecheck, unit-tests, build og end-to-end-tests ved hvert push og pull request. Kun når alt er grønt, bliver `main` udgivet på GitHub Pages.
+CI (`.github/workflows/ci.yml`) runs lint, the type check, unit tests, build and end-to-end tests on every push and pull request. `main` is only deployed to GitHub Pages when everything passes.
 
-## Opbygning
+## Structure
 
-Projektet er skrevet i TypeScript (strict).
+The project is written in TypeScript (strict).
 
-- `src/index.html`: sidens HTML og CSS
-- `src/app.ts`: app-logik (brugerflade, tekstgenkendelse, bogreol)
-- `src/layout.ts`: gør det rå OCR-resultat til rene tekstlinjer og afsnit med position (sorterer støj fra tegninger fra)
-- `src/pagedetect.ts`: finder siden på fotoet og retter den op (OpenCV), også buede sider
-- `src/silben.ts`: stavelsesdeling (dansk, tysk, engelsk)
-- `src/db.ts`: lagring af bøger på enheden (IndexedDB)
-- `src/epub.ts`: eksport og import af EPUB
-- `src/prep.ts`: billedforberedelse til tekstgenkendelse (udligning af baggrund)
+- `src/index.html`: page HTML and CSS
+- `src/app.ts`: app logic (UI, text recognition, bookshelf)
+- `src/layout.ts`: turns raw OCR output into clean text lines and paragraphs with positions (filters illustration noise)
+- `src/pagedetect.ts`: finds the page in the photo and straightens it (OpenCV), including curved pages
+- `src/silben.ts`: syllable splitting (Danish, German, English)
+- `src/db.ts`: stores books on the device (IndexedDB)
+- `src/epub.ts`: EPUB export and import
+- `src/prep.ts`: image preparation for OCR (background flattening)
 - `src/sw.ts`: service worker (offline, installation)
-- `src/types.ts`: fælles typer
-- `build.ts`: bygger `dist/` med esbuild og kopierer Tesseract-, OpenCV- og sprogfiler
-- `tests/`: unit-tests, end-to-end-tests og selvlavede testsider
+- `src/types.ts`: shared types
+- `build.ts`: builds `dist/` with esbuild and copies Tesseract, OpenCV and language files
+- `tests/`: unit tests, end-to-end tests and self-made test pages
 
-## Hvad siger forskningen?
+## What does the research say?
 
-Læsehjælper er et læseværktøj, ikke en behandling. Indstillingerne bygger på det, undersøgelser af børn, der lærer at læse, og af ordblinde børn viser:
+Læsehjælper is a reading tool, not a treatment. Its settings are based on what studies of beginning readers and children with dyslexia show:
 
-- **Afstand:** Mere afstand mellem bogstaverne hjælper mange ordblinde børn med at læse hurtigere og mere præcist (Zorzi m.fl. 2012) – men kun når ordafstanden vokser med (Galliussi m.fl. 2020). Derfor øger Læsehjælper ordafstanden automatisk.
-- **Korte linjer** hjælper nogle ordblinde læsere, især dem med svag visuel opmærksomhed; andre læser bedre med almindelige linjer (Schneps m.fl. 2013).
-- **Skrifttype:** Selve bogstavformen gør næppe en forskel. OpenDyslexic gav ingen fordel, og ingen af børnene foretrak den (Wery & Diliberto 2017; Galliussi m.fl. 2020). Standard er derfor Andika, en almindelig, tydelig skrift; OpenDyslexic kan vælges, hvis barnet kan lide den.
-- **Farvede stavelser** hjælper nogle børn i begyndelsen og andre ikke; bindestreger i ordene gør læsningen langsommere (Häikiö m.fl. 2015; Brügelmann 2025). Prøv, hvad barnet kan lide, og slå farverne fra, når det læser flydende.
-- **Oplæsning** hjælper forståelsen; markering af hvert ord giver ikke ekstra (Keelor m.fl. 2023). At læse den samme tekst flere gange, gerne efter at have hørt den, gør læsningen mere flydende (Lee & Yoon 2017).
-- **Farvet baggrund eller farvede filtre** har ingen påvist effekt ud over placebo (Griffiths m.fl. 2016). Baggrundsfarven er kun et spørgsmål om, hvad der føles rart.
-- **Undervisning:** Systematisk arbejde med bogstaver og lyde er den bedst dokumenterede hjælp ved ordblindhed (Galuschka m.fl. 2014). Dansk er et af de sprog, hvor det tager længst tid at lære at læse sikkert (Seymour m.fl. 2003).
+- **Spacing:** More space between letters helps many children with dyslexia read faster and more accurately (Zorzi et al. 2012) – but only if word spacing grows too (Galliussi et al. 2020). Læsehjælper therefore increases word spacing automatically.
+- **Short lines** help some readers with dyslexia, especially those with weak visual attention; others read better with normal lines (Schneps et al. 2013).
+- **Font:** The letter shapes themselves make little difference. OpenDyslexic gave no advantage, and no child preferred it (Wery & Diliberto 2017; Galliussi et al. 2020). The default is therefore Andika, a plain, clear font; OpenDyslexic can be chosen if your child likes it.
+- **Coloured syllables** help some children at the start and not others; hyphens inside words slow reading down (Häikiö et al. 2015; Brügelmann 2025). Try what your child likes, and switch the colours off once reading is fluent.
+- **Reading aloud** helps comprehension; highlighting each word adds nothing extra (Keelor et al. 2023). Reading the same text several times, ideally after hearing it, makes reading more fluent (Lee & Yoon 2017).
+- **Coloured backgrounds or overlays** have no proven effect beyond placebo (Griffiths et al. 2016). The background colour is purely a matter of comfort.
+- **Teaching:** Systematic work on letters and sounds is the best-supported help for dyslexia (Galuschka et al. 2014). Danish is one of the languages in which children take longest to read accurately (Seymour et al. 2003).
 
-Kilder:
+Sources:
 
-- Zorzi m.fl. 2012, *PNAS* — [doi:10.1073/pnas.1205566109](https://doi.org/10.1073/pnas.1205566109)
-- Galliussi m.fl. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
-- Schneps m.fl. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)
+- Zorzi et al. 2012, *PNAS* — [doi:10.1073/pnas.1205566109](https://doi.org/10.1073/pnas.1205566109)
+- Galliussi et al. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
+- Schneps et al. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)
 - Wery & Diliberto 2017, *Annals of Dyslexia* — [doi:10.1007/s11881-016-0127-1](https://doi.org/10.1007/s11881-016-0127-1)
-- Häikiö m.fl. 2015, *Journal of Cognitive Psychology* — [doi:10.1080/20445911.2014.982126](https://doi.org/10.1080/20445911.2014.982126)
+- Häikiö et al. 2015, *Journal of Cognitive Psychology* — [doi:10.1080/20445911.2014.982126](https://doi.org/10.1080/20445911.2014.982126)
 - Brügelmann 2025 — [pedocs.de](https://www.pedocs.de/volltexte/2025/34472/pdf/Bruegelmann_2025_Red_and_blue.pdf)
-- Keelor m.fl. 2023, *Annals of Dyslexia* — [doi:10.1007/s11881-023-00281-9](https://doi.org/10.1007/s11881-023-00281-9)
+- Keelor et al. 2023, *Annals of Dyslexia* — [doi:10.1007/s11881-023-00281-9](https://doi.org/10.1007/s11881-023-00281-9)
 - Lee & Yoon 2017, *Journal of Learning Disabilities* — [doi:10.1177/0022219415605194](https://doi.org/10.1177/0022219415605194)
-- Galuschka m.fl. 2014, *PLOS ONE* — [doi:10.1371/journal.pone.0089900](https://doi.org/10.1371/journal.pone.0089900)
-- Griffiths m.fl. 2016, *Ophthalmic & Physiological Optics* — [doi:10.1111/opo.12316](https://doi.org/10.1111/opo.12316)
-- Seymour m.fl. 2003, *British Journal of Psychology* — [doi:10.1348/000712603321661859](https://doi.org/10.1348/000712603321661859)
+- Galuschka et al. 2014, *PLOS ONE* — [doi:10.1371/journal.pone.0089900](https://doi.org/10.1371/journal.pone.0089900)
+- Griffiths et al. 2016, *Ophthalmic & Physiological Optics* — [doi:10.1111/opo.12316](https://doi.org/10.1111/opo.12316)
+- Seymour et al. 2003, *British Journal of Psychology* — [doi:10.1348/000712603321661859](https://doi.org/10.1348/000712603321661859)
 
-## Kendte begrænsninger
+## Known limitations
 
-- Orddele bruger en ordliste og enkle regler: ord, der ikke står på listen, forbliver hele, og flertydige ord (f.eks. „anden“) deles ikke. Kun dansk indtil videre.
-- Orddelingsmønstrene deler ikke enkelte bogstaver fra i starten eller slutningen af et ord, og nogle danske delinger er forkerte (f.eks. `hund-en` i stedet for `hun-den`). Løsning: ret det i teksten med `·`.
-- Tekst oven på illustrationer eller i dekorative skrifttyper bliver genkendt dårligere.
-- Den gamle tekst bliver malet over med baggrundsfarven omkring den. På ensfarvet baggrund ser det pænt ud; står teksten på en illustration, får den nye tekst sin egen lyse flade.
-- Den nye skrift kan kun blive så stor, som der er plads til på siden. Til rigtig stor skrift er visningen „Kun teksten“ bedre.
-- Buede sider skal indtil videre rettes ud i hånden (se [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
+- Word parts rely on a word list and simple rules: words not on the list stay whole, and ambiguous words (e.g. “anden”) are not split. Danish only so far.
+- The hyphenation patterns don't split off single letters at the start or end of a word, and some Danish splits are off (e.g. `hund-en` instead of `hun-den`). Workaround: fix it in the text with `·`.
+- Text on top of illustrations or in decorative fonts is recognized less reliably.
+- The old text is painted over with the surrounding background color. This looks clean on plain backgrounds; text on top of an illustration gets its own light panel.
+- The new text can only be as large as the page has room for. For really large text, use the text-only view.
+- Curved pages currently have to be straightened by hand (see [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
 
 ## Roadmap
 
-Roadmappen er opdelt i epics og stories (se [CONTRIBUTING.md](CONTRIBUTING.md)). Det, der er planlagt, styres som [issues med mærket `roadmap`](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap). Idéer og fejl meldes som [issue](https://github.com/eikrad/laesehjaelper/issues/new). Vil du bidrage, så læs [CONTRIBUTING.md](CONTRIBUTING.md).
+The roadmap is organised into epics and stories (see [CONTRIBUTING.md](CONTRIBUTING.md)). What is planned is tracked as [issues labelled `roadmap`](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap). Report ideas and bugs as an [issue](https://github.com/eikrad/laesehjaelper/issues/new). Want to contribute? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Ansvarsfraskrivelse
+## Disclaimer
 
-Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl, så tjek altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.
+Læsehjælper is a free hobby project, not a finished product. Text recognition and syllable splitting make mistakes, so always check the text before a child reads it. The app does not replace teaching, reading support or a dyslexia assessment.
 
-Billeder og bøger bliver kun behandlet og gemt på brugerens egen enhed. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug, og del ikke omdannede bøger uden at have rettighederne.
+Photos and books are processed and stored only on the user's own device. Books are protected by copyright: only use Læsehjælper for books you have access to, for private use, and do not share converted books unless you hold the rights.
 
-Softwaren stilles til rådighed, som den er, uden nogen form for garanti.
+The software is provided as is, without warranty of any kind.
 
-## Licens
+## License
 
-Koden er udgivet under [MIT-licensen](LICENSE). Komponenter fra tredjepart har deres egne licenser, se [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+The code is released under the [MIT License](LICENSE). Third-party components have their own licenses, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

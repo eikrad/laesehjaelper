@@ -3,7 +3,7 @@ import { strFromU8, unzipSync } from "fflate";
 import fs from "node:fs";
 import { addPhotos, fresh, waitForText } from "./helpers";
 
-test("E-Book exportieren und wieder importieren", async ({ page }, info) => {
+test("Exports and reimports an e-book", async ({ page }, info) => {
   await fresh(page);
   await addPhotos(page, ["side-da.jpg"]);
   await page.fill("#bookTitle", "Eksport");
@@ -19,7 +19,7 @@ test("E-Book exportieren und wieder importieren", async ({ page }, info) => {
   expect(strFromU8(files["OEBPS/page1.xhtml"])).toContain("Pindsvinet".slice(0, 5));
   expect(files["OEBPS/laesehjaelper/book.json"]).toBeDefined();
 
-  // In leerem Speicher wieder einlesen
+  // Reimport into empty storage.
   await fresh(page);
   await page.setInputFiles("#importFile", file);
   await waitForText(page);

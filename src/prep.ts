@@ -1,12 +1,12 @@
-// Bild für die Texterkennung aufbereiten.
+// Prepare an image for text recognition.
 //
-// Tesseract wandelt die Seite mit einem einzigen Schwellwert in Schwarz-Weiß um. Liegt Text auf
-// einem getönten Bildhintergrund oder fällt das Licht ungleichmäßig, verschwindet der Text in den
-// dunkleren Bereichen. Deshalb gleichen wir vorher den Hintergrund aus: Jedes Pixel wird durch die
-// geschätzte örtliche Hintergrundhelligkeit geteilt. Danach ist Papier überall ähnlich hell und die
-// Schrift überall ähnlich dunkel.
+// Tesseract uses a single threshold to turn the page into black and white. Text on
+// a tinted image background, or under uneven lighting, can disappear in the
+// darker areas. Normalize the background first: divide each pixel by the
+// estimated local background brightness. The paper then has similar brightness throughout,
+// and the text remains consistently dark.
 
-/** Graustufenbild mit ausgeglichenem Hintergrund, gleiche Größe wie die Vorlage. */
+/** Grayscale image with a normalized background, at the original size. */
 export function flattenBackground(src: HTMLCanvasElement): HTMLCanvasElement {
   const W = src.width, H = src.height;
   const data = src.getContext("2d")!.getImageData(0, 0, W, H);
@@ -14,20 +14,20 @@ export function flattenBackground(src: HTMLCanvasElement): HTMLCanvasElement {
   const gray = new Float32Array(W * H);
   for (let i = 0, j = 0; j < gray.length; i += 4, j++) gray[j] = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
 
-  // Hintergrund schätzen: helle Werte bevorzugen (Schrift ist dunkel), dann großflächig mitteln.
-  // 1) lokales Maximum in kleinen Kacheln, 2) Kachelraster weichzeichnen, 3) bilinear auf Bildgröße.
+  // Estimate the background: favor bright values (text is dark), then average over a wide area.
+  // 1) local maximum in small tiles, 2) blur the tile grid, 3) bilinearly scale to image size.
   const tile = Math.max(8, Math.round(Math.max(W, H) / 60));
   const tw = Math.ceil(W / tile), th = Math.ceil(H / tile);
   const tmax = new Float32Array(tw * th);
   for (let ty = 0; ty < th; ty++) for (let tx = 0; tx < tw; tx++) {
-    // 90. Perzentil statt Maximum, damit einzelne Glanzpunkte nicht stören
+    // Use the 90th percentile rather than the maximum to ignore isolated highlights
     const vals: number[] = [];
     for (let y = ty * tile; y < Math.min(H, (ty + 1) * tile); y += 2)
       for (let x = tx * tile; x < Math.min(W, (tx + 1) * tile); x += 2) vals.push(gray[y * W + x]);
     vals.sort((a, b) => a - b);
     tmax[ty * tw + tx] = vals[Math.floor(vals.length * 0.9)] || 255;
   }
-  // Raster weichzeichnen (3 Durchgänge 3×3), damit Bilder und Textblöcke nicht als „Hintergrund“ durchschlagen
+  // Blur the grid (three 3×3 passes) so images and text blocks do not leak into the "background"
   let grid = tmax;
   for (let pass = 0; pass < 3; pass++) {
     const next = new Float32Array(grid.length);
@@ -64,7 +64,7 @@ export function flattenBackground(src: HTMLCanvasElement): HTMLCanvasElement {
   return out;
 }
 
-/** Farbbild genau so drehen, wie Tesseract mit rotateAuto gedreht hat (um die Mitte, gleiche Größe). */
+/** Rotate the color image exactly as Tesseract did with rotateAuto (around the center, same size). */
 export function rotateLike(src: HTMLCanvasElement, radians: number): HTMLCanvasElement {
   if (!radians) return src;
   const c = document.createElement("canvas");
