@@ -24,6 +24,8 @@ export interface Para {
   raw: string;
   /** aufbereiteter Text (abhängig von Einstellungen) */
   text?: string;
+  /** von Hand gesetzte Position und Größe des Textfelds (ersetzt bbox/grow) */
+  place?: Box;
   /** Hintergrund unruhig (Text auf Bild)? */
   busy?: boolean;
   bg?: string;

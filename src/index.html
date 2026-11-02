@@ -288,6 +288,11 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
 .togetherhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .together ul { margin: 8px 0 0; padding-left: 1.2em; line-height: 1.5; font-size: 17px; }
 body.focus .together { display: none !important; }
+.reader.moving .tbox { outline: 2px dashed var(--blue); outline-offset: -1px; cursor: move; touch-action: none; user-select: none; }
+.reader.moving .tbox.dragging { z-index: 2; outline-style: solid; background: rgba(46,79,209,.08); }
+.reader.moving .w { cursor: move; }
+.grip { position: absolute; right: 3px; bottom: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 3px #fff; cursor: nwse-resize; touch-action: none; z-index: 3; }
+#moveBtn.on { background: var(--ink); color: #fff; }
 .toast { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 16px; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw; z-index: 30; }
 .toast.show { opacity: 1; }
 [hidden] { display: none !important; }
@@ -386,6 +391,8 @@ body.focus .together { display: none !important; }
         <div class="editactions">
           <button class="btn-ghost" id="recropBtn"><svg class="i"><use href="#i-crop"/></svg><span data-t="cropAgain"></span></button>
           <button class="btn-ghost" id="reocrBtn"><svg class="i"><use href="#i-redo"/></svg><span data-t="ocrAgain"></span></button>
+          <button class="btn-ghost" id="moveBtn"><svg class="i"><use href="#i-crop"/></svg><span data-t="moveBoxes"></span></button>
+          <button class="btn-ghost" id="resetPlaceBtn"><svg class="i"><use href="#i-redo"/></svg><span data-t="resetPlace"></span></button>
         </div>
       </details>
     </article>

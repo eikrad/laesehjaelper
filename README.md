@@ -28,6 +28,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Skæve fotos bliver rettet op, og „tekst“, som tekstgenkendelsen finder i tegningerne, bliver sorteret fra
 - Hver side genkendes to gange (som den er og med udlignet baggrund), så også tekst på farvede billeder bliver fundet
 - Ret den genkendte tekst; sæt selv stavelsesgrænser med `·` (f.eks. `hun·den`)
+- Flyt tekstfelter på bogens side med fingeren, eller ændr deres størrelse (under „Tjek og ret teksten“), f.eks. hvis den nye tekst går ind i et billede
 - Overskrifter forbliver større end brødteksten, og fed skrift bliver fundet og vist med fed (kan rettes med `*ord*`)
 - Læsetilstand: kun teksten, i fuld skærm
 - Vis den oprindelige tekst med ét tryk for at finde fejl i genkendelsen

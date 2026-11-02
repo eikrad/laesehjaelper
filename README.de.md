@@ -28,6 +28,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Schräge Fotos werden gerade gerückt, und vermeintlicher „Text“ in Zeichnungen wird aussortiert
 - Jede Seite wird zweimal erkannt (normal und mit ausgeglichenem Hintergrund), damit auch Text auf getönten Bildern erkannt wird
 - Erkannten Text korrigieren; eigene Silbengrenzen mit `·` setzen (z. B. `O·ma`)
+- Textfelder auf der Buchseite mit dem Finger verschieben oder vergrößern (unter „Text prüfen und korrigieren“), z. B. wenn der neue Text in ein Bild ragt
 - Überschriften bleiben größer als der Fließtext, fett Gedrucktes wird erkannt und fett gesetzt (korrigierbar mit `*Wort*`)
 - Mit einem Tipp den Originaltext einblenden, um Erkennungsfehler zu finden
 - Lesemodus: nur der Text, bildschirmfüllend
