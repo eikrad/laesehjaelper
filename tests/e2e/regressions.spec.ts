@@ -100,3 +100,11 @@ test("Vorlesemarkierung bleibt nach Bindestrichwörtern beim richtigen Wort", as
   await page.click("#readBtn");
   await expect(page.locator("#reader .w.speaking")).toHaveAttribute("data-word", "ist", { timeout: 1500 });
 });
+
+test("Manuell ergänzter Text kann nach leerem OCR-Ergebnis vorgelesen werden", async ({ page }) => {
+  await openStoredBook(page, [{ text: "" }]);
+  await expect(page.locator("#readBtn")).toBeDisabled();
+  await page.fill("#text", "Nu har siden tekst");
+  await expect(page.locator('#reader .w[data-word="tekst"]')).toHaveCount(1);
+  await expect(page.locator("#readBtn")).toBeEnabled({ timeout: 1500 });
+});

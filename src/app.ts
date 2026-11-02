@@ -916,7 +916,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     savePage(pg);
     clearTimeout(editT);
     editT = window.setTimeout(() => {
-      if (pages[cur] === pg) renderContent(pg);
+      if (pages[cur] === pg) render();
     }, 250);
   };
 
