@@ -1102,6 +1102,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
       const d = readEpub(new Uint8Array(await file.arrayBuffer()));
       if (!d || !d.pages.length) { toast(t("importFail")); return; }
       const b: Book = { id: uid(), title: d.title, pageIds: [], lastPage: 0, cover: null, created: Date.now(), updated: Date.now() };
+      const records: PageRecord[] = [];
       for (const p of d.pages) {
         const id = uid();
         const rec: PageRecord = {
@@ -1111,7 +1112,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
           photoBlob: p.photo ? new Blob([p.photo as BlobPart], { type: "image/jpeg" }) : null,
           cleanBlob: p.clean ? new Blob([p.clean as BlobPart], { type: "image/jpeg" }) : null,
         };
-        await DB.put<PageRecord>("pages", rec);
+        records.push(rec);
         b.pageIds.push(id);
       }
       const first = d.pages[0].input;
@@ -1122,7 +1123,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
         ctx2d(sm).drawImage(c, 0, 0, sm.width, sm.height);
         b.cover = sm.toDataURL("image/jpeg", 0.8);
       }
-      await DB.put("books", b);
+      await DB.putBook(b, records);
       toast(d.title || t("untitled"), 2000);
       await renderShelf();
       openBook(b);
