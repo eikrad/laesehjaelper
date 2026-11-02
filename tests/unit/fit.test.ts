@@ -22,3 +22,12 @@ describe("harmonizeSizes", () => {
     expect(harmonizeSizes([{ lh: 20, fit: 0 }, { lh: 20, fit: 30 }])).toEqual([0, 30]);
   });
 });
+
+it("gleicht schwankende OCR-Zeilenhöhen ohne Schrumpfschleife ab", () => {
+  const items = [{ lh: 20, fit: 32 }, { lh: 23, fit: 32 }, { lh: 27, fit: 32 }];
+  const sizes = harmonizeSizes(items);
+  expect(Math.min(...sizes)).toBeGreaterThan(24);
+  expect(sizes[2]).toBe(32);
+  expect(sizes[0]).toBe(sizes[1]);
+  expect(harmonizeSizes([...items].reverse())).toEqual([...sizes].reverse());
+});
