@@ -172,3 +172,12 @@ test("Gemeinsam lesen: zwei offene Fragen, eigene Frage pro Seite", async ({ pag
   await expect(page.locator("#togetherQs li").first()).toHaveText("Hvorfor sover pindsvinet?");
   await expect(page.locator("#togetherQs li")).toHaveCount(2);
 });
+
+test("Fett im Text: *Wort* wird fett gesetzt, ohne Sternchen", async ({ page }) => {
+  await page.click("#demoBtn");
+  await page.locator("#edit summary").click();
+  const t = await page.locator("#text").inputValue();
+  await page.fill("#text", t.replace("pindsvin", "*pindsvin*"));
+  await expect(page.locator('#reader .w.b[data-word="pindsvin"]')).toHaveCount(1);
+  await expect(page.locator("#reader")).not.toContainText("*");
+});

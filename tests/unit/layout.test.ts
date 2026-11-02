@@ -99,3 +99,11 @@ describe("parasFromOcr", () => {
     expect(p.lh).toBe(H);
   });
 });
+
+describe("Fettdruck", () => {
+  it("markiert fette Wörter mit *…* und fasst aufeinanderfolgende zusammen", () => {
+    const l = line(100, [["Der", 95], ["store", 95], ["bjørn", 95], ["sover", 95], ["nu", 95]]);
+    l.words[1].bold = true; l.words[2].bold = true; l.words[4].bold = true;
+    expect(texts(page(l))).toEqual(["Der *store bjørn* sover *nu*"]);
+  });
+});

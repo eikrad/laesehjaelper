@@ -1,6 +1,8 @@
 // Læsehjælper – App-Logik (Oberfläche, Texterkennung, Bücherregal).
 import { addProfile, initProfiles, removeProfile, switchProfile, syncActive, type ProfileStore } from "./profiles";
 import { pageQuestions } from "./together";
+import { harmonizeSizes } from "./fit";
+import { boldFlags, strokeWidth } from "./bold";
 import { shortLineBreaks } from "./lines";
 import { speechRate, showYourTurn, wordSteps } from "./readflow";
 import { wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
@@ -110,7 +112,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
       original: "Originalside", show: "Vis", hide: "Skjul", origAlt: "Originalside",
       editSummary: "Tjek og ret teksten",
-      editHint: "Tom linje = nyt afsnit. Du kan selv sætte stavelsesgrænser med ·, f.eks. <b>hun·den</b>.",
+      editHint: "Tom linje = nyt afsnit. Du kan selv sætte stavelsesgrænser med ·, f.eks. <b>hun·den</b>. Fed skrift: *ord*.",
       foot: "Alt foregår på din egen telefon eller computer. Billederne bliver ikke sendt nogen steder hen.",
       noText: "Der blev ikke fundet nogen tekst på denne side.<br>Åbn „Tjek og ret teksten“ og skriv den selv.",
       ocrFailed: "Genkendelsen mislykkedes.",
@@ -139,7 +141,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       background: "Background", bWhite: "White", bCream: "Cream", bYellow: "Yellow", bBlue: "Light blue", bGreen: "Light green",
       original: "Original page", show: "Show", hide: "Hide", origAlt: "Original page",
       editSummary: "Check and correct the text",
-      editHint: "Empty line = new paragraph. Set your own syllable breaks with ·, e.g. <b>gar·den</b>.",
+      editHint: "Empty line = new paragraph. Set your own syllable breaks with ·, e.g. <b>gar·den</b>. Bold: *word*.",
       foot: "Everything happens on your own phone or computer. Your photos are not sent anywhere.",
       noText: "No text was found on this page.<br>Open “Check and correct the text” and type it in yourself.",
       ocrFailed: "Recognition failed.",
@@ -168,7 +170,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
       original: "Originalseite", show: "Zeigen", hide: "Verbergen", origAlt: "Originalseite",
       editSummary: "Text prüfen und korrigieren",
-      editHint: "Leere Zeile = neuer Absatz. Eigene Silbengrenzen mit · setzen, z.&nbsp;B. <b>O·ma</b>.",
+      editHint: "Leere Zeile = neuer Absatz. Eigene Silbengrenzen mit · setzen, z.&nbsp;B. <b>O·ma</b>. Fett: *Wort*.",
       foot: "Alles passiert auf deinem eigenen Handy oder Computer. Die Fotos werden nirgendwohin geschickt.",
       noText: "Auf dieser Seite wurde kein Text gefunden.<br>Öffne „Text prüfen“ und tippe ihn selbst ein.",
       ocrFailed: "Die Erkennung hat nicht geklappt.",
@@ -448,9 +450,13 @@ const Lib = { detectPage, warpPage, orderCorners };
     const plainParts: string[] = [];
     let wordIndex = 0;
     const wordPos: Speech["wordPos"] = [];
-    text.split(/\n\s*\n/).forEach((para) => {
+    text.split(/\n\s*\n/).forEach((marked) => {
       const p = document.createElement("p");
       let last = 0;
+      // *fett* markierte Stellen: Sternchen entfernen, Positionen merken
+      const bold: boolean[] = [];
+      let para = "", on = false;
+      for (const ch of marked) { if (ch === "*") { on = !on; continue; } para += ch; bold.push(on); }
       const plain = para.replace(/\n/g, " ").replace(/·/g, "");
       for (const m of para.replace(/\n/g, " ").matchAll(WORD)) {
         if (m.index! > last) p.append(para.replace(/\n/g, " ").slice(last, m.index));
@@ -458,7 +464,7 @@ const Lib = { detectPage, warpPage, orderCorners };
         const word = raw.replace(/·/g, "");
         const parts = wordSyllables(raw, lang);
         const w = document.createElement("span");
-        w.className = "w"; w.dataset.word = word; w.dataset.i = String(wordIndex++);
+        w.className = "w" + (bold[m.index!] ? " b" : ""); w.dataset.word = word; w.dataset.i = String(wordIndex++);
         parts.forEach((sil, i) => {
           const s = document.createElement("span");
           s.className = "s s" + (i % 2) + (sil.length < 2 ? " tiny" : ""); s.textContent = sil;
@@ -578,15 +584,43 @@ const Lib = { detectPage, warpPage, orderCorners };
       box.style.fontSize = lo + "px";
       sizes.set(box, lo);
     });
-    // Gleich große Originalschrift soll auch gleich groß bleiben: kleinste passende Größe je Gruppe.
-    boxes.forEach(a => {
-      const la = parseFloat(a.dataset.lh!);
-      const same = boxes.filter(b => sizes.has(b) && Math.abs(parseFloat(b.dataset.lh!) - la) / la < 0.2);
-      if (same.length) a.style.fontSize = Math.min(...same.map(b => sizes.get(b)!)) + "px";
-    });
+    // Größenverhältnisse des Originals erhalten: gleich groß bleibt gleich groß, Überschriften bleiben größer.
+    const fitted = harmonizeSizes(boxes.map(b => ({ lh: parseFloat(b.dataset.lh || "0"), fit: sizes.get(b) || 0 })));
+    boxes.forEach((b, i) => { if (sizes.has(b)) b.style.fontSize = fitted[i] + "px"; });
   }
   let fitT = 0;
   new ResizeObserver(() => { clearTimeout(fitT); fitT = window.setTimeout(() => fitBoxes(), 60); }).observe($("reader"));
+
+  /** Fettdruck messen (Tesseract liefert keine Schriftmerkmale) und an den Wörtern vermerken. */
+  function markBold(data: OcrData, canvas: HTMLCanvasElement) {
+    const paras = (data.blocks || []).flatMap(b => b.paragraphs || []);
+    const words = paras.flatMap(p => (p.lines || []).flatMap(l => l.words || []));
+    // Bezugsgröße: mittlere Zeilenhöhe des Absatzes (einzelne Wörter oder kurze Zeilen ohne
+    // Ober-/Unterlängen sind niedriger und wirkten sonst dicker)
+    const lineH = new Map<object, number>();
+    for (const p of paras) {
+      const hs = (p.lines || []).map(l => l.bbox.y1 - l.bbox.y0).sort((x, y) => x - y);
+      const med = hs[hs.length >> 1] || 0;
+      for (const l of p.lines || []) for (const w of l.words || []) lineH.set(w, med);
+    }
+    if (!words.length) return;
+    const W = canvas.width, H = canvas.height;
+    const px = canvas.getContext("2d")!.getImageData(0, 0, W, H).data;
+    const ratios = words.map(w => {
+      if (!/\p{L}{2,}/u.test(w.text) || w.confidence < 60) return NaN;
+      const x0 = Math.max(0, Math.round(w.bbox.x0)), y0 = Math.max(0, Math.round(w.bbox.y0));
+      const x1 = Math.min(W, Math.round(w.bbox.x1)), y1 = Math.min(H, Math.round(w.bbox.y1));
+      const cw = x1 - x0, ch = y1 - y0;
+      if (cw < 4 || ch < 6) return NaN;
+      const g = new Uint8ClampedArray(cw * ch);
+      for (let y = 0; y < ch; y++) for (let x = 0; x < cw; x++) {
+        const i = ((y0 + y) * W + x0 + x) * 4;
+        g[y * cw + x] = 0.3 * px[i] + 0.59 * px[i + 1] + 0.11 * px[i + 2];
+      }
+      return strokeWidth(g, cw, ch) / (lineH.get(w) || ch);
+    });
+    boldFlags(ratios).forEach((b, i) => { words[i].bold = b; });
+  }
 
   // Alte Schrift aus dem Foto entfernen: jede Zeile mit der Hintergrundfarbe drumherum übermalen.
   function eraseText(canvas: HTMLCanvasElement, paras: Para[]): HTMLCanvasElement {
@@ -878,6 +912,7 @@ html, body { margin: 0; padding: 0; }
 .flow { position: absolute; left: 70px; right: 70px; top: 70px; line-height: ${S.lh}; letter-spacing: ${S.ls}em; word-spacing: ${wordSpacing(S.ls, WORD_BASE_FLOW)}em; }
 .flow p { margin-bottom: .8em; }
 .w { white-space: nowrap; }
+.w.b { font-weight: 700; }
 ${colors ? `.s0 { color: ${c0}; } .s1 { color: ${c1}; }` : ""}
 ${arcs ? `.s { position: relative; display: inline-block; padding-bottom: .12em; }
 .s::after { content: ""; position: absolute; left: 6%; right: 6%; bottom: -.02em; height: .28em; border: .07em solid ${colors ? c0 : "#555"}; border-top: 0; border-radius: 0 0 50% 50% / 0 0 100% 100%; }
@@ -1172,6 +1207,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
         // (hilft bei Text auf getönten Bildern oder ungleichmäßigem Licht). Pro Zeile gewinnt der sicherere.
         const { data } = await w.recognize(input, { rotateAuto: true }, { text: true, blocks: true });
         const work = rotateLike(input, data.rotateRadians || 0);
+      markBold(data, work);
         pg.stage = "recognizing2";
         const { data: flat } = await w.recognize(flattenBackground(work), {}, { blocks: true });
         pg.workW = work.width; pg.workH = work.height;

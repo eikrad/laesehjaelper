@@ -28,6 +28,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Tilted photos are straightened, and “text” that OCR finds inside illustrations is filtered out
 - Every page is recognized twice (as is and with a flattened background), so text on tinted pictures is found too
 - Correct the recognized text; set your own syllable breaks with `·` (e.g. `hun·den`)
+- Headings stay larger than body text, and bold words are detected and set in bold (editable with `*word*`)
 - Focus mode: just the text, full screen
 - Show the original text with one tap to spot recognition errors
 - Bookshelf: books are stored on the device, with title, page order and reading position
