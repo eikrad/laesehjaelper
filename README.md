@@ -17,6 +17,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Tekstgenkendelse (dansk, tysk, engelsk) med [Tesseract.js](https://github.com/naptha/tesseract.js)
 - Stavelsesdeling baseret på de danske, tyske og engelske TeX-orddelingsmønstre ([hyphen](https://github.com/ytiurin/hyphen))
 - Stavelser i skiftende farver (blå/rød, farverne kan vælges frit), som buer eller begge dele
+- Orddele (dansk): sammensatte ord deles i kendte dele, og bøjningsendelser vises dæmpet (f.eks. sommer|fugl|ene)
 - Skrifttyper: Andika (standard), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Justerbar skriftstørrelse, bogstavafstand, linjeafstand og baggrundsfarve
 - Korte linjer med 2–3 ord i tekstvisningen (kan vælges)
@@ -94,6 +95,7 @@ Kilder:
 
 ## Kendte begrænsninger
 
+- Orddele bruger en ordliste og enkle regler: ord, der ikke står på listen, forbliver hele, og flertydige ord (f.eks. „anden“) deles ikke. Kun dansk indtil videre.
 - Orddelingsmønstrene deler ikke enkelte bogstaver fra i starten eller slutningen af et ord, og nogle danske delinger er forkerte (f.eks. `hund-en` i stedet for `hun-den`). Løsning: ret det i teksten med `·`.
 - Tekst oven på illustrationer eller i dekorative skrifttyper bliver genkendt dårligere.
 - Den gamle tekst bliver malet over med baggrundsfarven omkring den. På ensfarvet baggrund ser det pænt ud; står teksten på en illustration, får den nye tekst sin egen lyse flade.

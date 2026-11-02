@@ -17,6 +17,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Text recognition (Danish, German, English) with [Tesseract.js](https://github.com/naptha/tesseract.js)
 - Syllable splitting based on the Danish, German and English TeX hyphenation patterns ([hyphen](https://github.com/ytiurin/hyphen))
 - Syllables shown in alternating colors (blue/red, colors adjustable), as arcs, or both
+- Word parts (Danish): compound words are split into known parts, and inflection endings are shown muted (e.g. sommer|fugl|ene)
 - Fonts: Andika (default), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Adjustable font size, letter spacing, line spacing and background color
 - Short lines with 2–3 words in the text view (optional)
@@ -94,6 +95,7 @@ Sources:
 
 ## Known limitations
 
+- Word parts rely on a word list and simple rules: words not on the list stay whole, and ambiguous words (e.g. “anden”) are not split. Danish only so far.
 - The hyphenation patterns don't split off single letters at the start or end of a word, and some Danish splits are off (e.g. `hund-en` instead of `hun-den`). Workaround: fix it in the text with `·`.
 - Text on top of illustrations or in decorative fonts is recognized less reliably.
 - The old text is painted over with the surrounding background color. This looks clean on plain backgrounds; text on top of an illustration gets its own light panel.
