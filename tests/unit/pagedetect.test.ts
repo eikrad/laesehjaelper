@@ -34,3 +34,10 @@ describe("Viereck-Prüfung der Seitenerkennung", () => {
     expect(inside([[0, 0], [0, 140], [100, 140], [100, 0]], 50, 70)).toBe(true);   // andere Umlaufrichtung
   });
 });
+
+it("ordnet diagonal fotografierte Seiten ohne doppelte Ecken", () => {
+  const c: Corners = [[500, 100], [900, 510], [490, 900], [100, 505]];
+  expect(anglesOk(c)).toBe(true);
+  expect(orderCorners(c)).toEqual(c);
+  expect(orderCorners([c[2], c[0], c[3], c[1]])).toEqual(c);
+});
