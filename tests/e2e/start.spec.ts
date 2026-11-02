@@ -89,3 +89,27 @@ test("Erst hören, dann selbst lesen: Hinweis nach dem Vorlesen, Tempo wählbar"
   await page.waitForTimeout(200);
   await expect(page.locator("#yourTurn")).toBeHidden();
 });
+
+test("Wort antippen: erst ganz, dann in Silben, Silbe wird markiert", async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __said: string[]; __marked: string[] };
+    w.__said = []; w.__marked = [];
+    const fake = {
+      speaking: false, getVoices: () => [], cancel: () => {},
+      speak: (u: SpeechSynthesisUtterance) => {
+        w.__said.push(u.text);
+        const m = document.querySelector(".s.speaking"); if (m) w.__marked.push(m.textContent || "");
+        setTimeout(() => u.onend?.(new Event("end") as SpeechSynthesisEvent), 30);
+      },
+    };
+    Object.defineProperty(window, "speechSynthesis", { value: fake, configurable: true });
+  });
+  await page.reload();
+  await page.click("#demoBtn");
+  await page.click('.w[data-word="pindsvin"]');
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said.length)).toBe(4);
+  const { said, marked } = await page.evaluate(() => { const w = window as unknown as { __said: string[]; __marked: string[] }; return { said: w.__said, marked: w.__marked }; });
+  expect(said).toEqual(["pindsvin", "pinds", "vin", "pindsvin"]);
+  expect(marked).toEqual(["pinds", "vin"]);
+  await expect(page.locator(".speaking")).toHaveCount(0);
+});
