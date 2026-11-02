@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 import { strFromU8, unzipSync } from "fflate";
 import fs from "node:fs";
-import { addPhotos, fresh, waitForText } from "./helpers";
+import { addPhotos, expectTextInImage, fresh, waitForText } from "./helpers";
 
 test("Exports and reimports an e-book", async ({ page }, info) => {
   await fresh(page);
@@ -24,7 +24,7 @@ test("Exports and reimports an e-book", async ({ page }, info) => {
   await page.setInputFiles("#importFile", file);
   await waitForText(page);
   await expect(page.locator("#bookTitle")).toHaveValue("Eksport");
-  await expect(page.locator("#reader")).toHaveClass(/pagemode/);
+  await expectTextInImage(page);
   expect(await page.locator("#text").inputValue()).toContain("Pindsvinet");
   await page.locator("#edit summary").click();
   await expect(page.locator("#recropBtn")).toBeVisible({ timeout: 1500 });

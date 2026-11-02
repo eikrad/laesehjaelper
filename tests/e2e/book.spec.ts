@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, fresh, waitForText } from "./helpers";
+import { addPhotos, expectTextInImage, fresh, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -10,12 +10,12 @@ test("Photo → crop → text recognition → book page", async ({ page }) => {
   expect(text).toContain("Pindsvinet");
   expect(text).toContain("haven");
   expect(text).toContain("mus");
-  await expect(page.locator("#reader")).toHaveClass(/pagemode/);
+  await expectTextInImage(page);
   // Show the original for comparison, then switch back.
   await page.click("#compareBtn");
   await expect(page.locator("#reader .origfull")).toBeVisible();
   await page.click("#compareBtn");
-  await expect(page.locator("#reader")).toHaveClass(/pagemode/);
+  await expectTextInImage(page);
   // The original-photo toggle is available and effective only in text-only view.
   await page.click("#setBtn");
   await expect(page.locator("#origToggle")).toBeHidden();
@@ -35,6 +35,22 @@ test("Recognizes text over an illustration while excluding the page number", asy
   expect(text).toContain("Søren går en tur");
   expect(text).toContain("bedste ven");
   expect(text).not.toMatch(/\b12\b/);
+});
+
+test("Book page keeps the text inside the page image after reopening the book", async ({ page }) => {
+  await addPhotos(page, ["side-illustration.jpg"]);
+  await waitForText(page);
+  await expectTextInImage(page);
+  // Back to the bookshelf and open the book again: the page images get new URLs.
+  await page.click("#homeBtn");
+  await page.click(".book");
+  await waitForText(page);
+  await expectTextInImage(page);
+  // After reloading, the page images come from storage.
+  await page.reload();
+  await page.click(".book");
+  await waitForText(page);
+  await expectTextInImage(page);
 });
 
 test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
