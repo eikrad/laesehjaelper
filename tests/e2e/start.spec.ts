@@ -127,3 +127,32 @@ test("Kurze Zeilen: höchstens drei Wörter pro Zeile, abschaltbar", async ({ pa
   await page.click("#linesSet button[data-v=normal]");
   await expect(page.locator("#reader br")).toHaveCount(0);
 });
+
+test("Einstellungen pro Kind: Profile anlegen, wechseln, behalten", async ({ page }) => {
+  await page.click("#demoBtn");
+  await page.click("#setBtn");
+  const size = (v: string) => page.locator("#size").evaluate((el: HTMLInputElement, v) => { el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); }, v);
+  await expect(page.locator("#profileSel option")).toHaveCount(1);
+  await expect(page.locator("#profileDel")).toBeHidden();
+  await size("26");
+  await page.fill("#profileName", "Bo");
+  await page.click("#profileAdd");
+  await expect(page.locator("#profileSel option")).toHaveCount(2);
+  await size("50");
+  await page.click("#mode button[data-v=aus]");
+  await page.selectOption("#profileSel", { index: 0 });
+  await expect(page.locator("#size")).toHaveValue("26");
+  await expect(page.locator("#reader")).toHaveClass(/mode-farbe/);
+  await page.selectOption("#profileSel", { label: "Bo" });
+  await expect(page.locator("#size")).toHaveValue("50");
+  await expect(page.locator("#reader")).not.toHaveClass(/mode-farbe/);
+  await page.reload();
+  await page.click("#demoBtn");
+  await expect(page.locator("#profileSel option:checked")).toHaveText("Bo");
+  await expect(page.locator("#size")).toHaveValue("50");
+  await page.click("#setBtn");
+  await page.click("#profileDel");
+  await page.click("#profileDel");
+  await expect(page.locator("#profileSel option")).toHaveCount(1);
+  await expect(page.locator("#size")).toHaveValue("26");
+});

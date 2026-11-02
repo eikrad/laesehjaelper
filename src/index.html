@@ -260,6 +260,11 @@ input[type=range] { width: 100%; accent-color: var(--blue); }
 #exportBtn { gap: 6px; display: inline-flex; align-items: center; }
 #exportBtn svg { width: 18px; height: 18px; }
 @media (max-width: 520px) { #exportBtn span { display: none; } }
+.profrow { display: flex; gap: 8px; margin-top: 8px; }
+.profrow select, .profrow input { flex: 1; min-width: 0; }
+.profrow input { border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 12px; background: #fff; }
+.btn-danger.small { padding: 8px 14px; font-size: 15px; white-space: nowrap; }
+.btn-danger[hidden] { display: none; }
 .fhint { font-size: 14px; color: var(--muted); margin: 8px 0 0; }
 .own { display: inline-flex; gap: 8px; margin-left: 6px; padding-left: 14px; border-left: 1.5px solid var(--line); }
 .pick { display: inline-flex; align-items: center; gap: 6px; background: var(--sky); border-radius: 999px; padding: 4px 12px 4px 4px; font-size: 14px; font-weight: 700; cursor: pointer; }
@@ -393,6 +398,12 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
 <div class="settings" id="settings">
   <div class="grid">
     <div class="field wide">
+      <label for="profileSel" data-t="reader"></label>
+      <div class="profrow"><select id="profileSel"></select><button class="btn-danger small" id="profileDel"></button></div>
+      <div class="profrow"><input id="profileName" autocomplete="off" data-tp="newReaderPh"><button class="btn-ghost small" id="profileAdd" data-t="addReader"></button></div>
+      <p class="fhint" data-t="readerHint"></p>
+    </div>
+    <div class="field wide">
       <span class="flabel" data-t="view"></span>
       <div class="seg" id="viewSet">
         <button data-v="side" data-t="viewPage"></button>
@@ -407,6 +418,7 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
         <button data-v="boegen" data-t="arcs"></button>
         <button data-v="beides" data-t="both"></button>
       </div>
+      <p class="fhint" data-t="sylHint"></p>
     </div>
     <div class="field wide">
       <label for="font" data-t="font"></label>
