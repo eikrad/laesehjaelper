@@ -21,6 +21,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Adjustable font size, letter spacing, line spacing and background color
 - Short lines with 2–3 words in the text view (optional)
 - Several readers: each child has their own settings for font, spacing, syllables and reading aloud
+- Read together: a few open questions per page for the adult, including your own (optional)
 - Tap a word to hear it – first whole, then slowly syllable by syllable, then whole again
 - Have the whole page read aloud with word-by-word highlighting, slow or normal; afterwards it's the child's turn ("Listen again")
 - “Hyphens in the book” setting: for early readers that split words into syllables with hyphens themselves (“sko-le”)
