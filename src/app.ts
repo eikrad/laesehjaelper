@@ -275,7 +275,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       if (key === "ui") applyTexts();
       if ((key === "view" || key === "lines") && pages[cur]) render();
       if (key === "together") renderTogether();
-      if (key === "hyph") { pages.forEach(pg => { if (pg.status === "done") retext(pg); }); if (pages[cur]) render(); }
+      if (key === "hyph") { pages.forEach(pg => { if (pg.status === "done") { retext(pg); savePage(pg); } }); if (pages[cur]) render(); }
       if (key === "lang" && pages[cur] && pages[cur].lang !== S.lang) relang(pages[cur]);
       if (key === "mode" || key === "lang") morphCheck();
     } };
