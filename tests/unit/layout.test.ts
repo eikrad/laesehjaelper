@@ -107,3 +107,15 @@ describe("Fettdruck", () => {
     expect(texts(page(l))).toEqual(["Der *store bjørn* sover *nu*"]);
   });
 });
+
+describe("englische OCR-Wörter", () => {
+  it("behält Kontraktionen und Genitive mit geraden und typografischen Apostrophen", () => {
+    const d = page(line(100, [["We", 97], ["don't", 97], ["like", 97], ["Tom’s", 97], ["raincoat.", 97]]));
+    expect(texts(d)).toEqual(["We don't like Tom’s raincoat."]);
+  });
+});
+
+it("behält englische Pluralgenitive und einfach zitierte Wörter", () => {
+  expect(texts(page(line(100, [["The", 97], ["dogs’", 97], ["name", 97], ["is", 97], ["'Lucky'.", 97]]))))
+    .toEqual(["The dogs’ name is 'Lucky'."]);
+});
