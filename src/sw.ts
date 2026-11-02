@@ -12,8 +12,33 @@ declare const VERSION: string;
 const CACHE = `laesehjaelper-${VERSION}`;
 const SHELL = ["./", "index.html", "manifest.webmanifest", "tesseract.min.js", "worker.min.js", "icon-192.png", "icon-512.png"];
 
+async function install() {
+  const cache = await caches.open(CACHE);
+  await cache.addAll(SHELL);
+  // Bereits genutzte Sprachen und OCR-Dateien vor dem Aktivieren auffrischen.
+  // Scheitert das Netz, bleibt der bisherige Worker mit seinem Cache aktiv.
+  for (const name of await caches.keys()) {
+    if (!name.startsWith("laesehjaelper-") || name === CACHE) continue;
+    const previous = await caches.open(name);
+    for (const req of await previous.keys()) {
+      if (await cache.match(req)) continue;
+      if (new URL(req.url).origin === self.location.origin) {
+        const res = await fetch(req, { cache: "reload" });
+        if (res.status === 404) continue; // Datei wurde in der neuen Version entfernt
+        if (!res.ok) throw new Error(`Offline resource unavailable: ${req.url}`);
+        await cache.put(req, res);
+      } else {
+        // Font-URLs enthalten die Version; auch opaque Antworten behalten.
+        const hit = await previous.match(req);
+        if (hit) await cache.put(req, hit);
+      }
+    }
+  }
+  await self.skipWaiting();
+}
+
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(install());
 });
 
 self.addEventListener("activate", (e) => {

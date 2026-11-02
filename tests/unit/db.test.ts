@@ -14,3 +14,17 @@ describe("DB", () => {
     expect((await DB.pagesOf<{ id: string }>("b1")).map((p) => p.id)).toEqual(["p2"]);
   });
 });
+
+it("speichert einen Buchimport vollständig oder gar nicht", async () => {
+  const book = { id: "atomic-import", title: "Testimport" };
+  await expect(DB.putBook(book, [
+    { id: "import-first", bookId: book.id, text: "Første side" },
+    { id: {}, bookId: book.id, text: "Ungültiger IndexedDB-Schlüssel" },
+  ])).rejects.toMatchObject({ name: "DataError" });
+  expect(await DB.pagesOf(book.id)).toEqual([]);
+  expect((await DB.all<{ id: string }>("books")).some(b => b.id === book.id)).toBe(false);
+
+  await DB.putBook(book, [{ id: "import-first", bookId: book.id, text: "Første side" }]);
+  expect(await DB.pagesOf(book.id)).toEqual([{ id: "import-first", bookId: book.id, text: "Første side" }]);
+  expect((await DB.all<{ id: string }>("books")).some(b => b.id === book.id)).toBe(true);
+});
