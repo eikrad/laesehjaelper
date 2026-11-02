@@ -40,3 +40,12 @@ test("Buchsprache Deutsch trennt deutsche Beispielwörter", async ({ page }) => 
   await page.click("#demoBtn");
   await expect(page.locator('.w[data-word="Apfelbaum"] .s')).not.toHaveCount(1);
 });
+
+test("Mehr Buchstabenabstand vergrößert auch den Wortabstand", async ({ page }) => {
+  await page.click("#demoBtn");
+  const ws = () => page.locator("#reader").evaluate(el => parseFloat(getComputedStyle(el).wordSpacing));
+  const before = await ws();
+  await page.click("#setBtn");
+  await page.locator("#ls").evaluate((el: HTMLInputElement) => { el.value = "0.2"; el.dispatchEvent(new Event("input", { bubbles: true })); });
+  expect(await ws()).toBeGreaterThan(before);
+});
