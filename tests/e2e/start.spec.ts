@@ -181,3 +181,17 @@ test("Fett im Text: *Wort* wird fett gesetzt, ohne Sternchen", async ({ page }) 
   await expect(page.locator('#reader .w.b[data-word="pindsvin"]')).toHaveCount(1);
   await expect(page.locator("#reader")).not.toContainText("*");
 });
+
+test("Wortteile (Dänisch): zusammengesetzte Wörter und Endungen", async ({ page }) => {
+  await page.click("#demoBtn");
+  await page.click("#setBtn");
+  await page.click("#mode button[data-v=morf]");
+  const w = page.locator('#reader .w[data-word="pindsvin"]');
+  await expect(w.locator(".s")).toHaveCount(2, { timeout: 30_000 });
+  await expect(w.locator(".s").first()).toHaveText("pind");
+  await expect(page.locator('#reader .w[data-word="æbletræ"] .s')).toHaveText(["æble", "træ"]);
+  await expect(page.locator('#reader .w[data-word="Pindsvinet"] .s.suf')).toHaveText("et");
+  // andere Buchsprachen: Hinweis, Wörter bleiben ganz
+  await page.click("#langSet button[data-v=de]");
+  await expect(page.locator("#toast")).toContainText(/dansk|Dänisch|Danish/i);
+});

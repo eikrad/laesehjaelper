@@ -171,6 +171,9 @@ body.editing .thumbs { padding-bottom: 14px; gap: 20px; }
 }
 .mode-boegen .w .s.tiny::after { left: -10%; right: -10%; }
 .mode-boegen.mode-farbe .w .s0::after { border-color: var(--s0); }
+.mode-morf .w .s0 { color: var(--s0); }
+.mode-morf .w .s1 { color: var(--s1); }
+.mode-morf .w .s.suf { color: #7c8190; }
 .mode-boegen.mode-farbe .w .s1::after { border-color: var(--s1); }
 
 .reader.pagemode { padding: 0; min-height: 0; }
@@ -435,6 +438,7 @@ body.focus .together { display: none !important; }
         <button data-v="farbe" data-t="color"></button>
         <button data-v="boegen" data-t="arcs"></button>
         <button data-v="beides" data-t="both"></button>
+        <button data-v="morf" data-t="morf"></button>
       </div>
       <p class="fhint" data-t="sylHint"></p>
     </div>

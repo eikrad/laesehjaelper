@@ -17,6 +17,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Texterkennung (Dänisch, Deutsch, Englisch) mit [Tesseract.js](https://github.com/naptha/tesseract.js)
 - Silbentrennung auf Basis der TeX-Trennmuster für Dänisch, Deutsch und Englisch ([hyphen](https://github.com/ytiurin/hyphen))
 - Silben in abwechselnden Farben (blau/rot, Farben frei wählbar), als Bögen oder beides
+- Wortteile (Dänisch): zusammengesetzte Wörter werden in bekannte Teile zerlegt, Beugungsendungen gedämpft (z. B. sommer|fugl|ene)
 - Schriften: Andika (Standard), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Schriftgröße, Buchstaben- und Zeilenabstand sowie Hintergrundfarbe einstellbar
 - Kurze Zeilen mit 2–3 Wörtern in der Textansicht (wählbar)
@@ -94,6 +95,7 @@ Quellen:
 
 ## Bekannte Grenzen
 
+- Wortteile beruhen auf einer Wortliste und einfachen Regeln: Wörter, die nicht in der Liste stehen, bleiben ganz, und mehrdeutige Wörter (z. B. „anden“) werden nicht zerlegt. Bisher nur Dänisch.
 - Die Trennmuster trennen keine einzelnen Buchstaben am Wortanfang oder -ende ab („Oma“ bleibt ungetrennt), und manche dänischen Trennungen sind falsch (z. B. `hund-en` statt `hun-den`). Abhilfe: im Text mit `·` korrigieren.
 - Text auf Illustrationen oder in Zierschriften wird weniger zuverlässig erkannt.
 - Die alte Schrift wird mit der umgebenden Hintergrundfarbe übermalt. Auf einfarbigem Hintergrund sieht das sauber aus; Text auf einer Illustration bekommt eine eigene helle Fläche.

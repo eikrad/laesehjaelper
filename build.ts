@@ -59,4 +59,12 @@ for (const f of ["tesseract-core-lstm.wasm.js", "tesseract-core-simd-lstm.wasm.j
 for (const l of ["dan", "deu", "eng"])
   fs.writeFileSync(`${out}/lang/${l}.js`, `window.TRAINEDDATA=window.TRAINEDDATA||{};window.TRAINEDDATA.${l}="${b64(`${nm}/@tesseract.js-data/${l}/4.0.0_best_int/${l}.traineddata.gz`)}";`);
 
+// Dänische Wortliste für „Wortteile“ (Stavekontrolden, MPL 1.1), nur Grundformen in Kleinbuchstaben.
+{
+  const dic = fs.readFileSync(`${nm}/dictionary-da/index.dic`, "utf8").split("\n").slice(1);
+  const words = new Set<string>();
+  for (const l of dic) { const w = l.split("/")[0].trim().toLowerCase(); if (/^[a-zæøåé]{2,}$/.test(w)) words.add(w); }
+  fs.writeFileSync(`${out}/lang/da-words.js`, `window.WORDS=window.WORDS||{};window.WORDS.da=${JSON.stringify([...words].sort().join("\n"))};`);
+}
+
 console.log("Fertig: dist/");
