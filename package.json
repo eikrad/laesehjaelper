@@ -21,8 +21,8 @@
     "esbuild": "^0.28.2",
     "fflate": "^0.8.3",
     "hyphen": "^1.14.1",
-    "tesseract.js": "^5.1.1",
-    "tesseract.js-core": "^5.1.1"
+    "tesseract.js": "^7.0.0",
+    "tesseract.js-core": "^7.0.0"
   },
   "private": true,
   "type": "module",
