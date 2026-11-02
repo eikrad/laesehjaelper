@@ -20,6 +20,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Skrifttyper: Andika (standard), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Justerbar skriftstørrelse, bogstavafstand, linjeafstand og baggrundsfarve
 - Korte linjer med 2–3 ord i tekstvisningen (kan vælges)
+- Flere læsere: hvert barn har sine egne indstillinger for skrift, afstand, stavelser og oplæsning
 - Tryk på et ord for at høre det – først helt, så langsomt stavelse for stavelse, så helt igen
 - Få hele siden læst op med markering af hvert ord, langsomt eller normalt; bagefter er det barnets tur („Hør igen“)
 - Indstilling „Bindestreger i bogen“: til læsebøger, der selv deler ord i stavelser med bindestreg („sko-le“)
