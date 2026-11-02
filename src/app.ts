@@ -1077,6 +1077,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
         data.push({
           lang: pg.lang, text: pg.text, rawText: pg.rawText, paras: pg.paras, workW: pg.workW, workH: pg.workH, corners: pg.corners, question: pg.question || "",
           input: (await blobBytes(pg.inputBlob)) || (pg.canvas ? await blobBytes(await canvasBlob(pg.canvas)) : null),
+          photo: (await blobBytes(pg.photoBlob)) || (pg.photo ? await blobBytes(await canvasBlob(pg.photo, 0.8)) : null),
           clean: (await blobBytes(pg.cleanBlob)) || (await urlBytes(pg.clean)),
         });
       }
@@ -1107,7 +1108,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
           id, bookId: b.id, lang: p.lang, status: "done", text: p.text, rawText: p.rawText, paras: p.paras || null,
           workW: p.workW, workH: p.workH, corners: p.corners || null, question: p.question || "",
           inputBlob: p.input ? new Blob([p.input as BlobPart], { type: "image/jpeg" }) : null,
-          photoBlob: null,
+          photoBlob: p.photo ? new Blob([p.photo as BlobPart], { type: "image/jpeg" }) : null,
           cleanBlob: p.clean ? new Blob([p.clean as BlobPart], { type: "image/jpeg" }) : null,
         };
         await DB.put<PageRecord>("pages", rec);
