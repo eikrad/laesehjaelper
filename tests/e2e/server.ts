@@ -16,7 +16,7 @@ http.createServer((req, res) => {
   if (!file.startsWith(root)) { res.writeHead(403).end(); return; }
   if (fs.existsSync(file) && fs.statSync(file).isDirectory()) file = path.join(file, "index.html");
   fs.readFile(file, (err, data) => {
-    if (err) { res.writeHead(404).end("nicht gefunden"); return; }
+    if (err) { res.writeHead(404).end("not found"); return; }
     res.writeHead(200, { "content-type": types[path.extname(file)] || "application/octet-stream" }).end(data);
   });
 }).listen(port, () => console.log(`http://localhost:${port}`));
