@@ -32,7 +32,7 @@ Rules:
 ## Making a change
 
 1. Fork the repository and create a branch from `main`.
-2. `npm install`, then make your change.
+2. Node 22.15 or newer (CI uses the current LTS, 26). `npm install`, then make your change.
 3. Run the checks:
    ```bash
    npm run typecheck   # TypeScript (strict), no JavaScript files in the project
