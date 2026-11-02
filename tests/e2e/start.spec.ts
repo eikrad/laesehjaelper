@@ -58,3 +58,34 @@ test("Einstellungen erklären ehrlich, was belegt hilft", async ({ page }) => {
   await expect(box).toContainText("OpenDyslexic");
   await expect(box.locator("a[href*='README.md#']")).toHaveCount(1);
 });
+
+test("Erst hören, dann selbst lesen: Hinweis nach dem Vorlesen, Tempo wählbar", async ({ page }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { __rates: number[] };
+    w.__rates = [];
+    const fake = {
+      speaking: false,
+      getVoices: () => [],
+      cancel: () => {},
+      speak: (u: SpeechSynthesisUtterance) => { w.__rates.push(u.rate); setTimeout(() => u.onend?.(new Event("end") as SpeechSynthesisEvent), 50); },
+    };
+    Object.defineProperty(window, "speechSynthesis", { value: fake, configurable: true });
+  });
+  await page.reload();
+  await page.click("#demoBtn");
+  await page.click("#readBtn");
+  await expect(page.locator("#yourTurn")).toBeVisible();
+  await page.click("#setBtn");
+  await page.click("#rateSet button[data-v=langsom]");
+  await page.click("#setBtn");
+  await page.click("#yourTurn button");
+  const rates = await page.evaluate(() => (window as unknown as { __rates: number[] }).__rates);
+  expect(rates.length).toBe(2);
+  expect(rates[1]).toBeLessThan(rates[0]);
+  await page.click("#setBtn");
+  await page.click("#turnSet button[data-v=aus]");
+  await page.click("#setBtn");
+  await page.click("#readBtn");
+  await page.waitForTimeout(200);
+  await expect(page.locator("#yourTurn")).toBeHidden();
+});
