@@ -156,3 +156,19 @@ test("Einstellungen pro Kind: Profile anlegen, wechseln, behalten", async ({ pag
   await expect(page.locator("#profileSel option")).toHaveCount(1);
   await expect(page.locator("#size")).toHaveValue("26");
 });
+
+test("Gemeinsam lesen: zwei offene Fragen, eigene Frage pro Seite", async ({ page }) => {
+  await page.click("#demoBtn");
+  await expect(page.locator("#together")).toBeHidden();
+  await page.click("#setBtn");
+  await page.click("#togetherSet button[data-v=an]");
+  await page.click("#setBtn");
+  await expect(page.locator("#together")).toBeVisible();
+  await expect(page.locator("#togetherQs li")).toHaveCount(2);
+  await expect(page.locator("#togetherQs li").first()).toHaveText(/\?$/);
+  await page.click("#ownQBtn");
+  await page.fill("#ownQ", "Hvorfor sover pindsvinet?");
+  await page.press("#ownQ", "Enter");
+  await expect(page.locator("#togetherQs li").first()).toHaveText("Hvorfor sover pindsvinet?");
+  await expect(page.locator("#togetherQs li")).toHaveCount(2);
+});

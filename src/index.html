@@ -282,6 +282,11 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
 
 .yourturn { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 20px; background: var(--mark); color: var(--ink); font-weight: 700; font-size: 17px; }
 .yourturn[hidden] { display: none; }
+.together { padding: 14px 20px 18px; border-top: 1px solid var(--line); background: #f7f8fa; font-family: var(--ui); }
+.together[hidden], .profrow[hidden] { display: none; }
+.togetherhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.together ul { margin: 8px 0 0; padding-left: 1.2em; line-height: 1.5; font-size: 17px; }
+body.focus .together { display: none !important; }
 .toast { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 16px; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw; z-index: 30; }
 .toast.show { opacity: 1; }
 [hidden] { display: none !important; }
@@ -368,6 +373,11 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
       <div class="orig" id="orig"><img id="origImg" alt=""></div>
       <div class="reader" id="reader"></div>
       <div class="yourturn" id="yourTurn" hidden><span data-t="yourTurn"></span><button class="btn-ghost small" id="againBtn"><svg class="i"><use href="#i-speak"/></svg><span data-t="again"></span></button></div>
+      <div class="together" id="together" hidden>
+        <div class="togetherhead"><strong data-t="togetherTitle"></strong><button class="linkbtn" id="ownQBtn" data-t="ownQ"></button></div>
+        <ul id="togetherQs"></ul>
+        <div class="profrow" id="ownQRow" hidden><input id="ownQ" autocomplete="off" data-tp="ownQPh"><button class="btn-ghost small" id="ownQSave" data-t="save"></button></div>
+      </div>
       <details class="edit" id="edit">
         <summary><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></summary>
         <textarea id="text" spellcheck="true"></textarea>
@@ -448,6 +458,14 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
         <button data-v="normal" data-t="linesNormal"></button>
         <button data-v="kort" data-t="linesShort"></button>
       </div>
+    <div class="field wide">
+      <span class="flabel" data-t="togetherLabel"></span>
+      <div class="seg" id="togetherSet">
+        <button data-v="an" data-t="togetherOn"></button>
+        <button data-v="aus" data-t="togetherOff"></button>
+      </div>
+      <p class="fhint" data-t="togetherHint"></p>
+    </div>
       <p class="fhint" data-t="linesHint"></p>
     </div>
     <div class="field wide">

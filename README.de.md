@@ -21,6 +21,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Schriftgröße, Buchstaben- und Zeilenabstand sowie Hintergrundfarbe einstellbar
 - Kurze Zeilen mit 2–3 Wörtern in der Textansicht (wählbar)
 - Mehrere Leser: Jedes Kind hat eigene Einstellungen für Schrift, Abstände, Silben und Vorlesen
+- Gemeinsam lesen: ein paar offene Fragen pro Seite für den Erwachsenen, auch eigene Fragen (zuschaltbar)
 - Wort antippen und hören – erst ganz, dann langsam Silbe für Silbe, dann wieder ganz
 - Die ganze Seite vorlesen lassen, mit Markierung des gerade gelesenen Worts, langsam oder normal; danach ist das Kind dran („Noch mal hören“)
 - Einstellung „Bindestriche im Buch“: für Lesebücher, die Wörter selbst mit Bindestrich in Silben trennen („Scho-ko-la-de“)

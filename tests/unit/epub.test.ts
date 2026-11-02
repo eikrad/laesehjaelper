@@ -14,7 +14,7 @@ function sample() {
     data: {
       title: "Søren & Mette",
       pages: [
-        { lang: "da", text: "Det er sjovt", paras: [], workW: 800, workH: 1120, corners: null, input: jpeg, clean: jpeg },
+        { lang: "da", text: "Det er sjovt", paras: [], workW: 800, workH: 1120, corners: null, question: "Hvad er sjovt?", input: jpeg, clean: jpeg },
         { lang: "da", text: "Kun tekst", input: null, clean: null },
       ],
     },
@@ -60,5 +60,10 @@ describe("EPUB", () => {
     const { zipSync, strToU8 } = await import("fflate");
     const foreign = zipSync({ mimetype: strToU8("application/epub+zip"), "OEBPS/content.opf": strToU8("<package/>") });
     expect(readEpub(foreign)).toBeNull();
+  });
+  it("behält die eigene Frage für „gemeinsam lesen“", () => {
+    const d = readEpub(sample())!;
+    expect(d.pages[0].question).toBe("Hvad er sjovt?");
+    expect(d.pages[1].question).toBe("");
   });
 });

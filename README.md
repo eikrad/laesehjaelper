@@ -21,6 +21,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Justerbar skriftstørrelse, bogstavafstand, linjeafstand og baggrundsfarve
 - Korte linjer med 2–3 ord i tekstvisningen (kan vælges)
 - Flere læsere: hvert barn har sine egne indstillinger for skrift, afstand, stavelser og oplæsning
+- Læs sammen: et par åbne spørgsmål til den voksne for hver side, også egne spørgsmål (kan slås til)
 - Tryk på et ord for at høre det – først helt, så langsomt stavelse for stavelse, så helt igen
 - Få hele siden læst op med markering af hvert ord, langsomt eller normalt; bagefter er det barnets tur („Hør igen“)
 - Indstilling „Bindestreger i bogen“: til læsebøger, der selv deler ord i stavelser med bindestreg („sko-le“)
