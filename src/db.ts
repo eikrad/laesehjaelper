@@ -32,6 +32,21 @@ async function run<R>(store: StoreName, mode: IDBTransactionMode, fn: (o: IDBObj
 }
 
 export const DB = {
+  putBook: async (book: object, pages: readonly object[]): Promise<void> => {
+    const d = await open();
+    return new Promise((resolve, reject) => {
+      const tx = d.transaction(["books", "pages"], "readwrite");
+      let failure: unknown;
+      tx.oncomplete = () => resolve();
+      tx.onabort = () => reject(failure || tx.error);
+      try {
+        for (const page of pages) tx.objectStore("pages").put(page);
+        tx.objectStore("books").put(book);
+      } catch (e) {
+        failure = e; tx.abort();
+      }
+    });
+  },
   put: <T>(store: StoreName, value: T) => run(store, "readwrite", (o) => o.put(value)),
   del: (store: StoreName, key: string) => run(store, "readwrite", (o) => o.delete(key)),
   all: <T>(store: StoreName) => run(store, "readonly", (o) => o.getAll() as IDBRequest<T[]>),
