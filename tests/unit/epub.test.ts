@@ -22,11 +22,11 @@ function sample() {
 }
 
 describe("EPUB", () => {
-  it("hat eine gültige Grundstruktur", () => {
+  it("Has a valid basic structure", () => {
     const bytes = sample();
-    // „mimetype“ muss die erste Datei sein, unkomprimiert
+    // The first file must be an uncompressed mimetype entry.
     expect(strFromU8(bytes.slice(30, 38))).toBe("mimetype");
-    expect(bytes[8]).toBe(0); // Kompressionsmethode „stored“
+    expect(bytes[8]).toBe(0); // The compression method is stored.
     const files = unzipSync(bytes);
     expect(strFromU8(files["mimetype"])).toBe("application/epub+zip");
     expect(files["META-INF/container.xml"]).toBeDefined();
@@ -40,13 +40,13 @@ describe("EPUB", () => {
     expect(files["OEBPS/images/page2.jpg"]).toBeUndefined();
   });
 
-  it("legt das Seitenbild nicht doppelt ab", () => {
+  it("Stores the page image only once", () => {
     const files = unzipSync(sample());
     expect(files["OEBPS/laesehjaelper/clean1.jpg"]).toBeUndefined();
     expect(files["OEBPS/laesehjaelper/input1.jpg"]).toBeDefined();
   });
 
-  it("liest die eigenen Daten verlustfrei zurück", () => {
+  it("Reads back its own data without loss", () => {
     const d = readEpub(sample());
     expect(d?.title).toBe("Søren & Mette");
     expect(d?.pages.map((p) => p.text)).toEqual(["Det er sjovt", "Kun tekst"]);
@@ -56,12 +56,12 @@ describe("EPUB", () => {
     expect(d?.pages[1].input).toBeNull();
   });
 
-  it("erkennt fremde EPUBs", async () => {
+  it("Recognizes unrelated EPUB files", async () => {
     const { zipSync, strToU8 } = await import("fflate");
     const foreign = zipSync({ mimetype: strToU8("application/epub+zip"), "OEBPS/content.opf": strToU8("<package/>") });
     expect(readEpub(foreign)).toBeNull();
   });
-  it("behält die eigene Frage für „gemeinsam lesen“", () => {
+  it("Preserves the custom reading-together question", () => {
     const d = readEpub(sample())!;
     expect(d.pages[0].question).toBe("Hvad er sjovt?");
     expect(d.pages[1].question).toBe("");

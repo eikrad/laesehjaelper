@@ -1,11 +1,11 @@
-## Was ändert sich?
+## What changes?
 
-<!-- Kurz beschreiben, was der Pull Request macht und warum. -->
+<!-- Briefly describe the problem and the resulting behavior. Write in English. -->
 
-Closes #  <!-- Story oder Bug, den dieser PR erledigt -->
+Closes #  <!-- The story or bug addressed by this PR -->
 
-## Geprüft
+## Validation
 
-- [ ] `npm run typecheck`, `npm test` und `npm run test:e2e` laufen lokal durch
-- [ ] Neue Funktionen bzw. behobene Fehler sind durch Tests abgesichert
-- [ ] Keine urheberrechtlich geschützten Inhalte (z. B. Fotos echter Bücher) im Pull Request
+- [ ] `npm run lint`, `npm run typecheck`, `npm test` and `npm run test:e2e` pass locally
+- [ ] New behavior or bug fixes are covered by tests
+- [ ] No copyrighted content (such as photos of real books) is included

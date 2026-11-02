@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { frameFromCorners, warpPage } from "../../src/pagedetect";
 import type { Corners } from "../../src/types";
 
-it("entzerrt eine gerade perspektivische Seite ohne zusätzliche Wölbung", async () => {
+it("Straightens a flat perspective page without introducing curvature", async () => {
   const cv: typeof import("@techstark/opencv-js") = await createRequire(import.meta.url)("@techstark/opencv-js");
   const W = 200, H = 294;
   const page = new cv.Mat(H, W, cv.CV_8UC4);

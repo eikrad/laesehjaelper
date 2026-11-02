@@ -3,28 +3,28 @@ import { fresh } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
-test("Startseite in allen drei Sprachen", async ({ page }) => {
+test("The start page supports all three languages", async ({ page }) => {
   await expect(page.locator(".cta strong")).toHaveText("Tag et billede af en side");
   await page.click("#uiLang button[data-v=de]");
   await expect(page.locator(".cta strong")).toHaveText("Eine Seite fotografieren");
   await page.click("#uiLang button[data-v=en]");
   await expect(page.locator(".cta strong")).toHaveText("Take a photo of a page");
   await page.reload();
-  await expect(page.locator(".cta strong")).toHaveText("Take a photo of a page"); // Einstellung bleibt
+  await expect(page.locator(".cta strong")).toHaveText("Take a photo of a page"); // The setting persists.
 });
 
-test("Beispielseite zeigt Silben, Zurück führt zur Startseite", async ({ page }) => {
+test("The sample page shows syllables and Back returns to the start page", async ({ page }) => {
   await page.click("#demoBtn");
   await expect(page.locator("#app")).toBeVisible();
   const word = page.locator('.w[data-word="pindsvin"]');
   await expect(word.locator(".s")).toHaveCount(2);
   await expect(word.locator(".s0")).toHaveText("pinds");
-  await expect(page.locator("#compareBtn")).toBeHidden();  // kein Foto, nichts zu vergleichen
+  await expect(page.locator("#compareBtn")).toBeHidden();  // No photo is available for comparison.
   await page.goBack();
   await expect(page.locator("#start")).toBeVisible();
 });
 
-test("Einstellungen: Silben als Bögen, eigene Farbe", async ({ page }) => {
+test("Settings: syllable arcs and a custom color", async ({ page }) => {
   await page.click("#demoBtn");
   await page.click("#setBtn");
   await page.click("#mode button[data-v=boegen]");
@@ -35,13 +35,13 @@ test("Einstellungen: Silben als Bögen, eigene Farbe", async ({ page }) => {
   expect(c1).toBe("#16a34a");
 });
 
-test("Buchsprache Deutsch trennt deutsche Beispielwörter", async ({ page }) => {
+test("German book language splits German sample words", async ({ page }) => {
   await page.click("#langStart button[data-v=de]");
   await page.click("#demoBtn");
   await expect(page.locator('.w[data-word="Apfelbaum"] .s')).not.toHaveCount(1);
 });
 
-test("Mehr Buchstabenabstand vergrößert auch den Wortabstand", async ({ page }) => {
+test("Increasing letter spacing also increases word spacing", async ({ page }) => {
   await page.click("#demoBtn");
   const ws = () => page.locator("#reader").evaluate(el => parseFloat(getComputedStyle(el).wordSpacing));
   const before = await ws();
@@ -50,16 +50,16 @@ test("Mehr Buchstabenabstand vergrößert auch den Wortabstand", async ({ page }
   expect(await ws()).toBeGreaterThan(before);
 });
 
-test("Einstellungen erklären ehrlich, was belegt hilft", async ({ page }) => {
+test("Settings explain the research evidence accurately", async ({ page }) => {
   await page.click("#demoBtn");
   await page.click("#setBtn");
   const box = page.locator("#evidence");
   await box.locator("summary").click();
   await expect(box).toContainText("OpenDyslexic");
-  await expect(box.locator("a[href*='README.md#']")).toHaveCount(1);
+  await expect(box.locator("a[href*='README.da.md#']")).toHaveCount(1);
 });
 
-test("Erst hören, dann selbst lesen: Hinweis nach dem Vorlesen, Tempo wählbar", async ({ page }) => {
+test("Listen, then read: show a prompt after reading aloud and allow speed selection", async ({ page }) => {
   await page.addInitScript(() => {
     const w = window as unknown as { __rates: number[] };
     w.__rates = [];
@@ -90,7 +90,7 @@ test("Erst hören, dann selbst lesen: Hinweis nach dem Vorlesen, Tempo wählbar"
   await expect(page.locator("#yourTurn")).toBeHidden();
 });
 
-test("Wort antippen: erst ganz, dann in Silben, Silbe wird markiert", async ({ page }) => {
+test("Tapping a word reads it whole, then highlights and reads each syllable", async ({ page }) => {
   await page.addInitScript(() => {
     const w = window as unknown as { __said: string[]; __marked: string[] };
     w.__said = []; w.__marked = [];
@@ -114,7 +114,7 @@ test("Wort antippen: erst ganz, dann in Silben, Silbe wird markiert", async ({ p
   await expect(page.locator(".speaking")).toHaveCount(0);
 });
 
-test("Kurze Zeilen: höchstens drei Wörter pro Zeile, abschaltbar", async ({ page }) => {
+test("Short lines: at most three words per line, with an option to disable", async ({ page }) => {
   await page.click("#demoBtn");
   const words = await page.locator("#reader .w").count();
   await page.click("#setBtn");
@@ -128,7 +128,7 @@ test("Kurze Zeilen: höchstens drei Wörter pro Zeile, abschaltbar", async ({ pa
   await expect(page.locator("#reader br")).toHaveCount(0);
 });
 
-test("Einstellungen pro Kind: Profile anlegen, wechseln, behalten", async ({ page }) => {
+test("Reader settings: create, switch and retain profiles", async ({ page }) => {
   await page.click("#demoBtn");
   await page.click("#setBtn");
   const size = (v: string) => page.locator("#size").evaluate((el: HTMLInputElement, v) => { el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); }, v);
@@ -157,7 +157,7 @@ test("Einstellungen pro Kind: Profile anlegen, wechseln, behalten", async ({ pag
   await expect(page.locator("#size")).toHaveValue("26");
 });
 
-test("Gemeinsam lesen: zwei offene Fragen, eigene Frage pro Seite", async ({ page }) => {
+test("Reading together: two open questions and a custom question per page", async ({ page }) => {
   await page.click("#demoBtn");
   await expect(page.locator("#together")).toBeHidden();
   await page.click("#setBtn");
@@ -173,7 +173,7 @@ test("Gemeinsam lesen: zwei offene Fragen, eigene Frage pro Seite", async ({ pag
   await expect(page.locator("#togetherQs li")).toHaveCount(2);
 });
 
-test("Fett im Text: *Wort* wird fett gesetzt, ohne Sternchen", async ({ page }) => {
+test("Text marked with *word* appears bold without asterisks", async ({ page }) => {
   await page.click("#demoBtn");
   await page.locator("#edit summary").click();
   const t = await page.locator("#text").inputValue();
@@ -182,7 +182,7 @@ test("Fett im Text: *Wort* wird fett gesetzt, ohne Sternchen", async ({ page }) 
   await expect(page.locator("#reader")).not.toContainText("*");
 });
 
-test("Wortteile (Dänisch): zusammengesetzte Wörter und Endungen", async ({ page }) => {
+test("Danish word parts: compounds and suffixes", async ({ page }) => {
   await page.click("#demoBtn");
   await page.click("#setBtn");
   await page.click("#mode button[data-v=morf]");
@@ -191,7 +191,7 @@ test("Wortteile (Dänisch): zusammengesetzte Wörter und Endungen", async ({ pag
   await expect(w.locator(".s").first()).toHaveText("pind");
   await expect(page.locator('#reader .w[data-word="æbletræ"] .s')).toHaveText(["æble", "træ"]);
   await expect(page.locator('#reader .w[data-word="Pindsvinet"] .s.suf')).toHaveText("et");
-  // andere Buchsprachen: Hinweis, Wörter bleiben ganz
+  // Other book languages: show a notice and keep words intact.
   await page.click("#langSet button[data-v=de]");
   await expect(page.locator("#toast")).toContainText(/dansk|Dänisch|Danish/i);
 });

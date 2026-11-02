@@ -1,9 +1,9 @@
 /// <reference lib="webworker" />
-// Service Worker: macht die App offline nutzbar und installierbar.
+// Service worker: makes the app usable offline and installable.
 //
-// Alle Dateien werden beim ersten Laden im Browser-Cache abgelegt (cache first). Die Seite selbst
-// (index.html) wird zuerst frisch geholt, damit Updates ankommen; ohne Netz kommt sie aus dem Cache.
-// Jede neue Version hat einen eigenen Cache-Namen; alte Caches werden beim Aktivieren gelöscht.
+// All files enter the browser cache on first load (cache first). The page itself
+// (index.html) uses the network first to receive updates, falling back to the cache when offline.
+// Each new version has its own cache name; activation deletes old caches.
 
 export {};
 declare const self: ServiceWorkerGlobalScope;
@@ -15,8 +15,8 @@ const SHELL = ["./", "index.html", "manifest.webmanifest", "tesseract.min.js", "
 async function install() {
   const cache = await caches.open(CACHE);
   await cache.addAll(SHELL);
-  // Bereits genutzte Sprachen und OCR-Dateien vor dem Aktivieren auffrischen.
-  // Scheitert das Netz, bleibt der bisherige Worker mit seinem Cache aktiv.
+  // Refresh previously used languages and OCR files before activation.
+  // If the network fails, the previous worker and its cache remain active.
   for (const name of await caches.keys()) {
     if (!name.startsWith("laesehjaelper-") || name === CACHE) continue;
     const previous = await caches.open(name);
@@ -24,11 +24,11 @@ async function install() {
       if (await cache.match(req)) continue;
       if (new URL(req.url).origin === self.location.origin) {
         const res = await fetch(req, { cache: "reload" });
-        if (res.status === 404) continue; // Datei wurde in der neuen Version entfernt
+        if (res.status === 404) continue; // The file was removed in the new version
         if (!res.ok) throw new Error(`Offline resource unavailable: ${req.url}`);
         await cache.put(req, res);
       } else {
-        // Font-URLs enthalten die Version; auch opaque Antworten behalten.
+        // Font URLs contain the version; preserve opaque responses too.
         const hit = await previous.match(req);
         if (hit) await cache.put(req, hit);
       }
@@ -72,7 +72,7 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) {
-    // Schriften von Google Fonts ebenfalls zwischenspeichern
+    // Cache Google Fonts as well
     if (/(^|\.)(googleapis|gstatic)\.com$/.test(url.hostname)) e.respondWith(cacheFirst(req));
     return;
   }

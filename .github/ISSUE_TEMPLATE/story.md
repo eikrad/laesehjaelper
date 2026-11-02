@@ -1,16 +1,16 @@
 ---
 name: Story
-about: Ein lieferbarer Teil eines Epics
+about: One deliverable part of an epic
 title: ""
 labels: story
 ---
 
-**Als** … **möchte ich** … **, damit** …
+**As** … **I want** … **so that** …
 
-Gehört zu Epic #
+Part of epic #
 
-## Akzeptanzkriterien
+## Acceptance criteria
 - [ ] …
 
-## Hinweise
-<!-- Ideen zur Umsetzung, betroffene Dateien, offene Fragen -->
+## Notes
+<!-- Implementation ideas, affected files, open questions -->

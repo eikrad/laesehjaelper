@@ -4,7 +4,7 @@ Rules for AI coding agents (Claude Code, Codex, Cursor, …) and humans alike. `
 
 ## The project in one paragraph
 
-Læsehjælper is a browser app (PWA, GitHub Pages) that turns a photo of a children's book page into an easier-to-read page: OCR (Tesseract.js), page detection and dewarping (OpenCV.js), the old text painted over and re-set in a legible font with syllable colours, read-aloud, bookshelf (IndexedDB) and EPUB export. Everything runs on the user's device. Primary language Danish; also German and English, for books and UI.
+Læsehjælper is a browser app (PWA, GitHub Pages) that turns a photo of a children's book page into an easier-to-read page: OCR (Tesseract.js), page detection and dewarping (OpenCV.js), the old text painted over and re-set in a legible font with syllable colours, read-aloud, bookshelf (IndexedDB) and EPUB export. Everything runs on the user's device. The app supports Danish, German and English books and UI, with Danish as the default app language.
 
 ## Non-negotiable rules
 
@@ -31,6 +31,7 @@ Node: CI runs on the current Node LTS (26); the minimum for local work is Node 2
 **Dependencies and security:** `npm audit` runs in CI and fails on moderate or worse. Dependabot opens weekly pull requests for npm packages and GitHub Actions. GitHub Actions are pinned to commit SHAs (with the version in a comment) so a hijacked tag cannot change what runs; when updating, take the SHA of the release tag. Check major updates with Context7 and the release notes before merging.
 
 ```bash
+npm run lint           # Biome for source, tests and configuration
 npm run typecheck      # TypeScript, strict
 npm test               # unit tests
 npm run build          # app into dist/
@@ -38,11 +39,12 @@ npm run test:e2e       # end-to-end tests (needs dist/)
 npm run coverage       # unit + e2e coverage, merged, with minimum thresholds
 ```
 
-**Coverage:** `npm run coverage` merges unit and browser coverage (Monocart, V8) and fails below the minimums in `coverage.ts` (lines 85 %, branches 72 %, functions 87 % as of November 2026). CI runs it on every pull request; the HTML report is attached to the run as the `coverage` artifact. Raise the minimums when coverage goes up; never lower them to make a pull request pass.
+**Coverage:** `npm run coverage` merges unit and browser coverage (Monocart, V8) and fails below the minimums in `coverage.ts` (lines 88 %, branches 76 %, functions 90 % as of November 2026). CI runs it on every pull request; the HTML report is attached to the run as the `coverage` artifact. Raise the minimums when coverage goes up; never lower them to make a pull request pass.
 
 ## Conventions
 
-- **Languages:** every UI string exists in Danish, German and English (`T` in `src/app.ts`). The three READMEs (`README.md` Danish, `README.de.md`, `README.en.md`) are updated together.
+- **Repository language: English.** Write documentation, code comments, test descriptions, development messages, commits, and GitHub issue/PR titles and bodies in English.
+- **Localization:** every UI string exists in Danish, German and English (`T` in `src/app.ts`). `README.md` is the English default and links to `README.da.md` (Danish) and `README.de.md` (German); update these three together. Localized UI text, README translations, and language-specific test data/examples use their intended language.
 - **Reading-support features are evidence-based.** Cite the study (author, year, DOI) in a code comment and in the README section “What does the research say?”. Features without clear evidence are optional and switched off by default.
 - **Book quirks are settings, not defaults** (e.g. hyphenated syllables in some readers).
 - **Commits:** English, imperative, explain why; end with `Closes #<n>` where it applies.

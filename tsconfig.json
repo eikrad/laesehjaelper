@@ -22,7 +22,8 @@
     "playwright.config.ts",
     "vitest.config.ts",
     "mcr.config.ts",
-    "coverage.ts"
+    "coverage.ts",
+    "lint.ts"
   ],
   "exclude": [
     "src/sw.ts"

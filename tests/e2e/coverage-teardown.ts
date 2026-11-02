@@ -1,7 +1,7 @@
 import { CoverageReport } from "monocart-coverage-reports";
 import { e2eCoverage } from "./coverage-options";
 
-/** Nach allen E2E-Tests: Bericht aus den gesammelten Daten erzeugen. */
+/** Generate the report from the collected data after all end-to-end tests. */
 export default async function teardown() {
   if (process.env.COVERAGE) await new CoverageReport(e2eCoverage).generate();
 }

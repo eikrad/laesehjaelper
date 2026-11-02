@@ -1,17 +1,17 @@
 /**
- * Modus „kurze Zeilen“: wenige Wörter pro Zeile.
+ * Short-lines mode: a few words per line.
  *
- * Kurze Zeilen machten Lesende mit Legasthenie schneller und halbierten die Rücksprünge
- * (Schneps et al. 2013, PLOS ONE, doi:10.1371/journal.pone.0071161) — aber nur für einen
- * Teil von ihnen (doi:10.1371/journal.pone.0075634). Darum ist der Modus wählbar, nicht Standard.
+ * Short lines increased reading speed and halved regressions for readers with dyslexia
+ * (Schneps et al. 2013, PLOS ONE, doi:10.1371/journal.pone.0071161), but only for a
+ * subset of readers (doi:10.1371/journal.pone.0075634). This mode is optional and off by default.
  */
 
 const PUNCT = /[.,;:!?…]/;
 
 /**
- * Wo nach Wort i umgebrochen wird. `seps[i]` ist der Text nach Wort i.
- * Nach Satzzeichen wird immer umgebrochen; dazwischen werden die Wörter gleichmäßig
- * auf Zeilen mit höchstens `max` Wörtern verteilt, damit kein Wort allein steht.
+ * Decide where to break after word i. `seps[i]` is the text following word i.
+ * Always break after punctuation; distribute the words in between evenly
+ * over lines of at most `max` words so no word stands alone.
  */
 export function shortLineBreaks(seps: string[], max = 3): boolean[] {
   const n = seps.length;
@@ -19,7 +19,7 @@ export function shortLineBreaks(seps: string[], max = 3): boolean[] {
   let start = 0;
   for (let i = 0; i < n; i++) {
     if (i < n - 1 && !PUNCT.test(seps[i])) continue;
-    // Abschnitt start..i ohne Satzzeichen dazwischen
+    // Section start..i with no punctuation in between
     const len = i - start + 1;
     const lines = Math.ceil(len / max);
     const size = Math.floor(len / lines), extra = len % lines;

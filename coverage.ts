@@ -1,12 +1,12 @@
-// Gesamte Testabdeckung: Unit- und E2E-Rohdaten zusammenführen (nach `coverage:unit` und `coverage:e2e`)
-// und prüfen, dass sie nicht unter die Mindestwerte fällt.
+// Merge raw unit and E2E coverage after `coverage:unit` and `coverage:e2e`,
+// then check that the combined coverage meets the minimum thresholds.
 import { CoverageReport } from "monocart-coverage-reports";
 
-/** Mindestabdeckung in Prozent (etwas unter dem Stand vom 2. 11. 2026: 88,6 / 76,9 / 91,3). */
-const MIN = { lines: 85, branches: 72, functions: 87 };
+/** Minimum coverage percentages, just below the November 2, 2026 results: 89.5 / 78.4 / 92.5. */
+const MIN = { lines: 88, branches: 76, functions: 90 };
 
 const results = await new CoverageReport({
-  name: "Læsehjælper – Testabdeckung gesamt",
+  name: "Læsehjælper – Combined test coverage",
   inputDir: ["coverage/unit/raw", "coverage/e2e/raw"],
   outputDir: "coverage/merged",
   sourceFilter: { "**/src/**": true, "**/*": false },
@@ -14,6 +14,6 @@ const results = await new CoverageReport({
 }).generate();
 
 const low = (Object.keys(MIN) as (keyof typeof MIN)[]).filter((k) => Number(results?.summary[k].pct ?? 0) < MIN[k]);
-for (const k of low) console.error(`Abdeckung ${k}: ${results?.summary[k].pct} % < Mindestwert ${MIN[k]} %`);
+for (const k of low) console.error(`Coverage ${k}: ${results?.summary[k].pct} % < minimum ${MIN[k]} %`);
 if (low.length) process.exit(1);
-console.log("Abdeckung über den Mindestwerten:", Object.entries(MIN).map(([k, v]) => `${k} ≥ ${v} %`).join(", "));
+console.log("Coverage meets the minimum thresholds:", Object.entries(MIN).map(([k, v]) => `${k} ≥ ${v} %`).join(", "));

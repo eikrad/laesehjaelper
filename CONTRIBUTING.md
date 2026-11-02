@@ -2,7 +2,7 @@
 
 Thanks for wanting to help! Contributions are welcome – bug reports, ideas, translations and code.
 
-*Deutsch: Beiträge sind willkommen, auf Deutsch, Dänisch oder Englisch. · Dansk: Bidrag er velkomne, på dansk, tysk eller engelsk.*
+English is the repository working language. Write documentation, code comments, test descriptions, issues, commits and pull requests in English. The default [README](README.md) is English, with [Danish](README.da.md) and [German](README.de.md) translations. Product translations and language-specific test data remain in their intended language.
 
 ## How decisions are made
 
@@ -35,6 +35,7 @@ Rules:
 2. Node 22.15 or newer (CI uses the current LTS, 26). `npm install`, then make your change.
 3. Run the checks:
    ```bash
+   npm run lint        # Biome for TypeScript (including tests and configuration)
    npm run typecheck   # TypeScript (strict), no JavaScript files in the project
    npm test            # unit tests (Vitest)
    npm run build

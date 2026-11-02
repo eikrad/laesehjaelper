@@ -1,27 +1,27 @@
-// EPUB 3 schreiben und Læsehjælper-Bücher daraus wieder einlesen.
+// Write EPUB 3 files and read Læsehjælper books back from them.
 //
-// Das EPUB hat feste Seiten (fixed layout): jede Buchseite ist ein Bild mit übermalter Originalschrift,
-// darüber liegt der neue Text als echter, farbig gesetzter Text. So lässt es sich in jeder Lese-App
-// öffnen (Apple Books, Google Play Books, Thorium …).
-// Zusätzlich enthält es unter OEBPS/laesehjaelper/ unsere eigenen Daten (Text, Positionen, Bilder),
-// damit Læsehjælper das Buch verlustfrei wieder importieren kann.
+// The EPUB uses fixed layout: each book page is an image with the original text painted over,
+// with the replacement text laid over it as real, colored text. It can be opened in reading apps
+// (Apple Books, Google Play Books, Thorium …).
+// It also includes our own data (text, positions, images) under OEBPS/laesehjaelper/
+// so Læsehjælper can import the book again without losing data.
 
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
 import type { Zippable } from "fflate";
 import type { Corners, Frame, Para } from "./types";
 
-/** Eine fertig gesetzte Seite für das EPUB. */
+/** A fully laid out page for the EPUB. */
 export interface EpubPage {
-  /** Seitengröße in CSS-Pixeln (Viewport der festen Seite) */
+  /** Page size in CSS pixels (the fixed page viewport) */
   width: number;
   height: number;
-  /** Hintergrundbild (JPEG), oder null für reine Textseiten */
+  /** Background image (JPEG), or null for text-only pages */
   image: Uint8Array | null;
-  /** XHTML-Inhalt über dem Bild (Textfelder oder Fließtext) */
+  /** XHTML content over the image (text boxes or flowing text) */
   bodyHtml: string;
 }
 
-/** Unsere eigenen Daten je Seite, für den verlustfreien Re-Import. */
+/** Our own per-page data for lossless reimport. */
 export interface DataPage {
   lang: string;
   text: string;
@@ -30,10 +30,10 @@ export interface DataPage {
   workW?: number;
   workH?: number;
   corners?: Frame | Corners | null;
-  /** eigene Frage für „gemeinsam lesen“ */
+  /** custom question for reading together */
   question?: string;
   input?: Uint8Array | null;
-  /** Unbeschnittenes Foto für spätere Änderungen am Seitenrahmen. */
+  /** Uncropped photo for later changes to the page frame. */
   photo?: Uint8Array | null;
   clean?: Uint8Array | null;
 }
@@ -49,7 +49,7 @@ export function buildEpub(opts: {
 }): Uint8Array {
   const { id, title, lang, css, fonts, pages, data } = opts;
   const files: Zippable = {};
-  // „mimetype“ muss die erste Datei sein und darf nicht komprimiert werden
+  // "mimetype" must be the first file and must not be compressed
   files["mimetype"] = [strToU8("application/epub+zip"), { level: 0 }];
   files["META-INF/container.xml"] = strToU8(`<?xml version="1.0" encoding="UTF-8"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
@@ -99,14 +99,14 @@ ${pages.map((_, i) => `<li><a href="page${i + 1}.xhtml">${esc(opts.pageLabel)} $
 </ol></nav></body></html>`;
   add("nav.xhtml", strToU8(nav), "application/xhtml+xml", "nav", "nav");
 
-  // Eigene Daten für den Re-Import
+  // Our own data for reimport
   const dataJson = {
     format: "laesehjaelper", version: 1, title: data.title,
     pages: data.pages.map((p, i) => {
       const n = i + 1;
       if (p.input) add(`laesehjaelper/input${n}.jpg`, p.input, "image/jpeg", `din${n}`);
       if (p.photo) add(`laesehjaelper/photo${n}.jpg`, p.photo, "image/jpeg", `dph${n}`);
-      // Das übermalte Seitenbild steckt schon in images/; nur wenn es fehlt, legen wir es extra ab
+      // The painted-over page image is already in images/; store it separately only if absent
       const pageImg = pages[i]?.image ? `../images/page${n}.jpg` : null;
       if (p.clean && !pageImg) add(`laesehjaelper/clean${n}.jpg`, p.clean, "image/jpeg", `dcl${n}`);
       return {
@@ -142,7 +142,7 @@ ${pages.map((_, i) => `<li><a href="page${i + 1}.xhtml">${esc(opts.pageLabel)} $
   return zipSync(files, { level: 6 });
 }
 
-/** Ein mit Læsehjælper erstelltes EPUB wieder einlesen. Gibt null zurück, wenn unsere Daten fehlen. */
+/** Read an EPUB created by Læsehjælper. Returns null when our own data is missing. */
 export function readEpub(bytes: Uint8Array): DataBook | null {
   const files = unzipSync(bytes);
   const json = files["OEBPS/laesehjaelper/book.json"];

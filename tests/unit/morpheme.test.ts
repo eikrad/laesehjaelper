@@ -6,42 +6,42 @@ const DICT = new Set(["sommer", "fugl", "sommerfugl", "bedste", "mor", "bedstemo
 const has = (w: string) => DICT.has(w);
 const show = (w: string) => morphParts(w, has).map((p) => (p.suffix ? "+" : "") + p.text).join("|");
 
-describe("morphParts (Dänisch)", () => {
-  it("teilt zusammengesetzte Wörter in bekannte Teile", () => {
+describe("morphParts (Danish)", () => {
+  it("Splits compounds into known parts", () => {
     expect(show("sommerfugl")).toBe("sommer|fugl");
     expect(show("bedstemor")).toBe("bedste|mor");
     expect(show("æbletræ")).toBe("æble|træ");
     expect(show("pindsvin")).toBe("pind|svin");
   });
-  it("trennt Endungen ab und nimmt den längsten bekannten Stamm", () => {
+  it("Separates suffixes using the longest known stem", () => {
     expect(show("sommerfuglene")).toBe("sommer|fugl|+ene");
     expect(show("hulen")).toBe("hule|+n");
     expect(show("skoven")).toBe("skov|+en");
     expect(show("morgenen")).toBe("morgen|+en");
   });
-  it("lässt bekannte Wörter ganz, wenn sie sich nicht sinnvoll teilen lassen", () => {
+  it("Keeps known words intact when no meaningful split exists", () => {
     expect(show("anden")).toBe("anden");
     expect(show("under")).toBe("under");
     expect(show("huse")).toBe("huse");
   });
-  it("teilt nicht an kurzen Wortanfängen (vordere Teile mindestens vier Buchstaben)", () => {
+  it("Avoids short prefixes by requiring at least four letters in the first part", () => {
     expect(show("morgen")).toBe("morgen");
     expect(show("sammen")).toBe("sammen");
     expect(show("ligger")).toBe("ligger");
     expect(show("kartofler")).toBe("kartofler");
   });
-  it("hängt Fugenlaute an den vorderen Teil", () => {
+  it("Attaches linking sounds to the first part", () => {
     expect(show("guleroden")).toBe("gule|rod|+en");
   });
-  it("behält Groß-/Kleinschreibung und Bindestriche", () => {
+  it("Preserves capitalization and hyphens", () => {
     expect(show("Sommerfugl")).toBe("Sommer|fugl");
     expect(show("Bjørne-far")).toBe("Bjørn|+e-|far");
   });
-  it("gibt unbekannte Wörter unverändert zurück", () => {
+  it("Returns unknown words unchanged", () => {
     expect(show("xyzabc")).toBe("xyzabc");
     expect(morphParts("", has)).toEqual([]);
   });
-  it("ergibt zusammengesetzt immer genau das Wort", () => {
+  it("Recombining the parts always reproduces the original word", () => {
     for (const w of ["sommerfuglene", "Bjørne-far", "guleroden", "pindsvin", "xyz"])
       expect(morphParts(w, has).map((p) => p.text).join("")).toBe(w);
   });

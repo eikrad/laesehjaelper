@@ -1,13 +1,13 @@
 /**
- * Textfelder auf der Buchseite von Hand verschieben oder vergrößern
- * (z. B. wenn der neue Text in ein Bild ragt, darunter aber Platz ist).
- * Alle Koordinaten im Arbeitsbild (workW × workH).
+ * Move or resize text boxes on the book page manually
+ * (e.g. when replacement text overlaps an image but space remains below).
+ * All coordinates refer to the working image (workW × workH).
  */
 import type { Box } from "./types";
 
 const MIN_W = 40, MIN_H = 20;
 
-/** Feld um (dx, dy) verschieben ("move") oder an der unteren rechten Ecke ziehen ("resize"). */
+/** Move a box by (dx, dy) ("move") or drag its bottom-right corner ("resize"). */
 export function dragBox(b: Box, dx: number, dy: number, mode: "move" | "resize", { W, H }: { W: number; H: number }): Box {
   if (mode === "move") {
     const w = b.x1 - b.x0, h = b.y1 - b.y0;
@@ -24,7 +24,7 @@ function overlap(a: Box, b: Box): number {
   return area(i) / Math.max(1, Math.min(area(a), area(b)));
 }
 
-/** Nach neuer Texterkennung: eigene Positionen für Felder übernehmen, die es (fast deckungsgleich) noch gibt. */
+/** After OCR, retain custom positions for boxes that still exist in nearly the same location. */
 export function transferPlaces<P extends { bbox: Box; place?: Box }>(old: P[] | null | undefined, neu: P[]): P[] {
   if (!old || !old.length) return neu;
   return neu.map((p) => {

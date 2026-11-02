@@ -8,7 +8,7 @@ test.use({ serviceWorkers: "block" });
 interface StoredPage { text: string; rawText?: string; paras?: Para[]; image?: boolean }
 const para = (text: string): Para => ({ raw: text, text, bbox: { x0: 10, y0: 10, x1: 300, y1: 150 }, lines: [], words: [], lh: 30 });
 
-/** Kleine eigene Texte im normalen Bücherregal, ohne von OCR-Genauigkeit abhängig zu sein. */
+/** Short original texts in the normal bookshelf, independent of OCR accuracy. */
 async function openStoredBook(page: Page, items: StoredPage[]) {
   await page.evaluate(async items => {
     const canvas = document.createElement("canvas"); canvas.width = canvas.height = 2;
@@ -32,7 +32,7 @@ async function openStoredBook(page: Page, items: StoredPage[]) {
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
-test("Korrektur bleibt beim sofortigen Weiterblättern erhalten", async ({ page }) => {
+test("Preserves corrections when immediately turning the page", async ({ page }) => {
   await openStoredBook(page, [{ text: "Første side" }, { text: "Anden side" }]);
   await page.locator("#text").evaluate((el: HTMLTextAreaElement) => {
     el.value = "Rettet første side"; el.dispatchEvent(new Event("input", { bubbles: true }));
@@ -45,7 +45,7 @@ test("Korrektur bleibt beim sofortigen Weiterblättern erhalten", async ({ page 
   await expect(page.locator("#text")).toHaveValue("Rettet første side");
 });
 
-test("Zusätzliche Absätze überstehen Bindestrichwechsel und erneutes Öffnen", async ({ page }) => {
+test("Additional paragraphs survive hyphen-setting changes and reopening", async ({ page }) => {
   await openStoredBook(page, [{ text: "Første side", paras: [para("Første side")] }]);
   await page.fill("#text", "Første side\n\nNy ekstra tekst");
   await expect(page.locator('#reader .w[data-word="ekstra"]')).toHaveCount(1);
@@ -55,7 +55,7 @@ test("Zusätzliche Absätze überstehen Bindestrichwechsel und erneutes Öffnen"
   await expect(page.locator("#text")).toHaveValue("Første side\n\nNy ekstra tekst");
 });
 
-test("Bindestrich-Einstellung gilt nach erneutem Öffnen weiterhin", async ({ page }) => {
+test("The hyphen setting remains effective after reopening", async ({ page }) => {
   await openStoredBook(page, [{ text: "Vi går i sko-le" }]);
   await page.click("#setBtn"); await page.click('#hyphSet button[data-v="bog"]');
   await expect(page.locator("#text")).toHaveValue("Vi går i sko·le");
@@ -64,12 +64,12 @@ test("Bindestrich-Einstellung gilt nach erneutem Öffnen weiterhin", async ({ pa
   await expect(page.locator("#text")).toHaveValue("Vi går i sko·le", { timeout: 1500 });
 });
 
-test("Zusatzabsätze aus bereits gespeicherten älteren Büchern bleiben erhalten", async ({ page }) => {
+test("Preserves additional paragraphs in older saved books", async ({ page }) => {
   await openStoredBook(page, [{ text: "Første side\n\nNy ekstra tekst", paras: [para("Første side")] }]);
   await expect(page.locator('#reader .w[data-word="ekstra"]')).toHaveCount(1);
 });
 
-test("Manuelle Zahlenabsätze bleiben beim erneuten Öffnen erhalten", async ({ page }) => {
+test("Preserves manually entered numeric paragraphs after reopening", async ({ page }) => {
   await openStoredBook(page, [{ text: "En side" }]);
   await page.fill("#text", "En side\n\n42");
   await expect(page.locator("#reader")).toContainText("42");
@@ -77,7 +77,7 @@ test("Manuelle Zahlenabsätze bleiben beim erneuten Öffnen erhalten", async ({ 
   await expect(page.locator("#text")).toHaveValue("En side\n\n42", { timeout: 1500 });
 });
 
-test("Wechsel zwischen Silben und Wortteilen berechnet die Segmente neu", async ({ page }) => {
+test("Switching between syllables and word parts rebuilds the segments", async ({ page }) => {
   await page.click("#demoBtn"); await page.click("#setBtn");
   const parts = page.locator('#reader .w[data-word="pindsvin"] .s');
   await expect(parts).toHaveText(["pinds", "vin"]);
@@ -89,7 +89,7 @@ test("Wechsel zwischen Silben und Wortteilen berechnet die Segmente neu", async 
   await expect(parts).toHaveText(["pind", "svin"]);
 });
 
-test("Vorlesemarkierung bleibt nach Bindestrichwörtern beim richtigen Wort", async ({ page }) => {
+test("Speech highlighting stays aligned after hyphenated words", async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window, "speechSynthesis", { value: {
       getVoices: () => [], cancel: () => {},
@@ -104,7 +104,7 @@ test("Vorlesemarkierung bleibt nach Bindestrichwörtern beim richtigen Wort", as
   await expect(page.locator("#reader .w.speaking")).toHaveAttribute("data-word", "ist", { timeout: 1500 });
 });
 
-test("Manuell ergänzter Text kann nach leerem OCR-Ergebnis vorgelesen werden", async ({ page }) => {
+test("Manually entered text can be read aloud after an empty OCR result", async ({ page }) => {
   await openStoredBook(page, [{ text: "" }]);
   await expect(page.locator("#readBtn")).toBeDisabled();
   await page.fill("#text", "Nu har siden tekst");
@@ -112,7 +112,7 @@ test("Manuell ergänzter Text kann nach leerem OCR-Ergebnis vorgelesen werden", 
   await expect(page.locator("#readBtn")).toBeEnabled({ timeout: 1500 });
 });
 
-test("Während OCR gelöschte Seite kehrt beim Öffnen nicht zurück", async ({ page }) => {
+test("A page deleted during OCR stays deleted after reopening", async ({ page }) => {
   await page.route("**/tesseract.min.js", route => route.fulfill({ contentType: "text/javascript", body: `
     let first = true;
     window.Tesseract = { createWorker: async () => ({
@@ -140,12 +140,12 @@ test("Während OCR gelöschte Seite kehrt beim Öffnen nicht zurück", async ({ 
   await expect(page.locator("#count")).toHaveText("1 / 1", { timeout: 1500 });
 });
 
-test("Bilder alter Buchansichten werden beim erneuten Öffnen freigegeben", async ({ page }) => {
+test("Releases images from previous book views when reopening", async ({ page }) => {
   await openStoredBook(page, [{ text: "En side med billede", image: true }]);
   const previousUrl = await page.locator("#origImg").getAttribute("src");
   await page.click("#homeBtn"); await page.locator(".book").click();
   await expect(page.locator("#text")).toHaveValue("En side med billede");
-  expect(await page.locator("#origImg").getAttribute("src")).not.toBe(previousUrl);
+  await expect(page.locator("#origImg")).not.toHaveAttribute("src", previousUrl!);
   const isReadable = (url: string) => page.evaluate(async url => {
     try { return (await fetch(url)).ok; } catch { return false; }
   }, url);

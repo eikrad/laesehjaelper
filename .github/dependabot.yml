@@ -1,5 +1,5 @@
-# Abhängigkeiten aktuell halten: Dependabot öffnet wöchentlich Pull Requests (gesammelt),
-# Sicherheitsupdates sofort. Gemergt wird wie immer nur nach grüner CI und durch den Maintainer.
+# Keep dependencies current: Dependabot opens grouped pull requests every week,
+# with security updates immediately. Only the maintainer merges, after CI passes.
 version: 2
 updates:
   - package-ecosystem: npm

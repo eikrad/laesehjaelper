@@ -1,5 +1,5 @@
 /// <reference types="node" />
-// Baut die App nach dist/: eine index.html plus die Dateien für die Texterkennung.
+// Build the app into dist/: index.html plus text-recognition assets.
 import { build } from "esbuild";
 import fs from "node:fs";
 
@@ -9,7 +9,7 @@ fs.rmSync(out, { recursive: true, force: true });
 fs.mkdirSync(`${out}/core`, { recursive: true });
 fs.mkdirSync(`${out}/lang`, { recursive: true });
 
-// COVERAGE=1: unminifiziert mit eingebetteter Source-Map, damit die E2E-Abdeckung den Quelldateien zugeordnet werden kann
+// COVERAGE=1: unminified code with an inline source map to map E2E coverage to source files.
 const coverage = !!process.env.COVERAGE;
 const app = await build({
   entryPoints: ["src/app.ts"], bundle: true, minify: !coverage, format: "iife", write: false,
@@ -27,11 +27,11 @@ fs.writeFileSync(`${out}/index.html`, html);
 
 const copy = (from: string, to: string): void => fs.copyFileSync(from, `${out}/${to}`);
 
-// Service Worker mit Versionsnummer, damit jede neue Version den alten Cache ersetzt
+// Version the service worker so each new version replaces the previous cache.
 const version = new Date().toISOString().replace(/\D/g, "").slice(0, 14);
 await build({ entryPoints: ["src/sw.ts"], bundle: true, minify: true, format: "iife", outfile: `${out}/sw.js`, define: { VERSION: JSON.stringify(version) } });
 
-// App-Manifest und Symbole
+// App manifest and icons.
 fs.writeFileSync(`${out}/manifest.webmanifest`, JSON.stringify({
   name: "Læsehjælper",
   short_name: "Læsehjælper",
@@ -50,21 +50,21 @@ fs.writeFileSync(`${out}/manifest.webmanifest`, JSON.stringify({
 for (const f of ["icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"]) copy(`assets/${f}`, f);
 copy(`${nm}/tesseract.js/dist/tesseract.min.js`, "tesseract.min.js");
 copy(`${nm}/@techstark/opencv-js/dist/opencv.js`, "opencv.js");
-// Fehler in tesseract.js (noch in v7) umgehen: bei mitgelieferten Sprachdaten verbindet der Worker
-// beim Initialisieren die Sprachen über t.data statt t.code. Wir laden die Sprachdaten selbst,
-// daher hier korrigieren. (Das Laden selbst nutzt in v7 schon _lang.code, siehe worker-script.)
+// Work around a tesseract.js bug still present in v7: initialization joins supplied language
+// data using t.data instead of t.code. We supply the data ourselves, so patch this here.
+// Loading already uses _lang.code in v7; see worker-script.
 const worker = fs.readFileSync(`${nm}/tesseract.js/dist/worker.min.js`, "utf8");
 const bug = 'return"string"==typeof t?t:t.data}';
-if (!worker.includes(bug)) throw new Error("worker.min.js: Patch-Stelle nicht gefunden");
+if (!worker.includes(bug)) throw new Error("worker.min.js: patch location not found");
 fs.writeFileSync(`${out}/worker.min.js`, worker.replace(bug, 'return"string"==typeof t?t:t.code}'));
-// Nur LSTM-Builds; tesseract.js wählt je nach Gerät (relaxed SIMD ab v7 am schnellsten).
+// LSTM builds only; tesseract.js selects one for the device (relaxed SIMD is fastest from v7).
 for (const f of ["tesseract-core-lstm.wasm.js", "tesseract-core-simd-lstm.wasm.js", "tesseract-core-relaxedsimd-lstm.wasm.js"])
   copy(`${nm}/tesseract.js-core/${f}`, `core/${f}`);
-// Sprachdaten als JS-Dateien (Base64), weil der Artifact-Host nur bestimmte Dateitypen ausliefert.
+// Package language data as Base64 in JS files because the artifact host only serves certain file types.
 for (const l of ["dan", "deu", "eng"])
   fs.writeFileSync(`${out}/lang/${l}.js`, `window.TRAINEDDATA=window.TRAINEDDATA||{};window.TRAINEDDATA.${l}="${b64(`${nm}/@tesseract.js-data/${l}/4.0.0_best_int/${l}.traineddata.gz`)}";`);
 
-// Dänische Wortliste für „Wortteile“ (Stavekontrolden, MPL 1.1), nur Grundformen in Kleinbuchstaben.
+// Danish word-parts dictionary (Stavekontrolden, MPL 1.1), lowercase base forms only.
 {
   const dic = fs.readFileSync(`${nm}/dictionary-da/index.dic`, "utf8").split("\n").slice(1);
   const words = new Set<string>();
@@ -72,4 +72,4 @@ for (const l of ["dan", "deu", "eng"])
   fs.writeFileSync(`${out}/lang/da-words.js`, `window.WORDS=window.WORDS||{};window.WORDS.da=${JSON.stringify([...words].sort().join("\n"))};`);
 }
 
-console.log("Fertig: dist/");
+console.log("Built: dist/");

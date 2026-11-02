@@ -1,19 +1,19 @@
 ---
-name: Fehler
-about: Etwas funktioniert nicht wie erwartet
+name: Bug report
+about: Something does not work as expected
 title: ""
 labels: bug
 ---
 
-## Was passiert?
+## What happens?
 
-## Was hätte passieren sollen?
+## What should happen?
 
-## So lässt es sich nachstellen
+## Steps to reproduce
 1. …
 
-## Umgebung
-- Gerät / Browser:
-- App installiert oder im Browser:
+## Environment
+- Device / browser:
+- Installed app or browser tab:
 
-<!-- Bitte keine Fotos aus urheberrechtlich geschützten Büchern anhängen, wenn sie öffentlich sichtbar wären. -->
+<!-- Do not attach copyrighted book photos if they would become publicly visible. -->

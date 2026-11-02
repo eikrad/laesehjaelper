@@ -3,11 +3,11 @@ import { CoverageReport } from "monocart-coverage-reports";
 import { e2eCoverage } from "./coverage-options";
 
 /**
- * Playwright-`test` mit automatischer Abdeckungsmessung (nur mit COVERAGE=1):
- * Chromium meldet, welcher Code der App im Browser lief.
+ * Playwright `test` with automatic coverage collection (only with COVERAGE=1):
+ * Chromium reports which application code ran in the browser.
  *
- * Beim Neuladen verwirft Chromium die Zählungen der alten Seite. Darum wird vor jedem
- * `goto`/`reload` der bisherige Stand gesichert und die Messung neu gestartet.
+ * Reloading discards coverage counts from the previous page. Before each
+ * `goto`/`reload`, save the current counts and restart coverage collection.
  */
 export const test = base.extend<{ autoCoverage: void }>({
   autoCoverage: [async ({ page }, use) => {
@@ -16,7 +16,7 @@ export const test = base.extend<{ autoCoverage: void }>({
     const start = () => page.coverage.startJSCoverage({ resetOnNavigation: false });
     const save = async () => {
       const data = await page.coverage.stopJSCoverage();
-      for (const entry of data) await report.add([entry]);   // einzeln, damit gleiche Skripte zusammengeführt werden
+      for (const entry of data) await report.add([entry]);   // Add entries individually so matching scripts are merged.
     };
     for (const m of ["goto", "reload"] as const) {
       const orig = page[m].bind(page) as (...a: unknown[]) => ReturnType<Page[typeof m]>;

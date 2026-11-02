@@ -1,14 +1,14 @@
 ---
 name: Epic
-about: Großes Ziel aus Sicht der Nutzer, wird in Stories aufgeteilt (nur Maintainer)
+about: A user goal split into stories (maintainer only)
 title: "Epic: "
 labels: epic, roadmap
 ---
 
-**Als** … **möchte ich** … **, damit** …
+**As** … **I want** … **so that** …
 
 ## Stories
-Werden als Unter-Issues (Sub-issues) dieses Epics angelegt.
+Create them as sub-issues of this epic.
 
-## Fertig, wenn
+## Done when
 - …

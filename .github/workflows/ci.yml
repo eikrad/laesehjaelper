@@ -19,34 +19,36 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          persist-credentials: false   # die CI pusht nie, also keine Zugangsdaten im Arbeitsverzeichnis
+          persist-credentials: false   # CI never pushes, so keep credentials out of the working tree
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: 26   # aktuelle LTS (seit 28. 10. 2026)
+          node-version: 26   # current LTS (since 2026-10-28)
           cache: npm
       - run: npm ci
-      - name: Bekannte Sicherheitslücken in Abhängigkeiten
+      - name: Dependency security audit
         run: npm audit --audit-level=moderate
-      - name: Typ-Check
+      - name: Lint
+        run: npm run lint
+      - name: Type check
         run: npm run typecheck
-      - name: Unit-Tests (mit Abdeckung)
+      - name: Unit tests (with coverage)
         run: npm run coverage:unit
-      - name: Browser für End-to-End-Tests
+      - name: Browser for end-to-end tests
         run: npx playwright install --with-deps chromium
-      - name: End-to-End-Tests (mit Abdeckung)
+      - name: End-to-end tests (with coverage)
         run: npm run coverage:e2e
-      - name: Testabdeckung prüfen
+      - name: Check test coverage
         run: node coverage.ts
-      - name: Abdeckungsbericht
+      - name: Coverage report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage
           path: coverage/merged/
           retention-days: 14
-      - name: Build (für die Seite, minifiziert)
+      - name: Build (minified site)
         run: npm run build
-      - name: Testbericht
+      - name: Test report
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
@@ -55,7 +57,7 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
-      - name: Seite für GitHub Pages
+      - name: Site for GitHub Pages
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

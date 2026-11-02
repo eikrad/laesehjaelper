@@ -18,16 +18,16 @@
 @font-face { font-family: "OpenDyslexic"; font-weight: 700; src: url(data:font/woff2;base64,%%OD_700%%) format("woff2"); }
 
 :root {
-  /* Farben */
-  --sky: #f2f3f5;        /* App-Hintergrund, neutrales Hellgrau */
-  --ink: #1d2131;        /* Text und Hauptknöpfe */
+  /* Colors */
+  --sky: #f2f3f5;        /* App background, neutral light gray */
+  --ink: #1d2131;        /* Text and primary buttons */
   --muted: #646a7c;
   --line: #e0e3e9;
   --surface: #ffffff;
-  --blue: #2e4fd1;       /* erste Silbe, Links */
-  --red: #d9473b;        /* zweite Silbe */
-  --mark: #fde68a;       /* Markierung beim Vorlesen */
-  /* Silben im Lesetext (einstellbar) */
+  --blue: #2e4fd1;       /* First syllable, links */
+  --red: #d9473b;        /* Second syllable */
+  --mark: #fde68a;       /* Read-aloud highlighting */
+  /* Syllables in reading text (configurable) */
   --s0: var(--blue);
   --s1: var(--red);
   --page-bg: #ffffff;
@@ -56,7 +56,7 @@ button { cursor: pointer; }
 svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .wrap { max-width: 760px; margin: 0 auto; padding: 14px 18px 120px; }
 
-/* Kopfzeile */
+/* Header */
 header.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 4px 0 8px; }
 .brand { display: flex; align-items: center; gap: 9px; cursor: pointer; border-radius: 10px; }
 .brand .name { font-size: 18px; font-weight: 700; }
@@ -65,7 +65,7 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .pill button { border: 0; background: none; border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 15px; color: var(--muted); }
 .pill button.on { background: var(--ink); color: #fff; }
 
-/* Startseite */
+/* Start screen */
 .hero { padding: 40px 0 8px; }
 .hero h1 {
   font-size: clamp(44px, 12vw, 76px); line-height: 1.05; letter-spacing: -0.02em; font-weight: 700;
@@ -101,7 +101,7 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .startrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; margin: 18px 0 0; }
 .startrow .lbl { font-size: 15px; color: var(--muted); margin-right: 8px; }
 .linkbtn { background: none; border: 0; padding: 4px 0; color: var(--blue); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
-/* Bücherregal */
+/* Bookshelf */
 .shelf { margin: 44px 0 0; }
 .shelf h2 { font-size: 20px; margin: 0 0 14px; }
 .books { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px 16px; }
@@ -137,7 +137,7 @@ body.editing .thumbs { padding-bottom: 14px; gap: 20px; }
 .disclaimer summary { cursor: pointer; font-weight: 700; color: var(--ink); }
 .disclaimer p { margin-top: 8px; line-height: 1.55; }
 
-/* Leseansicht */
+/* Reader view */
 .pagecard { background: var(--page-bg); border-radius: 16px; overflow: hidden; box-shadow: 0 0 0 1px var(--line); }
 .orig { display: flex; justify-content: center; background: #e9ebef; padding: 14px; }
 .orig img { max-width: 100%; max-height: 280px; border-radius: 12px; display: block; }
@@ -202,7 +202,7 @@ body.editing .thumbs { padding-bottom: 14px; gap: 20px; }
 .thumbs .demo { background: #fff; font-size: 12px; color: var(--muted); }
 .thumbs .add { width: 56px; height: 74px; border-radius: 12px; border: 2px dashed #b7bde6; display: grid; place-items: center; color: var(--muted); cursor: pointer; flex: none; }
 
-/* Werkzeugleiste unten */
+/* Bottom toolbar */
 .dock {
   position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 20;
   display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 999px;
@@ -219,7 +219,7 @@ body.editing .thumbs { padding-bottom: 14px; gap: 20px; }
 .dock .sep { width: 1px; height: 24px; background: rgba(255,255,255,.2); margin: 0 2px; }
 @media (max-width: 440px) { .dock .read span, .dock .hide-sm { display: none; } .dock .read { padding: 0 14px; } .dock .count { min-width: 50px; } }
 
-/* Einstellungen als Blatt über der Leiste */
+/* Settings sheet above the toolbar */
 .settings {
   position: fixed; left: 50%; transform: translate(-50%, 16px); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 70px); z-index: 19;
   width: min(560px, calc(100vw - 20px)); max-height: 66vh; overflow-y: auto;
@@ -242,7 +242,7 @@ input[type=range] { width: 100%; accent-color: var(--blue); }
 .swatches button { width: 38px; height: 38px; border-radius: 50%; border: 0; box-shadow: inset 0 0 0 1.5px var(--line); }
 .swatches button.on { box-shadow: inset 0 0 0 1.5px var(--line), 0 0 0 3px #fff, 0 0 0 5.5px var(--ink); }
 
-/* Zuschnitt */
+/* Cropping */
 .crop { position: fixed; left: 0; right: 0; top: 0; z-index: 40; background: #14171f; color: #fff; display: flex; flex-direction: column; }
 .crop-head { padding: max(14px, env(safe-area-inset-top)) 18px 10px; }
 .crop-head strong { display: block; font-size: 18px; }
@@ -278,7 +278,7 @@ input[type=range] { width: 100%; accent-color: var(--blue); }
 .pick input::-moz-color-swatch { border: 0; border-radius: 50%; }
 @media (max-width: 480px) { .own { margin-left: 0; padding-left: 0; border-left: 0; } }
 
-/* Lesemodus: nur der Text */
+/* Focus mode: text only */
 body.focus header.top, body.focus .orig, body.focus .edit, body.focus .thumbs, body.focus .settings, body.focus .foot, body.focus .dock > :not(.keep) { display: none !important; }
 body.focus .wrap { max-width: none; padding: 0; }
 body.focus .pagecard { border-radius: 0; box-shadow: none; min-height: 100vh; }
@@ -333,7 +333,7 @@ body.focus .together { display: none !important; }
     </div>
   </header>
 
-  <!-- Startseite -->
+  <!-- Start screen -->
   <section id="start">
     <div class="hero">
       <h1 id="heroWord"></h1>
@@ -371,7 +371,7 @@ body.focus .together { display: none !important; }
     </div>
   </section>
 
-  <!-- Leseansicht -->
+  <!-- Reader view -->
   <section id="app" hidden>
     <div class="bookbar">
       <input id="bookTitle" autocomplete="off" data-tp="titlePh">

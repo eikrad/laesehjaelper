@@ -3,7 +3,7 @@ import path from "node:path";
 
 export const fixture = (name: string) => path.resolve("tests/fixtures", name);
 
-/** Frischer Zustand: keine Einstellungen, keine Bücher. */
+/** Fresh state: no settings or books. */
 export async function fresh(page: Page) {
   await page.goto("/");
   await page.evaluate(async () => {
@@ -13,7 +13,7 @@ export async function fresh(page: Page) {
   await page.reload();
 }
 
-/** Foto(s) über den Hauptknopf laden und im Zuschnitt-Dialog jeweils übernehmen. */
+/** Load photos through the main button and confirm each one in the crop dialog. */
 export async function addPhotos(page: Page, files: string[], input = "#file") {
   await page.setInputFiles(input, files.map(fixture));
   for (let i = 0; i < files.length; i++) {
@@ -23,7 +23,7 @@ export async function addPhotos(page: Page, files: string[], input = "#file") {
   }
 }
 
-/** Warten, bis die aktuelle Seite erkannt und angezeigt ist. */
+/** Wait until the current page has been recognized and displayed. */
 export async function waitForText(page: Page) {
   await expect(page.locator("#reader .w").first()).toBeVisible({ timeout: 200_000 });
 }

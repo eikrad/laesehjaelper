@@ -1,12 +1,12 @@
 /**
- * Fettdruck erkennen. Tesseract 5 (LSTM) liefert keine Schriftmerkmale, darum messen wir
- * die Strichstärke jedes Worts im Bild und vergleichen sie mit dem Üblichen auf der Seite.
+ * Detect bold text. Tesseract 5 (LSTM) does not provide font attributes, so we measure
+ * the stroke width of each word in the image and compare it with the page baseline.
  */
 
 /**
- * Typische Strichstärke in Pixeln aus den waagrechten Tinten-Läufen im Ausschnitt.
- * Senkrechte Striche (die meisten Buchstaben haben welche) ergeben so genau ihre Breite.
- * `g` = Graustufen (0 = schwarz), Zeile für Zeile. NaN, wenn es keinen Kontrast gibt.
+ * Typical stroke width in pixels, measured from horizontal ink runs in the crop.
+ * Vertical strokes, present in most letters, yield their actual width this way.
+ * `g` = grayscale (0 = black), row by row. Returns NaN when there is no contrast.
  */
 export function strokeWidth(g: ArrayLike<number>, w: number, h: number): number {
   let lo = 255, hi = 0;
@@ -23,16 +23,16 @@ export function strokeWidth(g: ArrayLike<number>, w: number, h: number): number 
     }
   }
   if (!runs.length) return NaN;
-  // Mittel der mittleren Hälfte: robust gegen lange Querstriche, feiner als ein ganzzahliger Median
+  // Mean of the middle half: robust to long crossbars, finer than an integer median
   runs.sort((a, b) => a - b);
   const mid = runs.slice(runs.length >> 2, Math.max((runs.length >> 2) + 1, (3 * runs.length) >> 2));
   return mid.reduce((x, y) => x + y, 0) / mid.length;
 }
 
-const MIN_WORDS = 6;    // darunter gibt es keinen verlässlichen Vergleich
-const FACTOR = 1.5;     // so viel dicker als der Median gilt als fett (echtes Fett: etwa doppelt)
+const MIN_WORDS = 6;    // too few words for a reliable comparison
+const FACTOR = 1.5;     // stroke width above this median multiplier counts as bold (typically about twice as thick)
 
-/** Welche Wörter fett sind, aus Strichstärke relativ zur Worthöhe. NaN = nicht gemessen. */
+/** Identify bold words from stroke width relative to word height. NaN = not measured. */
 export function boldFlags(ratios: number[]): boolean[] {
   const valid = ratios.filter((r) => Number.isFinite(r)).sort((a, b) => a - b);
   if (valid.length < MIN_WORDS) return ratios.map(() => false);
