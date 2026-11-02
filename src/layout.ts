@@ -11,7 +11,7 @@ const ONLY_SIGNS = /^[\d.,:;!?»«"'„“”()\-–—]+$/u;
 
 const letters = (t: string): number => (t.match(/\p{L}/gu) || []).length;
 // Sieht wie ein Wort aus (Buchstaben, Silbenstriche, Satzzeichen am Rand)?
-const WORDLIKE = /^[»«"„“(]*\p{L}[\p{L}·.\-‐]*[.,:;!?»«"“”)]*$/u;
+const WORDLIKE = /^[»«"'‘’„“(]*\p{L}[\p{L}·.\-‐]*(?:['’]\p{L}[\p{L}·.\-‐]*)*[.,:;!?»«"'‘’“”)]*$/u;
 // Innerhalb einer sicheren Zeile reicht es, wie ein Wort auszusehen. Zahlen/Satzzeichen (z. B. „1.“) ab 60 %.
 const usable = (w: OcrWord): boolean => !!w.text && (WORDLIKE.test(w.text) || (ONLY_SIGNS.test(w.text) && w.confidence >= 60));
 // Sicheres Wort: daran erkennen wir, dass ein Zeilenstück echter Text ist.
