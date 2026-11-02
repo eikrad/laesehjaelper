@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { speechRate, showYourTurn } from "../../src/readflow";
+import { showYourTurn, speechRate, wordSteps } from "../../src/readflow";
 
 describe("speechRate", () => {
   it("liest langsam langsamer als normal", () => {
@@ -17,8 +17,6 @@ describe("showYourTurn", () => {
     expect(showYourTurn("end", "aus")).toBe(false);
   });
 });
-
-import { wordSteps } from "../../src/readflow";
 
 describe("wordSteps", () => {
   it("liest ganz, dann langsam in Silben, dann wieder ganz", () => {

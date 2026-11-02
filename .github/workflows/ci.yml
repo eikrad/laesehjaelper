@@ -25,14 +25,23 @@ jobs:
       - run: npm ci
       - name: Typ-Check
         run: npm run typecheck
-      - name: Unit-Tests
-        run: npm test
-      - name: Build
-        run: npm run build
+      - name: Unit-Tests (mit Abdeckung)
+        run: npm run coverage:unit
       - name: Browser für End-to-End-Tests
         run: npx playwright install --with-deps chromium
-      - name: End-to-End-Tests
-        run: npm run test:e2e
+      - name: End-to-End-Tests (mit Abdeckung)
+        run: npm run coverage:e2e
+      - name: Testabdeckung prüfen
+        run: node coverage.ts
+      - name: Abdeckungsbericht
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/merged/
+          retention-days: 14
+      - name: Build (für die Seite, minifiziert)
+        run: npm run build
       - name: Testbericht
         if: failure()
         uses: actions/upload-artifact@v4

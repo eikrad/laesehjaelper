@@ -909,7 +909,14 @@ const Lib = { detectPage, warpPage, orderCorners };
   let editT = 0;
   $<HTMLTextAreaElement>("text").oninput = e => {
     clearTimeout(editT);
-    editT = window.setTimeout(() => { pages[cur].text = val(e); syncParas(pages[cur]); renderContent(pages[cur]); savePage(pages[cur]); }, 250);
+    editT = window.setTimeout(() => {
+      const pg = pages[cur];
+      pg.text = val(e); syncParas(pg);
+      // Korrektur ist ab jetzt der Rohtext: Einstellungen (z. B. Silbenstriche) wirken weiter, ohne sie zu überschreiben
+      pg.rawText = pg.text;
+      pg.paras?.forEach(pa => { pa.raw = pa.text || ""; });
+      renderContent(pg); savePage(pg);
+    }, 250);
   };
 
   // ---------- Bilder laden ----------

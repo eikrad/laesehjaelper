@@ -3,3 +3,4 @@ dist/
 private-testbilder/
 test-results/
 playwright-report/
+coverage/
