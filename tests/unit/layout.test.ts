@@ -115,6 +115,13 @@ describe("englische OCR-Wörter", () => {
   });
 });
 
+it("behält den englischen Artikel am Anfang einer einzelnen Zeile", () => {
+  for (const article of ["A", "a"]) {
+    expect(texts(page(line(100, [[article, 97], ["small", 97], ["brown", 97], ["bear.", 97]]))))
+      .toEqual([`${article} small brown bear.`]);
+  }
+});
+
 it("behält englische Pluralgenitive und einfach zitierte Wörter", () => {
   expect(texts(page(line(100, [["The", 97], ["dogs’", 97], ["name", 97], ["is", 97], ["'Lucky'.", 97]]))))
     .toEqual(["The dogs’ name is 'Lucky'."]);

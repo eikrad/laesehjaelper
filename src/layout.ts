@@ -17,7 +17,7 @@ const usable = (w: OcrWord): boolean => !!w.text && (WORDLIKE.test(w.text) || (O
 // Sicheres Wort: daran erkennen wir, dass ein Zeilenstück echter Text ist.
 const strong = (w: OcrWord): boolean => letters(w.text) >= 2 && w.confidence >= 90 && WORDLIKE.test(w.text);
 // Am Rand eines Zeilenstücks muss ein Wort selbst einigermaßen sicher sein (rechts etwas weniger streng).
-const edgeOk = (w: OcrWord, min: number): boolean => w.confidence >= min && (letters(w.text) >= 2 || (ONLY_SIGNS.test(w.text) && w.confidence >= 85) || /^[IiÅåØøÆæ]$/.test(w.text));
+const edgeOk = (w: OcrWord, min: number): boolean => w.confidence >= min && (letters(w.text) >= 2 || (ONLY_SIGNS.test(w.text) && w.confidence >= 85) || /^[AaIiÅåØøÆæ][.,:;!?]?$/.test(w.text));
 
 const union = (bs: Box[]): Box => ({
   x0: Math.min(...bs.map((b) => b.x0)), y0: Math.min(...bs.map((b) => b.y0)),
