@@ -26,4 +26,12 @@ test("E-Book exportieren und wieder importieren", async ({ page }, info) => {
   await expect(page.locator("#bookTitle")).toHaveValue("Eksport");
   await expect(page.locator("#reader")).toHaveClass(/pagemode/);
   expect(await page.locator("#text").inputValue()).toContain("Pindsvinet");
+  await page.locator("#edit summary").click();
+  await expect(page.locator("#recropBtn")).toBeVisible({ timeout: 1500 });
+  await page.click("#recropBtn");
+  await expect(page.locator("#crop")).toBeVisible();
+  await expect(page.locator("#cropMsg")).not.toContainText("…");
+  await page.click("#cropWhole");
+  await waitForText(page);
+  expect(await page.locator("#text").inputValue()).toContain("Pindsvinet");
 });
