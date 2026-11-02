@@ -17,7 +17,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Text recognition (Danish, German, English) with [Tesseract.js](https://github.com/naptha/tesseract.js)
 - Syllable splitting based on the Danish, German and English TeX hyphenation patterns ([hyphen](https://github.com/ytiurin/hyphen))
 - Syllables shown in alternating colors (blue/red, colors adjustable), as arcs, or both
-- Fonts: Andika, OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
+- Fonts: Andika (default), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Adjustable font size, letter spacing, line spacing and background color
 - Tap a word to hear it read aloud, or read the whole page with word-by-word highlighting
 - “Hyphens in the book” setting: for early readers that split words into syllables with hyphens themselves (“sko-le”)
@@ -59,6 +59,32 @@ The project is written in TypeScript (strict).
 - `src/types.ts`: shared types
 - `build.ts`: builds `dist/` with esbuild and copies Tesseract, OpenCV and language files
 - `tests/`: unit tests, end-to-end tests and self-made test pages
+
+## What does the research say?
+
+Læsehjælper is a reading tool, not a treatment. Its settings are based on what studies of beginning readers and children with dyslexia show:
+
+- **Spacing:** More space between letters helps many children with dyslexia read faster and more accurately (Zorzi et al. 2012) – but only if word spacing grows too (Galliussi et al. 2020). Læsehjælper therefore increases word spacing automatically.
+- **Short lines** help some readers with dyslexia, especially those with weak visual attention; others read better with normal lines (Schneps et al. 2013).
+- **Font:** The letter shapes themselves make little difference. OpenDyslexic gave no advantage, and no child preferred it (Wery & Diliberto 2017; Galliussi et al. 2020). The default is therefore Andika, a plain, clear font; OpenDyslexic can be chosen if your child likes it.
+- **Coloured syllables** help some children at the start and not others; hyphens inside words slow reading down (Häikiö et al. 2015; Brügelmann 2025). Try what your child likes, and switch the colours off once reading is fluent.
+- **Reading aloud** helps comprehension; highlighting each word adds nothing extra (Keelor et al. 2023). Reading the same text several times, ideally after hearing it, makes reading more fluent (Lee & Yoon 2017).
+- **Coloured backgrounds or overlays** have no proven effect beyond placebo (Griffiths et al. 2016). The background colour is purely a matter of comfort.
+- **Teaching:** Systematic work on letters and sounds is the best-supported help for dyslexia (Galuschka et al. 2014). Danish is one of the languages in which children take longest to read accurately (Seymour et al. 2003).
+
+Sources:
+
+- Zorzi et al. 2012, *PNAS* — [doi:10.1073/pnas.1205566109](https://doi.org/10.1073/pnas.1205566109)
+- Galliussi et al. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
+- Schneps et al. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)
+- Wery & Diliberto 2017, *Annals of Dyslexia* — [doi:10.1007/s11881-016-0127-1](https://doi.org/10.1007/s11881-016-0127-1)
+- Häikiö et al. 2015, *Journal of Cognitive Psychology* — [doi:10.1080/20445911.2014.982126](https://doi.org/10.1080/20445911.2014.982126)
+- Brügelmann 2025 — [pedocs.de](https://www.pedocs.de/volltexte/2025/34472/pdf/Bruegelmann_2025_Red_and_blue.pdf)
+- Keelor et al. 2023, *Annals of Dyslexia* — [doi:10.1007/s11881-023-00281-9](https://doi.org/10.1007/s11881-023-00281-9)
+- Lee & Yoon 2017, *Journal of Learning Disabilities* — [doi:10.1177/0022219415605194](https://doi.org/10.1177/0022219415605194)
+- Galuschka et al. 2014, *PLOS ONE* — [doi:10.1371/journal.pone.0089900](https://doi.org/10.1371/journal.pone.0089900)
+- Griffiths et al. 2016, *Ophthalmic & Physiological Optics* — [doi:10.1111/opo.12316](https://doi.org/10.1111/opo.12316)
+- Seymour et al. 2003, *British Journal of Psychology* — [doi:10.1348/000712603321661859](https://doi.org/10.1348/000712603321661859)
 
 ## Known limitations
 
