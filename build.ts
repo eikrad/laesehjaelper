@@ -50,13 +50,15 @@ fs.writeFileSync(`${out}/manifest.webmanifest`, JSON.stringify({
 for (const f of ["icon-192.png", "icon-512.png", "icon-maskable-512.png", "apple-touch-icon.png"]) copy(`assets/${f}`, f);
 copy(`${nm}/tesseract.js/dist/tesseract.min.js`, "tesseract.min.js");
 copy(`${nm}/@techstark/opencv-js/dist/opencv.js`, "opencv.js");
-// Fehler in tesseract.js 5 umgehen: bei mitgelieferten Sprachdaten wird beim Initialisieren
-// t.data statt t.code verwendet. Wir laden die Sprachdaten selbst, daher hier korrigieren.
+// Fehler in tesseract.js (noch in v7) umgehen: bei mitgelieferten Sprachdaten verbindet der Worker
+// beim Initialisieren die Sprachen über t.data statt t.code. Wir laden die Sprachdaten selbst,
+// daher hier korrigieren. (Das Laden selbst nutzt in v7 schon _lang.code, siehe worker-script.)
 const worker = fs.readFileSync(`${nm}/tesseract.js/dist/worker.min.js`, "utf8");
 const bug = 'return"string"==typeof t?t:t.data}';
 if (!worker.includes(bug)) throw new Error("worker.min.js: Patch-Stelle nicht gefunden");
 fs.writeFileSync(`${out}/worker.min.js`, worker.replace(bug, 'return"string"==typeof t?t:t.code}'));
-for (const f of ["tesseract-core-lstm.wasm.js", "tesseract-core-simd-lstm.wasm.js"])
+// Nur LSTM-Builds; tesseract.js wählt je nach Gerät (relaxed SIMD ab v7 am schnellsten).
+for (const f of ["tesseract-core-lstm.wasm.js", "tesseract-core-simd-lstm.wasm.js", "tesseract-core-relaxedsimd-lstm.wasm.js"])
   copy(`${nm}/tesseract.js-core/${f}`, `core/${f}`);
 // Sprachdaten als JS-Dateien (Base64), weil der Artifact-Host nur bestimmte Dateitypen ausliefert.
 for (const l of ["dan", "deu", "eng"])
