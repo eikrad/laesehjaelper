@@ -33,6 +33,8 @@ export interface DataPage {
   /** eigene Frage für „gemeinsam lesen“ */
   question?: string;
   input?: Uint8Array | null;
+  /** Unbeschnittenes Foto für spätere Änderungen am Seitenrahmen. */
+  photo?: Uint8Array | null;
   clean?: Uint8Array | null;
 }
 export interface DataBook { title: string; pages: DataPage[] }
@@ -103,12 +105,13 @@ ${pages.map((_, i) => `<li><a href="page${i + 1}.xhtml">${esc(opts.pageLabel)} $
     pages: data.pages.map((p, i) => {
       const n = i + 1;
       if (p.input) add(`laesehjaelper/input${n}.jpg`, p.input, "image/jpeg", `din${n}`);
+      if (p.photo) add(`laesehjaelper/photo${n}.jpg`, p.photo, "image/jpeg", `dph${n}`);
       // Das übermalte Seitenbild steckt schon in images/; nur wenn es fehlt, legen wir es extra ab
       const pageImg = pages[i]?.image ? `../images/page${n}.jpg` : null;
       if (p.clean && !pageImg) add(`laesehjaelper/clean${n}.jpg`, p.clean, "image/jpeg", `dcl${n}`);
       return {
         lang: p.lang, text: p.text, rawText: p.rawText, paras: p.paras, workW: p.workW, workH: p.workH, corners: p.corners, question: p.question || "",
-        input: p.input ? `input${n}.jpg` : null, clean: pageImg || (p.clean ? `clean${n}.jpg` : null),
+        input: p.input ? `input${n}.jpg` : null, photo: p.photo ? `photo${n}.jpg` : null, clean: pageImg || (p.clean ? `clean${n}.jpg` : null),
       };
     }),
   };
@@ -163,6 +166,7 @@ export function readEpub(bytes: Uint8Array): DataBook | null {
       corners: (p.corners as Frame | Corners | null) ?? null,
       question: typeof p.question === "string" ? p.question : "",
       input: file(p.input as string | null),
+      photo: file(p.photo as string | null),
       clean: file(p.clean as string | null),
     })),
   };
