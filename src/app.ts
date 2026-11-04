@@ -114,7 +114,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse", view: "Visning", viewPage: "Bogens side", viewText: "Kun teksten", hyph: "Bindestreger i bogen", hyphNormal: "Almindelige", hyphBook: "Stavelsesdeling", hyphHint: "Vælg „Stavelsesdeling“, hvis bogen selv deler ord med bindestreg, f.eks. „sko-le“.",
       background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
       original: "Originalside", show: "Vis", hide: "Skjul", origAlt: "Originalside",
-      editSummary: "Tjek og ret teksten",
+      editSummary: "Tjek og ret teksten", bookTools: "Bogværktøjer",
       editHint: "Tom linje = nyt afsnit. Du kan selv sætte stavelsesgrænser med ·, f.eks. <b>hun·den</b>. Fed skrift: *ord*.",
       foot: "Alt foregår på din egen telefon eller computer. Billederne bliver ikke sendt nogen steder hen.",
       noText: "Der blev ikke fundet nogen tekst på denne side.<br>Åbn „Tjek og ret teksten“ og skriv den selv.",
@@ -143,7 +143,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Syllable colours", cBlueRed: "Blue and red", cBlueBlack: "Blue and black", cRedBlack: "Red and black", cPurpleGreen: "Purple and green", syl1: "1st syllable", syl2: "2nd syllable", view: "View", viewPage: "Book page", viewText: "Text only", hyph: "Hyphens in the book", hyphNormal: "Normal", hyphBook: "Syllable breaks", hyphHint: "Choose “Syllable breaks” if the book itself splits words with hyphens, e.g. “gar-den”.",
       background: "Background", bWhite: "White", bCream: "Cream", bYellow: "Yellow", bBlue: "Light blue", bGreen: "Light green",
       original: "Original page", show: "Show", hide: "Hide", origAlt: "Original page",
-      editSummary: "Check and correct the text",
+      editSummary: "Check and correct the text", bookTools: "Book tools",
       editHint: "Empty line = new paragraph. Set your own syllable breaks with ·, e.g. <b>gar·den</b>. Bold: *word*.",
       foot: "Everything happens on your own phone or computer. Your photos are not sent anywhere.",
       noText: "No text was found on this page.<br>Open “Check and correct the text” and type it in yourself.",
@@ -172,7 +172,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe", view: "Ansicht", viewPage: "Buchseite", viewText: "Nur Text", hyph: "Bindestriche im Buch", hyphNormal: "Normal", hyphBook: "Silbentrennung", hyphHint: "„Silbentrennung“ wählen, wenn das Buch Wörter selbst mit Bindestrich trennt, z. B. „Scho-ko-la-de“.",
       background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
       original: "Originalseite", show: "Zeigen", hide: "Verbergen", origAlt: "Originalseite",
-      editSummary: "Text prüfen und korrigieren",
+      editSummary: "Text prüfen und korrigieren", bookTools: "Buchwerkzeuge",
       editHint: "Leere Zeile = neuer Absatz. Eigene Silbengrenzen mit · setzen, z.&nbsp;B. <b>O·ma</b>. Fett: *Wort*.",
       foot: "Alles passiert auf deinem eigenen Handy oder Computer. Die Fotos werden nirgendwohin geschickt.",
       noText: "Auf dieser Seite wurde kein Text gefunden.<br>Öffne „Text prüfen“ und tippe ihn selbst ein.",
@@ -236,7 +236,6 @@ const Lib = { detectPage, warpPage, orderCorners };
     t("heroWord").split("·").forEach((x, i) => { const s = document.createElement("span"); s.className = "s s" + (i % 2); s.textContent = x; hw.append(s); });
     hw.setAttribute("aria-label", t("docTitle"));
     document.querySelectorAll<HTMLInputElement>("[data-tp]").forEach(el => { el.placeholder = t(el.dataset.tp!); });
-    $<HTMLButtonElement>("editPagesBtn").textContent = t(document.body.classList.contains("editing") ? "done" : "editPages");
     if (!$("start").hidden) renderShelf();
     if (pages.length) render();
   }
@@ -342,6 +341,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   }
   function releasePageImages(pg: Page) { releaseImage(pg.img); releaseImage(pg.clean); }
   function newBook(demo = false) {
+    showBookMenu(false); showCheck(false);
     pages.forEach(releasePageImages);
     book = { id: uid(), title: "", pageIds: [], lastPage: 0, cover: null, created: Date.now(), demo };
     pages.length = 0; cur = 0;
@@ -458,12 +458,33 @@ const Lib = { detectPage, warpPage, orderCorners };
 
   let titleTimer = 0;
   $<HTMLInputElement>("bookTitle").oninput = e => { if (book) { book.title = val(e).trim(); clearTimeout(titleTimer); titleTimer = window.setTimeout(saveBook, 400); } };
-  $<HTMLButtonElement>("editPagesBtn").onclick = () => {
-    const on = document.body.classList.toggle("editing");
-    $<HTMLButtonElement>("editPagesBtn").textContent = t(on ? "done" : "editPages");
+  // Book tools for adults, in one menu: check and correct the text, edit pages, save as e-book.
+  // Design inference from distracting storybook extras, not a tested benefit of this menu:
+  // Takacs, Swart & Bus (2015), doi:10.3102/0034654314566989.
+  function showBookMenu(on: boolean) {
+    $("bookMenu").hidden = !on;
+    $<HTMLButtonElement>("bookMenuBtn").setAttribute("aria-expanded", String(on));
+  }
+  $<HTMLButtonElement>("bookMenuBtn").onclick = () => showBookMenu($("bookMenu").hidden !== false);
+  $("bookMenu").addEventListener("click", e => { if ((e.target as Element).closest("button")) showBookMenu(false); });
+  document.addEventListener("pointerdown", e => { if (!(e.target as Element).closest(".bookmenu")) showBookMenu(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") showBookMenu(false); });
+  let checking = false;   // "Check and correct the text" was chosen from the menu.
+  function showCheck(on: boolean) {
+    checking = on;
+    if (!on) setMoving(false);
+    const d = $<HTMLDetailsElement>("edit"); d.hidden = !on; d.open = on;
+    if (on) d.scrollIntoView({ block: "nearest" });
+  }
+  $<HTMLButtonElement>("checkTextBtn").onclick = () => showCheck(true);
+  $("edit").addEventListener("toggle", () => { if (!$<HTMLDetailsElement>("edit").open) showCheck(false); });
+  function toggleEditing() {
+    document.body.classList.toggle("editing");
     $<HTMLButtonElement>("delBookBtn").classList.remove("armed"); $<HTMLButtonElement>("delBookBtn").textContent = t("deleteBook");
     renderThumbs();
-  };
+  }
+  $<HTMLButtonElement>("editPagesBtn").onclick = toggleEditing;
+  $<HTMLButtonElement>("editDoneBtn").onclick = toggleEditing;
   $<HTMLButtonElement>("delBookBtn").onclick = () => {
     const b = $<HTMLButtonElement>("delBookBtn");
     if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = t("confirmDelete"); return; }
@@ -897,7 +918,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       $("reader").classList.remove("comparing");
       renderContent(pg);
       $<HTMLTextAreaElement>("text").value = pg.text;
-      $<HTMLDetailsElement>("edit").hidden = false;
+      $<HTMLDetailsElement>("edit").hidden = !checking;
       $<HTMLButtonElement>("readBtn").disabled = !pg.text;
       if (!pg.text) showStatus(t("noText"));
     } else if (pg.status === "error") {

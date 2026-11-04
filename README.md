@@ -79,9 +79,11 @@ Læsehjælper is a reading tool, not a treatment. Its settings are based on what
 - **Reading aloud** helps comprehension; highlighting each word adds nothing extra (Keelor et al. 2023). Reading the same text several times, ideally after hearing it, makes reading more fluent (Lee & Yoon 2017).
 - **Coloured backgrounds or overlays** have no proven effect beyond placebo (Griffiths et al. 2016). The background colour is purely a matter of comfort.
 - **Teaching:** Systematic work on letters and sounds is the best-supported help for dyslexia (Galuschka et al. 2014). Danish is one of the languages in which children take longest to read accurately (Seymour et al. 2003).
+- **A calm reading screen:** Interactive extras in digital storybooks can distract from the story (Takacs, Swart & Bus 2015). Grouping adult tools in one book menu is a design inference from that research; the study did not test this menu or establish that it improves reading.
 
 Sources:
 
+- Takacs, Swart & Bus 2015, *Review of Educational Research* — [doi:10.3102/0034654314566989](https://doi.org/10.3102/0034654314566989)
 - Zorzi et al. 2012, *PNAS* — [doi:10.1073/pnas.1205566109](https://doi.org/10.1073/pnas.1205566109)
 - Galliussi et al. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
 - Schneps et al. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)

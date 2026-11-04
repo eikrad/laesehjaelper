@@ -79,9 +79,11 @@ Læsehjælper ist ein Lesewerkzeug, keine Behandlung. Die Einstellungen beruhen 
 - **Vorlesen** hilft beim Verstehen; eine Markierung jedes Worts bringt nichts zusätzlich (Keelor u. a. 2023). Denselben Text mehrmals zu lesen, am besten nachdem man ihn gehört hat, macht das Lesen flüssiger (Lee & Yoon 2017).
 - **Farbiger Hintergrund oder Farbfolien** haben keine nachgewiesene Wirkung über Placebo hinaus (Griffiths u. a. 2016). Die Hintergrundfarbe ist nur eine Frage dessen, was sich angenehm anfühlt.
 - **Unterricht:** Systematisches Üben von Buchstaben und Lauten ist die am besten belegte Hilfe bei Legasthenie (Galuschka u. a. 2014). Dänisch gehört zu den Sprachen, in denen sicheres Lesen am längsten dauert (Seymour u. a. 2003).
+- **Eine ruhige Leseansicht:** Interaktive Zusatzfunktionen in digitalen Bilderbüchern können von der Geschichte ablenken (Takacs, Swart & Bus 2015). Erwachsenenwerkzeuge in einem Buchmenü zu bündeln, ist eine daraus abgeleitete Gestaltungsentscheidung; die Studie hat dieses Menü nicht untersucht oder einen Nutzen für das Lesen belegt.
 
 Quellen:
 
+- Takacs, Swart & Bus 2015, *Review of Educational Research* — [doi:10.3102/0034654314566989](https://doi.org/10.3102/0034654314566989)
 - Zorzi u. a. 2012, *PNAS* — [doi:10.1073/pnas.1205566109](https://doi.org/10.1073/pnas.1205566109)
 - Galliussi u. a. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
 - Schneps u. a. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)

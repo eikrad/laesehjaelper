@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, fixture, fresh, waitForText } from "./helpers";
+import { addPhotos, bookTool, fixture, fresh, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -19,7 +19,7 @@ test("Photo of a page on a table: detect and straighten the page", async ({ page
 test("Crops the page again and reruns text recognition", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
-  await page.locator("#edit summary").click();
+  await bookTool(page, "checkTextBtn");
   await page.click("#recropBtn");
   await expect(page.locator("#crop")).toBeVisible();
   await expect(page.locator("#cropMsg")).not.toContainText("…", { timeout: 120_000 });
@@ -49,13 +49,13 @@ test("Book with multiple pages: navigate, add, reorder and delete pages", async 
   await page.click("#cropOk");
   await expect(page.locator(".thumb")).toHaveCount(3);
   // Edit pages: move the first page to the right, then delete it.
-  await page.click("#editPagesBtn");
+  await bookTool(page, "editPagesBtn");
   const first = await page.locator(".thumb img").first().getAttribute("src");
   await page.locator(".thumb").first().locator(".ctl button").last().click();
   expect(await page.locator(".thumb img").nth(1).getAttribute("src")).toBe(first);
   await page.locator(".thumb").nth(1).locator(".ctl .x").click();
   await expect(page.locator(".thumb")).toHaveCount(2);
-  await page.click("#editPagesBtn");
+  await page.click("#editDoneBtn");
 });
 
 test("Font, syllable hyphens in the book and reading mode", async ({ page }) => {
@@ -64,7 +64,7 @@ test("Font, syllable hyphens in the book and reading mode", async ({ page }) => 
   await page.selectOption("#font", { label: "OpenDyslexic" });
   expect(await page.locator("#reader").evaluate(el => getComputedStyle(el).fontFamily)).toContain("OpenDyslexic");
   await page.click("#setBtn");
-  await page.locator("#edit summary").click();
+  await bookTool(page, "checkTextBtn");
   await page.locator("#text").fill("Vi går i sko-le.");
   await expect(page.locator('#reader .w[data-word="sko-le"]')).toHaveCount(1);
   await page.click("#setBtn");
@@ -76,6 +76,59 @@ test("Font, syllable hyphens in the book and reading mode", async ({ page }) => 
   await expect(page.locator(".thumbs")).toBeHidden();
   await page.click("#focusBtn");
   await expect(page.locator("body")).not.toHaveClass(/focus/);
+});
+
+test("Book tools sit in one menu, so the reading screen stays calm", async ({ page }) => {
+  await addPhotos(page, ["side-da.jpg"]);
+  await waitForText(page);
+  // The reading screen: page, toolbar and thumbnails; no tools for adults.
+  for (const id of ["#reader", "#dock", "#thumbs", "#bookMenuBtn"]) await expect(page.locator(id), id).toBeVisible();
+  for (const id of ["#exportBtn", "#editPagesBtn", "#edit"]) await expect(page.locator(id), id).toBeHidden();
+  // Each tool is two taps away.
+  await page.click("#bookMenuBtn");
+  for (const id of ["#checkTextBtn", "#editPagesBtn", "#exportBtn"]) await expect(page.locator(id), id).toBeVisible();
+  await page.click("#checkTextBtn");
+  await expect(page.locator("#bookMenu")).toBeHidden();
+  await expect(page.locator("#text")).toBeVisible();
+  await page.locator("#edit summary").click();   // Folding it away hides it again.
+  await expect(page.locator("#edit")).toBeHidden();
+  await page.click("#bookMenuBtn");
+  await page.click("#editPagesBtn");
+  await expect(page.locator("body")).toHaveClass(/editing/);
+  await page.click("#editDoneBtn");
+  await expect(page.locator("body")).not.toHaveClass(/editing/);
+  // Escape or a tap outside closes the menu.
+  await page.click("#bookMenuBtn");
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#bookMenu")).toBeHidden();
+  await page.click("#bookMenuBtn");
+  await page.click("#bookTitle");
+  await expect(page.locator("#bookMenu")).toBeHidden();
+});
+
+test("Opening another book resets its editing tools", async ({ page }) => {
+  await page.click("#demoBtn");
+  await bookTool(page, "checkTextBtn");
+  await expect(page.locator("#edit")).toBeVisible();
+  await page.click("#bookMenuBtn");
+  await page.goBack();
+  await expect(page.locator("#start")).toBeVisible();
+  // Keyboard activation also starts a calm book, without relying on an outside pointer tap.
+  await page.locator("#demoBtn").press("Enter");
+  await expect(page.locator("#bookMenu")).toBeHidden();
+  await expect(page.locator("#edit")).toBeHidden();
+});
+
+test("Closing the text editor also ends moving text boxes", async ({ page }) => {
+  await addPhotos(page, ["side-da.jpg"]);
+  await waitForText(page);
+  await bookTool(page, "checkTextBtn");
+  await page.click("#moveBtn");
+  await expect(page.locator("#reader .grip").first()).toBeVisible();
+  await page.locator("#edit summary").click();
+  await expect(page.locator("#edit")).toBeHidden();
+  await expect(page.locator("#reader .grip")).toHaveCount(0);
+  await expect(page.locator("#reader")).not.toHaveClass(/moving/);
 });
 
 test("Reading mode shows only the text, read aloud and close", async ({ page }) => {
@@ -90,7 +143,7 @@ test("Reading mode shows only the text, read aloud and close", async ({ page }) 
   await page.keyboard.press("Escape");
   await expect(page.locator("#bookTitle")).toBeVisible();
   // Page-management controls must also disappear if editing was already active.
-  await page.click("#editPagesBtn");
+  await bookTool(page, "editPagesBtn");
   await expect(page.locator("#delBookBtn")).toBeVisible();
   await page.click("#focusBtn");
   await expect(page.locator("#delBookBtn")).toBeHidden();
@@ -137,7 +190,7 @@ test("A broken image file displays a clear message", async ({ page }) => {
 test("Preserves corrections when switching the syllable-hyphen setting", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
-  await page.locator("#edit summary").click();
+  await bookTool(page, "checkTextBtn");
   const t = await page.locator("#text").inputValue();
   await page.locator("#text").fill(t.replace("Pindsvinet", "Pindsvinet Bob-by"));
   await expect(page.locator('#reader .w[data-word="Bob-by"]')).toHaveCount(1);

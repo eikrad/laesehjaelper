@@ -27,3 +27,9 @@ export async function addPhotos(page: Page, files: string[], input = "#file") {
 export async function waitForText(page: Page) {
   await expect(page.locator("#reader .w").first()).toBeVisible({ timeout: 200_000 });
 }
+
+/** Choose a tool from the book menu in the book bar. */
+export async function bookTool(page: Page, id: "checkTextBtn" | "editPagesBtn" | "exportBtn") {
+  await page.click("#bookMenuBtn");
+  await page.click(`#${id}`);
+}

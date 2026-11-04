@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, fresh, waitForText } from "./helpers";
+import { addPhotos, bookTool, fresh, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -76,7 +76,7 @@ test("Each hint in the settings sits under its own choice", async ({ page }) => 
 
 test("Escape closes settings while the text editor has focus", async ({ page }) => {
   await page.click("#demoBtn");
-  await page.locator("#edit summary").click();
+  await bookTool(page, "checkTextBtn");
   await page.click("#setBtn");
   await page.locator("#text").focus();
   await page.keyboard.press("Escape");
@@ -86,7 +86,7 @@ test("Escape closes settings while the text editor has focus", async ({ page }) 
 test("Dismissing settings does not drag a text box underneath", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
-  await page.locator("#edit summary").click();
+  await bookTool(page, "checkTextBtn");
   await page.click("#moveBtn");
   const box = page.locator("#reader .tbox").first();
   await box.scrollIntoViewIfNeeded();
@@ -241,7 +241,7 @@ test("Reading together: two open questions and a custom question per page", asyn
 
 test("Text marked with *word* appears bold without asterisks", async ({ page }) => {
   await page.click("#demoBtn");
-  await page.locator("#edit summary").click();
+  await bookTool(page, "checkTextBtn");
   const t = await page.locator("#text").inputValue();
   await page.fill("#text", t.replace("pindsvin", "*pindsvin*"));
   await expect(page.locator('#reader .w.b[data-word="pindsvin"]')).toHaveCount(1);
