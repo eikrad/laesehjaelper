@@ -20,7 +20,8 @@ export default defineConfig({
   projects: [
     { name: "chromium", testIgnore: LAYOUT, use: { ...devices["Desktop Chrome"], viewport: { width: 820, height: 1180 } } },
     // Layout checks run at every screen size the app is designed for; tablets are the main device.
-    { name: "phone", testMatch: LAYOUT, use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true } },
+    // Phone uses 360 px, the narrowest common width (many Android phones).
+    { name: "phone", testMatch: LAYOUT, use: { ...devices["Desktop Chrome"], viewport: { width: 360, height: 780 }, hasTouch: true, isMobile: true } },
     { name: "tablet-portrait", testMatch: LAYOUT, use: { ...devices["Desktop Chrome"], viewport: { width: 820, height: 1180 }, hasTouch: true, isMobile: true } },
     { name: "tablet-landscape", testMatch: LAYOUT, use: { ...devices["Desktop Chrome"], viewport: { width: 1180, height: 820 }, hasTouch: true, isMobile: true } },
     { name: "laptop", testMatch: LAYOUT, use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
