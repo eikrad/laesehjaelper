@@ -73,6 +73,14 @@ describe("parasFromOcr", () => {
     expect(texts(d)[0]).toContain("klassen er på tur");
   });
 
+  it("Keeps a word that Tesseract returns with a leading space after an illustration", () => {
+    const d = page(
+      line(100, [["Lille", 96], ["bjørn", 96], ["kan", 96], ["ikke", 96], ["sove.", 96]]),
+      line(140, [[" Bjørne-far", 59], ["synger", 96], ["en", 96], ["sang", 95]]),
+    );
+    expect(texts(d)).toEqual(["Lille bjørn kan ikke sove. Bjørne-far synger en sang"]);
+  });
+
   it("Separates headings and body text with different font sizes", () => {
     const big: OcrLine = line(50, [["Bamse", 97]]);
     big.words[0].bbox.y1 = 110; big.bbox.y1 = 110;   // Twice the height

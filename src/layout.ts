@@ -31,7 +31,9 @@ interface Unit extends RawUnit { bbox: Box; words: Box[]; text: string }
 // Split an OCR line at large gaps between words (e.g. text on the left, an image on the right),
 // keeping only fragments that look like real text.
 function lineUnits(line: OcrLine): RawUnit[] {
-  const words = (line.words || []).filter((w) => w.text && w.text.trim());
+  // With preserve_interword_spaces, Tesseract puts the spaces of a wide gap (e.g. after an image)
+  // into the next word (“ Bjørne-far”), which would then no longer look like a word.
+  const words = (line.words || []).map((w) => ({ ...w, text: (w.text || "").trim() })).filter((w) => w.text);
   const hs = words.filter(strong).map((w) => w.bbox.y1 - w.bbox.y0).sort((a, b) => a - b);
   const h = hs[hs.length >> 1] || line.bbox.y1 - line.bbox.y0;
   // 1. Split at large gaps (beginner readers have wide word spacing; images are farther away)
