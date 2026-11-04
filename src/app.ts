@@ -11,6 +11,7 @@ import { wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
 import { silben } from "./silben";
 import { swipeDirection } from "./swipe";
 import { resumePage } from "./bookshelf";
+import { locationHash, parseLocation, type BookLocation } from "./navigation";
 import { cleanOcr, parasFromOcr } from "./layout";
 import { detectPage, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
 import type { CV } from "./pagedetect";
@@ -117,7 +118,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse", view: "Visning", viewPage: "Bogens side", viewText: "Kun teksten", hyph: "Bindestreger i bogen", hyphNormal: "Almindelige", hyphBook: "Stavelsesdeling", hyphHint: "Vælg „Stavelsesdeling“, hvis bogen selv deler ord med bindestreg, f.eks. „sko-le“.",
       background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
       original: "Originalside", show: "Vis", hide: "Skjul", origAlt: "Originalside",
-      editSummary: "Tjek og ret teksten", bookTools: "Bogværktøjer",
+      editSummary: "Tjek og ret teksten", bookTools: "Bogværktøjer", editBook: "Rediger bog", readBook: "Læs bogen",
       editHint: "Tom linje = nyt afsnit. Du kan selv sætte stavelsesgrænser med ·, f.eks. <b>hun·den</b>. Fed skrift: *ord*.",
       foot: "Alt foregår på din egen telefon eller computer. Billederne bliver ikke sendt nogen steder hen.",
       noText: "Der blev ikke fundet nogen tekst på denne side.<br>Åbn „Tjek og ret teksten“ og skriv den selv.",
@@ -148,7 +149,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Syllable colours", cBlueRed: "Blue and red", cBlueBlack: "Blue and black", cRedBlack: "Red and black", cPurpleGreen: "Purple and green", syl1: "1st syllable", syl2: "2nd syllable", view: "View", viewPage: "Book page", viewText: "Text only", hyph: "Hyphens in the book", hyphNormal: "Normal", hyphBook: "Syllable breaks", hyphHint: "Choose “Syllable breaks” if the book itself splits words with hyphens, e.g. “gar-den”.",
       background: "Background", bWhite: "White", bCream: "Cream", bYellow: "Yellow", bBlue: "Light blue", bGreen: "Light green",
       original: "Original page", show: "Show", hide: "Hide", origAlt: "Original page",
-      editSummary: "Check and correct the text", bookTools: "Book tools",
+      editSummary: "Check and correct the text", bookTools: "Book tools", editBook: "Edit book", readBook: "Read book",
       editHint: "Empty line = new paragraph. Set your own syllable breaks with ·, e.g. <b>gar·den</b>. Bold: *word*.",
       foot: "Everything happens on your own phone or computer. Your photos are not sent anywhere.",
       noText: "No text was found on this page.<br>Open “Check and correct the text” and type it in yourself.",
@@ -179,7 +180,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe", view: "Ansicht", viewPage: "Buchseite", viewText: "Nur Text", hyph: "Bindestriche im Buch", hyphNormal: "Normal", hyphBook: "Silbentrennung", hyphHint: "„Silbentrennung“ wählen, wenn das Buch Wörter selbst mit Bindestrich trennt, z. B. „Scho-ko-la-de“.",
       background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
       original: "Originalseite", show: "Zeigen", hide: "Verbergen", origAlt: "Originalseite",
-      editSummary: "Text prüfen und korrigieren", bookTools: "Buchwerkzeuge",
+      editSummary: "Text prüfen und korrigieren", bookTools: "Buchwerkzeuge", editBook: "Buch bearbeiten", readBook: "Buch lesen",
       editHint: "Leere Zeile = neuer Absatz. Eigene Silbengrenzen mit · setzen, z.&nbsp;B. <b>O·ma</b>. Fett: *Wort*.",
       foot: "Alles passiert auf deinem eigenen Handy oder Computer. Die Fotos werden nirgendwohin geschickt.",
       noText: "Auf dieser Seite wurde kein Text gefunden.<br>Öffne „Text prüfen“ und tippe ihn selbst ein.",
@@ -350,7 +351,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   function newBook(demo = false) {
     showBookMenu(false); showCheck(false);
     pages.forEach(releasePageImages);
-    book = { id: uid(), title: "", pageIds: [], lastPage: 0, cover: null, created: Date.now(), demo };
+    book = { id: demo ? "sample" : uid(), title: "", pageIds: [], lastPage: 0, cover: null, created: Date.now(), demo };
     pages.length = 0; cur = 0;
     document.body.classList.remove("editing");
   }
@@ -403,7 +404,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     };
   }
 
-  async function openBook(b: Book) {
+  async function openBook(b: Book, target?: Exclude<BookLocation, { view: "shelf" }>, fromHistory = false) {
     newBook();
     book = b;
     let recs: PageRecord[] = [];
@@ -413,8 +414,9 @@ const Lib = { detectPage, warpPage, orderCorners };
     recs.forEach(r => { if (!ordered.includes(r)) ordered.push(r); });
     pages.push(...ordered.map(pageFromRecord));
     cur = resumePage(b.lastPage, pages.length);
+    if (target?.pageId) { const i = pages.findIndex(pg => pg.id === target.pageId); if (i >= 0) cur = i; }
     pages.filter(p => p.status === "wait").forEach(p => queue.push(p));
-    showApp(); render(); runQueue();
+    showApp(target?.view ?? "read", !fromHistory); render(); runQueue();
   }
 
   async function renderShelf() {
@@ -469,8 +471,8 @@ const Lib = { detectPage, warpPage, orderCorners };
 
   let titleTimer = 0;
   $<HTMLInputElement>("bookTitle").oninput = e => { if (book) { book.title = val(e).trim(); clearTimeout(titleTimer); titleTimer = window.setTimeout(saveBook, 400); } };
-  // Book tools for adults, in one menu: check and correct the text, edit pages, save as e-book.
-  // Design inference from distracting storybook extras, not a tested benefit of this menu:
+  // Reading has one quiet entry into the adult workshop.
+  // Design inference from distracting storybook extras, not a tested benefit of this navigation:
   // Takacs, Swart & Bus (2015), doi:10.3102/0034654314566989.
   function showBookMenu(on: boolean) {
     $("bookMenu").hidden = !on;
@@ -901,6 +903,9 @@ const Lib = { detectPage, warpPage, orderCorners };
 
   function render() {
     const pg = pages[cur];
+    $("readingTitle").textContent = book?.title || t("untitled");
+    if (!$("app").hidden) syncLocation();
+    if (!pg) { showStatus(t("noText")); renderThumbs(); return; }
     $("count").textContent = t("pageOf", { a: cur + 1, b: pages.length });
     if (document.activeElement !== $<HTMLInputElement>("bookTitle")) $<HTMLInputElement>("bookTitle").value = (book && book.title) || "";
     $<HTMLButtonElement>("editPagesBtn").hidden = !book || !!book.demo;
@@ -1026,7 +1031,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   async function addFiles(files: FileList | File[] | null) {
     const list = [...(files || [])].filter(f => f.type.startsWith("image/"));
     if (!list.length) return;
-    showApp();
+    showApp("workshop");
     const first = pages.length;
     for (const [n, f] of list.entries()) {
       try {
@@ -1516,28 +1521,54 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   }
 
   // ---------- Start ----------
-  // Browser/tablet Back button: opening a book adds a history entry (#bog),
-  // so Back returns to the start screen instead of leaving the app.
-  function showApp() {
+  let view: "read" | "workshop" = "read";
+  function currentLocation(mode = view): BookLocation {
+    return book ? { view: mode, bookId: book.id, pageId: pages[cur]?.id } : { view: "shelf" };
+  }
+  function writeLocation(target: BookLocation, push: boolean) {
+    const hash = locationHash(target);
+    if (push && location.hash !== hash) history.pushState({ laese: target.view }, "", hash);
+    else history.replaceState({ laese: target.view }, "", hash);
+  }
+  function syncLocation() { writeLocation(currentLocation(), false); }
+  function showApp(mode: "read" | "workshop" = "read", push = true) {
+    if (push && mode === "workshop" && !$("start").hidden) writeLocation(currentLocation("read"), true);
+    view = mode;
+    showBookMenu(false); showCheck(false); showSettings(false);
+    document.body.classList.remove("editing", "focus"); setFocusBtn();
+    document.body.classList.toggle("workshop", view === "workshop");
+    comparing = false; setCompareBtn();
     $("start").hidden = true; $("app").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0);
-    if (location.hash !== "#bog") { try { history.pushState(null, "", "#bog"); } catch {} }
+    writeLocation(currentLocation(), push);
   }
-  window.addEventListener("popstate", () => {
-    if (!$("crop").hidden) return;
-    if (location.hash !== "#bog" && $("start").hidden) showStart(true);
-  });
-  if (location.hash === "#bog") { try { history.replaceState(null, "", location.pathname + location.search); } catch {} }
+  async function restoreLocation() {
+    const target = parseLocation(location.hash);
+    seedHistory(target);
+    if (target.view === "shelf") { showStart(true); return; }
+    if (book?.id === target.bookId && pages.length) {
+      if (!(view === "workshop" && target.view === "read")) {
+        const i = pages.findIndex(pg => pg.id === target.pageId); if (i >= 0) cur = i;
+      }
+      showApp(target.view, false); render(); return;
+    }
+    if (target.bookId === "sample") { openDemo(false, target.view); return; }
+    let saved: Book | undefined;
+    try { saved = (await DB.all<Book>("books")).find(b => b.id === target.bookId); } catch (e) { storageFail(e); }
+    if (!saved) { showStart(true); return; }
+    await openBook(saved, target, true);
+  }
+  window.addEventListener("popstate", () => { restoreLocation(); });
   function showStart(fromHistory = false) {
-    if (!fromHistory && location.hash === "#bog") { history.back(); return; } // popstate calls this function again.
-    stopSpeech();
-    if (document.body.classList.contains("focus")) $<HTMLButtonElement>("focusBtn").click();
+    if (!fromHistory && !$("app").hidden && book) { history.go(view === "workshop" ? -2 : -1); return; }
+    stopSpeech(); showBookMenu(false); showCheck(false);
+    document.body.classList.remove("focus", "editing", "workshop"); setFocusBtn();
     $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; showSettings(false);
-    document.body.classList.remove("editing");
-    saveBook();
-    renderShelf();
-    window.scrollTo(0, 0);
+    writeLocation({ view: "shelf" }, false);
+    saveBook(); renderShelf(); window.scrollTo(0, 0);
   }
-  $<HTMLButtonElement>("homeBtn").onclick = () => showStart();
+  $("editBookBtn").onclick = () => { showApp("workshop"); render(); };
+  $("readBookBtn").onclick = () => { saveBook(); history.back(); };
+  $<HTMLButtonElement>("homeBtn").onclick = () => { if (view === "workshop") history.back(); else showStart(); };
   $("home").onclick = () => showStart();
   $("home").onkeydown = e => { if (e.key === "Enter") showStart(); };
 
@@ -1548,12 +1579,13 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   drop.addEventListener("drop", e => { newBook(); addFiles(e.dataTransfer?.files ?? null); });
   document.addEventListener("paste", e => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { if ($("app").hidden) newBook(); addFiles(f); } });
 
-  $<HTMLButtonElement>("demoBtn").onclick = () => {
+  function openDemo(push = true, mode: "read" | "workshop" = "read") {
     newBook(true);
-    pages.push({ img: null, status: "done", progress: 1, lang: S.lang, text: DEMO[S.lang] });
-    cur = 0; showApp(); render();
+    pages.push({ id: "sample-page", img: null, status: "done", progress: 1, lang: S.lang, text: DEMO[S.lang] });
+    cur = 0; showApp(mode, push); render();
     getWorker(S.lang); // Preload recognition in the background.
-  };
+  }
+  $<HTMLButtonElement>("demoBtn").onclick = () => openDemo();
 
   // Show the install button when the browser offers installation (Chrome, Edge, Samsung Internet).
   interface InstallPrompt extends Event { prompt(): Promise<void> }
@@ -1569,3 +1601,14 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
 
   applySettings();
   applyTexts();
+
+  // Seed the internal Back path for direct links; reload keeps the existing history.
+  function seedHistory(initialLocation: BookLocation) {
+    if (history.state?.laese) return;
+    writeLocation({ view: "shelf" }, false);
+    if (initialLocation.view !== "shelf") {
+      writeLocation({ ...initialLocation, view: "read" }, true);
+      if (initialLocation.view === "workshop") writeLocation(initialLocation, true);
+    }
+  }
+  restoreLocation();

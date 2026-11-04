@@ -51,14 +51,14 @@ test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
   await waitForText(page);
   await page.click("#next");
   await waitForText(page);
-  await page.goBack();
+  await page.click("#home");
   await expect(page.locator(".book b")).toHaveText("Min testbog");
   await expect(page.locator(".book")).toContainText("2 sider");
 
   await page.reload();
   await page.click(".book");
   await waitForText(page);
-  await expect(page.locator("#bookTitle")).toHaveValue("Min testbog");
+  await expect(page.locator("#readingTitle")).toHaveText("Min testbog");
   await expect(page.locator("#count")).toHaveText("2 / 2");   // Resume where reading stopped.
 
   await bookTool(page, "editPagesBtn");
@@ -83,7 +83,6 @@ test("Saves text corrections", async ({ page }) => {
   await expect(page.locator('.w[data-word="Pindsvinet"] .s')).toHaveCount(3);
   await page.waitForTimeout(600);
   await page.reload();
-  await page.click(".book");
   await waitForText(page);
   await expect(page.locator("#text")).toHaveValue(/Pind·svi·net/);
 });
@@ -125,7 +124,6 @@ test("Moves, saves and resets text boxes on the book page", async ({ page }) => 
   expect((await box.boundingBox())!.height).toBeGreaterThan(h0 + 30);
   // The position survives reloading.
   await page.reload();
-  await page.locator(".book").first().click();
   await waitForText(page);
   const top2 = await page.locator("#reader .tbox").first().evaluate(el => el.getBoundingClientRect().top - el.parentElement!.getBoundingClientRect().top);
   expect(Math.abs(top2 - top1)).toBeLessThan(3);

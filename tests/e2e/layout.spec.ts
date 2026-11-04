@@ -25,11 +25,14 @@ test("Stored books come first, with large covers and a secondary new-book action
   await expect(page.locator("#installBtn")).toBeVisible();
 });
 
-test("The book-tools menu has a name in every language", async ({ page }) => {
+test("Reading has one quiet editing entry in every language and fits the screen", async ({ page }) => {
   await page.click("#demoBtn");
-  for (const [lang, name] of [["da", "Bogværktøjer"], ["de", "Buchwerkzeuge"], ["en", "Book tools"]]) {
+  for (const [lang, name] of [["da", "Rediger bog"], ["de", "Buch bearbeiten"], ["en", "Edit book"]]) {
     await page.click(`#uiLang button[data-v=${lang}]`);
-    await expect(page.locator("#bookMenuBtn")).toHaveAccessibleName(name);
+    await expect(page.locator("#editBookBtn")).toHaveAccessibleName(name);
+    await expect(page.locator("#bookTitle")).toBeHidden();
+    await expect(page.locator("#thumbs")).toBeHidden();
+    expect(await sidewaysScroll(page)).toBe(0);
   }
 });
 

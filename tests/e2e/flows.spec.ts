@@ -78,10 +78,14 @@ test("Font, syllable hyphens in the book and reading mode", async ({ page }) => 
   await expect(page.locator("body")).not.toHaveClass(/focus/);
 });
 
-test("Book tools sit in one menu, so the reading screen stays calm", async ({ page }) => {
+test("Workshop tools remain available behind the quiet reading entry", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
-  // The reading screen: page, toolbar and thumbnails; no tools for adults.
+  await page.click("#readBookBtn");
+  await expect(page.locator("#bookMenuBtn")).toBeHidden();
+  await expect(page.locator("#thumbs")).toBeHidden();
+  await page.click("#editBookBtn");
+  // The workshop retains the existing tools while the reader stays calm.
   for (const id of ["#reader", "#dock", "#thumbs", "#bookMenuBtn"]) await expect(page.locator(id), id).toBeVisible();
   for (const id of ["#exportBtn", "#editPagesBtn", "#edit"]) await expect(page.locator(id), id).toBeHidden();
   // Each tool is two taps away.
@@ -111,7 +115,7 @@ test("Opening another book resets its editing tools", async ({ page }) => {
   await bookTool(page, "checkTextBtn");
   await expect(page.locator("#edit")).toBeVisible();
   await page.click("#bookMenuBtn");
-  await page.goBack();
+  await page.click("#home");
   await expect(page.locator("#start")).toBeVisible();
   // Keyboard activation also starts a calm book, without relying on an outside pointer tap.
   await page.locator("#demoBtn").press("Enter");

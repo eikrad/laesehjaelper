@@ -145,6 +145,12 @@ body.editing .thumbs { gap: 16px; }
 .disclaimer summary { cursor: pointer; font-weight: 700; color: var(--ink); padding: 12px 0; }
 .disclaimer p { margin-top: 8px; line-height: 1.55; }
 
+/* Reading and making books have separate entry points. */
+#readingTitle { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+body:not(.workshop) .bookbar input, body:not(.workshop) .bookmenu,
+body:not(.workshop) #edit, body:not(.workshop) #thumbs, body:not(.workshop) #editbar,
+body:not(.workshop) #compareBtn, body:not(.workshop) .workshop-only,
+body.workshop .reading-only { display: none !important; }
 /* Reader view */
 .pagecard { background: var(--page-bg); border-radius: 16px; overflow: hidden; overflow: clip; box-shadow: 0 0 0 1px var(--line); }   /* clip: keeps the photo sticky beside the text */
 .orig { display: flex; justify-content: center; background: #e9ebef; padding: 14px; }
@@ -445,6 +451,9 @@ body.focus .together { display: none !important; }
   <!-- Reader view -->
   <section id="app" hidden>
     <div class="bookbar">
+      <strong id="readingTitle" class="reading-only"></strong>
+      <button class="btn-ghost small reading-only" id="editBookBtn" data-t="editBook"></button>
+      <button class="btn-ghost small workshop-only" id="readBookBtn" data-t="readBook"></button>
       <input id="bookTitle" autocomplete="off" data-tp="titlePh">
       <!-- Tools for adults sit in one menu, so the reading screen stays calm. -->
       <div class="bookmenu">

@@ -49,6 +49,7 @@ export async function waitForText(page: Page) {
 
 /** Choose a tool from the book menu in the book bar. */
 export async function bookTool(page: Page, id: "checkTextBtn" | "editPagesBtn" | "exportBtn") {
+  if (await page.locator("#editBookBtn").isVisible()) await page.click("#editBookBtn");
   await page.click("#bookMenuBtn");
   await page.click(`#${id}`);
 }
