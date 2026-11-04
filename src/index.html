@@ -146,6 +146,7 @@ body.editing .thumbs { gap: 16px; }
 .orig.hidden { display: none; }
 
 .reader {
+  touch-action: pan-y pinch-zoom;   /* Sideways moves are swipes that turn the page (src/swipe.ts). */
   background: var(--page-bg);
   font-family: var(--font);
   font-size: var(--size);
@@ -210,6 +211,20 @@ body.editing .thumbs { gap: 16px; }
 .thumbs img, .thumbs .demo { width: 56px; height: 74px; object-fit: cover; border-radius: 12px; display: grid; place-items: center; }
 .thumbs .demo { background: #fff; font-size: 12px; color: var(--muted); }
 .thumbs .add { width: 56px; height: 74px; border-radius: 12px; border: 2px dashed #b7bde6; display: grid; place-items: center; color: var(--muted); cursor: pointer; flex: none; }
+
+/* Wide screens (tablets in landscape, laptops): big page-turn buttons at the screen edges, where
+   the thumbs are when holding a tablet by its sides (Hoober & Shank). Hidden when there is no page. */
+.edgenav { display: none; }
+@media (min-width: 840px) {
+  .edgenav {
+    display: grid; place-items: center; position: fixed; top: 50%; transform: translateY(-50%); z-index: 15;
+    left: max(8px, env(safe-area-inset-left)); width: 52px; height: 52px; padding: 0; border: 0; border-radius: 50%;
+    background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1.5px var(--line), 0 6px 16px -8px rgba(23,25,59,.35);
+  }
+  .edgenav.next { left: auto; right: max(8px, env(safe-area-inset-right)); }
+  .edgenav:disabled { visibility: hidden; }
+  .edgenav svg.i { width: 28px; height: 28px; }
+}
 
 /* Bottom toolbar */
 /* Centred with auto margins: "left: 50%" would limit its width to half the screen. */
@@ -424,6 +439,8 @@ body.focus .together { display: none !important; }
     </article>
     <div class="thumbs" id="thumbs"></div>
     <div class="editbar" id="editbar"><button class="btn-danger" id="delBookBtn" data-t="deleteBook"></button></div>
+    <button class="edgenav" id="edgePrev" data-ta="prevPage"><svg class="i"><use href="#i-prev"/></svg></button>
+    <button class="edgenav next" id="edgeNext" data-ta="nextPage"><svg class="i"><use href="#i-next"/></svg></button>
   </section>
 </div>
 

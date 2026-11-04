@@ -164,3 +164,54 @@ test("Scrolled to the end, the toolbar covers nothing that can be tapped", async
     expect(overlaps, await el.evaluate(e => e.outerHTML.slice(0, 80))).toBe(false);
   }
 });
+
+/** A real touch move on the reader, starting near its top, by (dx, dy) px. */
+async function swipeOnReader(page: Page, dx: number, dy: number) {
+  const r = (await page.locator("#reader").boundingBox())!;
+  const x = r.x + r.width / 2, y = r.y + 80;
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+  for (let i = 1; i <= 5; i++) await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: x + dx * i / 5, y: y + dy * i / 5 }] });
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await cdp.detach();
+}
+
+test("Swiping turns the page; taps, scrolling and moving text boxes do not", async ({ page }, info) => {
+  test.skip(!info.project.use.hasTouch, "Swiping needs a touch screen.");
+  await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
+  await waitForText(page);
+  const count = page.locator("#count");
+  await expect(count).toHaveText("1 / 2");
+  await swipeOnReader(page, -150, 0);
+  await expect(count).toHaveText("2 / 2");
+  await swipeOnReader(page, 150, 0);
+  await expect(count).toHaveText("1 / 2");
+  await swipeOnReader(page, -10, 0);    // A tap.
+  await swipeOnReader(page, -60, 200);  // Scrolling.
+  await expect(count).toHaveText("1 / 2");
+  await page.locator("#edit").evaluate((d: HTMLDetailsElement) => { d.open = true; });
+  await page.locator("#moveBtn").evaluate((b: HTMLButtonElement) => b.click());
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await swipeOnReader(page, -150, 0);
+  await expect(count).toHaveText("1 / 2");
+});
+
+test("On wide screens big buttons at the screen edges turn the page", async ({ page }) => {
+  await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
+  await waitForText(page);
+  const width = page.viewportSize()!.width;
+  const prev = page.locator("#edgePrev"), next = page.locator("#edgeNext");
+  if (width < 840) {
+    await expect(next).toBeHidden();
+    return;
+  }
+  await expect(prev).toBeHidden();   // No page before the first one.
+  const box = (await next.boundingBox())!, card = (await page.locator(".pagecard").boundingBox())!;
+  expect(box.x + box.width, "at the right edge of the screen").toBeGreaterThan(width - 40);
+  expect(box.x, "beside the page, not on it").toBeGreaterThanOrEqual(card.x + card.width);
+  await next.click();
+  await expect(page.locator("#count")).toHaveText("2 / 2");
+  await expect(next).toBeHidden();
+  await prev.click();
+  await expect(page.locator("#count")).toHaveText("1 / 2");
+});
