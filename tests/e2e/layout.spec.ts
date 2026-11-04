@@ -248,3 +248,35 @@ test("In text view on wide screens the photo sits beside the text, otherwise abo
   const card = (await page.locator(".pagecard").boundingBox())!, alone = (await text.boundingBox())!;
   expect(alone.width).toBeGreaterThan(card.width - 4);
 });
+
+test("On wide screens the settings open beside the page, which stays visible; otherwise as a bottom sheet", async ({ page }) => {
+  await addPhotos(page, ["side-da.jpg"]);
+  await waitForText(page);
+  await page.click("#setBtn");
+  const { width, height } = page.viewportSize()!;
+  const panel = page.locator("#settings");
+  await expect(panel).toHaveClass(/open/);
+  await expect(async () => {
+    const s = (await panel.boundingBox())!, dock = (await page.locator("#dock").boundingBox())!;
+    expect(s.y + s.height, "settings end above the toolbar").toBeLessThanOrEqual(dock.y);
+    if (width >= 840) {
+      const card = (await page.locator(".pagecard").boundingBox())!;
+      expect(s.x, "settings beside the page").toBeGreaterThanOrEqual(card.x + card.width);
+      expect(s.x + s.width, "settings at the right edge").toBeGreaterThan(width - 30);
+      expect(s.height, "settings use the height of the screen").toBeGreaterThan(height * 0.6);
+    } else {
+      expect(s.height, "bottom sheet covers at most 60 % of the screen").toBeLessThanOrEqual(height * 0.6 + 1);
+    }
+  }).toPass({ timeout: 5_000 });
+  if (width < 840) return;
+  // Beside the page, the settings stay open while the child taps a word to hear the change.
+  await page.locator("#reader .w").first().click();
+  await expect(panel).toHaveClass(/open/);
+  await page.click("#focusBtn");
+  await expect(panel).not.toHaveClass(/open/);
+  await expect(page.locator("body")).not.toHaveClass(/settings-open/);
+  const focusedCard = (await page.locator(".pagecard").boundingBox())!;
+  expect(focusedCard.width, "reading mode does not reserve an invisible settings panel").toBeGreaterThan(width - 4);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("body")).not.toHaveClass(/focus/);
+});
