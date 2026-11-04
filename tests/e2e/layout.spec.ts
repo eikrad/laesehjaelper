@@ -44,6 +44,7 @@ test("The toolbar fits on one line inside the screen in every language", async (
 test("The crop dialog fills the screen and keeps its buttons after turning the device", async ({ page }, info) => {
   test.skip(!info.project.use.hasTouch, "Laptops are not turned.");
   await page.setInputFiles("#file", fixture("side-da.jpg"));
+  await expect(page.locator("#crop")).toBeVisible();
   await expect(page.locator("#cropMsg")).not.toContainText("…", { timeout: 120_000 });
   const { width, height } = page.viewportSize()!;
   await page.setViewportSize({ width: height, height: width });   // Rotate.
