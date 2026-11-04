@@ -124,7 +124,7 @@ async function expectPageOnScreen(page: Page) {
     const pv = (await page.locator("#reader .pageview").boundingBox())!;
     expect(pv.y, "page top below the book bar").toBeGreaterThanOrEqual(bar.y + bar.height);
     expect(pv.y + pv.height, "page bottom above the toolbar").toBeLessThanOrEqual(dock.y);
-    const overflow = await page.locator("#reader .tbox").evaluateAll(boxes => boxes.filter(b => b.scrollHeight > b.clientHeight + 1).length);
+    const overflow = await page.locator("#reader .tbox-text").evaluateAll(texts => texts.filter(t => t.scrollHeight > t.clientHeight + 1).length);
     expect(overflow, "text boxes whose text does not fit").toBe(0);
   }).toPass({ timeout: 5_000 });
 }
