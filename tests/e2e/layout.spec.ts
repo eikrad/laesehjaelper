@@ -241,6 +241,13 @@ test("In text view on wide screens the photo sits beside the text, otherwise abo
   } else {
     expect(p.y + p.height, "photo above the text").toBeLessThanOrEqual(r.y + 1);
   }
+  // Reading mode hides the photo and uses the whole card too.
+  await page.click("#focusBtn");
+  await expect(photo).toBeHidden();
+  const focusedCard = (await page.locator(".pagecard").boundingBox())!, focusedText = (await text.boundingBox())!;
+  expect(focusedText.width, "reading-mode text uses the whole card").toBeGreaterThan(focusedCard.width - 4);
+  expect(focusedCard.width, "reading mode uses the screen width").toBeGreaterThan(page.viewportSize()!.width - 4);
+  await page.click("#focusBtn");
   // Without the photo, the text uses the whole card.
   await page.click("#setBtn");
   await page.click("#origToggle button[data-v=aus]");
@@ -273,4 +280,11 @@ test("On wide screens the settings open beside the page, which stays visible; ot
   // Beside the page, the settings stay open while the child taps a word to hear the change.
   await page.locator("#reader .w").first().click();
   await expect(panel).toHaveClass(/open/);
+  await page.click("#focusBtn");
+  await expect(panel).not.toHaveClass(/open/);
+  await expect(page.locator("body")).not.toHaveClass(/settings-open/);
+  const focusedCard = (await page.locator(".pagecard").boundingBox())!;
+  expect(focusedCard.width, "reading mode does not reserve an invisible settings panel").toBeGreaterThan(width - 4);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("body")).not.toHaveClass(/focus/);
 });

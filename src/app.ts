@@ -305,7 +305,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   for (const [i, id] of ["c0", "c1"].entries())
     $(id).oninput = e => { const c = S.colors.split(","); c[i] = val(e); S.colors = c.join(","); applySettings(); };
   $<HTMLButtonElement>("focusBtn").onclick = () => {
-    document.body.classList.toggle("focus");
+    if (document.body.classList.toggle("focus")) showSettings(false);
     setFocusBtn();
     window.scrollTo(0, 0);
   };
