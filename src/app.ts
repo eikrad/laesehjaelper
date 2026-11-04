@@ -9,6 +9,7 @@ import { shortLineBreaks } from "./lines";
 import { speechRate, showYourTurn, wordSteps } from "./readflow";
 import { wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
 import { silben } from "./silben";
+import { swipeDirection } from "./swipe";
 import { cleanOcr, parasFromOcr } from "./layout";
 import { detectPage, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
 import type { CV } from "./pagedetect";
@@ -851,7 +852,8 @@ const Lib = { detectPage, warpPage, orderCorners };
     if (document.activeElement !== $<HTMLInputElement>("bookTitle")) $<HTMLInputElement>("bookTitle").value = (book && book.title) || "";
     $<HTMLButtonElement>("editPagesBtn").hidden = !book || !!book.demo;
     $<HTMLButtonElement>("exportBtn").hidden = !book || !!book.demo;
-    $<HTMLButtonElement>("prev").disabled = cur === 0; $<HTMLButtonElement>("next").disabled = cur >= pages.length - 1;
+    $<HTMLButtonElement>("prev").disabled = $<HTMLButtonElement>("edgePrev").disabled = cur === 0;
+    $<HTMLButtonElement>("next").disabled = $<HTMLButtonElement>("edgeNext").disabled = cur >= pages.length - 1;
     if (pg.img) $<HTMLImageElement>("origImg").src = pg.img;
     $<HTMLButtonElement>("recropBtn").hidden = !(pg.photo || pg.photoBlob);
     const pageView = pg.status === "done" && isPageMode(pg) && !comparing;
@@ -912,6 +914,20 @@ const Lib = { detectPage, warpPage, orderCorners };
 
   $<HTMLButtonElement>("prev").onclick = () => { if (cur > 0) { cur--; render(); saveBook(); } };
   $<HTMLButtonElement>("next").onclick = () => { if (cur < pages.length - 1) { cur++; render(); saveBook(); } };
+  $<HTMLButtonElement>("edgePrev").onclick = () => $<HTMLButtonElement>("prev").click();
+  $<HTMLButtonElement>("edgeNext").onclick = () => $<HTMLButtonElement>("next").click();
+  // Swipe left or right on the page to turn it; not while moving text boxes.
+  let swipe: { x: number; y: number; t: number; id: number } | null = null;
+  $("reader").addEventListener("pointerdown", e => {
+    swipe = e.pointerType !== "mouse" && e.isPrimary && !moving ? { x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId } : null;
+  });
+  $("reader").addEventListener("pointerup", e => {
+    if (!swipe || e.pointerId !== swipe.id) return;
+    const to = swipeDirection(e.clientX - swipe.x, e.clientY - swipe.y, e.timeStamp - swipe.t);
+    swipe = null;
+    if (to) $<HTMLButtonElement>(to).click();
+  });
+  $("reader").addEventListener("pointercancel", () => { swipe = null; });
   document.addEventListener("keydown", e => {
     if ((e.target as HTMLElement).tagName === "TEXTAREA") return;
     if (e.key === "ArrowLeft") $<HTMLButtonElement>("prev").click();
