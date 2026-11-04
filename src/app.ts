@@ -262,6 +262,8 @@ const Lib = { detectPage, warpPage, orderCorners };
     for (const [id, key] of CHOICES)
       $(id).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === S[key]));
     $("orig").classList.toggle("hidden", S.orig === "aus" || !pages[cur]?.img || isPageMode(pages[cur]));
+    // Photo beside the text on wide screens (CSS); not while comparing, which shows the photo instead of the text.
+    $("app").classList.toggle("split", !$("orig").classList.contains("hidden") && !comparing);
     // Showing or hiding the original page only applies to text view. In book-page view,
     // the page itself is the image; use the eye button to compare it.
     $("origToggle").closest<HTMLElement>(".field")!.hidden = S.view === "side";

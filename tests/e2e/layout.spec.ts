@@ -215,3 +215,29 @@ test("On wide screens big buttons at the screen edges turn the page", async ({ p
   await prev.click();
   await expect(page.locator("#count")).toHaveText("1 / 2");
 });
+
+test("In text view on wide screens the photo sits beside the text, otherwise above it", async ({ page }) => {
+  await addPhotos(page, ["side-da.jpg"]);
+  await waitForText(page);
+  await page.click("#setBtn");
+  await page.click("#viewSet button[data-v=tekst]");
+  await page.click("#setBtn");
+  const photo = page.locator("#orig"), text = page.locator("#reader");
+  await expect(photo).toBeVisible();
+  const p = (await photo.boundingBox())!, r = (await text.boundingBox())!;
+  if (page.viewportSize()!.width >= 840) {
+    expect(p.x + p.width, "photo left of the text").toBeLessThanOrEqual(r.x + 1);
+    expect(Math.abs(p.y - r.y), "photo and text start at the same height").toBeLessThan(2);
+    const prev = (await page.locator(".pagecard").boundingBox())!;
+    expect(prev.x, "room for the page buttons at the screen edges").toBeGreaterThanOrEqual(60);
+  } else {
+    expect(p.y + p.height, "photo above the text").toBeLessThanOrEqual(r.y + 1);
+  }
+  // Without the photo, the text uses the whole card.
+  await page.click("#setBtn");
+  await page.click("#origToggle button[data-v=aus]");
+  await page.click("#setBtn");
+  await expect(photo).toBeHidden();
+  const card = (await page.locator(".pagecard").boundingBox())!, alone = (await text.boundingBox())!;
+  expect(alone.width).toBeGreaterThan(card.width - 4);
+});
