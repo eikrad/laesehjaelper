@@ -7,6 +7,31 @@ import { addPhotos, fixture, fresh, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
+/**
+ * Visible controls under `scope` that are smaller than `min` px in either direction.
+ * Links inside running text are exempt, as in WCAG 2.5.5; a colour picker's label is its target.
+ */
+const smallControls = (page: Page, min = 44, scope = "body") =>
+  page.evaluate(([min, scope]) => {
+    const sel = "button, select, input:not([type=color]), textarea, summary, a, label.linkbtn, label.add, .pick, [role=button], .grip";
+    return [...document.querySelector(scope)!.querySelectorAll<HTMLElement>(sel)].flatMap(el => {
+      if (el.tagName === "A" && el.closest("p")) return [];
+      if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return [];
+      const r = el.getBoundingClientRect();
+      let { left, right, top, bottom } = r;
+      // An ancestor can clip a nominally large target down to a much smaller hit area.
+      for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+        const style = getComputedStyle(parent), clip = parent.getBoundingClientRect();
+        if (["hidden", "clip"].includes(style.overflowX)) { left = Math.max(left, clip.left); right = Math.min(right, clip.right); }
+        if (["hidden", "clip"].includes(style.overflowY)) { top = Math.max(top, clip.top); bottom = Math.min(bottom, clip.bottom); }
+      }
+      const width = Math.max(0, right - left), height = Math.max(0, bottom - top);
+      if (width >= min && height >= min) return [];
+      const name = el.id ? `#${el.id}` : `${el.tagName.toLowerCase()}.${el.className} "${(el.textContent || "").trim().slice(0, 16)}"`;
+      return [`${name} ${Math.round(width)}×${Math.round(height)}`];
+    });
+  }, [min, scope] as const);
+
 /** How far the page can be scrolled sideways, in CSS pixels. */
 const sidewaysScroll = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -62,4 +87,30 @@ test("The crop dialog fills the screen and keeps its buttons after turning the d
       expect(b.y + b.height, id).toBeLessThanOrEqual(width);
     }
   }).toPass({ timeout: 5_000 });
+});
+
+test("On touch screens every control is at least 44 px", async ({ page }, info) => {
+  test.skip(!info.project.use.hasTouch, "A mouse pointer hits smaller targets.");
+  await expect.poll(() => smallControls(page), { message: "start screen" }).toEqual([]);
+  await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
+  await waitForText(page);
+  await expect.poll(() => smallControls(page), { message: "reader" }).toEqual([]);
+  await expect.poll(() => smallControls(page, 48, "#dock"), { message: "reading toolbar" }).toEqual([]);
+  await page.click("#setBtn");
+  await expect.poll(() => smallControls(page), { message: "settings" }).toEqual([]);
+  await page.click("#setBtn");
+  await page.locator("#edit").evaluate((d: HTMLDetailsElement) => { d.open = true; });
+  await page.locator("#editPagesBtn").evaluate((b: HTMLButtonElement) => b.click());
+  await page.locator("#moveBtn").evaluate((b: HTMLButtonElement) => b.click());
+  await expect.poll(() => smallControls(page), { message: "editing pages and text boxes" }).toEqual([]);
+});
+
+test("On touch screens taps do not zoom and words keep no hover colour", async ({ page }, info) => {
+  test.skip(!info.project.use.hasTouch, "Only touch screens zoom on double tap and keep hover after a tap.");
+  await page.click("#demoBtn");
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).touchAction)).toBe("manipulation");
+  const word = page.locator("#reader .w").first();
+  await word.hover();
+  await page.waitForTimeout(300);   // Longer than the colour transition.
+  expect(await word.evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
 });
