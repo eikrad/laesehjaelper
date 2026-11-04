@@ -265,4 +265,11 @@ test("On wide screens the settings open beside the page, which stays visible; ot
   // Beside the page, the settings stay open while the child taps a word to hear the change.
   await page.locator("#reader .w").first().click();
   await expect(panel).toHaveClass(/open/);
+  await page.click("#focusBtn");
+  await expect(panel).not.toHaveClass(/open/);
+  await expect(page.locator("body")).not.toHaveClass(/settings-open/);
+  const focusedCard = (await page.locator(".pagecard").boundingBox())!;
+  expect(focusedCard.width, "reading mode does not reserve an invisible settings panel").toBeGreaterThan(width - 4);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("body")).not.toHaveClass(/focus/);
 });
