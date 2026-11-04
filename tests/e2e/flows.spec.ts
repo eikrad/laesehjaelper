@@ -78,6 +78,19 @@ test("Font, syllable hyphens in the book and reading mode", async ({ page }) => 
   await expect(page.locator("body")).not.toHaveClass(/focus/);
 });
 
+test("Reading mode shows only the text, read aloud and close", async ({ page }) => {
+  await addPhotos(page, ["side-da.jpg"]);
+  await waitForText(page);
+  await page.click("#focusBtn");
+  await expect(page.locator("#reader")).toBeVisible();
+  await expect(page.locator("#readBtn")).toBeVisible();
+  await expect(page.locator("#focusBtn")).toBeVisible();
+  for (const id of ["#bookTitle", "#exportBtn", "#editPagesBtn", "#home", "#edit", "#thumbs", "#prev", "#next", "#setBtn"])
+    await expect(page.locator(id), id).toBeHidden();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#bookTitle")).toBeVisible();
+});
+
 test("Reading aloud highlights the current word", async ({ page }) => {
   await page.addInitScript(() => {
     const fake = {
