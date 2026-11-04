@@ -89,6 +89,13 @@ test("Reading mode shows only the text, read aloud and close", async ({ page }) 
     await expect(page.locator(id), id).toBeHidden();
   await page.keyboard.press("Escape");
   await expect(page.locator("#bookTitle")).toBeVisible();
+  // Page-management controls must also disappear if editing was already active.
+  await page.click("#editPagesBtn");
+  await expect(page.locator("#delBookBtn")).toBeVisible();
+  await page.click("#focusBtn");
+  await expect(page.locator("#delBookBtn")).toBeHidden();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#delBookBtn")).toBeVisible();
 });
 
 test("Reading aloud highlights the current word", async ({ page }) => {
