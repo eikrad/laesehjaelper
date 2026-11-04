@@ -9,6 +9,7 @@ import { shortLineBreaks } from "./lines";
 import { speechRate, showYourTurn, wordSteps } from "./readflow";
 import { wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
 import { silben } from "./silben";
+import { swipeDirection } from "./swipe";
 import { cleanOcr, parasFromOcr } from "./layout";
 import { detectPage, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
 import type { CV } from "./pagedetect";
@@ -261,6 +262,8 @@ const Lib = { detectPage, warpPage, orderCorners };
     for (const [id, key] of CHOICES)
       $(id).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === S[key]));
     $("orig").classList.toggle("hidden", S.orig === "aus" || !pages[cur]?.img || isPageMode(pages[cur]));
+    // Photo beside the text on wide screens (CSS); not while comparing, which shows the photo instead of the text.
+    $("app").classList.toggle("split", !$("orig").classList.contains("hidden") && !comparing);
     // Showing or hiding the original page only applies to text view. In book-page view,
     // the page itself is the image; use the eye button to compare it.
     $("origToggle").closest<HTMLElement>(".field")!.hidden = S.view === "side";
@@ -599,6 +602,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   function buildPageView(pg: Page, ps: HTMLParagraphElement[]): HTMLDivElement {
     const W = pg.workW!, H = pg.workH!, paras = pg.paras!;
     const pv = document.createElement("div"); pv.className = "pageview";
+    pv.style.setProperty("--ar", String(W / H));   // Lets CSS fit the whole page on screen.
     const img = new Image(); img.src = pg.clean!; img.alt = ""; pv.append(img);
     paras.forEach((pa, i) => {
       const box = document.createElement("div");
@@ -611,7 +615,9 @@ const Lib = { detectPage, warpPage, orderCorners };
       Object.assign(box.style, { left: x0 / W * 100 + "%", top: y0 / H * 100 + "%", width: (x1 - x0) / W * 100 + "%", height: (y1 - y0) / H * 100 + "%" });
       if (pa.busy && pa.bg) box.style.background = pa.bg;
       const own = i === paras.length - 1 ? ps.slice(i) : ps.slice(i, i + 1);
-      own.forEach(p => box.append(p));
+      const text = document.createElement("div"); text.className = "tbox-text";
+      own.forEach(p => text.append(p));
+      box.append(text);
       pv.append(box);
     });
     return pv;
@@ -682,13 +688,14 @@ const Lib = { detectPage, warpPage, orderCorners };
     boxes.forEach(box => {
       const h = box.clientHeight, w = box.clientWidth;
       if (!h || !w) return;
+      const text = box.querySelector<HTMLElement>(".tbox-text")!;
       // Limit the size to a little over twice the original text size.
       const maxFs = parseFloat(box.dataset.lh || "1") * (box.parentElement?.clientHeight || h) * 2.4;
       let lo = 4, hi = Math.max(8, Math.min(h, maxFs));
       for (let k = 0; k < 12; k++) {
         const mid = (lo + hi) / 2;
         box.style.fontSize = mid + "px";
-        if (box.scrollHeight <= h + 1 && box.scrollWidth <= w + 1) lo = mid; else hi = mid;
+        if (text.scrollHeight <= text.clientHeight + 1 && text.scrollWidth <= text.clientWidth + 1) lo = mid; else hi = mid;
       }
       box.style.fontSize = lo + "px";
       sizes.set(box, lo);
@@ -860,7 +867,8 @@ const Lib = { detectPage, warpPage, orderCorners };
     if (document.activeElement !== $<HTMLInputElement>("bookTitle")) $<HTMLInputElement>("bookTitle").value = (book && book.title) || "";
     $<HTMLButtonElement>("editPagesBtn").hidden = !book || !!book.demo;
     $<HTMLButtonElement>("exportBtn").hidden = !book || !!book.demo;
-    $<HTMLButtonElement>("prev").disabled = cur === 0; $<HTMLButtonElement>("next").disabled = cur >= pages.length - 1;
+    $<HTMLButtonElement>("prev").disabled = $<HTMLButtonElement>("edgePrev").disabled = cur === 0;
+    $<HTMLButtonElement>("next").disabled = $<HTMLButtonElement>("edgeNext").disabled = cur >= pages.length - 1;
     if (pg.img) $<HTMLImageElement>("origImg").src = pg.img;
     $<HTMLButtonElement>("recropBtn").hidden = !(pg.photo || pg.photoBlob);
     const pageView = pg.status === "done" && isPageMode(pg) && !comparing;
@@ -921,6 +929,20 @@ const Lib = { detectPage, warpPage, orderCorners };
 
   $<HTMLButtonElement>("prev").onclick = () => { if (cur > 0) { cur--; render(); saveBook(); } };
   $<HTMLButtonElement>("next").onclick = () => { if (cur < pages.length - 1) { cur++; render(); saveBook(); } };
+  $<HTMLButtonElement>("edgePrev").onclick = () => $<HTMLButtonElement>("prev").click();
+  $<HTMLButtonElement>("edgeNext").onclick = () => $<HTMLButtonElement>("next").click();
+  // Swipe left or right on the page to turn it; not while moving text boxes.
+  let swipe: { x: number; y: number; t: number; id: number } | null = null;
+  $("reader").addEventListener("pointerdown", e => {
+    swipe = e.pointerType !== "mouse" && e.isPrimary && !moving ? { x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId } : null;
+  });
+  $("reader").addEventListener("pointerup", e => {
+    if (!swipe || e.pointerId !== swipe.id) return;
+    const to = swipeDirection(e.clientX - swipe.x, e.clientY - swipe.y, e.timeStamp - swipe.t);
+    swipe = null;
+    if (to) $<HTMLButtonElement>(to).click();
+  });
+  $("reader").addEventListener("pointercancel", () => { swipe = null; });
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && settingsOpen()) { showSettings(false); return; }
     if ((e.target as HTMLElement).tagName === "TEXTAREA") return;
@@ -1185,9 +1207,15 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     dlg.hidden = false;
     // Limit height to the visible screen. Embedded views may grow with their content,
     // which would otherwise make the dialog taller than the screen and hide its buttons.
-    const visibleH = Math.min(window.innerHeight, window.visualViewport?.height || Infinity, screen.availHeight || Infinity);
-    dlg.style.height = visibleH + "px";
-    dlg.style.top = (window.innerHeight > visibleH * 1.15 ? window.scrollY : 0) + "px";
+    // Fit again when the screen changes, for example when the tablet is turned.
+    const fitDialog = () => {
+      const visibleH = Math.min(window.innerHeight, window.visualViewport?.height || Infinity, screen.availHeight || Infinity);
+      dlg.style.height = visibleH + "px";
+      dlg.style.top = (window.innerHeight > visibleH * 1.15 ? window.scrollY : 0) + "px";
+    };
+    fitDialog();
+    window.addEventListener("resize", fitDialog);
+    window.visualViewport?.addEventListener("resize", fitDialog);
     const msg = (k: string) => { $("cropMsg").textContent = (counter ? counter + " · " : "") + t(k); };
     msg("cropLoading");
     let scale = 1, ox = 0, oy = 0;
@@ -1243,6 +1271,8 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     return new Promise((resolve) => {
       const finish = (frame: Frame | null) => {
         ro.disconnect(); handles.forEach(h => h.remove()); dlg.hidden = true;
+        window.removeEventListener("resize", fitDialog);
+        window.visualViewport?.removeEventListener("resize", fitDialog);
         $<HTMLButtonElement>("cropOk").onclick = $<HTMLButtonElement>("cropWhole").onclick = null;
         const all = (f: Frame) => [...f.corners, ...f.mids];
         const isFull = !frame || all(frame).every((p, i) => Math.hypot(p[0] - all(full)[i][0], p[1] - all(full)[i][1]) < 2);
