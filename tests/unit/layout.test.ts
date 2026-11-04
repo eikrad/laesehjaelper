@@ -73,6 +73,14 @@ describe("parasFromOcr", () => {
     expect(texts(d)[0]).toContain("klassen er på tur");
   });
 
+  it("Keeps a word that Tesseract returns with a leading space after an illustration", () => {
+    const d = page(
+      line(100, [["Lille", 96], ["bjørn", 96], ["kan", 96], ["ikke", 96], ["sove.", 96]]),
+      line(140, [[" Bjørne-far", 59], ["synger", 96], ["en", 96], ["sang", 95]]),
+    );
+    expect(texts(d)).toEqual(["Lille bjørn kan ikke sove. Bjørne-far synger en sang"]);
+  });
+
   it("Separates headings and body text with different font sizes", () => {
     const big: OcrLine = line(50, [["Bamse", 97]]);
     big.words[0].bbox.y1 = 110; big.bbox.y1 = 110;   // Twice the height
@@ -90,6 +98,15 @@ describe("parasFromOcr", () => {
     const run1 = page(line(100, [["Det", 96], ["bliver", 97], ["en", 97], ["lang", 96], ["tur", 97]]));
     const run2 = page(line(300, [["Bjørne-far", 92], ["var", 95], ["en", 96], ["stor", 95], ["bjørn", 94]]));
     expect(parasFromOcr(run1, run2).map((p) => cleanOcr(p.raw))).toEqual(["Det bliver en lang tur", "Bjørne-far var en stor bjørn"]);
+  });
+
+  it("Keeps the pass that recognized more of an equally reliable line", () => {
+    // Beside an image, the first pass is unsure of the first word; the flattened pass reads it well.
+    const unsure = page(line(100, [["Bjørne-far", 14], ["synger", 96], ["en", 96], ["sang", 95]]));
+    const sure = page(line(100, [["Bjørne-far", 83], ["synger", 96], ["en", 96], ["sang", 96]]));
+    for (const runs of [[unsure, sure], [sure, unsure]]) {
+      expect(parasFromOcr(...runs).map((p) => cleanOcr(p.raw))).toEqual(["Bjørne-far synger en sang"]);
+    }
   });
 
   it("Returns positions for painting over text", () => {

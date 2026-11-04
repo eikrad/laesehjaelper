@@ -31,7 +31,9 @@ interface Unit extends RawUnit { bbox: Box; words: Box[]; text: string }
 // Split an OCR line at large gaps between words (e.g. text on the left, an image on the right),
 // keeping only fragments that look like real text.
 function lineUnits(line: OcrLine): RawUnit[] {
-  const words = (line.words || []).filter((w) => w.text && w.text.trim());
+  // With preserve_interword_spaces, Tesseract puts the spaces of a wide gap (e.g. after an image)
+  // into the next word (“ Bjørne-far”), which would then no longer look like a word.
+  const words = (line.words || []).map((w) => ({ ...w, text: (w.text || "").trim() })).filter((w) => w.text);
   const hs = words.filter(strong).map((w) => w.bbox.y1 - w.bbox.y0).sort((a, b) => a - b);
   const h = hs[hs.length >> 1] || line.bbox.y1 - line.bbox.y0;
   // 1. Split at large gaps (beginner readers have wide word spacing; images are farther away)
@@ -137,12 +139,13 @@ export function cleanOcr(raw: string, { bookSyllables = false }: { bookSyllables
 }
 
 // For tilted page photos, Tesseract sometimes returns the same line twice (as two
-// overlapping lines). Keep the one with more reliable words.
+// overlapping lines). Keep the one with more reliable words; if equal, the one that kept more
+// words (beside an image, one pass may drop an uncertain word that the other reads well).
 function dedupe(units: Unit[]): Unit[] {
   const area = (b: Box): number => Math.max(0, b.x1 - b.x0) * Math.max(0, b.y1 - b.y0);
   const score = (u: Unit): number => u.ws.filter(strong).length;
   const kept: Unit[] = [];
-  for (const u of [...units].sort((a, b) => score(b) - score(a))) {
+  for (const u of [...units].sort((a, b) => score(b) - score(a) || b.ws.length - a.ws.length)) {
     const clash = kept.some((k) => {
       const i = { x0: Math.max(u.bbox.x0, k.bbox.x0), y0: Math.max(u.bbox.y0, k.bbox.y0), x1: Math.min(u.bbox.x1, k.bbox.x1), y1: Math.min(u.bbox.y1, k.bbox.y1) };
       return area(i) > 0.5 * Math.min(area(u.bbox), area(k.bbox));

@@ -37,6 +37,14 @@ test("Recognizes text over an illustration while excluding the page number", asy
   expect(text).not.toMatch(/\b12\b/);
 });
 
+test("Keeps the first word of lines that start right beside an illustration", async ({ page }) => {
+  await addPhotos(page, ["side-bjorn.jpg"]);
+  await waitForText(page);
+  const text = await page.locator("#text").inputValue();
+  expect(text).toContain("Bjørne-far synger en sang");
+  expect(text).toContain("Så falder lille bjørn i søvn.");
+});
+
 test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg", "side-illustration.jpg"]);
   await page.fill("#bookTitle", "Min testbog");
