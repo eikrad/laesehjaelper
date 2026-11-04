@@ -20,3 +20,23 @@ test("A book page fits the screen width", async ({ page }) => {
   await waitForText(page);
   expect(await sidewaysScroll(page)).toBe(0);
 });
+
+test("The toolbar fits on one line inside the screen in every language", async ({ page }) => {
+  await addPhotos(page, ["side-da.jpg"]);   // With a photo, so the compare button is shown too.
+  await waitForText(page);
+  const width = page.viewportSize()!.width;
+  for (const lang of ["da", "de", "en"]) {
+    await page.click(`#uiLang button[data-v=${lang}]`);
+    for (const button of await page.locator("#dock button:visible").all()) {
+      const box = (await button.boundingBox())!;
+      expect(box.x, `${lang}: ${await button.getAttribute("id")}`).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width, `${lang}: ${await button.getAttribute("id")}`).toBeLessThanOrEqual(width);
+    }
+    // The read-aloud label does not wrap onto a second line.
+    const lines = await page.locator("#readBtn span").evaluate(el => {
+      const r = document.createRange(); r.selectNodeContents(el);
+      return new Set([...r.getClientRects()].map(rect => Math.round(rect.top))).size;
+    });
+    expect(lines, lang).toBeLessThanOrEqual(1);
+  }
+});
