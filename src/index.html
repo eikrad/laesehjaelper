@@ -260,13 +260,17 @@ body.editing .thumbs { gap: 16px; }
 /* Settings sheet above the toolbar */
 .settings {
   position: fixed; left: 50%; transform: translate(-50%, 16px); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 70px); z-index: 19;
-  width: min(560px, calc(100vw - 20px)); max-height: 66vh; overflow-y: auto;
-  background: #fff; border-radius: 18px; padding: 20px 20px 22px;
+  width: min(560px, calc(100vw - 20px)); max-height: 66vh; display: flex; flex-direction: column; overflow: hidden;
+  background: #fff; border-radius: 18px;
   box-shadow: 0 24px 60px -18px rgba(23,25,59,.45);
   opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
 }
 .settings.open { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
 @media (prefers-reduced-motion: reduce) { .settings { transition: none; } }
+.sethead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 4px 20px; }
+.sethead strong { font-size: 18px; }
+.sethead button { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--sky); display: grid; place-items: center; padding: 0; }
+.settings > .grid { overflow-y: auto; min-height: 0; padding: 8px 20px 22px; }
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 20px; }
 .grid .wide { grid-column: 1 / -1; }
 @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
@@ -465,7 +469,8 @@ body.focus .together { display: none !important; }
   <button class="keep" id="focusBtn"></button>
 </nav>
 
-<div class="settings" id="settings">
+<div class="settings" id="settings" role="dialog" aria-labelledby="setTitle">
+  <div class="sethead"><strong id="setTitle" data-t="adjust"></strong><button id="setClose" data-ta="closeSettings"><svg class="i"><use href="#i-close"/></svg></button></div>
   <div class="grid">
     <div class="field wide">
       <label for="profileSel" data-t="reader"></label>
@@ -519,6 +524,8 @@ body.focus .together { display: none !important; }
         <button data-v="normal" data-t="linesNormal"></button>
         <button data-v="kort" data-t="linesShort"></button>
       </div>
+      <p class="fhint" data-t="linesHint"></p>
+    </div>
     <div class="field wide">
       <span class="flabel" data-t="togetherLabel"></span>
       <div class="seg" id="togetherSet">
@@ -526,8 +533,6 @@ body.focus .together { display: none !important; }
         <button data-v="aus" data-t="togetherOff"></button>
       </div>
       <p class="fhint" data-t="togetherHint"></p>
-    </div>
-      <p class="fhint" data-t="linesHint"></p>
     </div>
     <div class="field wide">
       <span class="flabel" data-t="sylColors"></span>

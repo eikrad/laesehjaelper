@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { fresh } from "./helpers";
+import { addPhotos, fresh, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -33,6 +33,61 @@ test("Settings: syllable arcs and a custom color", async ({ page }) => {
   await page.locator("#c1").evaluate((el: HTMLInputElement) => { el.value = "#16a34a"; el.dispatchEvent(new Event("input", { bubbles: true })); });
   const c1 = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--s1").trim());
   expect(c1).toBe("#16a34a");
+});
+
+test("Settings close with the close button, Escape or a tap outside", async ({ page }) => {
+  await page.click("#demoBtn");
+  const settings = page.locator("#settings");
+  await page.click("#setBtn");
+  await expect(settings).toHaveClass(/open/);
+  await page.click("#setClose");
+  await expect(settings).not.toHaveClass(/open/);
+  await expect(page.locator("#setBtn")).not.toHaveClass(/on/);
+  await page.click("#setBtn");
+  await page.keyboard.press("Escape");
+  await expect(settings).not.toHaveClass(/open/);
+  // The first tap outside only closes the panel: the logo does not lead home.
+  await page.click("#setBtn");
+  await page.click("#home");
+  await expect(settings).not.toHaveClass(/open/);
+  await expect(page.locator("#app")).toBeVisible();
+  // The toolbar stays usable while the panel is open.
+  await page.click("#setBtn");
+  await page.click("#focusBtn");
+  await expect(page.locator("body")).toHaveClass(/focus/);
+});
+
+test("Each hint in the settings sits under its own choice", async ({ page }) => {
+  await page.click("#demoBtn");
+  await expect(page.locator("#linesSet + .fhint")).toHaveAttribute("data-t", "linesHint");
+  await expect(page.locator("#togetherSet + .fhint")).toHaveAttribute("data-t", "togetherHint");
+});
+
+test("Escape closes settings while the text editor has focus", async ({ page }) => {
+  await page.click("#demoBtn");
+  await page.locator("#edit summary").click();
+  await page.click("#setBtn");
+  await page.locator("#text").focus();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#settings")).not.toHaveClass(/open/);
+});
+
+test("Dismissing settings does not drag a text box underneath", async ({ page }) => {
+  await addPhotos(page, ["side-da.jpg"]);
+  await waitForText(page);
+  await page.locator("#edit summary").click();
+  await page.click("#moveBtn");
+  const box = page.locator("#reader .tbox").first();
+  await box.scrollIntoViewIfNeeded();
+  const before = await box.evaluate((el: HTMLElement) => [el.style.left, el.style.top, el.style.width, el.style.height]);
+  await page.click("#setBtn");
+  const bounds = (await box.boundingBox())!;
+  await page.mouse.move(bounds.x + 10, bounds.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + 50, bounds.y + 30, { steps: 4 });
+  await page.mouse.up();
+  await expect(page.locator("#settings")).not.toHaveClass(/open/);
+  expect(await box.evaluate((el: HTMLElement) => [el.style.left, el.style.top, el.style.width, el.style.height])).toEqual(before);
 });
 
 test("German book language splits German sample words", async ({ page }) => {
