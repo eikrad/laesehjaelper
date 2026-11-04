@@ -196,8 +196,8 @@ body.editing .thumbs { gap: 16px; }
    and the toolbar (74 px from the bottom), so no page needs scrolling. --ar is the page's
    width / height. Phones keep the full width. */
 @media (min-width: 600px) {
-  .reader.pagemode { background: #e9ebef; }
-  .reader.pagemode .pageview { margin: 0 auto; width: min(100%, calc((100vh - 220px) * var(--ar, 1))); width: min(100%, calc((100dvh - 220px) * var(--ar, 1))); }
+  #reader.pagemode { background: #e9ebef; }
+  #reader.pagemode .pageview { margin: 0 auto; width: min(100%, calc((100vh - 220px) * var(--ar, 1))); width: min(100%, calc((100dvh - 220px) * var(--ar, 1))); }
 }
 .tbox { position: absolute; overflow: hidden; line-height: min(var(--lh), 1.6); word-spacing: var(--ws-box); }
 .tbox-text { height: 100%; overflow: hidden; }
