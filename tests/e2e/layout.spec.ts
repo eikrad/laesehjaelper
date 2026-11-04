@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { addPhotos, fresh, waitForText } from "./helpers";
+import { addPhotos, fixture, fresh, waitForText } from "./helpers";
 
 // Layout checks. Unlike the other specs, these run at every screen size the app is
 // designed for: phone, tablet portrait, tablet landscape and laptop (see playwright.config.ts).
@@ -39,4 +39,21 @@ test("The toolbar fits on one line inside the screen in every language", async (
     });
     expect(lines, lang).toBeLessThanOrEqual(1);
   }
+});
+
+test("The crop dialog fills the screen and keeps its buttons after turning the device", async ({ page }, info) => {
+  test.skip(!info.project.use.hasTouch, "Laptops are not turned.");
+  await page.setInputFiles("#file", fixture("side-da.jpg"));
+  await expect(page.locator("#cropMsg")).not.toContainText("…", { timeout: 120_000 });
+  const { width, height } = page.viewportSize()!;
+  await page.setViewportSize({ width: height, height: width });   // Rotate.
+  await expect(async () => {
+    const dlg = (await page.locator("#crop").boundingBox())!;
+    expect(Math.round(dlg.y), "dialog top").toBe(0);
+    expect(Math.round(dlg.height), "dialog height").toBe(width);
+    for (const id of ["#cropOk", "#cropWhole"]) {
+      const b = (await page.locator(id).boundingBox())!;
+      expect(b.y + b.height, id).toBeLessThanOrEqual(width);
+    }
+  }).toPass({ timeout: 5_000 });
 });

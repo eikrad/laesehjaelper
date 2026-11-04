@@ -1171,9 +1171,15 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     dlg.hidden = false;
     // Limit height to the visible screen. Embedded views may grow with their content,
     // which would otherwise make the dialog taller than the screen and hide its buttons.
-    const visibleH = Math.min(window.innerHeight, window.visualViewport?.height || Infinity, screen.availHeight || Infinity);
-    dlg.style.height = visibleH + "px";
-    dlg.style.top = (window.innerHeight > visibleH * 1.15 ? window.scrollY : 0) + "px";
+    // Fit again when the screen changes, for example when the tablet is turned.
+    const fitDialog = () => {
+      const visibleH = Math.min(window.innerHeight, window.visualViewport?.height || Infinity, screen.availHeight || Infinity);
+      dlg.style.height = visibleH + "px";
+      dlg.style.top = (window.innerHeight > visibleH * 1.15 ? window.scrollY : 0) + "px";
+    };
+    fitDialog();
+    window.addEventListener("resize", fitDialog);
+    window.visualViewport?.addEventListener("resize", fitDialog);
     const msg = (k: string) => { $("cropMsg").textContent = (counter ? counter + " · " : "") + t(k); };
     msg("cropLoading");
     let scale = 1, ox = 0, oy = 0;
@@ -1229,6 +1235,8 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     return new Promise((resolve) => {
       const finish = (frame: Frame | null) => {
         ro.disconnect(); handles.forEach(h => h.remove()); dlg.hidden = true;
+        window.removeEventListener("resize", fitDialog);
+        window.visualViewport?.removeEventListener("resize", fitDialog);
         $<HTMLButtonElement>("cropOk").onclick = $<HTMLButtonElement>("cropWhole").onclick = null;
         const all = (f: Frame) => [...f.corners, ...f.mids];
         const isFull = !frame || all(frame).every((p, i) => Math.hypot(p[0] - all(full)[i][0], p[1] - all(full)[i][1]) < 2);
