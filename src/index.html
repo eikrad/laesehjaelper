@@ -182,6 +182,13 @@ body.editing .thumbs { gap: 16px; }
 .reader .origfull { display: block; width: 100%; }
 .pageview { position: relative; line-height: 0; }
 .pageview > img { width: 100%; display: block; }
+/* Tablets and laptops: the whole book page fits between the book bar (138 px from the top)
+   and the toolbar (74 px from the bottom), so no page needs scrolling. --ar is the page's
+   width / height. Phones keep the full width. */
+@media (min-width: 600px) {
+  #reader.pagemode { background: #e9ebef; }
+  #reader.pagemode .pageview { margin: 0 auto; width: min(100%, calc((100vh - 220px) * var(--ar, 1))); width: min(100%, calc((100dvh - 220px) * var(--ar, 1))); }
+}
 .tbox { position: absolute; overflow: hidden; line-height: min(var(--lh), 1.6); word-spacing: var(--ws-box); }
 .tbox-text { height: 100%; overflow: hidden; }
 .tbox p { margin: 0 0 .35em; max-width: none; }

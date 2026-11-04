@@ -114,3 +114,53 @@ test("On touch screens taps do not zoom and words keep no hover colour", async (
   await page.waitForTimeout(300);   // Longer than the colour transition.
   expect(await word.evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
 });
+
+/** Check that the whole book page is visible between the book bar and the toolbar, and all text fits its boxes. */
+async function expectPageOnScreen(page: Page) {
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(async () => {
+    const bar = (await page.locator(".bookbar").boundingBox())!;
+    const dock = (await page.locator("#dock").boundingBox())!;
+    const pv = (await page.locator("#reader .pageview").boundingBox())!;
+    expect(pv.y, "page top below the book bar").toBeGreaterThanOrEqual(bar.y + bar.height);
+    expect(pv.y + pv.height, "page bottom above the toolbar").toBeLessThanOrEqual(dock.y);
+    const overflow = await page.locator("#reader .tbox-text").evaluateAll(texts => texts.filter(t => t.scrollHeight > t.clientHeight + 1).length);
+    expect(overflow, "text boxes whose text does not fit").toBe(0);
+  }).toPass({ timeout: 5_000 });
+}
+
+test("The whole book page is on screen on tablets and laptops; phones use the full width", async ({ page }, info) => {
+  await addPhotos(page, ["side-da.jpg"]);
+  await waitForText(page);
+  const { width, height } = page.viewportSize()!;
+  if (width < 600) {
+    const reader = (await page.locator("#reader").boundingBox())!;
+    expect((await page.locator("#reader .pageview").boundingBox())!.width).toBeGreaterThan(reader.width - 2);
+    return;
+  }
+  await expectPageOnScreen(page);
+  // The page stays on screen in reading mode too.
+  await page.click("#focusBtn");
+  const pv = (await page.locator("#reader .pageview").boundingBox())!, dock = (await page.locator("#dock").boundingBox())!;
+  expect(pv.y, "reading mode: page top").toBeGreaterThanOrEqual(0);
+  expect(pv.y + pv.height, "reading mode: page bottom above the toolbar").toBeLessThanOrEqual(dock.y);
+  await page.click("#focusBtn");
+  if (!info.project.use.hasTouch) return;
+  await page.setViewportSize({ width: height, height: width });   // Rotate.
+  await expectPageOnScreen(page);
+});
+
+test("Scrolled to the end, the toolbar covers nothing that can be tapped", async ({ page }) => {
+  await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
+  await waitForText(page);
+  await page.locator("#editPagesBtn").evaluate((b: HTMLButtonElement) => b.click());   // Editing adds the most controls below the page.
+  await page.locator("#edit").evaluate((d: HTMLDetailsElement) => { d.open = true; });
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  const dock = (await page.locator("#dock").boundingBox())!;
+  for (const el of await page.locator("#app button:visible, #app summary:visible, #app label:visible").all()) {
+    const b = await el.boundingBox();
+    if (!b) continue;   // Not rendered, so nothing to cover.
+    const overlaps = b.x < dock.x + dock.width && dock.x < b.x + b.width && b.y < dock.y + dock.height && dock.y < b.y + b.height;
+    expect(overlaps, await el.evaluate(e => e.outerHTML.slice(0, 80))).toBe(false);
+  }
+});

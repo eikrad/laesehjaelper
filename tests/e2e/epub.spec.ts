@@ -3,6 +3,24 @@ import { strFromU8, unzipSync } from "fflate";
 import fs from "node:fs";
 import { addPhotos, fresh, waitForText } from "./helpers";
 
+test("Exported page layout is independent of the screen orientation", async ({ page }, info) => {
+  await fresh(page);
+  await addPhotos(page, ["side-da.jpg"]);
+  await waitForText(page);
+  await page.evaluate(() => document.fonts.ready.then(() => {}));
+  const pages: string[] = [];
+  for (const viewport of [{ width: 820, height: 1180 }, { width: 1180, height: 820 }]) {
+    await page.setViewportSize(viewport);
+    const [download] = await Promise.all([page.waitForEvent("download"), page.click("#exportBtn")]);
+    const file = info.outputPath(`export-${viewport.width}.epub`);
+    await download.saveAs(file);
+    const files = unzipSync(new Uint8Array(fs.readFileSync(file)));
+    pages.push(strFromU8(files["OEBPS/page1.xhtml"]));
+  }
+  expect(pages[0]).toContain("font-size:");
+  expect(pages[1]).toBe(pages[0]);
+});
+
 test("Exports and reimports an e-book", async ({ page }, info) => {
   await fresh(page);
   await addPhotos(page, ["side-da.jpg"]);
