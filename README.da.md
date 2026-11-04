@@ -33,7 +33,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Overskrifter forbliver større end brødteksten, og fed skrift bliver fundet og vist med fed (kan rettes med `*ord*`)
 - Læsetilstand: kun teksten, i fuld skærm
 - Vis den oprindelige tekst med ét tryk for at finde fejl i genkendelsen
-- Bogreol: bøger gemmes på enheden, med titel, rækkefølge og læsestatus
+- Bogreolen først: gemte bøger åbnes via store forsider og viser, hvor læsningen stoppede. „Ny bog“ er en sekundær knap; uden bøger er fotografering den primære handling. Bøger, rækkefølge og læsestatus bliver på enheden.
 - Beskæring: siden findes automatisk på fotoet og rettes op; hjørner og kanter kan justeres, også på buede sider
 - E-bog: gem en bog som EPUB 3 (faste sider, kan åbnes i alle læse-apps) og hent den ind igen uden tab
 - Kan installeres som app og bruges offline

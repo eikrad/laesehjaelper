@@ -33,7 +33,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Überschriften bleiben größer als der Fließtext, fett Gedrucktes wird erkannt und fett gesetzt (korrigierbar mit `*Wort*`)
 - Mit einem Tipp den Originaltext einblenden, um Erkennungsfehler zu finden
 - Lesemodus: nur der Text, bildschirmfüllend
-- Bücherregal: Bücher werden auf dem Gerät gespeichert, mit Titel, Seitenreihenfolge und Lesestand
+- Bücherregal zuerst: Gespeicherte Bücher lassen sich über große Cover öffnen und zeigen die zuletzt gelesene Seite. „Neues Buch“ bleibt eine Nebenaktion; ohne Bücher steht das Fotografieren im Vordergrund. Bücher, Seitenreihenfolge und Lesestand bleiben auf dem Gerät.
 - Zuschneiden: Die Seite wird auf dem Foto automatisch gefunden und entzerrt; Ecken und Kanten lassen sich nachziehen, auch bei gewölbten Seiten
 - E-Book: ein Buch als EPUB 3 speichern (feste Seiten, lässt sich in jeder Lese-App öffnen) und verlustfrei wieder laden
 - Als App installierbar und offline nutzbar

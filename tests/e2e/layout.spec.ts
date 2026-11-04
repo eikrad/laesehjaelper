@@ -1,11 +1,29 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { addPhotos, fixture, fresh, waitForText } from "./helpers";
+import { addPhotos, fixture, fresh, seedBooks, waitForText } from "./helpers";
 
 // Layout checks. Unlike the other specs, these run at every screen size the app is
 // designed for: phone, tablet portrait, tablet landscape and laptop (see playwright.config.ts).
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
+
+test("Stored books come first, with large covers and a secondary new-book action", async ({ page }) => {
+  await seedBooks(page, Array.from({ length: 6 }, (_, i) => ({ id: `shelf-${i}`, title: i === 5 ? "Enmegetlangselvskrevetprøvebogstiteludenmellemrum" : `Prøvebog ${i + 1}`, texts: ["En selvskrevet prøveside."] })));
+  await expect(page.locator("#shelf")).toBeVisible();
+  const shelf = (await page.locator("#shelf").boundingBox())!, photo = (await page.locator("#drop").boundingBox())!;
+  expect(shelf.y + shelf.height, "books come before creating another book").toBeLessThanOrEqual(photo.y);
+  await expect(page.locator("#drop")).toContainText("Ny bog");
+  const covers = await page.locator(".book").evaluateAll(books => books.map(b => { const r = b.getBoundingClientRect(); return { width: r.width, height: r.height, y: r.y }; }));
+  for (const b of covers) { expect(b.width).toBeGreaterThanOrEqual(48); expect(b.height).toBeGreaterThanOrEqual(48); }
+  const columns = covers.filter(b => Math.abs(b.y - covers[0].y) < 1).length;
+  if (page.viewportSize()!.width < 600) expect(columns).toBe(2);
+  if (page.viewportSize()!.width >= 840) expect(columns).toBeGreaterThan(2);
+  expect(await sidewaysScroll(page)).toBe(0);
+  await expect(page.locator("#demoBtn")).toBeVisible();
+  await expect(page.locator("label:has(#importFile)")).toBeVisible();
+  await page.evaluate(() => window.dispatchEvent(Object.assign(new Event("beforeinstallprompt"), { prompt: () => Promise.resolve() })));
+  await expect(page.locator("#installBtn")).toBeVisible();
+});
 
 test("The book-tools menu has a name in every language", async ({ page }) => {
   await page.click("#demoBtn");
