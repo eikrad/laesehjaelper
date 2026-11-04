@@ -57,6 +57,17 @@ test("Settings close with the close button, Escape or a tap outside", async ({ p
   await expect(page.locator("body")).toHaveClass(/focus/);
 });
 
+test("The most used settings come first, the rest under More settings", async ({ page }) => {
+  await page.click("#demoBtn");
+  await page.click("#setBtn");
+  const order = await page.evaluate(() => {
+    const ids = ["size", "mode", "font", "viewSet", "rateSet", "moreSettings", "profileSel", "ls"];
+    return ids.sort((a, b) => document.getElementById(a)!.compareDocumentPosition(document.getElementById(b)!) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
+  });
+  expect(order).toEqual(["size", "mode", "font", "viewSet", "rateSet", "moreSettings", "profileSel", "ls"]);
+  await expect(page.locator("#moreSettings")).toHaveText("Flere indstillinger");
+});
+
 test("Each hint in the settings sits under its own choice", async ({ page }) => {
   await page.click("#demoBtn");
   await expect(page.locator("#linesSet + .fhint")).toHaveAttribute("data-t", "linesHint");

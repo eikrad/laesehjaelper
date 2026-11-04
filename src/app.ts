@@ -108,7 +108,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       how2t: "Tjek teksten", how2: "Se de genkendte ord igennem og ret eventuelle fejl.",
       how3t: "Læs", how3: "Tryk på et ord for at høre det. Tilpas skrift og farver.",
       prevPage: "Forrige side", nextPage: "Næste side", page: "Side", pageOf: "{a} / {b}",
-      read: "Læs op", stop: "Stop", adjust: "Tilpas", closeSettings: "Luk indstillinger", focus: "Læsetilstand", close: "Luk læsetilstand",
+      read: "Læs op", stop: "Stop", adjust: "Tilpas", closeSettings: "Luk indstillinger", moreSettings: "Flere indstillinger", focus: "Læsetilstand", close: "Luk læsetilstand",
       font: "Skrift", andika: "Andika (til begyndere)", size: "Skriftstørrelse", letterSp: "Bogstavafstand", lineSp: "Linjeafstand",
       syllables: "Stavelser", off: "Fra", color: "Farve", arcs: "Buer", both: "Begge",
       sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse", view: "Visning", viewPage: "Bogens side", viewText: "Kun teksten", hyph: "Bindestreger i bogen", hyphNormal: "Almindelige", hyphBook: "Stavelsesdeling", hyphHint: "Vælg „Stavelsesdeling“, hvis bogen selv deler ord med bindestreg, f.eks. „sko-le“.",
@@ -137,7 +137,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       how2t: "Check the text", how2: "Look through the recognised words and fix any mistakes.",
       how3t: "Read", how3: "Tap a word to hear it. Adjust the font and colours.",
       prevPage: "Previous page", nextPage: "Next page", page: "Page", pageOf: "{a} / {b}",
-      read: "Read aloud", stop: "Stop", adjust: "Adjust", closeSettings: "Close settings", focus: "Reading mode", close: "Close reading mode",
+      read: "Read aloud", stop: "Stop", adjust: "Adjust", closeSettings: "Close settings", moreSettings: "More settings", focus: "Reading mode", close: "Close reading mode",
       font: "Font", andika: "Andika (for beginners)", size: "Font size", letterSp: "Letter spacing", lineSp: "Line spacing",
       syllables: "Syllables", off: "Off", color: "Colour", arcs: "Arcs", both: "Both",
       sylColors: "Syllable colours", cBlueRed: "Blue and red", cBlueBlack: "Blue and black", cRedBlack: "Red and black", cPurpleGreen: "Purple and green", syl1: "1st syllable", syl2: "2nd syllable", view: "View", viewPage: "Book page", viewText: "Text only", hyph: "Hyphens in the book", hyphNormal: "Normal", hyphBook: "Syllable breaks", hyphHint: "Choose “Syllable breaks” if the book itself splits words with hyphens, e.g. “gar-den”.",
@@ -166,7 +166,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       how2t: "Text prüfen", how2: "Erkannte Wörter kurz kontrollieren und Fehler korrigieren.",
       how3t: "Lesen", how3: "Wort antippen zum Vorlesen. Schrift und Farben anpassen.",
       prevPage: "Vorherige Seite", nextPage: "Nächste Seite", page: "Seite", pageOf: "{a} / {b}",
-      read: "Vorlesen", stop: "Stopp", adjust: "Anpassen", closeSettings: "Einstellungen schließen", focus: "Lesemodus", close: "Lesemodus schließen",
+      read: "Vorlesen", stop: "Stopp", adjust: "Anpassen", closeSettings: "Einstellungen schließen", moreSettings: "Weitere Einstellungen", focus: "Lesemodus", close: "Lesemodus schließen",
       font: "Schrift", andika: "Andika (für Leseanfänger)", size: "Schriftgröße", letterSp: "Buchstabenabstand", lineSp: "Zeilenabstand",
       syllables: "Silben", off: "Aus", color: "Farbe", arcs: "Bögen", both: "Beides",
       sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe", view: "Ansicht", viewPage: "Buchseite", viewText: "Nur Text", hyph: "Bindestriche im Buch", hyphNormal: "Normal", hyphBook: "Silbentrennung", hyphHint: "„Silbentrennung“ wählen, wenn das Buch Wörter selbst mit Bindestrich trennt, z. B. „Scho-ko-la-de“.",
@@ -284,15 +284,21 @@ const Lib = { detectPage, warpPage, orderCorners };
     } };
   $<HTMLButtonElement>("compareBtn").onclick = () => { comparing = !comparing; setCompareBtn(); render(); };
   const settingsOpen = () => $("settings").classList.contains("open");
-  function showSettings(on: boolean) { $<HTMLButtonElement>("setBtn").classList.toggle("on", $("settings").classList.toggle("open", on)); }
+  function showSettings(on: boolean) {
+    $<HTMLButtonElement>("setBtn").classList.toggle("on", $("settings").classList.toggle("open", on));
+    document.body.classList.toggle("settings-open", on);   // Wide screens move the page beside the panel.
+  }
+  // From 840 px the settings are a panel beside the page (CSS), not a sheet over it.
+  const sidePanel = () => matchMedia("(min-width: 840px)").matches;
   $<HTMLButtonElement>("setBtn").onclick = () => showSettings(!settingsOpen());
   $<HTMLButtonElement>("setClose").onclick = () => showSettings(false);
-  // A tap outside the settings closes them and does nothing else, so closing does not
-  // also read a word aloud or leave the book. The toolbar stays usable.
+  // A tap outside the settings sheet closes it and does nothing else, so closing does not
+  // also read a word aloud or leave the book. The toolbar stays usable. The side panel on
+  // wide screens stays open, so a child can tap a word to hear the changed settings.
   let swallowClick = false;
   document.addEventListener("pointerdown", e => {
     swallowClick = false;
-    if (!settingsOpen() || (e.target as Element).closest("#settings, #dock")) return;
+    if (!settingsOpen() || sidePanel() || (e.target as Element).closest("#settings, #dock")) return;
     e.preventDefault(); e.stopPropagation();
     showSettings(false); swallowClick = true;
   }, true);
@@ -1417,7 +1423,6 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
 
   $("reader").onclick = e => {
     if (moving) return;   // Do not read aloud while moving text boxes.
-    if ($("settings").classList.contains("open")) { $("settings").classList.remove("open"); $<HTMLButtonElement>("setBtn").classList.remove("on"); return; }
     const w = (e.target as HTMLElement).closest<HTMLElement>(".w"); if (!w) return;
     stopSpeech();
     sayWord(w);
@@ -1494,7 +1499,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     if (!fromHistory && location.hash === "#bog") { history.back(); return; } // popstate calls this function again.
     stopSpeech();
     if (document.body.classList.contains("focus")) $<HTMLButtonElement>("focusBtn").click();
-    $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; $("settings").classList.remove("open");
+    $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; showSettings(false);
     document.body.classList.remove("editing");
     saveBook();
     renderShelf();
