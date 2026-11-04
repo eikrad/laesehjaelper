@@ -1,13 +1,16 @@
 // Merge raw unit and E2E coverage after `coverage:unit` and `coverage:e2e`,
 // then check that the combined coverage meets the minimum thresholds.
+// CI passes the raw folders it downloaded from its parallel jobs as arguments.
 import { CoverageReport } from "monocart-coverage-reports";
+
+const inputDir = process.argv.length > 2 ? process.argv.slice(2) : ["coverage/unit/raw", "coverage/e2e/raw"];
 
 /** Minimum coverage percentages, just below the November 2, 2026 results: 89.5 / 78.4 / 92.5. */
 const MIN = { lines: 88, branches: 76, functions: 90 };
 
 const results = await new CoverageReport({
   name: "Læsehjælper – Combined test coverage",
-  inputDir: ["coverage/unit/raw", "coverage/e2e/raw"],
+  inputDir,
   outputDir: "coverage/merged",
   sourceFilter: { "**/src/**": true, "**/*": false },
   reports: ["v8", "console-details", "lcovonly"],
