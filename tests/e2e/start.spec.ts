@@ -35,6 +35,34 @@ test("Settings: syllable arcs and a custom color", async ({ page }) => {
   expect(c1).toBe("#16a34a");
 });
 
+test("Settings close with the close button, Escape or a tap outside", async ({ page }) => {
+  await page.click("#demoBtn");
+  const settings = page.locator("#settings");
+  await page.click("#setBtn");
+  await expect(settings).toHaveClass(/open/);
+  await page.click("#setClose");
+  await expect(settings).not.toHaveClass(/open/);
+  await expect(page.locator("#setBtn")).not.toHaveClass(/on/);
+  await page.click("#setBtn");
+  await page.keyboard.press("Escape");
+  await expect(settings).not.toHaveClass(/open/);
+  // The first tap outside only closes the panel: the logo does not lead home.
+  await page.click("#setBtn");
+  await page.click("#home");
+  await expect(settings).not.toHaveClass(/open/);
+  await expect(page.locator("#app")).toBeVisible();
+  // The toolbar stays usable while the panel is open.
+  await page.click("#setBtn");
+  await page.click("#focusBtn");
+  await expect(page.locator("body")).toHaveClass(/focus/);
+});
+
+test("Each hint in the settings sits under its own choice", async ({ page }) => {
+  await page.click("#demoBtn");
+  await expect(page.locator("#linesSet + .fhint")).toHaveAttribute("data-t", "linesHint");
+  await expect(page.locator("#togetherSet + .fhint")).toHaveAttribute("data-t", "togetherHint");
+});
+
 test("German book language splits German sample words", async ({ page }) => {
   await page.click("#langStart button[data-v=de]");
   await page.click("#demoBtn");
