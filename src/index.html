@@ -203,8 +203,9 @@ body.editing .thumbs { padding-bottom: 14px; gap: 20px; }
 .thumbs .add { width: 56px; height: 74px; border-radius: 12px; border: 2px dashed #b7bde6; display: grid; place-items: center; color: var(--muted); cursor: pointer; flex: none; }
 
 /* Bottom toolbar */
+/* Centred with auto margins: "left: 50%" would limit its width to half the screen. */
 .dock {
-  position: fixed; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 20;
+  position: fixed; left: 0; right: 0; margin: 0 auto; width: fit-content; bottom: max(14px, env(safe-area-inset-bottom)); z-index: 20;
   display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 999px;
   background: var(--ink); color: #fff; box-shadow: 0 14px 34px -10px rgba(23,25,59,.6);
   max-width: calc(100vw - 20px);
@@ -217,7 +218,13 @@ body.editing .thumbs { padding-bottom: 14px; gap: 20px; }
 .dock .read:hover:not(:disabled) { background: #e9ebf0; }
 .dock .count { font-weight: 700; font-size: 15px; min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; }
 .dock .sep { width: 1px; height: 24px; background: rgba(255,255,255,.2); margin: 0 2px; }
-@media (max-width: 440px) { .dock .read span, .dock .hide-sm { display: none; } .dock .read { padding: 0 14px; } .dock .count { min-width: 50px; } }
+/* Narrow screens: icons only, tighter spacing, and no home button (the logo above leads home too). */
+@media (max-width: 600px) {
+  .dock .read span, .dock .hide-sm { display: none; }
+  .dock { gap: 2px; padding: 4px; }
+  .dock button, .dock .read { min-width: 44px; padding: 0 10px; }
+  .dock .count { min-width: 44px; }
+}
 
 /* Settings sheet above the toolbar */
 .settings {
@@ -405,7 +412,7 @@ body.focus .together { display: none !important; }
 </div>
 
 <nav class="dock" id="dock" hidden>
-  <button id="homeBtn" data-ta="toStart"><svg class="i"><use href="#i-home"/></svg></button>
+  <button class="hide-sm" id="homeBtn" data-ta="toStart"><svg class="i"><use href="#i-home"/></svg></button>
   <span class="sep hide-sm"></span>
   <button id="prev" data-ta="prevPage"><svg class="i"><use href="#i-prev"/></svg></button>
   <span class="count" id="count"></span>
