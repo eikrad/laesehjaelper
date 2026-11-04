@@ -100,6 +100,15 @@ describe("parasFromOcr", () => {
     expect(parasFromOcr(run1, run2).map((p) => cleanOcr(p.raw))).toEqual(["Det bliver en lang tur", "Bjørne-far var en stor bjørn"]);
   });
 
+  it("Keeps the pass that recognized more of an equally reliable line", () => {
+    // Beside an image, the first pass is unsure of the first word; the flattened pass reads it well.
+    const unsure = page(line(100, [["Bjørne-far", 14], ["synger", 96], ["en", 96], ["sang", 95]]));
+    const sure = page(line(100, [["Bjørne-far", 83], ["synger", 96], ["en", 96], ["sang", 96]]));
+    for (const runs of [[unsure, sure], [sure, unsure]]) {
+      expect(parasFromOcr(...runs).map((p) => cleanOcr(p.raw))).toEqual(["Bjørne-far synger en sang"]);
+    }
+  });
+
   it("Returns positions for painting over text", () => {
     const [p] = parasFromOcr(page(line(100, [["Det", 96], ["bliver", 97], ["en", 97], ["lang", 96]])));
     expect(p.bbox.y0).toBe(100);

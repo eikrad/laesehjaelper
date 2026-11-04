@@ -139,12 +139,13 @@ export function cleanOcr(raw: string, { bookSyllables = false }: { bookSyllables
 }
 
 // For tilted page photos, Tesseract sometimes returns the same line twice (as two
-// overlapping lines). Keep the one with more reliable words.
+// overlapping lines). Keep the one with more reliable words; if equal, the one that kept more
+// words (beside an image, one pass may drop an uncertain word that the other reads well).
 function dedupe(units: Unit[]): Unit[] {
   const area = (b: Box): number => Math.max(0, b.x1 - b.x0) * Math.max(0, b.y1 - b.y0);
   const score = (u: Unit): number => u.ws.filter(strong).length;
   const kept: Unit[] = [];
-  for (const u of [...units].sort((a, b) => score(b) - score(a))) {
+  for (const u of [...units].sort((a, b) => score(b) - score(a) || b.ws.length - a.ws.length)) {
     const clash = kept.some((k) => {
       const i = { x0: Math.max(u.bbox.x0, k.bbox.x0), y0: Math.max(u.bbox.y0, k.bbox.y0), x1: Math.min(u.bbox.x1, k.bbox.x1), y1: Math.min(u.bbox.y1, k.bbox.y1) };
       return area(i) > 0.5 * Math.min(area(u.bbox), area(k.bbox));
