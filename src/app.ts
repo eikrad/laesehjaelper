@@ -586,6 +586,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   function buildPageView(pg: Page, ps: HTMLParagraphElement[]): HTMLDivElement {
     const W = pg.workW!, H = pg.workH!, paras = pg.paras!;
     const pv = document.createElement("div"); pv.className = "pageview";
+    pv.style.setProperty("--ar", String(W / H));   // Lets CSS fit the whole page on screen.
     const img = new Image(); img.src = pg.clean!; img.alt = ""; pv.append(img);
     paras.forEach((pa, i) => {
       const box = document.createElement("div");
