@@ -599,7 +599,9 @@ const Lib = { detectPage, warpPage, orderCorners };
       Object.assign(box.style, { left: x0 / W * 100 + "%", top: y0 / H * 100 + "%", width: (x1 - x0) / W * 100 + "%", height: (y1 - y0) / H * 100 + "%" });
       if (pa.busy && pa.bg) box.style.background = pa.bg;
       const own = i === paras.length - 1 ? ps.slice(i) : ps.slice(i, i + 1);
-      own.forEach(p => box.append(p));
+      const text = document.createElement("div"); text.className = "tbox-text";
+      own.forEach(p => text.append(p));
+      box.append(text);
       pv.append(box);
     });
     return pv;
@@ -670,13 +672,14 @@ const Lib = { detectPage, warpPage, orderCorners };
     boxes.forEach(box => {
       const h = box.clientHeight, w = box.clientWidth;
       if (!h || !w) return;
+      const text = box.querySelector<HTMLElement>(".tbox-text")!;
       // Limit the size to a little over twice the original text size.
       const maxFs = parseFloat(box.dataset.lh || "1") * (box.parentElement?.clientHeight || h) * 2.4;
       let lo = 4, hi = Math.max(8, Math.min(h, maxFs));
       for (let k = 0; k < 12; k++) {
         const mid = (lo + hi) / 2;
         box.style.fontSize = mid + "px";
-        if (box.scrollHeight <= h + 1 && box.scrollWidth <= w + 1) lo = mid; else hi = mid;
+        if (text.scrollHeight <= text.clientHeight + 1 && text.scrollWidth <= text.clientWidth + 1) lo = mid; else hi = mid;
       }
       box.style.fontSize = lo + "px";
       sizes.set(box, lo);
