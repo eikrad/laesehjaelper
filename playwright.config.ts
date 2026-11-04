@@ -7,8 +7,10 @@ export default defineConfig({
   globalTeardown: "./tests/e2e/coverage-teardown.ts",
   timeout: 240_000,
   expect: { timeout: 20_000 },
-  fullyParallel: false,
-  workers: 1,
+  // Every test starts from a fresh browser context, so tests can run side by side.
+  // GitHub's runners for public repositories have 4 CPUs; locally Playwright uses half the CPUs.
+  fullyParallel: true,
+  workers: process.env.CI ? 4 : undefined,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {

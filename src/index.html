@@ -147,8 +147,8 @@ body.editing .thumbs { gap: 16px; }
 /* Wide screens, text view with the photo: the photo on the left stays in view while the large
    text reads on the right. The page buttons at the screen edges keep their room. */
 @media (min-width: 840px) {
-  .wrap:has(> #app.split:not([hidden])) { max-width: min(1100px, calc(100vw - 136px)); }
-  #app.split .pagecard { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
+  body:not(.focus) .wrap:has(> #app.split:not([hidden])) { max-width: min(1100px, calc(100vw - 136px)); }
+  body:not(.focus) #app.split .pagecard { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); }
   #app.split .orig { grid-row: 1 / span 9; align-items: flex-start; }
   #app.split .orig img { position: sticky; top: 14px; max-height: calc(100vh - 28px); max-height: calc(100dvh - 28px); }
   #app.split .pagecard > :not(.orig) { grid-column: 2; }
@@ -196,8 +196,8 @@ body.editing .thumbs { gap: 16px; }
    and the toolbar (74 px from the bottom), so no page needs scrolling. --ar is the page's
    width / height. Phones keep the full width. */
 @media (min-width: 600px) {
-  .reader.pagemode { background: #e9ebef; }
-  .reader.pagemode .pageview { margin: 0 auto; width: min(100%, calc((100vh - 220px) * var(--ar, 1))); width: min(100%, calc((100dvh - 220px) * var(--ar, 1))); }
+  #reader.pagemode { background: #e9ebef; }
+  #reader.pagemode .pageview { margin: 0 auto; width: min(100%, calc((100vh - 220px) * var(--ar, 1))); width: min(100%, calc((100dvh - 220px) * var(--ar, 1))); }
 }
 .tbox { position: absolute; overflow: hidden; line-height: min(var(--lh), 1.6); word-spacing: var(--ws-box); }
 .tbox-text { height: 100%; overflow: hidden; }
