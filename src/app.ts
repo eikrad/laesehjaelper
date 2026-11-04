@@ -341,6 +341,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   }
   function releasePageImages(pg: Page) { releaseImage(pg.img); releaseImage(pg.clean); }
   function newBook(demo = false) {
+    showBookMenu(false); showCheck(false);
     pages.forEach(releasePageImages);
     book = { id: uid(), title: "", pageIds: [], lastPage: 0, cover: null, created: Date.now(), demo };
     pages.length = 0; cur = 0;
@@ -458,6 +459,8 @@ const Lib = { detectPage, warpPage, orderCorners };
   let titleTimer = 0;
   $<HTMLInputElement>("bookTitle").oninput = e => { if (book) { book.title = val(e).trim(); clearTimeout(titleTimer); titleTimer = window.setTimeout(saveBook, 400); } };
   // Book tools for adults, in one menu: check and correct the text, edit pages, save as e-book.
+  // Design inference from distracting storybook extras, not a tested benefit of this menu:
+  // Takacs, Swart & Bus (2015), doi:10.3102/0034654314566989.
   function showBookMenu(on: boolean) {
     $("bookMenu").hidden = !on;
     $<HTMLButtonElement>("bookMenuBtn").setAttribute("aria-expanded", String(on));
@@ -469,6 +472,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   let checking = false;   // "Check and correct the text" was chosen from the menu.
   function showCheck(on: boolean) {
     checking = on;
+    if (!on) setMoving(false);
     const d = $<HTMLDetailsElement>("edit"); d.hidden = !on; d.open = on;
     if (on) d.scrollIntoView({ block: "nearest" });
   }

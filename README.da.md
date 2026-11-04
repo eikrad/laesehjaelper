@@ -79,9 +79,11 @@ Læsehjælper er et læseværktøj, ikke en behandling. Indstillingerne bygger p
 - **Oplæsning** hjælper forståelsen; markering af hvert ord giver ikke ekstra (Keelor m.fl. 2023). At læse den samme tekst flere gange, gerne efter at have hørt den, gør læsningen mere flydende (Lee & Yoon 2017).
 - **Farvet baggrund eller farvede filtre** har ingen påvist effekt ud over placebo (Griffiths m.fl. 2016). Baggrundsfarven er kun et spørgsmål om, hvad der føles rart.
 - **Undervisning:** Systematisk arbejde med bogstaver og lyde er den bedst dokumenterede hjælp ved ordblindhed (Galuschka m.fl. 2014). Dansk er et af de sprog, hvor det tager længst tid at lære at læse sikkert (Seymour m.fl. 2003).
+- **En rolig læseskærm:** Interaktive ekstrafunktioner i digitale billedbøger kan distrahere fra historien (Takacs, Swart & Bus 2015). At samle voksenværktøjer i én bogmenu er et designvalg inspireret af den forskning; undersøgelsen afprøvede ikke denne menu og påviste ikke, at den forbedrer læsningen.
 
 Kilder:
 
+- Takacs, Swart & Bus 2015, *Review of Educational Research* — [doi:10.3102/0034654314566989](https://doi.org/10.3102/0034654314566989)
 - Zorzi m.fl. 2012, *PNAS* — [doi:10.1073/pnas.1205566109](https://doi.org/10.1073/pnas.1205566109)
 - Galliussi m.fl. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
 - Schneps m.fl. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)

@@ -106,6 +106,31 @@ test("Book tools sit in one menu, so the reading screen stays calm", async ({ pa
   await expect(page.locator("#bookMenu")).toBeHidden();
 });
 
+test("Opening another book resets its editing tools", async ({ page }) => {
+  await page.click("#demoBtn");
+  await bookTool(page, "checkTextBtn");
+  await expect(page.locator("#edit")).toBeVisible();
+  await page.click("#bookMenuBtn");
+  await page.goBack();
+  await expect(page.locator("#start")).toBeVisible();
+  // Keyboard activation also starts a calm book, without relying on an outside pointer tap.
+  await page.locator("#demoBtn").press("Enter");
+  await expect(page.locator("#bookMenu")).toBeHidden();
+  await expect(page.locator("#edit")).toBeHidden();
+});
+
+test("Closing the text editor also ends moving text boxes", async ({ page }) => {
+  await addPhotos(page, ["side-da.jpg"]);
+  await waitForText(page);
+  await bookTool(page, "checkTextBtn");
+  await page.click("#moveBtn");
+  await expect(page.locator("#reader .grip").first()).toBeVisible();
+  await page.locator("#edit summary").click();
+  await expect(page.locator("#edit")).toBeHidden();
+  await expect(page.locator("#reader .grip")).toHaveCount(0);
+  await expect(page.locator("#reader")).not.toHaveClass(/moving/);
+});
+
 test("Reading mode shows only the text, read aloud and close", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);

@@ -7,6 +7,14 @@ import { addPhotos, fixture, fresh, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
+test("The book-tools menu has a name in every language", async ({ page }) => {
+  await page.click("#demoBtn");
+  for (const [lang, name] of [["da", "Bogværktøjer"], ["de", "Buchwerkzeuge"], ["en", "Book tools"]]) {
+    await page.click(`#uiLang button[data-v=${lang}]`);
+    await expect(page.locator("#bookMenuBtn")).toHaveAccessibleName(name);
+  }
+});
+
 /**
  * Visible controls under `scope` that are smaller than `min` px in either direction.
  * Links inside running text are exempt, as in WCAG 2.5.5; a colour picker's label is its target.
