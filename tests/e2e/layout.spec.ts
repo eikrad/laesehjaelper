@@ -18,9 +18,17 @@ const smallControls = (page: Page, min = 44, scope = "body") =>
       if (el.tagName === "A" && el.closest("p")) return [];
       if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return [];
       const r = el.getBoundingClientRect();
-      if (r.width >= min && r.height >= min) return [];
+      let { left, right, top, bottom } = r;
+      // An ancestor can clip a nominally large target down to a much smaller hit area.
+      for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+        const style = getComputedStyle(parent), clip = parent.getBoundingClientRect();
+        if (["hidden", "clip"].includes(style.overflowX)) { left = Math.max(left, clip.left); right = Math.min(right, clip.right); }
+        if (["hidden", "clip"].includes(style.overflowY)) { top = Math.max(top, clip.top); bottom = Math.min(bottom, clip.bottom); }
+      }
+      const width = Math.max(0, right - left), height = Math.max(0, bottom - top);
+      if (width >= min && height >= min) return [];
       const name = el.id ? `#${el.id}` : `${el.tagName.toLowerCase()}.${el.className} "${(el.textContent || "").trim().slice(0, 16)}"`;
-      return [`${name} ${Math.round(r.width)}×${Math.round(r.height)}`];
+      return [`${name} ${Math.round(width)}×${Math.round(height)}`];
     });
   }, [min, scope] as const);
 
@@ -81,8 +89,7 @@ test("On touch screens every control is at least 44 px", async ({ page }, info) 
   await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await waitForText(page);
   await expect.poll(() => smallControls(page), { message: "reader" }).toEqual([]);
-  if (page.viewportSize()!.width >= 600)
-    await expect.poll(() => smallControls(page, 48, "#dock"), { message: "toolbar on tablets" }).toEqual([]);
+  await expect.poll(() => smallControls(page, 48, "#dock"), { message: "reading toolbar" }).toEqual([]);
   await page.click("#setBtn");
   await expect.poll(() => smallControls(page), { message: "settings" }).toEqual([]);
   await page.click("#setBtn");

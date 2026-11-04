@@ -183,6 +183,7 @@ body.editing .thumbs { gap: 16px; }
 .pageview { position: relative; line-height: 0; }
 .pageview > img { width: 100%; display: block; }
 .tbox { position: absolute; overflow: hidden; line-height: min(var(--lh), 1.6); word-spacing: var(--ws-box); }
+.tbox-text { height: 100%; overflow: hidden; }
 .tbox p { margin: 0 0 .35em; max-width: none; }
 .tbox p:last-child { margin-bottom: 0; }
 .tbox.busy { border-radius: 12px; padding: 0 .3em; }
@@ -220,9 +221,9 @@ body.editing .thumbs { gap: 16px; }
 /* Phones: icons only, tighter spacing, and no home button (the logo above leads home too). */
 @media (max-width: 440px) {
   .dock .read span, .dock .hide-sm { display: none; }
-  .dock { gap: 2px; padding: 4px; }
-  .dock button, .dock .read { min-width: 44px; padding: 0 10px; }
-  .dock .count { min-width: 44px; }
+  .dock { gap: 0; padding: 4px; }
+  .dock button, .dock .read { padding: 0 10px; }
+  .dock .count { min-width: 40px; }
 }
 
 /* Settings sheet above the toolbar */
@@ -297,10 +298,10 @@ body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
 .togetherhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .together ul { margin: 8px 0 0; padding-left: 1.2em; line-height: 1.5; font-size: 17px; }
 body.focus .together { display: none !important; }
-.reader.moving .tbox { outline: 2px dashed var(--blue); outline-offset: -1px; cursor: move; touch-action: none; user-select: none; }
+.reader.moving .tbox { outline: 2px dashed var(--blue); outline-offset: -1px; cursor: move; touch-action: none; user-select: none; overflow: visible; }
 .reader.moving .tbox.dragging { z-index: 2; outline-style: solid; background: rgba(46,79,209,.08); }
 .reader.moving .w { cursor: move; }
-/* Resize grip: a 44 px target inside the box (which clips overflow) around a 22 px dot in the corner. */
+/* Resize grip: a 44 px target around a 22 px dot, even when the text box is shorter. */
 .grip { position: absolute; right: 0; bottom: 0; width: 44px; height: 44px; cursor: nwse-resize; touch-action: none; z-index: 3; }
 .grip::after { content: ""; position: absolute; right: 3px; bottom: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 3px #fff; }
 #moveBtn.on { background: var(--ink); color: #fff; }
