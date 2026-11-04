@@ -27,11 +27,15 @@ const smallControls = (page: Page, min = 44, scope = "body") =>
       if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return [];
       const r = el.getBoundingClientRect();
       let { left, right, top, bottom } = r;
+      let clipX = true, clipY = true;
       // An ancestor can clip a nominally large target down to a much smaller hit area.
       for (let parent = el.parentElement; parent; parent = parent.parentElement) {
         const style = getComputedStyle(parent), clip = parent.getBoundingClientRect();
-        if (["hidden", "clip"].includes(style.overflowX)) { left = Math.max(left, clip.left); right = Math.min(right, clip.right); }
-        if (["hidden", "clip"].includes(style.overflowY)) { top = Math.max(top, clip.top); bottom = Math.min(bottom, clip.bottom); }
+        // A scroll container can bring the target into view; its outer clipping does not shrink the target.
+        if (["auto", "scroll"].includes(style.overflowX)) clipX = false;
+        if (["auto", "scroll"].includes(style.overflowY)) clipY = false;
+        if (clipX && ["hidden", "clip"].includes(style.overflowX)) { left = Math.max(left, clip.left); right = Math.min(right, clip.right); }
+        if (clipY && ["hidden", "clip"].includes(style.overflowY)) { top = Math.max(top, clip.top); bottom = Math.min(bottom, clip.bottom); }
       }
       const width = Math.max(0, right - left), height = Math.max(0, bottom - top);
       if (width >= min && height >= min) return [];
