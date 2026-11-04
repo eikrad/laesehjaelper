@@ -290,6 +290,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   document.addEventListener("pointerdown", e => {
     swallowClick = false;
     if (!settingsOpen() || (e.target as Element).closest("#settings, #dock")) return;
+    e.preventDefault(); e.stopPropagation();
     showSettings(false); swallowClick = true;
   }, true);
   document.addEventListener("click", e => { if (swallowClick) { swallowClick = false; e.preventDefault(); e.stopPropagation(); } }, true);
@@ -921,11 +922,11 @@ const Lib = { detectPage, warpPage, orderCorners };
   $<HTMLButtonElement>("prev").onclick = () => { if (cur > 0) { cur--; render(); saveBook(); } };
   $<HTMLButtonElement>("next").onclick = () => { if (cur < pages.length - 1) { cur++; render(); saveBook(); } };
   document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && settingsOpen()) { showSettings(false); return; }
     if ((e.target as HTMLElement).tagName === "TEXTAREA") return;
     if (e.key === "ArrowLeft") $<HTMLButtonElement>("prev").click();
     if (e.key === "ArrowRight") $<HTMLButtonElement>("next").click();
-    if (e.key === "Escape" && settingsOpen()) showSettings(false);
-    else if (e.key === "Escape" && document.body.classList.contains("focus")) $<HTMLButtonElement>("focusBtn").click();
+    if (e.key === "Escape" && document.body.classList.contains("focus")) $<HTMLButtonElement>("focusBtn").click();
   });
 
   let editT = 0;

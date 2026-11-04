@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { fresh } from "./helpers";
+import { addPhotos, fresh, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -61,6 +61,33 @@ test("Each hint in the settings sits under its own choice", async ({ page }) => 
   await page.click("#demoBtn");
   await expect(page.locator("#linesSet + .fhint")).toHaveAttribute("data-t", "linesHint");
   await expect(page.locator("#togetherSet + .fhint")).toHaveAttribute("data-t", "togetherHint");
+});
+
+test("Escape closes settings while the text editor has focus", async ({ page }) => {
+  await page.click("#demoBtn");
+  await page.locator("#edit summary").click();
+  await page.click("#setBtn");
+  await page.locator("#text").focus();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#settings")).not.toHaveClass(/open/);
+});
+
+test("Dismissing settings does not drag a text box underneath", async ({ page }) => {
+  await addPhotos(page, ["side-da.jpg"]);
+  await waitForText(page);
+  await page.locator("#edit summary").click();
+  await page.click("#moveBtn");
+  const box = page.locator("#reader .tbox").first();
+  await box.scrollIntoViewIfNeeded();
+  const before = await box.evaluate((el: HTMLElement) => [el.style.left, el.style.top, el.style.width, el.style.height]);
+  await page.click("#setBtn");
+  const bounds = (await box.boundingBox())!;
+  await page.mouse.move(bounds.x + 10, bounds.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(bounds.x + 50, bounds.y + 30, { steps: 4 });
+  await page.mouse.up();
+  await expect(page.locator("#settings")).not.toHaveClass(/open/);
+  expect(await box.evaluate((el: HTMLElement) => [el.style.left, el.style.top, el.style.width, el.style.height])).toEqual(before);
 });
 
 test("German book language splits German sample words", async ({ page }) => {
