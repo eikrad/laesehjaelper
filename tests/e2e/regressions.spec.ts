@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
 import type { Para } from "../../src/types";
-import { fresh } from "./helpers";
+import { bookTool, fresh } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
@@ -27,7 +27,7 @@ async function openStoredBook(page: Page, items: StoredPage[]) {
   }, items);
   await page.reload(); await page.locator(".book").click();
   await expect(page.locator("#text")).toHaveValue(items[0].text);
-  await page.locator("#edit summary").click();
+  await bookTool(page, "checkTextBtn");
 }
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
@@ -128,10 +128,10 @@ test("A page deleted during OCR stays deleted after reopening", async ({ page })
     }) };
   ` }));
   await page.reload();
-  const { addPhotos, waitForText } = await import("./helpers");
+  const { addPhotos, bookTool, waitForText } = await import("./helpers");
   await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await page.waitForFunction(() => "finishRecognition" in window);
-  await page.click("#editPagesBtn");
+  await bookTool(page, "editPagesBtn");
   await page.locator(".thumb").first().locator(".ctl .x").click();
   await expect(page.locator(".thumb")).toHaveCount(1);
   await page.evaluate(() => (window as unknown as { finishRecognition: () => void }).finishRecognition());

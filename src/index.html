@@ -115,8 +115,8 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .bookbar input { flex: 1; min-width: 0; font-size: 22px; font-weight: 700; border: 0; background: transparent; padding: 6px 2px; border-bottom: 1.5px solid transparent; border-radius: 0; }
 .bookbar input:focus { border-bottom-color: var(--line); outline: none; }
 .btn-ghost.small { min-height: 44px; justify-content: center; padding: 10px 14px; font-size: 15px; white-space: nowrap; }
-.editbar { display: none; margin-top: 14px; }
-body.editing .editbar { display: block; }
+.editbar { display: none; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+body.editing .editbar { display: flex; }
 .btn-danger { border: 1.5px solid #c9372c; color: #c9372c; background: #fff; border-radius: 12px; padding: 10px 16px; font-weight: 700; }
 .btn-danger.armed { background: #c9372c; color: #fff; }
 .thumb { position: relative; flex: 0 0 auto; }
@@ -313,9 +313,13 @@ input[type=range] { width: 100%; height: 44px; margin: 0; accent-color: var(--bl
 .installrow { margin: 18px 0 0; }
 .importrow { margin: 10px 0 0; }
 .importrow .linkbtn { cursor: pointer; }
-#exportBtn { gap: 6px; display: inline-flex; align-items: center; }
-#exportBtn svg { width: 18px; height: 18px; }
-@media (max-width: 520px) { #exportBtn span { display: none; } }
+#bookMenuBtn { gap: 6px; }
+#bookMenuBtn svg { width: 20px; height: 20px; }
+@media (max-width: 520px) { #bookMenuBtn span { display: none; } }
+.bookmenu { position: relative; }
+.menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 25; display: grid; min-width: 250px; padding: 6px; background: #fff; border-radius: 14px; box-shadow: 0 0 0 1px var(--line), 0 16px 40px -16px rgba(23,25,59,.45); }
+.menu button { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border: 0; background: none; border-radius: 10px; font-weight: 700; text-align: left; white-space: nowrap; }
+@media (hover: hover) { .menu button:hover { background: var(--sky); } }
 .profrow { display: flex; gap: 8px; margin-top: 8px; }
 .profrow select, .profrow input { flex: 1; min-width: 0; }
 .profrow input { border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 12px; background: #fff; }
@@ -436,8 +440,15 @@ body.focus .together { display: none !important; }
   <section id="app" hidden>
     <div class="bookbar">
       <input id="bookTitle" autocomplete="off" data-tp="titlePh">
-      <button class="btn-ghost small" id="exportBtn"><svg class="i"><use href="#i-download"/></svg><span data-t="exportBook"></span></button>
-      <button class="btn-ghost small" id="editPagesBtn" data-t="editPages"></button>
+      <!-- Tools for adults sit in one menu, so the reading screen stays calm. -->
+      <div class="bookmenu">
+        <button class="btn-ghost small" id="bookMenuBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="bookMenu"><svg class="i"><use href="#i-book"/></svg><span data-t="bookTools"></span></button>
+        <div class="menu" id="bookMenu" role="menu" hidden>
+          <button role="menuitem" id="checkTextBtn"><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></button>
+          <button role="menuitem" id="editPagesBtn"><svg class="i"><use href="#i-crop"/></svg><span data-t="editPages"></span></button>
+          <button role="menuitem" id="exportBtn"><svg class="i"><use href="#i-download"/></svg><span data-t="exportBook"></span></button>
+        </div>
+      </div>
     </div>
     <article class="pagecard">
       <div class="orig" id="orig"><img id="origImg" alt=""></div>
@@ -448,7 +459,7 @@ body.focus .together { display: none !important; }
         <ul id="togetherQs"></ul>
         <div class="profrow" id="ownQRow" hidden><input id="ownQ" autocomplete="off" data-tp="ownQPh"><button class="btn-ghost small" id="ownQSave" data-t="save"></button></div>
       </div>
-      <details class="edit" id="edit">
+      <details class="edit" id="edit" hidden>
         <summary><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></summary>
         <textarea id="text" spellcheck="true"></textarea>
         <p class="hint" data-th="editHint"></p>
@@ -461,7 +472,7 @@ body.focus .together { display: none !important; }
       </details>
     </article>
     <div class="thumbs" id="thumbs"></div>
-    <div class="editbar" id="editbar"><button class="btn-danger" id="delBookBtn" data-t="deleteBook"></button></div>
+    <div class="editbar" id="editbar"><button class="btn-ghost" id="editDoneBtn" data-t="done"></button><button class="btn-danger" id="delBookBtn" data-t="deleteBook"></button></div>
     <button class="edgenav" id="edgePrev" data-ta="prevPage"><svg class="i"><use href="#i-prev"/></svg></button>
     <button class="edgenav next" id="edgeNext" data-ta="nextPage"><svg class="i"><use href="#i-next"/></svg></button>
   </section>

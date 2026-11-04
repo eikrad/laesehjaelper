@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, fresh, waitForText } from "./helpers";
+import { addPhotos, bookTool, fresh, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -61,7 +61,7 @@ test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
   await expect(page.locator("#bookTitle")).toHaveValue("Min testbog");
   await expect(page.locator("#count")).toHaveText("2 / 2");   // Resume where reading stopped.
 
-  await page.click("#editPagesBtn");
+  await bookTool(page, "editPagesBtn");
   await page.locator(".thumb").nth(1).locator(".ctl button").first().click();   // Move page 2 to the left.
   await expect(page.locator("#count")).toHaveText("1 / 2");
   await expect(page.locator("#text")).toHaveValue(/Søren går en tur/);
@@ -76,7 +76,7 @@ test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
 test("Saves text corrections", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
-  await page.click("#edit summary");
+  await bookTool(page, "checkTextBtn");
   const t = await page.locator("#text").inputValue();
   await page.fill("#text", t.replace("Pindsvinet", "Pind·svi·net"));
   await expect(page.locator('.w[data-word="Pindsvinet"] .s')).toHaveCount(3);
@@ -102,7 +102,7 @@ test("Keeps headings larger and bold words bold", async ({ page }) => {
 test("Moves, saves and resets text boxes on the book page", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
-  await page.locator("#edit summary").click();
+  await bookTool(page, "checkTextBtn");
   await page.click("#moveBtn");
   await expect(page.locator("#reader")).toHaveClass(/moving/);
   const box = page.locator("#reader .tbox").first();
@@ -129,7 +129,7 @@ test("Moves, saves and resets text boxes on the book page", async ({ page }) => 
   const top2 = await page.locator("#reader .tbox").first().evaluate(el => el.getBoundingClientRect().top - el.parentElement!.getBoundingClientRect().top);
   expect(Math.abs(top2 - top1)).toBeLessThan(3);
   // Reset the position.
-  await page.locator("#edit summary").click();
+  await bookTool(page, "checkTextBtn");
   await page.click("#resetPlaceBtn");
   const top3 = await page.locator("#reader .tbox").first().evaluate(el => el.getBoundingClientRect().top - el.parentElement!.getBoundingClientRect().top);
   expect(Math.abs(top3 - top0)).toBeLessThan(3);

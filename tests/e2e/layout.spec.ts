@@ -99,7 +99,7 @@ test("On touch screens every control is at least 44 px", async ({ page }, info) 
   await page.click("#setBtn");
   await expect.poll(() => smallControls(page), { message: "settings" }).toEqual([]);
   await page.click("#setBtn");
-  await page.locator("#edit").evaluate((d: HTMLDetailsElement) => { d.open = true; });
+  await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
   await page.locator("#editPagesBtn").evaluate((b: HTMLButtonElement) => b.click());
   await page.locator("#moveBtn").evaluate((b: HTMLButtonElement) => b.click());
   await expect.poll(() => smallControls(page), { message: "editing pages and text boxes" }).toEqual([]);
@@ -154,7 +154,7 @@ test("Scrolled to the end, the toolbar covers nothing that can be tapped", async
   await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await waitForText(page);
   await page.locator("#editPagesBtn").evaluate((b: HTMLButtonElement) => b.click());   // Editing adds the most controls below the page.
-  await page.locator("#edit").evaluate((d: HTMLDetailsElement) => { d.open = true; });
+  await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   const dock = (await page.locator("#dock").boundingBox())!;
   for (const el of await page.locator("#app button:visible, #app summary:visible, #app label:visible").all()) {
@@ -189,7 +189,7 @@ test("Swiping turns the page; taps, scrolling and moving text boxes do not", asy
   await swipeOnReader(page, -10, 0);    // A tap.
   await swipeOnReader(page, -60, 200);  // Scrolling.
   await expect(count).toHaveText("1 / 2");
-  await page.locator("#edit").evaluate((d: HTMLDetailsElement) => { d.open = true; });
+  await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
   await page.locator("#moveBtn").evaluate((b: HTMLButtonElement) => b.click());
   await page.evaluate(() => window.scrollTo(0, 0));
   await swipeOnReader(page, -150, 0);
