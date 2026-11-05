@@ -118,7 +118,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse", view: "Visning", viewPage: "Bogens side", viewText: "Kun teksten", hyph: "Bindestreger i bogen", hyphNormal: "Almindelige", hyphBook: "Stavelsesdeling", hyphHint: "Vælg „Stavelsesdeling“, hvis bogen selv deler ord med bindestreg, f.eks. „sko-le“.",
       background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
       original: "Originalside", show: "Vis", hide: "Skjul", origAlt: "Originalside",
-      editSummary: "Tjek og ret teksten", bookTools: "Bogværktøjer", editBook: "Rediger bog", readBook: "Læs bogen",
+      editSummary: "Tjek og ret teksten", bookTools: "Bogværktøjer", editBook: "Rediger bog", readBook: "Tilbage til læsning", correctPage: "Ret denne side",
       editHint: "Tom linje = nyt afsnit. Du kan selv sætte stavelsesgrænser med ·, f.eks. <b>hun·den</b>. Fed skrift: *ord*.",
       foot: "Alt foregår på din egen telefon eller computer. Billederne bliver ikke sendt nogen steder hen.",
       noText: "Der blev ikke fundet nogen tekst på denne side.<br>Åbn „Tjek og ret teksten“ og skriv den selv.",
@@ -149,7 +149,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Syllable colours", cBlueRed: "Blue and red", cBlueBlack: "Blue and black", cRedBlack: "Red and black", cPurpleGreen: "Purple and green", syl1: "1st syllable", syl2: "2nd syllable", view: "View", viewPage: "Book page", viewText: "Text only", hyph: "Hyphens in the book", hyphNormal: "Normal", hyphBook: "Syllable breaks", hyphHint: "Choose “Syllable breaks” if the book itself splits words with hyphens, e.g. “gar-den”.",
       background: "Background", bWhite: "White", bCream: "Cream", bYellow: "Yellow", bBlue: "Light blue", bGreen: "Light green",
       original: "Original page", show: "Show", hide: "Hide", origAlt: "Original page",
-      editSummary: "Check and correct the text", bookTools: "Book tools", editBook: "Edit book", readBook: "Read book",
+      editSummary: "Check and correct the text", bookTools: "Book tools", editBook: "Edit book", readBook: "Back to reading", correctPage: "Correct this page",
       editHint: "Empty line = new paragraph. Set your own syllable breaks with ·, e.g. <b>gar·den</b>. Bold: *word*.",
       foot: "Everything happens on your own phone or computer. Your photos are not sent anywhere.",
       noText: "No text was found on this page.<br>Open “Check and correct the text” and type it in yourself.",
@@ -180,7 +180,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe", view: "Ansicht", viewPage: "Buchseite", viewText: "Nur Text", hyph: "Bindestriche im Buch", hyphNormal: "Normal", hyphBook: "Silbentrennung", hyphHint: "„Silbentrennung“ wählen, wenn das Buch Wörter selbst mit Bindestrich trennt, z. B. „Scho-ko-la-de“.",
       background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
       original: "Originalseite", show: "Zeigen", hide: "Verbergen", origAlt: "Originalseite",
-      editSummary: "Text prüfen und korrigieren", bookTools: "Buchwerkzeuge", editBook: "Buch bearbeiten", readBook: "Buch lesen",
+      editSummary: "Text prüfen und korrigieren", bookTools: "Buchwerkzeuge", editBook: "Buch bearbeiten", readBook: "Zurück zum Lesen", correctPage: "Diese Seite korrigieren",
       editHint: "Leere Zeile = neuer Absatz. Eigene Silbengrenzen mit · setzen, z.&nbsp;B. <b>O·ma</b>. Fett: *Wort*.",
       foot: "Alles passiert auf deinem eigenen Handy oder Computer. Die Fotos werden nirgendwohin geschickt.",
       noText: "Auf dieser Seite wurde kein Text gefunden.<br>Öffne „Text prüfen“ und tippe ihn selbst ein.",
@@ -351,7 +351,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   function releasePageImages(pg: Page) { releaseImage(pg.img); releaseImage(pg.clean); }
   function newBook(demo = false) {
     navigationId++;
-    showCheck(false);
+    showEditEntry(false); showCheck(false);
     pages.forEach(releasePageImages);
     book = { id: demo ? "sample" : uid(), title: "", pageIds: [], lastPage: 0, cover: null, created: Date.now(), demo };
     pages.length = 0; cur = 0;
@@ -1530,7 +1530,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     navigationId++;
     if (push && mode === "workshop" && !$("start").hidden) writeLocation(currentLocation("read"), true);
     view = mode;
-    showCheck(false); showSettings(false);
+    showEditEntry(false); showCheck(false); showSettings(false);
     document.body.classList.remove("focus"); setFocusBtn();
     document.body.classList.toggle("workshop", view === "workshop");
     comparing = false; setCompareBtn();
@@ -1563,13 +1563,26 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   function showStart(fromHistory = false) {
     navigationId++;
     if (!fromHistory && !$("app").hidden && book) { history.go(view === "workshop" ? -2 : -1); return; }
-    stopSpeech(); showCheck(false);
+    stopSpeech(); showEditEntry(false); showCheck(false);
     document.body.classList.remove("focus", "workshop"); setFocusBtn();
     $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; showSettings(false);
     writeLocation({ view: "shelf" }, false);
     saveBook(); renderShelf(); window.scrollTo(0, 0);
   }
-  $("editBookBtn").onclick = () => { showApp("workshop"); render(); };
+  function showEditEntry(on: boolean) {
+    $("editEntry").hidden = !on;
+    $("editBookBtn").setAttribute("aria-expanded", String(on));
+    $<HTMLButtonElement>("correctPageBtn").disabled = pages[cur]?.status !== "done";
+  }
+  function enterWorkshop(correct = false) {
+    showApp("workshop"); render();
+    if (correct && pages[cur]?.status === "done") { showCheck(true); $<HTMLTextAreaElement>("text").focus(); }
+  }
+  $("editBookBtn").onclick = () => showEditEntry($("editEntry").hidden !== false);
+  $("openWorkshopBtn").onclick = () => enterWorkshop();
+  $("correctPageBtn").onclick = () => enterWorkshop(true);
+  document.addEventListener("pointerdown", e => { if (!(e.target as Element).closest(".reading-entry")) showEditEntry(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("editEntry").hidden) { showEditEntry(false); $<HTMLButtonElement>("editBookBtn").focus(); } });
   $("readBookBtn").onclick = () => { saveBook(); history.back(); };
   $<HTMLButtonElement>("homeBtn").onclick = () => { if (view === "workshop") history.back(); else showStart(); };
   $("home").onclick = () => showStart();

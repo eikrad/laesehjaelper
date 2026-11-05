@@ -144,6 +144,10 @@ body.workshop .thumbs { gap: 16px; }
 .disclaimer p { margin-top: 8px; line-height: 1.55; }
 
 /* Reading and making books have separate entry points. */
+.reading-entry { position: relative; }
+.entry-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 25; display: grid; width: min(300px, calc(100vw - 36px)); padding: 6px; background: white; border-radius: 14px; box-shadow: 0 0 0 1px var(--line), 0 16px 40px -16px rgba(23,25,59,.45); }
+.entry-menu button { min-height: 48px; padding: 8px 14px; border: 0; background: none; border-radius: 10px; font-weight: 700; text-align: left; }
+.entry-menu button:hover { background: var(--sky); }
 #readingTitle { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 body:not(.workshop) .bookbar input,
 body:not(.workshop) #edit, body:not(.workshop) #thumbs,
@@ -456,7 +460,13 @@ body.focus .together { display: none !important; }
   <section id="app" hidden>
     <div class="bookbar">
       <strong id="readingTitle" class="reading-only"></strong>
-      <button class="btn-ghost small reading-only" id="editBookBtn" data-t="editBook"></button>
+      <div class="reading-entry reading-only">
+        <button class="btn-ghost small" id="editBookBtn" data-t="editBook" aria-haspopup="menu" aria-expanded="false" aria-controls="editEntry"></button>
+        <div class="entry-menu" id="editEntry" role="menu" hidden>
+          <button role="menuitem" id="correctPageBtn" data-t="correctPage"></button>
+          <button role="menuitem" id="openWorkshopBtn" data-t="editBook"></button>
+        </div>
+      </div>
       <button class="btn-ghost small workshop-only" id="readBookBtn" data-t="readBook"></button>
       <input id="bookTitle" autocomplete="off" data-tp="titlePh">
     </div>
