@@ -344,11 +344,13 @@ const Lib = { detectPage, warpPage, orderCorners };
   });
 
   let book: Book | null = null;
+  let navigationId = 0;
   function releaseImage(src: string | null | undefined) {
     if (src?.startsWith("blob:")) URL.revokeObjectURL(src);
   }
   function releasePageImages(pg: Page) { releaseImage(pg.img); releaseImage(pg.clean); }
   function newBook(demo = false) {
+    navigationId++;
     showBookMenu(false); showCheck(false);
     pages.forEach(releasePageImages);
     book = { id: demo ? "sample" : uid(), title: "", pageIds: [], lastPage: 0, cover: null, created: Date.now(), demo };
@@ -405,10 +407,12 @@ const Lib = { detectPage, warpPage, orderCorners };
   }
 
   async function openBook(b: Book, target?: Exclude<BookLocation, { view: "shelf" }>, fromHistory = false) {
-    newBook();
-    book = b;
+    const requestId = ++navigationId;
     let recs: PageRecord[] = [];
     try { recs = await DB.pagesOf<PageRecord>(b.id); } catch (e) { storageFail(e); }
+    if (requestId !== navigationId) return;
+    newBook();
+    book = b;
     const byId: Record<string, PageRecord> = Object.fromEntries(recs.map(r => [r.id, r]));
     const ordered = (b.pageIds || []).map(id => byId[id]).filter(Boolean);
     recs.forEach(r => { if (!ordered.includes(r)) ordered.push(r); });
@@ -1532,6 +1536,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   }
   function syncLocation() { writeLocation(currentLocation(), false); }
   function showApp(mode: "read" | "workshop" = "read", push = true) {
+    navigationId++;
     if (push && mode === "workshop" && !$("start").hidden) writeLocation(currentLocation("read"), true);
     view = mode;
     showBookMenu(false); showCheck(false); showSettings(false);
@@ -1542,6 +1547,9 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     writeLocation(currentLocation(), push);
   }
   async function restoreLocation() {
+    // A crop has not been accepted or saved yet. Keep its history entry until it finishes.
+    if (!$("crop").hidden) { writeLocation(currentLocation(), true); return; }
+    const requestId = ++navigationId;
     const target = parseLocation(location.hash);
     seedHistory(target);
     if (target.view === "shelf") { showStart(true); return; }
@@ -1554,11 +1562,13 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     if (target.bookId === "sample") { openDemo(false, target.view); return; }
     let saved: Book | undefined;
     try { saved = (await DB.all<Book>("books")).find(b => b.id === target.bookId); } catch (e) { storageFail(e); }
+    if (requestId !== navigationId) return;
     if (!saved) { showStart(true); return; }
     await openBook(saved, target, true);
   }
   window.addEventListener("popstate", () => { restoreLocation(); });
   function showStart(fromHistory = false) {
+    navigationId++;
     if (!fromHistory && !$("app").hidden && book) { history.go(view === "workshop" ? -2 : -1); return; }
     stopSpeech(); showBookMenu(false); showCheck(false);
     document.body.classList.remove("focus", "editing", "workshop"); setFocusBtn();
