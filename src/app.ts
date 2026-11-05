@@ -1546,7 +1546,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     $("start").hidden = true; $("app").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0);
     writeLocation(currentLocation(), push);
   }
-  async function restoreLocation() {
+  async function restoreLocation(fromAppHistory = false) {
     // A crop has not been accepted or saved yet. Keep its history entry until it finishes.
     if (!$("crop").hidden) { writeLocation(currentLocation(), true); return; }
     const requestId = ++navigationId;
@@ -1554,7 +1554,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     seedHistory(target);
     if (target.view === "shelf") { showStart(true); return; }
     if (book?.id === target.bookId && pages.length) {
-      if (!(view === "workshop" && target.view === "read")) {
+      if (!(fromAppHistory && view === "workshop" && target.view === "read")) {
         const i = pages.findIndex(pg => pg.id === target.pageId); if (i >= 0) cur = i;
       }
       showApp(target.view, false); render(); return;
@@ -1566,7 +1566,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     if (!saved) { showStart(true); return; }
     await openBook(saved, target, true);
   }
-  window.addEventListener("popstate", () => { restoreLocation(); });
+  window.addEventListener("popstate", e => { restoreLocation(e.state?.laese === "read"); });
   function showStart(fromHistory = false) {
     navigationId++;
     if (!fromHistory && !$("app").hidden && book) { history.go(view === "workshop" ? -2 : -1); return; }
