@@ -1026,21 +1026,29 @@ const Lib = { detectPage, warpPage, orderCorners };
   const queue: Page[] = [];
   async function addFiles(files: FileList | File[] | null) {
     const list = [...(files || [])].filter(f => f.type.startsWith("image/"));
-    if (!list.length) return;
+    if (!list.length || !book) return;
+    const owner = book;
     showApp("workshop");
+    const generation = navigationId;
+    const ownsPreparation = () => book === owner && navigationId === generation;
     const first = pages.length;
     for (const [n, f] of list.entries()) {
       try {
         const { canvas: photo } = await loadImage(f);
+        if (!ownsPreparation()) return;
         const { canvas, corners } = await cropFlow(photo, null, list.length > 1 ? t("cropOf", { a: n + 1, b: list.length }) : "");
-        const pg: Page = { bookId: book && !book.demo ? book.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: S.lang, text: "", status: "wait", progress: 0 };
+        if (!ownsPreparation()) return;
+        const pg: Page = { bookId: !owner.demo ? owner.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: S.lang, text: "", status: "wait", progress: 0 };
         pages.push(pg); queue.push(pg);
         if (n === 0) { cur = pages.length - 1; render(); }
-        await savePage(pg); await saveBook();
+        await savePage(pg);
+        // Navigation may cancel the remaining batch, but an accepted page still needs its book record.
+        if (book === owner) await saveBook();
         runQueue();
+        if (!ownsPreparation()) return;
       } catch (e) { toast(e instanceof Error ? e.message : String(e)); }
     }
-    if (!pages.length) return;
+    if (!ownsPreparation() || !pages.length) return;
     cur = Math.min(first, pages.length - 1);
     render();
   }
@@ -1540,7 +1548,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     $("delBookBtn").classList.remove("armed"); $("delBookBtn").textContent = t("deleteBook");
     showCheck(mode === "workshop"); window.scrollTo(0, 0);
   }
-  async function restoreLocation() {
+  async function restoreLocation(fromAppHistory = false) {
     // A crop has not been accepted or saved yet. Keep its history entry until it finishes.
     if (!$("crop").hidden) { writeLocation(currentLocation(), true); return; }
     const requestId = ++navigationId;
@@ -1548,7 +1556,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     seedHistory(target);
     if (target.view === "shelf") { showStart(true); return; }
     if (book?.id === target.bookId && pages.length) {
-      if (!(view === "workshop" && target.view === "read")) {
+      if (!(fromAppHistory && view === "workshop" && target.view === "read")) {
         const i = pages.findIndex(pg => pg.id === target.pageId); if (i >= 0) cur = i;
       }
       showApp(target.view, false); render(); return;
@@ -1560,7 +1568,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     if (!saved) { showStart(true); return; }
     await openBook(saved, target, true);
   }
-  window.addEventListener("popstate", () => { restoreLocation(); });
+  window.addEventListener("popstate", e => { restoreLocation(e.state?.laese === "read"); });
   function showStart(fromHistory = false) {
     navigationId++;
     if (!fromHistory && !$("app").hidden && book) { history.go(view === "workshop" ? -2 : -1); return; }
