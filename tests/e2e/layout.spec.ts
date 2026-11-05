@@ -346,3 +346,24 @@ test("The workshop puts the page list beside its editor on wide screens and abov
   await expect(page.locator("#reader")).toContainText("Anden prøveside.");
   await expect(page).toHaveURL(/#read\/workshop\/workshop-1$/);
 });
+
+test("The parent gate supports a deliberate touch hold with visible progress", async ({ page }, info) => {
+  test.skip(!info.project.use.hasTouch, "Touch input needs a touch screen.");
+  await seedBooks(page, [{ id: "touch-gate", title: "En original prøvebog", texts: ["En original prøveside."] }]);
+  await page.locator(".book").click();
+  await page.click("#setBtn");
+  await page.click('#gateSet button[data-v="an"]');
+  await page.click("#setClose");
+  const button = page.locator("#editBookBtn"), r = (await button.boundingBox())!;
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: r.x + r.width / 2, y: r.y + r.height / 2 }] });
+  await page.waitForTimeout(400);
+  expect(await button.evaluate(el => parseFloat(el.style.getPropertyValue("--hold-progress")))).toBeGreaterThan(0);
+  expect(await button.evaluate(el => getComputedStyle(el).backgroundImage)).toContain("linear-gradient");
+  await page.waitForTimeout(1800);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await cdp.detach();
+  await expect(page.locator("#editEntry")).toBeVisible();
+  await page.click("#correctPageBtn");
+  await expect(page.locator("#text")).toBeFocused();
+});
