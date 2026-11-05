@@ -47,3 +47,37 @@ test("Leaving image preparation cannot open a crop or add a page in another book
   await page.locator(".book", { hasText: "Original book B" }).click();
   await expect(page.locator("#count")).toHaveText("1 / 1");
 });
+
+test("An accepted first photo survives Back during storage and reload", async ({ page }) => {
+  await fresh(page);
+  await page.route("**/tesseract.min.js", route => route.fulfill({ contentType: "text/javascript", body:
+    "window.Tesseract = { createWorker: async () => new Promise(() => {}) };",
+  }));
+  await page.reload();
+  await page.setInputFiles("#file", fixture("side-da.jpg"));
+  await expect(page.locator("#crop")).toBeVisible();
+  await expect(page.locator("#cropMsg")).not.toContainText("…", { timeout: 120000 });
+  await page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const r = indexedDB.open("laesehjaelper", 1);
+      r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
+    });
+    const state = { release: false, finished: false };
+    Object.assign(window, { pendingPhotoSave: state });
+    const tx = db.transaction("pages", "readwrite");
+    const keepOpen = () => { tx.objectStore("pages").get("missing").onsuccess = () => { if (!state.release) keepOpen(); }; };
+    keepOpen();
+    tx.oncomplete = () => { state.finished = true; db.close(); };
+  });
+  await page.click("#cropWhole");
+  await expect(page.locator("#thumbs .thumb")).toHaveCount(1);
+  await page.goBack();
+  await expect(page).toHaveURL(/#read\//);
+  await page.evaluate(() => { (window as unknown as { pendingPhotoSave: { release: boolean } }).pendingPhotoSave.release = true; });
+  await page.waitForFunction(() => (window as unknown as { pendingPhotoSave: { finished: boolean } }).pendingPhotoSave.finished);
+  // Let the queued write and its continuation finish before restoring from storage.
+  await page.waitForTimeout(300);
+  await page.reload();
+  await expect(page.locator("#app")).toBeVisible({ timeout: 1500 });
+  await expect(page.locator("#count")).toHaveText("1 / 1");
+});

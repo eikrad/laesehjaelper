@@ -1041,8 +1041,8 @@ const Lib = { detectPage, warpPage, orderCorners };
         pages.push(pg); queue.push(pg);
         if (n === 0) { cur = pages.length - 1; render(); }
         await savePage(pg);
-        if (!ownsPreparation()) { runQueue(); return; }
-        await saveBook();
+        // Navigation may cancel the remaining batch, but an accepted page still needs its book record.
+        if (book === owner) await saveBook();
         runQueue();
         if (!ownsPreparation()) return;
       } catch (e) { toast(e instanceof Error ? e.message : String(e)); }
