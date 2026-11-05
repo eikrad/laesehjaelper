@@ -22,3 +22,25 @@ for (const [lang, correct, back] of [
     await expect(page.locator("#reader")).toContainText("En rettet original sætning.");
   });
 }
+
+test.describe("Correction availability", () => {
+  test.use({ serviceWorkers: "block" });
+  test("An open correction menu follows the current page's readiness", async ({ page }) => {
+    await fresh(page);
+    await page.route("**/tesseract.min.js", route => route.fulfill({ contentType: "text/javascript", body:
+      "window.Tesseract = { createWorker: async () => { window.ocrWaiting = true; return new Promise(() => {}); } };",
+    }));
+    await seedBooks(page, [{ id: "ready", title: "En original bog", texts: ["En klar original side.", ""], readyPages: 1 }]);
+    await page.locator(".book").click();
+    await page.waitForFunction(() => "ocrWaiting" in window);
+    await page.click("#editBookBtn");
+    await expect(page.locator("#correctPageBtn")).toBeEnabled();
+    await page.keyboard.press("ArrowRight");
+    await expect(page.locator("#correctPageBtn")).toBeDisabled({ timeout: 1500 });
+    await page.keyboard.press("ArrowLeft");
+    await expect(page.locator("#correctPageBtn")).toBeEnabled();
+    await page.click("#correctPageBtn");
+    await expect(page.locator("#text")).toBeFocused();
+    await expect(page.locator("#text")).toHaveValue("En klar original side.");
+  });
+});

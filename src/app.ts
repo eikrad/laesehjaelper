@@ -891,6 +891,7 @@ const Lib = { detectPage, warpPage, orderCorners };
 
   function render() {
     const pg = pages[cur];
+    $<HTMLButtonElement>("correctPageBtn").disabled = pg?.status !== "done";
     $("readingTitle").textContent = book?.title || t("untitled");
     if (!$("app").hidden) syncLocation();
     if (!pg) { showStatus(t("noText")); renderThumbs(); return; }
