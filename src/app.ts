@@ -1025,21 +1025,29 @@ const Lib = { detectPage, warpPage, orderCorners };
   const queue: Page[] = [];
   async function addFiles(files: FileList | File[] | null) {
     const list = [...(files || [])].filter(f => f.type.startsWith("image/"));
-    if (!list.length) return;
+    if (!list.length || !book) return;
+    const owner = book;
     showApp("workshop");
+    const generation = navigationId;
+    const ownsPreparation = () => book === owner && navigationId === generation;
     const first = pages.length;
     for (const [n, f] of list.entries()) {
       try {
         const { canvas: photo } = await loadImage(f);
+        if (!ownsPreparation()) return;
         const { canvas, corners } = await cropFlow(photo, null, list.length > 1 ? t("cropOf", { a: n + 1, b: list.length }) : "");
-        const pg: Page = { bookId: book && !book.demo ? book.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: S.lang, text: "", status: "wait", progress: 0 };
+        if (!ownsPreparation()) return;
+        const pg: Page = { bookId: !owner.demo ? owner.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: S.lang, text: "", status: "wait", progress: 0 };
         pages.push(pg); queue.push(pg);
         if (n === 0) { cur = pages.length - 1; render(); }
-        await savePage(pg); await saveBook();
+        await savePage(pg);
+        if (!ownsPreparation()) { runQueue(); return; }
+        await saveBook();
         runQueue();
+        if (!ownsPreparation()) return;
       } catch (e) { toast(e instanceof Error ? e.message : String(e)); }
     }
-    if (!pages.length) return;
+    if (!ownsPreparation() || !pages.length) return;
     cur = Math.min(first, pages.length - 1);
     render();
   }
