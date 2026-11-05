@@ -89,3 +89,17 @@ test("A delayed book load cannot reopen after Back to the shelf", async ({ page 
   await expect(page.locator("#app")).toBeHidden({ timeout: 1500 });
   await expect(page).toHaveURL(/#shelf$/);
 });
+
+test("An explicit reading link selects its requested page from the workshop", async ({ page }) => {
+  await seedBooks(page, [{ id: "link", title: "Original test book", texts: ["First original page.", "Second original page.", "Third original page."], lastPage: 2 }]);
+  await page.locator(".book").click();
+  await page.goto("/#edit/link/link-2");
+  await page.goto("/#read/link/link-0");
+  await expect(page.locator("#count")).toHaveText("1 / 3", { timeout: 1500 });
+  await expect(page).toHaveURL(/#read\/link\/link-0$/);
+  await page.goto("/#edit/link/link-0");
+  await page.click("#next");
+  await page.goBack();
+  await expect(page).toHaveURL(/#read\/link\/link-1$/);
+  await expect(page.locator("#count")).toHaveText("2 / 3");
+});
