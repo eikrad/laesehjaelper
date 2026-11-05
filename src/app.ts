@@ -894,8 +894,10 @@ const Lib = { detectPage, warpPage, orderCorners };
     $("readingTitle").textContent = book?.title || t("untitled");
     if (!$("app").hidden) syncLocation();
     if (!pg) { showStatus(t("noText")); renderThumbs(); return; }
-    $("edit").hidden = !checking || pg.status !== "done";
-    $<HTMLButtonElement>("checkTextBtn").disabled = pg.status !== "done";
+    const pending = pg.status === "wait" || pg.status === "ocr";
+    $("edit").hidden = !checking || pending;
+    $<HTMLButtonElement>("checkTextBtn").disabled = pending;
+    $<HTMLTextAreaElement>("text").disabled = pg.status !== "done";
     $("count").textContent = t("pageOf", { a: cur + 1, b: pages.length });
     if (document.activeElement !== $<HTMLInputElement>("bookTitle")) $<HTMLInputElement>("bookTitle").value = (book && book.title) || "";
     $<HTMLButtonElement>("delBookBtn").hidden = !book || !!book.demo;

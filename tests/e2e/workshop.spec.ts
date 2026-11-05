@@ -39,3 +39,22 @@ test.describe("Workshop recognition status", () => {
     await expect(page.locator("#text")).toHaveValue("En klar side.");
   });
 });
+
+test.describe("Workshop recognition recovery", () => {
+  test.use({ serviceWorkers: "block" });
+  test("A failed page still offers recognition retry and crop tools", async ({ page }) => {
+    const { addPhotos } = await import("./helpers");
+    await page.route("**/tesseract.min.js", route => route.fulfill({ contentType: "text/javascript", body:
+      "window.Tesseract = { createWorker: async () => { throw new Error('Recognition unavailable'); } };",
+    }));
+    await page.reload();
+    await addPhotos(page, ["side-da.jpg"]);
+    await expect(page.locator("#reader")).toContainText("Genkendelsen mislykkedes.");
+    await expect(page.locator("#reocrBtn")).toBeVisible({ timeout: 1500 });
+    await expect(page.locator("#recropBtn")).toBeVisible();
+    await page.click("#reocrBtn");
+    await expect(page.locator("#reader")).toContainText("Genkendelsen mislykkedes.");
+    await page.click("#recropBtn");
+    await expect(page.locator("#crop")).toBeVisible();
+  });
+});
