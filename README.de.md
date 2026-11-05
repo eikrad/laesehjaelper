@@ -67,34 +67,69 @@ Das Projekt ist in TypeScript geschrieben (strict).
 - `src/types.ts`: gemeinsame Typen
 - `build.ts`: baut `dist/` mit esbuild und kopiert Tesseract-, OpenCV- und Sprachdateien
 - `tests/`: Unit-Tests, End-to-End-Tests und selbst erstellte Testseiten
+- `docs/research/`: die Literaturübersichten hinter „Was sagt die Forschung?“ (auf Englisch)
 
 ## Was sagt die Forschung?
 
-Læsehjælper ist ein Lesewerkzeug, keine Behandlung. Die Einstellungen beruhen auf dem, was Studien mit Leseanfängern und Kindern mit Legasthenie zeigen:
+Læsehjælper ist ein Lesewerkzeug, keine Behandlung. Die Einstellungen beruhen auf dem, was Studien mit Leseanfängern und Kindern mit Legasthenie zeigen. Die vollständigen Literaturübersichten mit allen Quellen (auf Englisch) liegen in [docs/research](docs/research/README.md).
 
-- **Abstand:** Mehr Abstand zwischen den Buchstaben hilft vielen Kindern mit Legasthenie, schneller und genauer zu lesen (Zorzi u. a. 2012) – aber nur, wenn der Wortabstand mitwächst (Galliussi u. a. 2020). Læsehjælper vergrößert den Wortabstand deshalb automatisch.
-- **Kurze Zeilen** helfen manchen Kindern mit Legasthenie, vor allem bei schwacher visueller Aufmerksamkeit; andere lesen mit normalen Zeilen besser (Schneps u. a. 2013).
-- **Schrift:** Die Buchstabenform selbst macht kaum einen Unterschied. OpenDyslexic brachte keinen Vorteil, und kein Kind las lieber darin (Wery & Diliberto 2017; Galliussi u. a. 2020). Standard ist deshalb Andika, eine klare, gewöhnliche Schrift; OpenDyslexic lässt sich wählen, wenn das Kind sie mag.
-- **Farbige Silben** helfen manchen Kindern am Anfang, anderen nicht; Bindestriche in den Wörtern bremsen das Lesen (Häikiö u. a. 2015; Brügelmann 2025). Probiere aus, was das Kind mag, und schalte die Farben ab, sobald es flüssig liest.
-- **Vorlesen** hilft beim Verstehen; eine Markierung jedes Worts bringt nichts zusätzlich (Keelor u. a. 2023). Denselben Text mehrmals zu lesen, am besten nachdem man ihn gehört hat, macht das Lesen flüssiger (Lee & Yoon 2017).
-- **Farbiger Hintergrund oder Farbfolien** haben keine nachgewiesene Wirkung über Placebo hinaus (Griffiths u. a. 2016). Die Hintergrundfarbe ist nur eine Frage dessen, was sich angenehm anfühlt.
-- **Unterricht:** Systematisches Üben von Buchstaben und Lauten ist die am besten belegte Hilfe bei Legasthenie (Galuschka u. a. 2014). Dänisch gehört zu den Sprachen, in denen sicheres Lesen am längsten dauert (Seymour u. a. 2003).
-- **Eine ruhige Leseansicht:** Interaktive Zusatzfunktionen in digitalen Bilderbüchern können von der Geschichte ablenken (Takacs, Swart & Bus 2015). Erwachsenenwerkzeuge in einem Buchmenü zu bündeln, ist eine daraus abgeleitete Gestaltungsentscheidung; die Studie hat dieses Menü nicht untersucht oder einen Nutzen für das Lesen belegt.
+**Am meisten hilft keine Einstellung auf dem Bildschirm.**
+
+- **Unterricht:** Systematisches, frühes Üben von Buchstaben, Lauten und Lautieren ist die am besten belegte Hilfe bei Legasthenie. Die Effekte sind mittelgroß und in den ersten Schuljahren und mit mehr Stunden größer (Hall u. a. 2023; McArthur u. a. 2018; Galuschka u. a. 2014). In einer dänischen Studie sank mit Kleingruppenunterricht der Anteil der Risikokinder, die am Ende der 1. Klasse kaum lesen konnten, von 37 % auf 15 % (Gellert u. a. 2024). Læsehjælper ersetzt diesen Unterricht nicht. Dänisch gehört zu den Sprachen, in denen sicheres Lesen am längsten dauert (Seymour u. a. 2003).
+- **Üben mit einem Erwachsenen:** Eltern helfen am meisten, wenn sie zuhören, während ihr Kind liest, und bei bestimmten Fertigkeiten helfen – mehr als wenn sie nur vorlesen (Sénéchal & Young 2008). In einer dänischen Studie mit 1.587 Zweitklässlern verbesserten ein paar Bücher und einfache Tipps das Lesen: die Mühe loben, über die Geschichte sprechen, nicht jeden kleinen Fehler verbessern (Andersen & Nielsen 2016). Lese-Apps wirken viel besser, wenn ein Erwachsener dabei ist (McTigue u. a. 2020).
+
+**Die Einstellungen helfen weniger, und nicht jedem Kind:**
+
+- **Abstand:** Mehr Abstand zwischen den Buchstaben verringert bei manchen Kindern die Lesefehler, aber die Studien sind uneinig, viele finden keinen Unterschied im Tempo, und der Effekt betrifft nicht nur Kinder mit Legasthenie (Zorzi u. a. 2012; Hakvoort u. a. 2017; Łuniewska u. a. 2022). Mehr Buchstabenabstand ohne mehr Wortabstand bremst das Lesen (Galliussi u. a. 2020); Læsehjælper vergrößert den Wortabstand deshalb automatisch.
+- **Kurze Zeilen** helfen manchen Kindern mit Legasthenie, vor allem bei schwacher visueller Aufmerksamkeit; andere lesen mit normalen Zeilen besser. Die Studien untersuchten Jugendliche, keine jungen Kinder (Schneps u. a. 2013).
+- **Schrift:** Spezielle Legasthenie-Schriften verbessern weder Tempo noch Genauigkeit (Metaanalyse: Azzarello u. a. 2026), und Kinder mögen oft gewöhnliche Schriften lieber (Wery & Diliberto 2017). Standard ist deshalb Andika, eine klare, gewöhnliche Schrift; OpenDyslexic lässt sich wählen, wenn das Kind sie mag.
+- **Farbige Silben** machten in einer Blickbewegungsstudie keinen Unterschied für das Lesetempo (Häikiö u. a. 2015). Manche schwächeren Leseanfänger lasen einzelne Wörter damit genauer (Lopes & Barrera 2019), und eine deutsche Klassenstudie fand einen kleinen Gewinn in der 2. Klasse (Dreschinski 2022, eine Dissertation). Der Nutzen scheint früh, klein und vor allem bei langen Wörtern zu liegen. Im Dänischen, wo geschriebene und gesprochene Silben oft nicht übereinstimmen, wurden farbige Silben nie untersucht. Eine Übersicht empfiehlt sie nur für manche Kinder und nur im Übergang zum flüssigen Lesen (Brügelmann 2025, ein Bericht, nicht begutachtet). Bindestriche in den Wörtern bremsen das Lesen (Häikiö u. a. 2015).
+- **Wortteile (Dänisch):** Wer lernt, auf Wortteile zu achten, liest und schreibt lange Wörter besser, auch im Dänischen (Goodwin & Ahn 2010; Arnbak & Elbro 2000; Gellert u. a. 2021). Die Anzeige der Wortteile auf der Seite baut darauf auf, wurde aber selbst nicht untersucht.
+- **Vorlesen** hilft Kindern, einen Text zu verstehen, allerdings nur mäßig (Wood u. a. 2018), und Zuhören allein bringt das Lesen nicht bei. Eine Markierung jedes Worts verbesserte das Verstehen in einer kleinen Studie nicht (Keelor u. a. 2023) und half Kindern nicht, neue Wörter zu lernen (Gerbier u. a. 2018).
+- **Erst hören, dann selbst lesen:** Denselben Text nach dem Hören noch einmal zu lesen, macht das Lesen flüssiger, vor allem beim geübten Text (Lee & Yoon 2017); in ganzen Klassen ist der Effekt klein (Lauer-Schmaltz u. a. 2014). Neue Seiten zu lesen hilft etwa genauso (Zimmermann u. a. 2021).
+- **Wort antippen:** Schwere Wörter beim Lesen auf Wunsch zu hören, half in Trainingsstudien – auch dänischen Schülern, die das Wort erst in Teilen und dann ganz hörten (Olson & Wise 1992; Elbro u. a. 1996).
+- **Farbiger Hintergrund oder Farbfolien** haben keine nachgewiesene Wirkung über Placebo hinaus (Griffiths u. a. 2016; Suttle u. a. 2018). Die Hintergrundfarbe ist nur eine Frage dessen, was sich angenehm anfühlt.
+- **Eine ruhige Leseansicht:** Interaktive Zusatzfunktionen in digitalen Bilderbüchern helfen Kindern nicht, die Geschichte zu verstehen, und Minispiele schaden dem Verstehen (Takacs, Swart & Bus 2015; Bus u. a. 2026). Erwachsenenwerkzeuge in einem Buchmenü zu bündeln, ist eine daraus abgeleitete Gestaltungsentscheidung; die Studien haben dieses Menü nicht untersucht.
+- **Gemeinsam lesen:** Mit offenen Fragen über ein Buch zu sprechen, stärkt den Wortschatz kleiner Kinder (Mol u. a. 2008), vor allem im Alter von 2–3 Jahren; neuere Studien finden kleinere Effekte (Noble u. a. 2019). Die Fragen in Læsehjælper sind deshalb freiwillig und standardmäßig aus.
 
 Quellen:
 
-- Takacs, Swart & Bus 2015, *Review of Educational Research* — [doi:10.3102/0034654314566989](https://doi.org/10.3102/0034654314566989)
+- Hall u. a. 2023, *Reading Research Quarterly* — [doi:10.1002/rrq.477](https://doi.org/10.1002/rrq.477)
+- McArthur u. a. 2018, *Cochrane Database of Systematic Reviews* — [doi:10.1002/14651858.CD009115.pub3](https://doi.org/10.1002/14651858.CD009115.pub3)
+- Galuschka u. a. 2014, *PLOS ONE* — [doi:10.1371/journal.pone.0089900](https://doi.org/10.1371/journal.pone.0089900)
+- Gellert u. a. 2024, *NyS – Nydanske Sprogstudier* — [doi:10.7146/nys.v1i66.148749](https://doi.org/10.7146/nys.v1i66.148749)
+- Seymour u. a. 2003, *British Journal of Psychology* — [doi:10.1348/000712603321661859](https://doi.org/10.1348/000712603321661859)
+- Sénéchal & Young 2008, *Review of Educational Research* — [doi:10.3102/0034654308320319](https://doi.org/10.3102/0034654308320319)
+- Andersen & Nielsen 2016, *PNAS* — [doi:10.1073/pnas.1607946113](https://doi.org/10.1073/pnas.1607946113)
+- McTigue u. a. 2020, *Reading Research Quarterly* — [doi:10.1002/rrq.256](https://doi.org/10.1002/rrq.256)
 - Zorzi u. a. 2012, *PNAS* — [doi:10.1073/pnas.1205566109](https://doi.org/10.1073/pnas.1205566109)
+- Hakvoort u. a. 2017, *Journal of Experimental Child Psychology* — [doi:10.1016/j.jecp.2017.07.010](https://doi.org/10.1016/j.jecp.2017.07.010)
+- Łuniewska u. a. 2022, *Learning and Instruction* — [doi:10.1016/j.learninstruc.2021.101576](https://doi.org/10.1016/j.learninstruc.2021.101576)
 - Galliussi u. a. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
 - Schneps u. a. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)
+- Azzarello u. a. 2026, *Annals of Dyslexia* — [doi:10.1007/s11881-026-00389-8](https://doi.org/10.1007/s11881-026-00389-8)
 - Wery & Diliberto 2017, *Annals of Dyslexia* — [doi:10.1007/s11881-016-0127-1](https://doi.org/10.1007/s11881-016-0127-1)
 - Häikiö u. a. 2015, *Journal of Cognitive Psychology* — [doi:10.1080/20445911.2014.982126](https://doi.org/10.1080/20445911.2014.982126)
-- Brügelmann 2025 — [pedocs.de](https://www.pedocs.de/volltexte/2025/34472/pdf/Bruegelmann_2025_Red_and_blue.pdf)
+- Lopes & Barrera 2019, *Estudos de Psicologia (Natal)* — [doi:10.22491/1678-4669.20190035](https://doi.org/10.22491/1678-4669.20190035)
+- Dreschinski 2022, Dissertation, PH Heidelberg — [doi:10.46586/SLLD.254](https://doi.org/10.46586/SLLD.254)
+- Brügelmann 2025, Bericht auf peDOCS, nicht begutachtet — [doi:10.25656/01:34472](https://doi.org/10.25656/01:34472)
+- Goodwin & Ahn 2010, *Annals of Dyslexia* — [doi:10.1007/s11881-010-0041-x](https://doi.org/10.1007/s11881-010-0041-x)
+- Arnbak & Elbro 2000, *Scandinavian Journal of Educational Research* — [doi:10.1080/00313830050154485](https://doi.org/10.1080/00313830050154485)
+- Gellert u. a. 2021, *Reading Research Quarterly* — [doi:10.1002/rrq.325](https://doi.org/10.1002/rrq.325)
+- Wood u. a. 2018, *Journal of Learning Disabilities* — [doi:10.1177/0022219416688170](https://doi.org/10.1177/0022219416688170)
 - Keelor u. a. 2023, *Annals of Dyslexia* — [doi:10.1007/s11881-023-00281-9](https://doi.org/10.1007/s11881-023-00281-9)
+- Gerbier u. a. 2018, *Computer Speech & Language* — [doi:10.1016/j.csl.2017.07.003](https://doi.org/10.1016/j.csl.2017.07.003)
 - Lee & Yoon 2017, *Journal of Learning Disabilities* — [doi:10.1177/0022219415605194](https://doi.org/10.1177/0022219415605194)
-- Galuschka u. a. 2014, *PLOS ONE* — [doi:10.1371/journal.pone.0089900](https://doi.org/10.1371/journal.pone.0089900)
+- Lauer-Schmaltz u. a. 2014, *Didaktik Deutsch* — [doi:10.25656/01:17152](https://doi.org/10.25656/01:17152)
+- Zimmermann u. a. 2021, *Remedial and Special Education* — [doi:10.1177/0741932519855058](https://doi.org/10.1177/0741932519855058)
+- Olson & Wise 1992, *Reading and Writing* — [doi:10.1007/BF01027488](https://doi.org/10.1007/BF01027488)
+- Elbro u. a. 1996, *Scandinavian Journal of Psychology* — [doi:10.1111/j.1467-9450.1996.tb00647.x](https://doi.org/10.1111/j.1467-9450.1996.tb00647.x)
 - Griffiths u. a. 2016, *Ophthalmic & Physiological Optics* — [doi:10.1111/opo.12316](https://doi.org/10.1111/opo.12316)
-- Seymour u. a. 2003, *British Journal of Psychology* — [doi:10.1348/000712603321661859](https://doi.org/10.1348/000712603321661859)
+- Suttle u. a. 2018, *Clinical and Experimental Optometry* — [doi:10.1111/cxo.12676](https://doi.org/10.1111/cxo.12676)
+- Takacs, Swart & Bus 2015, *Review of Educational Research* — [doi:10.3102/0034654314566989](https://doi.org/10.3102/0034654314566989)
+- Bus u. a. 2026, *Early Education and Development* — [doi:10.1080/10409289.2025.2571978](https://doi.org/10.1080/10409289.2025.2571978)
+- Mol u. a. 2008, *Early Education and Development* — [doi:10.1080/10409280701838603](https://doi.org/10.1080/10409280701838603)
+- Noble u. a. 2019, *Educational Research Review* — [doi:10.1016/j.edurev.2019.100290](https://doi.org/10.1016/j.edurev.2019.100290)
 
 ## Bekannte Grenzen
 

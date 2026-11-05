@@ -67,34 +67,69 @@ The project is written in TypeScript (strict).
 - `src/types.ts`: shared types
 - `build.ts`: builds `dist/` with esbuild and copies Tesseract, OpenCV and language files
 - `tests/`: unit tests, end-to-end tests and self-made test pages
+- `docs/research/`: literature reviews behind "What does the research say?"
 
 ## What does the research say?
 
-Læsehjælper is a reading tool, not a treatment. Its settings are based on what studies of beginning readers and children with dyslexia show:
+Læsehjælper is a reading tool, not a treatment. Its settings are based on what studies of beginning readers and children with dyslexia show. The full literature reviews, with every source checked, are in [docs/research](docs/research/README.md).
 
-- **Spacing:** More space between letters helps many children with dyslexia read faster and more accurately (Zorzi et al. 2012) – but only if word spacing grows too (Galliussi et al. 2020). Læsehjælper therefore increases word spacing automatically.
-- **Short lines** help some readers with dyslexia, especially those with weak visual attention; others read better with normal lines (Schneps et al. 2013).
-- **Font:** The letter shapes themselves make little difference. OpenDyslexic gave no advantage, and no child preferred it (Wery & Diliberto 2017; Galliussi et al. 2020). The default is therefore Andika, a plain, clear font; OpenDyslexic can be chosen if your child likes it.
-- **Coloured syllables** help some children at the start and not others; hyphens inside words slow reading down (Häikiö et al. 2015; Brügelmann 2025). Try what your child likes, and switch the colours off once reading is fluent.
-- **Reading aloud** helps comprehension; highlighting each word adds nothing extra (Keelor et al. 2023). Reading the same text several times, ideally after hearing it, makes reading more fluent (Lee & Yoon 2017).
-- **Coloured backgrounds or overlays** have no proven effect beyond placebo (Griffiths et al. 2016). The background colour is purely a matter of comfort.
-- **Teaching:** Systematic work on letters and sounds is the best-supported help for dyslexia (Galuschka et al. 2014). Danish is one of the languages in which children take longest to read accurately (Seymour et al. 2003).
-- **A calm reading screen:** Interactive extras in digital storybooks can distract from the story (Takacs, Swart & Bus 2015). Grouping adult tools in one book menu is a design inference from that research; the study did not test this menu or establish that it improves reading.
+**What helps most is not a setting on the screen.**
+
+- **Teaching:** Systematic, early teaching of letters, sounds and sounding out is the best-supported help for dyslexia. Effects are moderate, and larger in the first school years and with more hours (Hall et al. 2023; McArthur et al. 2018; Galuschka et al. 2014). In a Danish trial, small-group lessons in grade 1 cut the share of at-risk children who could hardly read from 37 % to 15 % (Gellert et al. 2024). Læsehjælper does not replace this teaching. Danish is one of the languages in which children take longest to read accurately (Seymour et al. 2003).
+- **Practice with an adult:** Parents help most when they listen to their child read and help with specific skills, more than when they only read to the child (Sénéchal & Young 2008). In a Danish trial with 1,587 second graders, a few books and simple advice – praise effort, talk about the story, don't correct every slip – improved reading (Andersen & Nielsen 2016). Reading apps work far better with an adult involved (McTigue et al. 2020).
+
+**The settings help less, and not every child:**
+
+- **Spacing:** More space between letters reduces reading errors for some children, but studies disagree, many find no change in speed, and the benefit is not specific to dyslexia (Zorzi et al. 2012; Hakvoort et al. 2017; Łuniewska et al. 2022). Widening letter spacing without widening the gaps between words slows reading (Galliussi et al. 2020), so Læsehjælper widens word spacing automatically.
+- **Short lines** help some readers with dyslexia, especially those with weak visual attention; others read better with normal lines. The studies tested teenagers, not young children (Schneps et al. 2013).
+- **Font:** Special dyslexia fonts do not improve reading speed or accuracy (meta-analysis: Azzarello et al. 2026), and children often prefer ordinary fonts (Wery & Diliberto 2017). The default is therefore Andika, a plain, clear font; OpenDyslexic can be chosen if your child likes it.
+- **Coloured syllables** made no difference to reading speed in an eye-tracking study (Häikiö et al. 2015). Some weaker beginners read single words more accurately with them (Lopes & Barrera 2019), and a German class study found a small gain in grade 2 (Dreschinski 2022, a dissertation). The benefit seems to be early, small and mainly for long words. Coloured syllables have never been tested in Danish, where written and spoken syllables often differ. A review recommends them only for some children and only while they move on to fluent reading (Brügelmann 2025, a report, not peer-reviewed). Hyphens inside words slow reading down (Häikiö et al. 2015).
+- **Word parts (Danish):** Teaching children to notice word parts helps them read and spell long words, also in Danish (Goodwin & Ahn 2010; Arnbak & Elbro 2000; Gellert et al. 2021). Showing word parts on the page builds on this but has not been tested itself.
+- **Reading aloud** helps children understand a text, though the effect is modest (Wood et al. 2018), and listening alone does not teach reading. Highlighting each word did not add to comprehension in a small study (Keelor et al. 2023) and did not help children learn new words (Gerbier et al. 2018).
+- **Listen first, then read:** Reading the same text again after hearing it makes reading more fluent, mostly on the practised text (Lee & Yoon 2017); in whole classes the effect is small (Lauer-Schmaltz et al. 2014). Reading new pages helps about as much (Zimmermann et al. 2021).
+- **Tap a word:** Hearing hard words on request while reading helped children in training studies, including Danish pupils who heard the word in parts and then whole (Olson & Wise 1992; Elbro et al. 1996).
+- **Coloured backgrounds or overlays** have no proven effect beyond placebo (Griffiths et al. 2016; Suttle et al. 2018). The background colour is purely a matter of comfort.
+- **A calm reading screen:** Interactive extras in digital storybooks do not help children understand the story, and mini-games harm understanding (Takacs, Swart & Bus 2015; Bus et al. 2026). Grouping adult tools in one book menu is a design inference from that research; the studies did not test this menu.
+- **Reading together:** Talking about a book with open questions helps young children's vocabulary (Mol et al. 2008), but mainly at age 2–3, and later studies find smaller effects (Noble et al. 2019). The questions in Læsehjælper are therefore optional and off by default.
 
 Sources:
 
-- Takacs, Swart & Bus 2015, *Review of Educational Research* — [doi:10.3102/0034654314566989](https://doi.org/10.3102/0034654314566989)
+- Hall et al. 2023, *Reading Research Quarterly* — [doi:10.1002/rrq.477](https://doi.org/10.1002/rrq.477)
+- McArthur et al. 2018, *Cochrane Database of Systematic Reviews* — [doi:10.1002/14651858.CD009115.pub3](https://doi.org/10.1002/14651858.CD009115.pub3)
+- Galuschka et al. 2014, *PLOS ONE* — [doi:10.1371/journal.pone.0089900](https://doi.org/10.1371/journal.pone.0089900)
+- Gellert et al. 2024, *NyS – Nydanske Sprogstudier* — [doi:10.7146/nys.v1i66.148749](https://doi.org/10.7146/nys.v1i66.148749)
+- Seymour et al. 2003, *British Journal of Psychology* — [doi:10.1348/000712603321661859](https://doi.org/10.1348/000712603321661859)
+- Sénéchal & Young 2008, *Review of Educational Research* — [doi:10.3102/0034654308320319](https://doi.org/10.3102/0034654308320319)
+- Andersen & Nielsen 2016, *PNAS* — [doi:10.1073/pnas.1607946113](https://doi.org/10.1073/pnas.1607946113)
+- McTigue et al. 2020, *Reading Research Quarterly* — [doi:10.1002/rrq.256](https://doi.org/10.1002/rrq.256)
 - Zorzi et al. 2012, *PNAS* — [doi:10.1073/pnas.1205566109](https://doi.org/10.1073/pnas.1205566109)
+- Hakvoort et al. 2017, *Journal of Experimental Child Psychology* — [doi:10.1016/j.jecp.2017.07.010](https://doi.org/10.1016/j.jecp.2017.07.010)
+- Łuniewska et al. 2022, *Learning and Instruction* — [doi:10.1016/j.learninstruc.2021.101576](https://doi.org/10.1016/j.learninstruc.2021.101576)
 - Galliussi et al. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
 - Schneps et al. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)
+- Azzarello et al. 2026, *Annals of Dyslexia* — [doi:10.1007/s11881-026-00389-8](https://doi.org/10.1007/s11881-026-00389-8)
 - Wery & Diliberto 2017, *Annals of Dyslexia* — [doi:10.1007/s11881-016-0127-1](https://doi.org/10.1007/s11881-016-0127-1)
 - Häikiö et al. 2015, *Journal of Cognitive Psychology* — [doi:10.1080/20445911.2014.982126](https://doi.org/10.1080/20445911.2014.982126)
-- Brügelmann 2025 — [pedocs.de](https://www.pedocs.de/volltexte/2025/34472/pdf/Bruegelmann_2025_Red_and_blue.pdf)
+- Lopes & Barrera 2019, *Estudos de Psicologia (Natal)* — [doi:10.22491/1678-4669.20190035](https://doi.org/10.22491/1678-4669.20190035)
+- Dreschinski 2022, dissertation, PH Heidelberg — [doi:10.46586/SLLD.254](https://doi.org/10.46586/SLLD.254)
+- Brügelmann 2025, report on peDOCS, not peer-reviewed — [doi:10.25656/01:34472](https://doi.org/10.25656/01:34472)
+- Goodwin & Ahn 2010, *Annals of Dyslexia* — [doi:10.1007/s11881-010-0041-x](https://doi.org/10.1007/s11881-010-0041-x)
+- Arnbak & Elbro 2000, *Scandinavian Journal of Educational Research* — [doi:10.1080/00313830050154485](https://doi.org/10.1080/00313830050154485)
+- Gellert et al. 2021, *Reading Research Quarterly* — [doi:10.1002/rrq.325](https://doi.org/10.1002/rrq.325)
+- Wood et al. 2018, *Journal of Learning Disabilities* — [doi:10.1177/0022219416688170](https://doi.org/10.1177/0022219416688170)
 - Keelor et al. 2023, *Annals of Dyslexia* — [doi:10.1007/s11881-023-00281-9](https://doi.org/10.1007/s11881-023-00281-9)
+- Gerbier et al. 2018, *Computer Speech & Language* — [doi:10.1016/j.csl.2017.07.003](https://doi.org/10.1016/j.csl.2017.07.003)
 - Lee & Yoon 2017, *Journal of Learning Disabilities* — [doi:10.1177/0022219415605194](https://doi.org/10.1177/0022219415605194)
-- Galuschka et al. 2014, *PLOS ONE* — [doi:10.1371/journal.pone.0089900](https://doi.org/10.1371/journal.pone.0089900)
+- Lauer-Schmaltz et al. 2014, *Didaktik Deutsch* — [doi:10.25656/01:17152](https://doi.org/10.25656/01:17152)
+- Zimmermann et al. 2021, *Remedial and Special Education* — [doi:10.1177/0741932519855058](https://doi.org/10.1177/0741932519855058)
+- Olson & Wise 1992, *Reading and Writing* — [doi:10.1007/BF01027488](https://doi.org/10.1007/BF01027488)
+- Elbro et al. 1996, *Scandinavian Journal of Psychology* — [doi:10.1111/j.1467-9450.1996.tb00647.x](https://doi.org/10.1111/j.1467-9450.1996.tb00647.x)
 - Griffiths et al. 2016, *Ophthalmic & Physiological Optics* — [doi:10.1111/opo.12316](https://doi.org/10.1111/opo.12316)
-- Seymour et al. 2003, *British Journal of Psychology* — [doi:10.1348/000712603321661859](https://doi.org/10.1348/000712603321661859)
+- Suttle et al. 2018, *Clinical and Experimental Optometry* — [doi:10.1111/cxo.12676](https://doi.org/10.1111/cxo.12676)
+- Takacs, Swart & Bus 2015, *Review of Educational Research* — [doi:10.3102/0034654314566989](https://doi.org/10.3102/0034654314566989)
+- Bus et al. 2026, *Early Education and Development* — [doi:10.1080/10409289.2025.2571978](https://doi.org/10.1080/10409289.2025.2571978)
+- Mol et al. 2008, *Early Education and Development* — [doi:10.1080/10409280701838603](https://doi.org/10.1080/10409280701838603)
+- Noble et al. 2019, *Educational Research Review* — [doi:10.1016/j.edurev.2019.100290](https://doi.org/10.1016/j.edurev.2019.100290)
 
 ## Known limitations
 

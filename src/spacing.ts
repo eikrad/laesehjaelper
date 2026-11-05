@@ -2,8 +2,12 @@
  * Match word spacing to letter spacing.
  *
  * Increasing letter spacing without increasing word spacing slows reading
- * (Galliussi et al. 2020, Annals of Dyslexia, doi:10.1007/s11881-020-00194-x);
- * increasing both together helps (Zorzi et al. 2012, PNAS, doi:10.1073/pnas.1205566109).
+ * (Galliussi et al. 2020, Annals of Dyslexia, doi:10.1007/s11881-020-00194-x); increasing
+ * both together was merely neutral there. Extra letter spacing itself gives small,
+ * inconsistent benefits: fewer errors for some children, rarely faster reading, and not
+ * specific to dyslexia (Zorzi et al. 2012, PNAS, doi:10.1073/pnas.1205566109;
+ * Hakvoort et al. 2017, doi:10.1016/j.jecp.2017.07.010;
+ * Łuniewska et al. 2022, doi:10.1016/j.learninstruc.2021.101576).
  * Rule of thumb: word spacing increases by twice the letter spacing
  * so word boundaries remain clear even with widely spaced letters.
  */

@@ -3,7 +3,8 @@
  *
  * Short lines increased reading speed and halved regressions for readers with dyslexia
  * (Schneps et al. 2013, PLOS ONE, doi:10.1371/journal.pone.0071161), but only for a
- * subset of readers (doi:10.1371/journal.pone.0075634). This mode is optional and off by default.
+ * subset of readers (doi:10.1371/journal.pone.0075634). Both studies tested high-school
+ * students; young children have not been tested. This mode is optional and off by default.
  */
 
 const PUNCT = /[.,;:!?…]/;
