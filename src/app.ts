@@ -1622,14 +1622,20 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     else holdFrame = requestAnimationFrame(advanceEditHold);
   }
   function startEditHold() {
-    if (S.gate !== "an" || holdStarted !== null) return;
+    // An open entry closes with a plain press; holding is only needed to open it.
+    if (S.gate !== "an" || holdStarted !== null || $("editEntry").hidden === false) return;
     holdCompleted = false; holdStarted = performance.now(); editEntryButton.classList.add("holding"); advanceEditHold();
   }
-  editEntryButton.onclick = () => {
-    if (S.gate !== "an") showEditEntry($("editEntry").hidden !== false);
-    else if (!holdCompleted) toast(t("holdToEdit"));
-    holdCompleted = false;
-  };
+  /** A finished click or key press on "Edit book". */
+  function pressEditEntry() {
+    if (holdCompleted) { holdCompleted = false; return; }   // The hold has just opened the entry.
+    const open = $("editEntry").hidden === false;
+    if (S.gate === "an" && !open) toast(t("holdToEdit"));
+    else showEditEntry(!open);
+  }
+  editEntryButton.onclick = pressEditEntry;
+  // A long press must not turn into a context menu, callout or text selection, which can cancel the hold.
+  editEntryButton.oncontextmenu = e => { if (S.gate === "an") e.preventDefault(); };
   editEntryButton.onpointerdown = e => {
     if (e.button !== 0 || S.gate !== "an") return;
     editEntryButton.setPointerCapture(e.pointerId); startEditHold();
@@ -1644,7 +1650,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); if (!e.repeat) startEditHold(); }
   };
   editEntryButton.onkeyup = e => {
-    if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); cancelEditHold(); if (!holdCompleted) toast(t("holdToEdit")); holdCompleted = false; }
+    if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); cancelEditHold(); pressEditEntry(); }
   };
   editEntryButton.onblur = cancelEditHold;
   window.addEventListener("blur", cancelEditHold);
