@@ -1530,8 +1530,13 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   }
   function writeLocation(target: BookLocation, push: boolean) {
     const hash = locationHash(target);
-    if (push && location.hash !== hash) history.pushState({ laese: target.view }, "", hash);
-    else history.replaceState({ laese: target.view }, "", hash);
+    if (location.hash === hash && history.state?.laese === target.view) return;   // Already recorded.
+    // Browsers cap how often a page may change its history (Safari and Firefox then throw),
+    // and some embedded views block it. Reading goes on; only the link is not updated.
+    try {
+      if (push && location.hash !== hash) history.pushState({ laese: target.view }, "", hash);
+      else history.replaceState({ laese: target.view }, "", hash);
+    } catch { /* Keep the previous link. */ }
   }
   function syncLocation() { writeLocation(currentLocation(), false); }
   function showApp(mode: "read" | "workshop" = "read", push = true) {
@@ -1570,7 +1575,9 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   window.addEventListener("popstate", e => { restoreLocation(e.state?.laese === "read"); });
   function showStart(fromHistory = false) {
     navigationId++;
-    if (!fromHistory && !$("app").hidden && book) { history.go(view === "workshop" ? -2 : -1); return; }
+    // Return through the app's own history entries, also after deleting the book, so Back
+    // from the shelf never leads into a book that is no longer there.
+    if (!fromHistory && !$("app").hidden) { history.go(view === "workshop" ? -2 : -1); return; }
     stopSpeech(); showCheck(false);
     document.body.classList.remove("focus", "workshop"); setFocusBtn();
     $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; showSettings(false);
