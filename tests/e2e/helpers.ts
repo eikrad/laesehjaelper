@@ -49,6 +49,7 @@ export async function waitForText(page: Page) {
 
 /** Enter the current book's workshop if it is being read. */
 export async function openWorkshop(page: Page) {
+  await bookOpen(page);
   if (await page.locator("#editBookBtn").isVisible()) {
     await page.click("#editBookBtn");
     await page.click("#openWorkshopBtn");
@@ -57,7 +58,13 @@ export async function openWorkshop(page: Page) {
 
 /** Return from preparing the selected page to reading it. */
 export async function readBook(page: Page) {
+  await bookOpen(page);
   if (await page.locator("#readBookBtn").isVisible()) await page.click("#readBookBtn");
+}
+
+/** Wait until a book is shown: opening one first reads its pages from storage, and isVisible() does not wait. */
+async function bookOpen(page: Page) {
+  await expect(page.locator("#app")).toBeVisible();
 }
 
 /** Choose a page or book tool in the workshop. */
