@@ -10,6 +10,7 @@ import { speechRate, showYourTurn, wordSteps } from "./readflow";
 import { wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
 import { silben } from "./silben";
 import { swipeDirection } from "./swipe";
+import { resumePage } from "./bookshelf";
 import { cleanOcr, parasFromOcr } from "./layout";
 import { detectPage, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
 import type { CV } from "./pagedetect";
@@ -100,6 +101,8 @@ const Lib = { detectPage, warpPage, orderCorners };
       startTitle: "Gør bogsider lettere at læse",
       heroWord: "Læ·se·hjæl·per", startIntro: "Børnebøger sat op, så de er lettere at læse: stor skrift, god luft og farvede stavelser.",
       dropMain: "Tag et billede af en side",
+      newBook: "Ny bog",
+      continuePage: "Fortsæt på side {a} af {b}",
       dropSub: "eller vælg flere billeder på én gang",
       bookLangColon: "Bogen er på", bookLang: "Bogens sprog",
       langDaFlag: "🇩🇰 Dansk", langDeFlag: "🇩🇪 Tysk", langDa: "Dansk", langDe: "Tysk", langEn: "Engelsk",
@@ -129,6 +132,8 @@ const Lib = { detectPage, warpPage, orderCorners };
       startTitle: "Make book pages easier to read",
       heroWord: "Læ·se·hjæl·per", startIntro: "Children's books set to be easier to read: large type, generous spacing and coloured syllables.",
       dropMain: "Take a photo of a page",
+      newBook: "New book",
+      continuePage: "Continue on page {a} of {b}",
       dropSub: "or choose several photos at once",
       bookLangColon: "The book is in", bookLang: "Language of the book",
       langDaFlag: "🇩🇰 Danish", langDeFlag: "🇩🇪 German", langDa: "Danish", langDe: "German", langEn: "English",
@@ -158,6 +163,8 @@ const Lib = { detectPage, warpPage, orderCorners };
       startTitle: "Buchseiten leichter lesbar machen",
       heroWord: "Le·se·hel·fer", startIntro: "Kinderbücher so gesetzt, dass sie leichter zu lesen sind: große Schrift, viel Luft und farbige Silben.",
       dropMain: "Eine Seite fotografieren",
+      newBook: "Neues Buch",
+      continuePage: "Auf Seite {a} von {b} weiterlesen",
       dropSub: "oder mehrere Bilder auf einmal wählen",
       bookLangColon: "Das Buch ist auf", bookLang: "Sprache des Buchs",
       langDaFlag: "🇩🇰 Dänisch", langDeFlag: "🇩🇪 Deutsch", langDa: "Dänisch", langDe: "Deutsch", langEn: "Englisch",
@@ -405,7 +412,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     const ordered = (b.pageIds || []).map(id => byId[id]).filter(Boolean);
     recs.forEach(r => { if (!ordered.includes(r)) ordered.push(r); });
     pages.push(...ordered.map(pageFromRecord));
-    cur = Math.min(b.lastPage || 0, Math.max(0, pages.length - 1));
+    cur = resumePage(b.lastPage, pages.length);
     pages.filter(p => p.status === "wait").forEach(p => queue.push(p));
     showApp(); render(); runQueue();
   }
@@ -415,13 +422,17 @@ const Lib = { detectPage, warpPage, orderCorners };
     try { books = await DB.all<Book>("books"); } catch { /* No storage available: leave the bookshelf empty. */ }
     books.sort((a, b) => (b.updated || 0) - (a.updated || 0));
     $("shelf").hidden = !books.length;
+    $("start").classList.toggle("has-books", books.length > 0);
+    const photoLabel = $("drop").querySelector<HTMLElement>("[data-t]")!;
+    photoLabel.dataset.t = books.length ? "newBook" : "dropMain";
+    photoLabel.textContent = t(photoLabel.dataset.t);
     const box = $("books"); box.innerHTML = "";
     for (const b of books) {
       const el = document.createElement("button");
       el.className = "book";
       const n = (b.pageIds || []).length;
       const title = b.title || t("untitled");
-      el.innerHTML = `<div class="cover"></div><b></b><span>${n === 1 ? t("page1") : t("pagesN", { n })}</span>`;
+      el.innerHTML = `<div class="cover"></div><b></b><span>${n === 1 ? t("page1") : t("pagesN", { n })}</span><span class="resume">${n ? t("continuePage", { a: resumePage(b.lastPage, n) + 1, b: n }) : ""}</span>`;
       if (b.cover) el.querySelector<HTMLElement>(".cover")!.style.backgroundImage = `url(${b.cover})`;
       el.querySelector("b")!.textContent = title;
       el.onclick = () => openBook(b);
