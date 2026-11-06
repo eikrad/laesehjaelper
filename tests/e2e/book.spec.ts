@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, openWorkshop, fresh, waitForText } from "./helpers";
+import { addPhotos, bookTool, fixture, openWorkshop, fresh, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -35,6 +36,38 @@ test("Recognizes text over an illustration while excluding the page number", asy
   expect(text).toContain("Søren går en tur");
   expect(text).toContain("bedste ven");
   expect(text).not.toMatch(/\b12\b/);
+});
+
+test("Fills in the illustration under text on a picture, without a patch or a panel", async ({ page }) => {
+  await addPhotos(page, ["side-eng.jpg"]);
+  await waitForText(page);
+  expect(await page.locator("#text").inputValue()).toContain("Engen er fuld af blomster");
+  const box = page.locator("#reader .pageview .tbox").first();
+  await expect(box).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(box).not.toHaveCSS("text-shadow", "none");   // A soft halo keeps the new text readable.
+  // Where the old text was, the cleaned page should show the meadow, as on the same page without text.
+  const plain = `data:image/jpeg;base64,${readFileSync(fixture("side-eng-uden-tekst.jpg")).toString("base64")}`;
+  const diff = await page.evaluate(async plain => {
+    const load = (src: string) => new Promise<HTMLImageElement>((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+    const clean = await load(document.querySelector<HTMLImageElement>("#reader .pageview img")!.src), ref = await load(plain);
+    const W = clean.naturalWidth, H = clean.naturalHeight;
+    const pixels = (img: HTMLImageElement) => {
+      const c = document.createElement("canvas"); c.width = W; c.height = H;
+      const x = c.getContext("2d")!; x.drawImage(img, 0, 0, W, H);
+      return x.getImageData(0, 0, W, H).data;
+    };
+    const a = pixels(clean), b = pixels(ref), el = document.querySelector<HTMLElement>("#reader .pageview .tbox")!;
+    const pc = (v: string) => parseFloat(v) / 100;
+    const x0 = Math.round(pc(el.style.left) * W), y0 = Math.round(pc(el.style.top) * H);
+    const x1 = x0 + Math.round(pc(el.style.width) * W), y1 = y0 + Math.round(pc(el.style.height) * H);
+    let s = 0, n = 0;
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) {
+      const i = (y * W + x) * 4;
+      s += (Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2])) / 3; n++;
+    }
+    return s / n;
+  }, plain);
+  expect(diff).toBeLessThan(15);   // Painting it over with one colour gave 35.
 });
 
 test("Keeps the first word of lines that start right beside an illustration", async ({ page }) => {

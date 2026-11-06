@@ -139,7 +139,7 @@ Quellen:
 - Wortteile beruhen auf einer Wortliste und einfachen Regeln: Wörter, die nicht in der Liste stehen, bleiben ganz, und mehrdeutige Wörter (z. B. „anden“) werden nicht zerlegt. Bisher nur Dänisch.
 - Die Trennmuster trennen keine einzelnen Buchstaben am Wortanfang oder -ende ab („Oma“ bleibt ungetrennt), und manche dänischen Trennungen sind falsch (z. B. `hund-en` statt `hun-den`). Abhilfe: im Text mit `·` korrigieren.
 - Text auf Illustrationen oder in Zierschriften wird weniger zuverlässig erkannt.
-- Die alte Schrift wird mit der umgebenden Hintergrundfarbe übermalt. Auf einfarbigem Hintergrund sieht das sauber aus; Text auf einer Illustration bekommt eine eigene helle Fläche.
+- Die alte Schrift wird mit der umgebenden Hintergrundfarbe übermalt. Steht sie auf einer Illustration, wird stattdessen das Bild unter den alten Buchstaben ergänzt (Inpainting), und der neue Text bekommt einen weichen, hellen Schein. Feine, regelmäßige Muster können dort, wo der Text stand, etwas verwischt aussehen.
 - Der neue Text kann nur so groß werden, wie auf der Seite Platz ist. Für richtig große Schrift ist die Ansicht „Nur Text“ besser.
 - Gewölbte Seiten muss man bisher von Hand glattziehen (siehe [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
 

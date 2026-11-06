@@ -139,7 +139,7 @@ Sources:
 - Word parts rely on a word list and simple rules: words not on the list stay whole, and ambiguous words (e.g. “anden”) are not split. Danish only so far.
 - The hyphenation patterns don't split off single letters at the start or end of a word, and some Danish splits are off (e.g. `hund-en` instead of `hun-den`). Workaround: fix it in the text with `·`.
 - Text on top of illustrations or in decorative fonts is recognized less reliably.
-- The old text is painted over with the surrounding background color. This looks clean on plain backgrounds; text on top of an illustration gets its own light panel.
+- The old text is painted over with the surrounding background color. On an illustration, the picture is filled in under the old letters instead (inpainting), and the new text gets a soft light halo. Fine, regular patterns can look a little blurred where the text was.
 - The new text can only be as large as the page has room for. For really large text, use the text-only view.
 - Curved pages currently have to be straightened by hand (see [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
 
