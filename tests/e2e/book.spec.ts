@@ -53,7 +53,7 @@ test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
   await waitForText(page);
   await page.goBack();
   await expect(page.locator(".book b")).toHaveText("Min testbog");
-  await expect(page.locator(".book span")).toHaveText("2 sider");
+  await expect(page.locator(".book")).toContainText("2 sider");
 
   await page.reload();
   await page.click(".book");
@@ -71,6 +71,7 @@ test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
   await page.click("#delBookBtn");                                              // Click twice to confirm.
   await expect(page.locator("#start")).toBeVisible();
   await expect(page.locator("#shelf")).toBeHidden();
+  await expect(page.locator("#drop")).toContainText("Tag et billede af en side");
 });
 
 test("Saves text corrections", async ({ page }) => {

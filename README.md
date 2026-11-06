@@ -33,7 +33,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Headings stay larger than body text, and bold words are detected and set in bold (editable with `*word*`)
 - Focus mode: just the text, full screen
 - Show the original text with one tap to spot recognition errors
-- Bookshelf: books are stored on the device, with title, page order and reading position
+- Bookshelf first: stored books open from large covers and show the page where reading stopped. “New book” stays secondary; with no books yet, taking a photo is the main action. Books, page order and reading positions stay on the device.
 - Cropping: the page is found in the photo automatically and straightened; corners and edges can be adjusted, including for curved pages
 - E-book: save a book as EPUB 3 (fixed layout, opens in any reading app) and import it again losslessly
 - Installable as an app and usable offline
