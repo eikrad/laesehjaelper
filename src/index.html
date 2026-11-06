@@ -144,6 +144,8 @@ body.workshop .thumbs { gap: 16px; }
 .disclaimer p { margin-top: 8px; line-height: 1.55; }
 
 /* Reading and making books have separate entry points. */
+#editBookBtn { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }   /* Long press for the parent gate. */
+#editBookBtn.holding { background: linear-gradient(to right, var(--sky) var(--hold-progress, 0%), #fff var(--hold-progress, 0%)); }
 .reading-entry { position: relative; }
 .entry-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 25; display: grid; width: min(300px, calc(100vw - 36px)); padding: 6px; background: white; border-radius: 14px; box-shadow: 0 0 0 1px var(--line), 0 16px 40px -16px rgba(23,25,59,.45); }
 .entry-menu button { min-height: 48px; padding: 8px 14px; border: 0; background: none; border-radius: 10px; font-weight: 700; text-align: left; }
@@ -561,6 +563,11 @@ body.focus .together { display: none !important; }
       </div>
     </div>
     <h3 class="more wide" id="moreSettings" data-t="moreSettings"></h3>
+    <div class="field wide">
+      <span class="flabel" data-t="parentGate"></span>
+      <div class="seg" id="gateSet"><button data-v="aus" data-t="gateOff"></button><button data-v="an" data-t="gateOn"></button></div>
+      <p class="fhint" data-t="holdToEdit"></p><p class="fhint" data-t="gateHint"></p>
+    </div>
     <div class="field wide">
       <label for="profileSel" data-t="reader"></label>
       <div class="profrow"><select id="profileSel"></select><button class="btn-danger small" id="profileDel"></button></div>

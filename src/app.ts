@@ -11,6 +11,7 @@ import { wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
 import { silben } from "./silben";
 import { swipeDirection } from "./swipe";
 import { resumePage } from "./bookshelf";
+import { holdProgress } from "./hold";
 import { locationHash, parseLocation, type BookLocation } from "./navigation";
 import { cleanOcr, parasFromOcr } from "./layout";
 import { detectPage, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
@@ -32,10 +33,10 @@ declare global { interface Window { cv: unknown; TRAINEDDATA: Record<string, str
 
 interface Settings {
   font: string; size: number; ls: number; lh: number; mode: string; colors: string; bg: string;
-  orig: string; view: string; hyph: string; lang: string; ui: string; rate: string; turn: string; lines: string; together: string;
+  gate: string; orig: string; view: string; hyph: string; lang: string; ui: string; rate: string; turn: string; lines: string; together: string;
 }
 /** Settings controlled by button groups (data-v). */
-type ChoiceKey = "mode" | "colors" | "bg" | "orig" | "lang" | "ui" | "view" | "hyph" | "rate" | "turn" | "lines" | "together";
+type ChoiceKey = "gate" | "mode" | "colors" | "bg" | "orig" | "lang" | "ui" | "view" | "hyph" | "rate" | "turn" | "lines" | "together";
 
 interface Page {
   id?: string;
@@ -83,7 +84,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   const val = (e: Event) => (e.target as HTMLInputElement).value;
 
   // ---------- Settings ----------
-  const defaults: Settings = { font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus" };
+  const defaults: Settings = { gate: "aus", font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus" };
   const S: Settings = { ...defaults };
   try { Object.assign(S, JSON.parse(localStorage.getItem("lesehelfer") || "{}")); } catch {}
   const PROFILES = "laesehjaelper-profiles";
@@ -118,7 +119,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse", view: "Visning", viewPage: "Bogens side", viewText: "Kun teksten", hyph: "Bindestreger i bogen", hyphNormal: "Almindelige", hyphBook: "Stavelsesdeling", hyphHint: "Vælg „Stavelsesdeling“, hvis bogen selv deler ord med bindestreg, f.eks. „sko-le“.",
       background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
       original: "Originalside", show: "Vis", hide: "Skjul", origAlt: "Originalside",
-      editSummary: "Tjek og ret teksten", bookTools: "Bogværktøjer", editBook: "Rediger bog", readBook: "Tilbage til læsning", correctPage: "Ret denne side",
+      editSummary: "Tjek og ret teksten", bookTools: "Bogværktøjer", editBook: "Rediger bog", readBook: "Tilbage til læsning", correctPage: "Ret denne side", parentGate: "Forældresikring", gateOn: "Til", gateOff: "Fra", holdToEdit: "Hold knappen nede i to sekunder for at redigere bogen.", gateHint: "Forebygger utilsigtede tryk. Det er ikke en sikkerhedslås.",
       editHint: "Tom linje = nyt afsnit. Du kan selv sætte stavelsesgrænser med ·, f.eks. <b>hun·den</b>. Fed skrift: *ord*.",
       foot: "Alt foregår på din egen telefon eller computer. Billederne bliver ikke sendt nogen steder hen.",
       noText: "Der blev ikke fundet nogen tekst på denne side.<br>Åbn „Tjek og ret teksten“ og skriv den selv.",
@@ -149,7 +150,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Syllable colours", cBlueRed: "Blue and red", cBlueBlack: "Blue and black", cRedBlack: "Red and black", cPurpleGreen: "Purple and green", syl1: "1st syllable", syl2: "2nd syllable", view: "View", viewPage: "Book page", viewText: "Text only", hyph: "Hyphens in the book", hyphNormal: "Normal", hyphBook: "Syllable breaks", hyphHint: "Choose “Syllable breaks” if the book itself splits words with hyphens, e.g. “gar-den”.",
       background: "Background", bWhite: "White", bCream: "Cream", bYellow: "Yellow", bBlue: "Light blue", bGreen: "Light green",
       original: "Original page", show: "Show", hide: "Hide", origAlt: "Original page",
-      editSummary: "Check and correct the text", bookTools: "Book tools", editBook: "Edit book", readBook: "Back to reading", correctPage: "Correct this page",
+      editSummary: "Check and correct the text", bookTools: "Book tools", editBook: "Edit book", readBook: "Back to reading", correctPage: "Correct this page", parentGate: "Parent gate", gateOn: "On", gateOff: "Off", holdToEdit: "Hold for two seconds to edit the book.", gateHint: "Prevents accidental taps. This is not a security lock.",
       editHint: "Empty line = new paragraph. Set your own syllable breaks with ·, e.g. <b>gar·den</b>. Bold: *word*.",
       foot: "Everything happens on your own phone or computer. Your photos are not sent anywhere.",
       noText: "No text was found on this page.<br>Open “Check and correct the text” and type it in yourself.",
@@ -180,7 +181,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe", view: "Ansicht", viewPage: "Buchseite", viewText: "Nur Text", hyph: "Bindestriche im Buch", hyphNormal: "Normal", hyphBook: "Silbentrennung", hyphHint: "„Silbentrennung“ wählen, wenn das Buch Wörter selbst mit Bindestrich trennt, z. B. „Scho-ko-la-de“.",
       background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
       original: "Originalseite", show: "Zeigen", hide: "Verbergen", origAlt: "Originalseite",
-      editSummary: "Text prüfen und korrigieren", bookTools: "Buchwerkzeuge", editBook: "Buch bearbeiten", readBook: "Zurück zum Lesen", correctPage: "Diese Seite korrigieren",
+      editSummary: "Text prüfen und korrigieren", bookTools: "Buchwerkzeuge", editBook: "Buch bearbeiten", readBook: "Zurück zum Lesen", correctPage: "Diese Seite korrigieren", parentGate: "Elternschutz", gateOn: "An", gateOff: "Aus", holdToEdit: "Zum Bearbeiten die Taste zwei Sekunden gedrückt halten.", gateHint: "Verhindert versehentliches Tippen. Dies ist keine Sicherheitssperre.",
       editHint: "Leere Zeile = neuer Absatz. Eigene Silbengrenzen mit · setzen, z.&nbsp;B. <b>O·ma</b>. Fett: *Wort*.",
       foot: "Alles passiert auf deinem eigenen Handy oder Computer. Die Fotos werden nirgendwohin geschickt.",
       noText: "Auf dieser Seite wurde kein Text gefunden.<br>Öffne „Text prüfen“ und tippe ihn selbst ein.",
@@ -248,7 +249,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     if (pages.length) render();
   }
 
-  const CHOICES: [string, ChoiceKey][] = [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"], ["viewSet", "view"], ["hyphSet", "hyph"], ["rateSet", "rate"], ["turnSet", "turn"], ["linesSet", "lines"], ["togetherSet", "together"]];
+  const CHOICES: [string, ChoiceKey][] = [["gateSet", "gate"], ["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"], ["viewSet", "view"], ["hyphSet", "hyph"], ["rateSet", "rate"], ["turnSet", "turn"], ["linesSet", "lines"], ["togetherSet", "together"]];
   function applySettings() {
     const r = document.documentElement.style;
     r.setProperty("--font", S.font);
@@ -1598,6 +1599,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     saveBook(); renderShelf(); window.scrollTo(0, 0);
   }
   function showEditEntry(on: boolean) {
+    if (!on) { cancelEditHold(); holdCompleted = false; }
     $("editEntry").hidden = !on;
     $("editBookBtn").setAttribute("aria-expanded", String(on));
     $<HTMLButtonElement>("correctPageBtn").disabled = pages[cur]?.status !== "done";
@@ -1606,7 +1608,53 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     showApp("workshop"); render();
     if (correct && pages[cur]?.status === "done") { showCheck(true); $<HTMLTextAreaElement>("text").focus(); }
   }
-  $("editBookBtn").onclick = () => showEditEntry($("editEntry").hidden !== false);
+  const editEntryButton = $<HTMLButtonElement>("editBookBtn");
+  let holdStarted: number | null = null, holdFrame = 0, holdCompleted = false;
+  function cancelEditHold() {
+    cancelAnimationFrame(holdFrame); holdStarted = null;
+    editEntryButton.classList.remove("holding"); editEntryButton.style.removeProperty("--hold-progress");
+  }
+  function advanceEditHold() {
+    if (holdStarted === null) return;
+    const progress = holdProgress(performance.now() - holdStarted);
+    editEntryButton.style.setProperty("--hold-progress", `${progress * 100}%`);
+    if (progress === 1) { holdCompleted = true; cancelEditHold(); showEditEntry(true); }
+    else holdFrame = requestAnimationFrame(advanceEditHold);
+  }
+  function startEditHold() {
+    // An open entry closes with a plain press; holding is only needed to open it.
+    if (S.gate !== "an" || holdStarted !== null || $("editEntry").hidden === false) return;
+    holdCompleted = false; holdStarted = performance.now(); editEntryButton.classList.add("holding"); advanceEditHold();
+  }
+  /** A finished click or key press on "Edit book". */
+  function pressEditEntry() {
+    if (holdCompleted) { holdCompleted = false; return; }   // The hold has just opened the entry.
+    const open = $("editEntry").hidden === false;
+    if (S.gate === "an" && !open) toast(t("holdToEdit"));
+    else showEditEntry(!open);
+  }
+  editEntryButton.onclick = pressEditEntry;
+  // A long press must not turn into a context menu, callout or text selection, which can cancel the hold.
+  editEntryButton.oncontextmenu = e => { if (S.gate === "an") e.preventDefault(); };
+  editEntryButton.onpointerdown = e => {
+    if (e.button !== 0 || S.gate !== "an") return;
+    editEntryButton.setPointerCapture(e.pointerId); startEditHold();
+  };
+  editEntryButton.onpointermove = e => {
+    if (holdStarted === null) return;
+    const r = editEntryButton.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) cancelEditHold();
+  };
+  editEntryButton.onpointerup = editEntryButton.onpointercancel = editEntryButton.onlostpointercapture = cancelEditHold;
+  editEntryButton.onkeydown = e => {
+    if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); if (!e.repeat) startEditHold(); }
+  };
+  editEntryButton.onkeyup = e => {
+    if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); cancelEditHold(); pressEditEntry(); }
+  };
+  editEntryButton.onblur = cancelEditHold;
+  window.addEventListener("blur", cancelEditHold);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) cancelEditHold(); });
   $("openWorkshopBtn").onclick = () => enterWorkshop();
   $("correctPageBtn").onclick = () => enterWorkshop(true);
   document.addEventListener("pointerdown", e => { if (!(e.target as Element).closest(".reading-entry")) showEditEntry(false); });
