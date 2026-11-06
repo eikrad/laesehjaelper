@@ -10,6 +10,9 @@ import { speechRate, showYourTurn, wordSteps } from "./readflow";
 import { wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
 import { silben } from "./silben";
 import { swipeDirection } from "./swipe";
+import { resumePage } from "./bookshelf";
+import { holdProgress } from "./hold";
+import { locationHash, parseLocation, type BookLocation } from "./navigation";
 import { cleanOcr, parasFromOcr } from "./layout";
 import { detectPage, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
 import type { CV } from "./pagedetect";
@@ -30,10 +33,10 @@ declare global { interface Window { cv: unknown; TRAINEDDATA: Record<string, str
 
 interface Settings {
   font: string; size: number; ls: number; lh: number; mode: string; colors: string; bg: string;
-  orig: string; view: string; hyph: string; lang: string; ui: string; rate: string; turn: string; lines: string; together: string;
+  gate: string; orig: string; view: string; hyph: string; lang: string; ui: string; rate: string; turn: string; lines: string; together: string;
 }
 /** Settings controlled by button groups (data-v). */
-type ChoiceKey = "mode" | "colors" | "bg" | "orig" | "lang" | "ui" | "view" | "hyph" | "rate" | "turn" | "lines" | "together";
+type ChoiceKey = "gate" | "mode" | "colors" | "bg" | "orig" | "lang" | "ui" | "view" | "hyph" | "rate" | "turn" | "lines" | "together";
 
 interface Page {
   id?: string;
@@ -81,7 +84,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   const val = (e: Event) => (e.target as HTMLInputElement).value;
 
   // ---------- Settings ----------
-  const defaults: Settings = { font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus" };
+  const defaults: Settings = { gate: "aus", font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "farbe", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus" };
   const S: Settings = { ...defaults };
   try { Object.assign(S, JSON.parse(localStorage.getItem("lesehelfer") || "{}")); } catch {}
   const PROFILES = "laesehjaelper-profiles";
@@ -100,6 +103,8 @@ const Lib = { detectPage, warpPage, orderCorners };
       startTitle: "Gør bogsider lettere at læse",
       heroWord: "Læ·se·hjæl·per", startIntro: "Børnebøger sat op, så de er lettere at læse: stor skrift, god luft og farvede stavelser.",
       dropMain: "Tag et billede af en side",
+      newBook: "Ny bog",
+      continuePage: "Fortsæt på side {a} af {b}",
       dropSub: "eller vælg flere billeder på én gang",
       bookLangColon: "Bogen er på", bookLang: "Bogens sprog",
       langDaFlag: "🇩🇰 Dansk", langDeFlag: "🇩🇪 Tysk", langDa: "Dansk", langDe: "Tysk", langEn: "Engelsk",
@@ -114,12 +119,12 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse", view: "Visning", viewPage: "Bogens side", viewText: "Kun teksten", hyph: "Bindestreger i bogen", hyphNormal: "Almindelige", hyphBook: "Stavelsesdeling", hyphHint: "Vælg „Stavelsesdeling“, hvis bogen selv deler ord med bindestreg, f.eks. „sko-le“.",
       background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
       original: "Originalside", show: "Vis", hide: "Skjul", origAlt: "Originalside",
-      editSummary: "Tjek og ret teksten", bookTools: "Bogværktøjer",
+      editSummary: "Tjek og ret teksten", bookTools: "Bogværktøjer", editBook: "Rediger bog", readBook: "Tilbage til læsning", correctPage: "Ret denne side", parentGate: "Forældresikring", gateOn: "Til", gateOff: "Fra", holdToEdit: "Hold knappen nede i to sekunder for at redigere bogen.", gateHint: "Forebygger utilsigtede tryk. Det er ikke en sikkerhedslås.",
       editHint: "Tom linje = nyt afsnit. Du kan selv sætte stavelsesgrænser med ·, f.eks. <b>hun·den</b>. Fed skrift: *ord*.",
       foot: "Alt foregår på din egen telefon eller computer. Billederne bliver ikke sendt nogen steder hen.",
       noText: "Der blev ikke fundet nogen tekst på denne side.<br>Åbn „Tjek og ret teksten“ og skriv den selv.",
       ocrFailed: "Genkendelsen mislykkedes.",
-      waiting: "Venter på genkendelse …", recognizing: "Teksten genkendes …", recognizing2: "Teksten tjekkes en gang til …", loadingCore: "Genkendelsen indlæses …",
+      pageReady: "Klar", waiting: "Venter på genkendelse …", recognizing: "Teksten genkendes …", recognizing2: "Teksten tjekkes en gang til …", loadingCore: "Genkendelsen indlæses …",
       loadingLang: "Sprogdata indlæses …", preparing: "Gøres klar …",
       imgError: "Billedet kunne ikke åbnes.", noSpeech: "Oplæsning understøttes ikke af denne browser.",
       example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", shelfTitle: "Dine bøger", pagesN: "{n} sider", page1: "1 side", untitled: "Bog uden titel", titlePh: "Bogens titel", editPages: "Rediger sider", done: "Færdig", deleteBook: "Slet bogen", confirmDelete: "Tryk igen for at slette bogen", moveLeft: "Flyt til venstre", moveRight: "Flyt til højre", deletePage: "Slet side", evTitle: "Hvad siger forskningen?", evText: "Mere afstand mellem bogstaver <i>og</i> ord hjælper mange ordblinde børn med at læse hurtigere. Korte linjer hjælper nogle børn, men ikke alle. Oplæsning hjælper forståelsen, og at høre en tekst og så læse den selv flere gange gør læsningen mere flydende.<br><br>Farvede stavelser hjælper nogle børn i begyndelsen, andre ikke. Prøv, hvad dit barn kan lide, og slå dem fra, når det læser flydende.<br><br>Særlige ordblindeskrifter som OpenDyslexic og farvet baggrund har ikke vist nogen effekt i undersøgelser. Brug dem gerne, hvis barnet synes, de er rare, men ikke som behandling. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.da.md#hvad-siger-forskningen\">Kilder</a>", rateLabel: "Oplæsning", rateSlow: "Langsom", rateNormal: "Normal", turnLabel: "Efter oplæsning", turnOn: "Din tur", turnOff: "Kun lyt", yourTurn: "Nu er det din tur. Læs siden selv.", again: "Hør igen", linesLabel: "Linjer", linesNormal: "Normale", linesShort: "Korte", linesHint: "Korte linjer med få ord hjælper nogle børn. Gælder kun, når teksten vises alene.", reader: "Læser", reader1: "Læser 1", addReader: "Tilføj", newReaderPh: "Navn på ny læser", removeReader: "Slet læser", confirmReader: "Tryk igen for at slette", readerHint: "Hver læser har sine egne indstillinger for skrift, afstand, stavelser og oplæsning.", sylHint: "Når barnet læser flydende, kan stavelserne slås fra.", togetherLabel: "Læs sammen", togetherOn: "Til", togetherOff: "Fra", togetherHint: "Viser et par åbne spørgsmål til den voksne, der læser med. Ikke en quiz – lad barnet fortælle.", togetherTitle: "Snak om siden", ownQ: "Eget spørgsmål", ownQPh: "Skriv et spørgsmål til denne side", save: "Gem", moveBoxes: "Flyt tekstfelter", moveDone: "Færdig med at flytte", resetPlace: "Nulstil placering", moveHint: "Træk i et felt for at flytte det, eller i hjørnet for at ændre størrelsen.", morf: "Orddele", morfOnlyDa: "Orddele findes indtil videre kun for dansk.", morfFail: "Ordlisten kunne ikke hentes.", aboutTitle: "Om Læsehjælper og ansvarsfraskrivelse", aboutText: "Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl – tjek derfor altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.<br><br>Billeder og bøger bliver kun behandlet og gemt på din egen enhed og bliver ikke sendt til nogen server. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug. Del ikke omdannede bøger med andre, medmindre du har rettighederne.<br><br>Brug sker på eget ansvar og uden garanti. Kildekoden er åben: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Bøgerne kan ikke gemmes i denne browser.", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", ocrAgain: "Genkend teksten igen", cropOf: "Billede {a} af {b}", exportBook: "Gem som e-bog", importBook: "Hent en e-bog (EPUB) fra Læsehjælper", exporting: "Laver e-bogen …", exported: "E-bogen er gemt: {name}", importFail: "Filen er ikke en e-bog fra Læsehjælper.", importing: "Henter e-bogen …", notReady: "Vent, til alle sider er genkendt.", install: "Installér som app på denne enhed", compare: "Vis den oprindelige tekst", compareOff: "Vis den nye tekst",
@@ -129,6 +134,8 @@ const Lib = { detectPage, warpPage, orderCorners };
       startTitle: "Make book pages easier to read",
       heroWord: "Læ·se·hjæl·per", startIntro: "Children's books set to be easier to read: large type, generous spacing and coloured syllables.",
       dropMain: "Take a photo of a page",
+      newBook: "New book",
+      continuePage: "Continue on page {a} of {b}",
       dropSub: "or choose several photos at once",
       bookLangColon: "The book is in", bookLang: "Language of the book",
       langDaFlag: "🇩🇰 Danish", langDeFlag: "🇩🇪 German", langDa: "Danish", langDe: "German", langEn: "English",
@@ -143,12 +150,12 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Syllable colours", cBlueRed: "Blue and red", cBlueBlack: "Blue and black", cRedBlack: "Red and black", cPurpleGreen: "Purple and green", syl1: "1st syllable", syl2: "2nd syllable", view: "View", viewPage: "Book page", viewText: "Text only", hyph: "Hyphens in the book", hyphNormal: "Normal", hyphBook: "Syllable breaks", hyphHint: "Choose “Syllable breaks” if the book itself splits words with hyphens, e.g. “gar-den”.",
       background: "Background", bWhite: "White", bCream: "Cream", bYellow: "Yellow", bBlue: "Light blue", bGreen: "Light green",
       original: "Original page", show: "Show", hide: "Hide", origAlt: "Original page",
-      editSummary: "Check and correct the text", bookTools: "Book tools",
+      editSummary: "Check and correct the text", bookTools: "Book tools", editBook: "Edit book", readBook: "Back to reading", correctPage: "Correct this page", parentGate: "Parent gate", gateOn: "On", gateOff: "Off", holdToEdit: "Hold for two seconds to edit the book.", gateHint: "Prevents accidental taps. This is not a security lock.",
       editHint: "Empty line = new paragraph. Set your own syllable breaks with ·, e.g. <b>gar·den</b>. Bold: *word*.",
       foot: "Everything happens on your own phone or computer. Your photos are not sent anywhere.",
       noText: "No text was found on this page.<br>Open “Check and correct the text” and type it in yourself.",
       ocrFailed: "Recognition failed.",
-      waiting: "Waiting for recognition …", recognizing: "Recognising text …", recognizing2: "Double-checking the text …", loadingCore: "Loading text recognition …",
+      pageReady: "Ready", waiting: "Waiting for recognition …", recognizing: "Recognising text …", recognizing2: "Double-checking the text …", loadingCore: "Loading text recognition …",
       loadingLang: "Loading language data …", preparing: "Getting ready …",
       imgError: "The photo could not be opened.", noSpeech: "Reading aloud is not supported in this browser.",
       example: "Sample", addPages: "Add pages", toStart: "Back to start", shelfTitle: "Your books", pagesN: "{n} pages", page1: "1 page", untitled: "Untitled book", titlePh: "Book title", editPages: "Edit pages", done: "Done", deleteBook: "Delete book", confirmDelete: "Tap again to delete the book", moveLeft: "Move left", moveRight: "Move right", deletePage: "Delete page", evTitle: "What does the research say?", evText: "More space between letters <i>and</i> words helps many children with dyslexia read faster. Short lines help some children, but not all. Reading aloud helps comprehension, and listening to a text and then reading it yourself several times makes reading more fluent.<br><br>Coloured syllables help some children at the start, others not. Try what your child likes, and switch them off once reading is fluent.<br><br>Special dyslexia fonts such as OpenDyslexic and coloured backgrounds have shown no effect in studies. Use them if your child finds them pleasant, but not as a treatment. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.md#what-does-the-research-say\">Sources</a>", rateLabel: "Reading aloud", rateSlow: "Slow", rateNormal: "Normal", turnLabel: "After reading aloud", turnOn: "Your turn", turnOff: "Just listen", yourTurn: "Now it's your turn. Read the page yourself.", again: "Listen again", linesLabel: "Lines", linesNormal: "Normal", linesShort: "Short", linesHint: "Short lines with a few words help some children. Only applies when the text is shown on its own.", reader: "Reader", reader1: "Reader 1", addReader: "Add", newReaderPh: "Name of new reader", removeReader: "Delete reader", confirmReader: "Tap again to delete", readerHint: "Each reader has their own settings for font, spacing, syllables and reading aloud.", sylHint: "Once your child reads fluently, you can switch the syllables off.", togetherLabel: "Read together", togetherOn: "On", togetherOff: "Off", togetherHint: "Shows a few open questions for the adult reading along. Not a quiz – let the child do the talking.", togetherTitle: "Talk about the page", ownQ: "Own question", ownQPh: "Write a question for this page", save: "Save", moveBoxes: "Move text boxes", moveDone: "Done moving", resetPlace: "Reset position", moveHint: "Drag a box to move it, or drag its corner to resize it.", morf: "Word parts", morfOnlyDa: "Word parts are only available for Danish so far.", morfFail: "The word list could not be loaded.", aboutTitle: "About Læsehjælper and disclaimer", aboutText: "Læsehjælper is a free hobby project, not a finished product. Text recognition and syllable splitting make mistakes, so always check the text before a child reads it. The app does not replace teaching, reading support or a dyslexia assessment.<br><br>Photos and books are processed and stored only on your own device and are never sent to a server. Books are protected by copyright: only use Læsehjælper for books you have access to, and only for private use. Do not share converted books unless you hold the rights.<br><br>Use at your own risk and without warranty. The source code is open: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Books cannot be saved in this browser.", cropTitle: "Adjust the page", cropFound: "Page found. Drag the corners if it doesn't fit.", cropNone: "Drag the corners to the edges of the page.", cropLoading: "Looking for the page …", cropUse: "Use", cropWhole: "Whole photo", cropAgain: "Crop the page again", ocrAgain: "Recognise the text again", cropOf: "Photo {a} of {b}", exportBook: "Save as e-book", importBook: "Open a Læsehjælper e-book (EPUB)", exporting: "Creating the e-book …", exported: "E-book saved: {name}", importFail: "This file is not a Læsehjælper e-book.", importing: "Loading the e-book …", notReady: "Wait until all pages have been recognised.", install: "Install as an app on this device", compare: "Show the original text", compareOff: "Show the new text",
@@ -158,6 +165,8 @@ const Lib = { detectPage, warpPage, orderCorners };
       startTitle: "Buchseiten leichter lesbar machen",
       heroWord: "Le·se·hel·fer", startIntro: "Kinderbücher so gesetzt, dass sie leichter zu lesen sind: große Schrift, viel Luft und farbige Silben.",
       dropMain: "Eine Seite fotografieren",
+      newBook: "Neues Buch",
+      continuePage: "Auf Seite {a} von {b} weiterlesen",
       dropSub: "oder mehrere Bilder auf einmal wählen",
       bookLangColon: "Das Buch ist auf", bookLang: "Sprache des Buchs",
       langDaFlag: "🇩🇰 Dänisch", langDeFlag: "🇩🇪 Deutsch", langDa: "Dänisch", langDe: "Deutsch", langEn: "Englisch",
@@ -172,12 +181,12 @@ const Lib = { detectPage, warpPage, orderCorners };
       sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe", view: "Ansicht", viewPage: "Buchseite", viewText: "Nur Text", hyph: "Bindestriche im Buch", hyphNormal: "Normal", hyphBook: "Silbentrennung", hyphHint: "„Silbentrennung“ wählen, wenn das Buch Wörter selbst mit Bindestrich trennt, z. B. „Scho-ko-la-de“.",
       background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
       original: "Originalseite", show: "Zeigen", hide: "Verbergen", origAlt: "Originalseite",
-      editSummary: "Text prüfen und korrigieren", bookTools: "Buchwerkzeuge",
+      editSummary: "Text prüfen und korrigieren", bookTools: "Buchwerkzeuge", editBook: "Buch bearbeiten", readBook: "Zurück zum Lesen", correctPage: "Diese Seite korrigieren", parentGate: "Elternschutz", gateOn: "An", gateOff: "Aus", holdToEdit: "Zum Bearbeiten die Taste zwei Sekunden gedrückt halten.", gateHint: "Verhindert versehentliches Tippen. Dies ist keine Sicherheitssperre.",
       editHint: "Leere Zeile = neuer Absatz. Eigene Silbengrenzen mit · setzen, z.&nbsp;B. <b>O·ma</b>. Fett: *Wort*.",
       foot: "Alles passiert auf deinem eigenen Handy oder Computer. Die Fotos werden nirgendwohin geschickt.",
       noText: "Auf dieser Seite wurde kein Text gefunden.<br>Öffne „Text prüfen“ und tippe ihn selbst ein.",
       ocrFailed: "Die Erkennung hat nicht geklappt.",
-      waiting: "Wartet auf Erkennung …", recognizing: "Text wird erkannt …", recognizing2: "Text wird ein zweites Mal geprüft …", loadingCore: "Erkennung wird geladen …",
+      pageReady: "Bereit", waiting: "Wartet auf Erkennung …", recognizing: "Text wird erkannt …", recognizing2: "Text wird ein zweites Mal geprüft …", loadingCore: "Erkennung wird geladen …",
       loadingLang: "Sprachdaten werden geladen …", preparing: "Wird vorbereitet …",
       imgError: "Bild konnte nicht geöffnet werden.", noSpeech: "Vorlesen wird von diesem Browser nicht unterstützt.",
       example: "Beispiel", addPages: "Seiten hinzufügen", toStart: "Zur Startseite", shelfTitle: "Deine Bücher", pagesN: "{n} Seiten", page1: "1 Seite", untitled: "Buch ohne Titel", titlePh: "Titel des Buchs", editPages: "Seiten bearbeiten", done: "Fertig", deleteBook: "Buch löschen", confirmDelete: "Zum Löschen noch einmal tippen", moveLeft: "Nach links", moveRight: "Nach rechts", deletePage: "Seite löschen", evTitle: "Was sagt die Forschung?", evText: "Mehr Abstand zwischen Buchstaben <i>und</i> Wörtern hilft vielen Kindern mit Legasthenie, schneller zu lesen. Kurze Zeilen helfen manchen Kindern, aber nicht allen. Vorlesen hilft beim Verstehen, und einen Text erst zu hören und dann mehrmals selbst zu lesen macht das Lesen flüssiger.<br><br>Farbige Silben helfen manchen Kindern am Anfang, anderen nicht. Probiere aus, was deinem Kind gefällt, und schalte sie ab, sobald es flüssig liest.<br><br>Spezielle Legasthenie-Schriften wie OpenDyslexic und farbige Hintergründe haben in Studien keine Wirkung gezeigt. Nutze sie gern, wenn dein Kind sie angenehm findet, aber nicht als Behandlung. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.de.md#was-sagt-die-forschung\">Quellen</a>", rateLabel: "Vorlesen", rateSlow: "Langsam", rateNormal: "Normal", turnLabel: "Nach dem Vorlesen", turnOn: "Du bist dran", turnOff: "Nur zuhören", yourTurn: "Jetzt bist du dran. Lies die Seite selbst.", again: "Noch mal hören", linesLabel: "Zeilen", linesNormal: "Normal", linesShort: "Kurz", linesHint: "Kurze Zeilen mit wenigen Wörtern helfen manchen Kindern. Gilt nur, wenn der Text allein angezeigt wird.", reader: "Leser", reader1: "Leser 1", addReader: "Hinzufügen", newReaderPh: "Name des neuen Lesers", removeReader: "Leser löschen", confirmReader: "Zum Löschen noch einmal tippen", readerHint: "Jeder Leser hat eigene Einstellungen für Schrift, Abstände, Silben und Vorlesen.", sylHint: "Sobald dein Kind flüssig liest, kannst du die Silben ausschalten.", togetherLabel: "Gemeinsam lesen", togetherOn: "An", togetherOff: "Aus", togetherHint: "Zeigt ein paar offene Fragen für den Erwachsenen, der mitliest. Kein Quiz – lass das Kind erzählen.", togetherTitle: "Sprecht über die Seite", ownQ: "Eigene Frage", ownQPh: "Frage zu dieser Seite schreiben", save: "Speichern", moveBoxes: "Textfelder verschieben", moveDone: "Verschieben beenden", resetPlace: "Position zurücksetzen", moveHint: "Zieh ein Feld, um es zu verschieben, oder an seiner Ecke, um die Größe zu ändern.", morf: "Wortteile", morfOnlyDa: "Wortteile gibt es bisher nur für Dänisch.", morfFail: "Die Wortliste konnte nicht geladen werden.", aboutTitle: "Über Læsehjælper und Haftungsausschluss", aboutText: "Læsehjælper ist ein kostenloses Hobbyprojekt und kein fertiges Produkt. Texterkennung und Silbentrennung machen Fehler – prüfe den Text deshalb immer, bevor ein Kind ihn liest. Die App ersetzt keinen Unterricht, keine Leseförderung und keine Diagnostik bei Legasthenie.<br><br>Fotos und Bücher werden nur auf deinem eigenen Gerät verarbeitet und gespeichert und an keinen Server geschickt. Bücher sind urheberrechtlich geschützt: Nutze Læsehjælper nur für Bücher, auf die du selbst Zugriff hast, und nur privat. Gib umgewandelte Bücher nicht weiter, außer du hast die Rechte dazu.<br><br>Nutzung auf eigene Verantwortung und ohne Gewähr. Der Quellcode ist offen: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "In diesem Browser können keine Bücher gespeichert werden.", cropTitle: "Seite zuschneiden", cropFound: "Seite gefunden. Zieh an den Ecken, falls es nicht passt.", cropNone: "Zieh die Ecken an die Ränder der Seite.", cropLoading: "Seite wird gesucht …", cropUse: "Übernehmen", cropWhole: "Ganzes Bild", cropAgain: "Seite neu zuschneiden", ocrAgain: "Text neu erkennen", cropOf: "Bild {a} von {b}", exportBook: "Als E-Book speichern", importBook: "E-Book (EPUB) aus Læsehjælper laden", exporting: "E-Book wird erstellt …", exported: "E-Book gespeichert: {name}", importFail: "Die Datei ist kein E-Book aus Læsehjælper.", importing: "E-Book wird geladen …", notReady: "Warte, bis alle Seiten erkannt sind.", install: "Als App auf diesem Gerät installieren", compare: "Originaltext anzeigen", compareOff: "Neuen Text anzeigen",
@@ -240,7 +249,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     if (pages.length) render();
   }
 
-  const CHOICES: [string, ChoiceKey][] = [["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"], ["viewSet", "view"], ["hyphSet", "hyph"], ["rateSet", "rate"], ["turnSet", "turn"], ["linesSet", "lines"], ["togetherSet", "together"]];
+  const CHOICES: [string, ChoiceKey][] = [["gateSet", "gate"], ["mode", "mode"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"], ["viewSet", "view"], ["hyphSet", "hyph"], ["rateSet", "rate"], ["turnSet", "turn"], ["linesSet", "lines"], ["togetherSet", "together"]];
   function applySettings() {
     const r = document.documentElement.style;
     r.setProperty("--font", S.font);
@@ -336,16 +345,17 @@ const Lib = { detectPage, warpPage, orderCorners };
   });
 
   let book: Book | null = null;
+  let navigationId = 0;
   function releaseImage(src: string | null | undefined) {
     if (src?.startsWith("blob:")) URL.revokeObjectURL(src);
   }
   function releasePageImages(pg: Page) { releaseImage(pg.img); releaseImage(pg.clean); }
   function newBook(demo = false) {
-    showBookMenu(false); showCheck(false);
+    navigationId++;
+    showEditEntry(false); showCheck(false);
     pages.forEach(releasePageImages);
-    book = { id: uid(), title: "", pageIds: [], lastPage: 0, cover: null, created: Date.now(), demo };
+    book = { id: demo ? "sample" : uid(), title: "", pageIds: [], lastPage: 0, cover: null, created: Date.now(), demo };
     pages.length = 0; cur = 0;
-    document.body.classList.remove("editing");
   }
 
   let persistAsked = false;
@@ -396,18 +406,21 @@ const Lib = { detectPage, warpPage, orderCorners };
     };
   }
 
-  async function openBook(b: Book) {
-    newBook();
-    book = b;
+  async function openBook(b: Book, target?: Exclude<BookLocation, { view: "shelf" }>, fromHistory = false) {
+    const requestId = ++navigationId;
     let recs: PageRecord[] = [];
     try { recs = await DB.pagesOf<PageRecord>(b.id); } catch (e) { storageFail(e); }
+    if (requestId !== navigationId) return;
+    newBook();
+    book = b;
     const byId: Record<string, PageRecord> = Object.fromEntries(recs.map(r => [r.id, r]));
     const ordered = (b.pageIds || []).map(id => byId[id]).filter(Boolean);
     recs.forEach(r => { if (!ordered.includes(r)) ordered.push(r); });
     pages.push(...ordered.map(pageFromRecord));
-    cur = Math.min(b.lastPage || 0, Math.max(0, pages.length - 1));
+    cur = resumePage(b.lastPage, pages.length);
+    if (target?.pageId) { const i = pages.findIndex(pg => pg.id === target.pageId); if (i >= 0) cur = i; }
     pages.filter(p => p.status === "wait").forEach(p => queue.push(p));
-    showApp(); render(); runQueue();
+    showApp(target?.view ?? "read", !fromHistory); render(); runQueue();
   }
 
   async function renderShelf() {
@@ -415,13 +428,17 @@ const Lib = { detectPage, warpPage, orderCorners };
     try { books = await DB.all<Book>("books"); } catch { /* No storage available: leave the bookshelf empty. */ }
     books.sort((a, b) => (b.updated || 0) - (a.updated || 0));
     $("shelf").hidden = !books.length;
+    $("start").classList.toggle("has-books", books.length > 0);
+    const photoLabel = $("drop").querySelector<HTMLElement>("[data-t]")!;
+    photoLabel.dataset.t = books.length ? "newBook" : "dropMain";
+    photoLabel.textContent = t(photoLabel.dataset.t);
     const box = $("books"); box.innerHTML = "";
     for (const b of books) {
       const el = document.createElement("button");
       el.className = "book";
       const n = (b.pageIds || []).length;
       const title = b.title || t("untitled");
-      el.innerHTML = `<div class="cover"></div><b></b><span>${n === 1 ? t("page1") : t("pagesN", { n })}</span>`;
+      el.innerHTML = `<div class="cover"></div><b></b><span>${n === 1 ? t("page1") : t("pagesN", { n })}</span><span class="resume">${n ? t("continuePage", { a: resumePage(b.lastPage, n) + 1, b: n }) : ""}</span>`;
       if (b.cover) el.querySelector<HTMLElement>(".cover")!.style.backgroundImage = `url(${b.cover})`;
       el.querySelector("b")!.textContent = title;
       el.onclick = () => openBook(b);
@@ -458,18 +475,10 @@ const Lib = { detectPage, warpPage, orderCorners };
 
   let titleTimer = 0;
   $<HTMLInputElement>("bookTitle").oninput = e => { if (book) { book.title = val(e).trim(); clearTimeout(titleTimer); titleTimer = window.setTimeout(saveBook, 400); } };
-  // Book tools for adults, in one menu: check and correct the text, edit pages, save as e-book.
-  // Design inference from distracting storybook extras, not a tested benefit of this menu:
+  // Reading has one quiet entry into the adult workshop.
+  // Design inference from distracting storybook extras, not a tested benefit of this navigation:
   // Takacs, Swart & Bus (2015), doi:10.3102/0034654314566989.
-  function showBookMenu(on: boolean) {
-    $("bookMenu").hidden = !on;
-    $<HTMLButtonElement>("bookMenuBtn").setAttribute("aria-expanded", String(on));
-  }
-  $<HTMLButtonElement>("bookMenuBtn").onclick = () => showBookMenu($("bookMenu").hidden !== false);
-  $("bookMenu").addEventListener("click", e => { if ((e.target as Element).closest("button")) showBookMenu(false); });
-  document.addEventListener("pointerdown", e => { if (!(e.target as Element).closest(".bookmenu")) showBookMenu(false); });
-  document.addEventListener("keydown", e => { if (e.key === "Escape") showBookMenu(false); });
-  let checking = false;   // "Check and correct the text" was chosen from the menu.
+  let checking = false;
   function showCheck(on: boolean) {
     checking = on;
     if (!on) setMoving(false);
@@ -478,13 +487,6 @@ const Lib = { detectPage, warpPage, orderCorners };
   }
   $<HTMLButtonElement>("checkTextBtn").onclick = () => showCheck(true);
   $("edit").addEventListener("toggle", () => { if (!$<HTMLDetailsElement>("edit").open) showCheck(false); });
-  function toggleEditing() {
-    document.body.classList.toggle("editing");
-    $<HTMLButtonElement>("delBookBtn").classList.remove("armed"); $<HTMLButtonElement>("delBookBtn").textContent = t("deleteBook");
-    renderThumbs();
-  }
-  $<HTMLButtonElement>("editPagesBtn").onclick = toggleEditing;
-  $<HTMLButtonElement>("editDoneBtn").onclick = toggleEditing;
   $<HTMLButtonElement>("delBookBtn").onclick = () => {
     const b = $<HTMLButtonElement>("delBookBtn");
     if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = t("confirmDelete"); return; }
@@ -890,9 +892,17 @@ const Lib = { detectPage, warpPage, orderCorners };
 
   function render() {
     const pg = pages[cur];
+    $<HTMLButtonElement>("correctPageBtn").disabled = pg?.status !== "done";
+    $("readingTitle").textContent = book?.title || t("untitled");
+    if (!$("app").hidden) syncLocation();
+    if (!pg) { showStatus(t("noText")); renderThumbs(); return; }
+    const pending = pg.status === "wait" || pg.status === "ocr";
+    $("edit").hidden = !checking || pending;
+    $<HTMLButtonElement>("checkTextBtn").disabled = pending;
+    $<HTMLTextAreaElement>("text").disabled = pg.status !== "done";
     $("count").textContent = t("pageOf", { a: cur + 1, b: pages.length });
     if (document.activeElement !== $<HTMLInputElement>("bookTitle")) $<HTMLInputElement>("bookTitle").value = (book && book.title) || "";
-    $<HTMLButtonElement>("editPagesBtn").hidden = !book || !!book.demo;
+    $<HTMLButtonElement>("delBookBtn").hidden = !book || !!book.demo;
     $<HTMLButtonElement>("exportBtn").hidden = !book || !!book.demo;
     $<HTMLButtonElement>("prev").disabled = $<HTMLButtonElement>("edgePrev").disabled = cur === 0;
     $<HTMLButtonElement>("next").disabled = $<HTMLButtonElement>("edgeNext").disabled = cur >= pages.length - 1;
@@ -933,13 +943,18 @@ const Lib = { detectPage, warpPage, orderCorners };
     renderThumbs();
   }
 
+  /** Recognition status of a page, as the workshop's page list shows it. */
+  const pageStatus = (pg: Page) => t(pg.status === "done" ? "pageReady" : pg.status === "error" ? "ocrFailed" : pg.status === "wait" ? "waiting" : "recognizing");
   function renderThumbs() {
     const box = $("thumbs"); box.innerHTML = "";
+    if (view !== "workshop") return;   // Only the workshop shows the page list; thumbnails can be large photos.
     pages.forEach((pg, i) => {
       const wrap = document.createElement("div"); wrap.className = "thumb";
       const b = document.createElement("button");
       b.className = i === cur ? "on" : ""; b.title = t("page") + " " + (i + 1);
-      b.innerHTML = pg.img ? `<img src="${pg.img}" alt="">` : `<span class="demo">${t("example")}</span>`;
+      b.innerHTML = pg.img ? `<img src="${pg.img}" alt="">` : `<span class="demo">${b.title}</span>`;
+      const state = document.createElement("span"); state.className = "recognition"; b.append(state);
+      setThumbStatus(b, pg);
       b.onclick = () => { cur = i; render(); saveBook(); };
       const ctl = document.createElement("div"); ctl.className = "ctl";
       ctl.innerHTML = `<button title="${t("moveLeft")}">‹</button><button class="x" title="${t("deletePage")}">×</button><button title="${t("moveRight")}">›</button>`;
@@ -952,6 +967,16 @@ const Lib = { detectPage, warpPage, orderCorners };
     add.className = "add"; add.title = t("addPages"); add.innerHTML = icon("plus") + `<input type="file" accept="image/*" multiple hidden>`;
     add.querySelector("input")!.onchange = e => addFiles((e.target as HTMLInputElement).files);
     box.append(add);
+  }
+  function setThumbStatus(b: HTMLElement, pg: Page) {
+    const status = pageStatus(pg);
+    b.setAttribute("aria-label", `${b.title}, ${status}`);
+    b.querySelector(".recognition")!.textContent = status;
+  }
+  /** Show a page's new recognition status without redrawing every thumbnail. */
+  function renderThumbStatus(pg: Page) {
+    const b = $("thumbs").querySelectorAll<HTMLElement>(".thumb > button")[pages.indexOf(pg)];
+    if (b) setThumbStatus(b, pg);
   }
 
   $<HTMLButtonElement>("prev").onclick = () => { if (cur > 0) { cur--; render(); saveBook(); } };
@@ -1014,21 +1039,29 @@ const Lib = { detectPage, warpPage, orderCorners };
   const queue: Page[] = [];
   async function addFiles(files: FileList | File[] | null) {
     const list = [...(files || [])].filter(f => f.type.startsWith("image/"));
-    if (!list.length) return;
-    showApp();
+    if (!list.length || !book) return;
+    const owner = book;
+    showApp("workshop");
+    const generation = navigationId;
+    const ownsPreparation = () => book === owner && navigationId === generation;
     const first = pages.length;
     for (const [n, f] of list.entries()) {
       try {
         const { canvas: photo } = await loadImage(f);
+        if (!ownsPreparation()) return;
         const { canvas, corners } = await cropFlow(photo, null, list.length > 1 ? t("cropOf", { a: n + 1, b: list.length }) : "");
-        const pg: Page = { bookId: book && !book.demo ? book.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: S.lang, text: "", status: "wait", progress: 0 };
+        if (!ownsPreparation()) return;
+        const pg: Page = { bookId: !owner.demo ? owner.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: S.lang, text: "", status: "wait", progress: 0 };
         pages.push(pg); queue.push(pg);
         if (n === 0) { cur = pages.length - 1; render(); }
-        await savePage(pg); await saveBook();
+        await savePage(pg);
+        // Navigation may cancel the remaining batch, but an accepted page still needs its book record.
+        if (book === owner) await saveBook();
         runQueue();
+        if (!ownsPreparation()) return;
       } catch (e) { toast(e instanceof Error ? e.message : String(e)); }
     }
-    if (!pages.length) return;
+    if (!ownsPreparation() || !pages.length) return;
     cur = Math.min(first, pages.length - 1);
     render();
   }
@@ -1378,7 +1411,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
       const pg = queue.shift()!;
       if (isRemoved(pg)) continue;
       active = pg; pg.status = "ocr"; pg.stage = "loadingCore";
-      if (pages[cur] === pg) render();
+      if (pages[cur] === pg) render(); else renderThumbStatus(pg);
       try {
         const w = await getWorker(pg.lang);
         if (isRemoved(pg)) { active = null; continue; }
@@ -1411,7 +1444,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
         pg.status = "error"; pg.error = e instanceof Error ? e.message : String(e);
       }
       active = null;
-      if (pages[cur] === pg) render(); else renderThumbs();
+      if (pages[cur] === pg) render(); else renderThumbStatus(pg);
     }
     running = false;
   }
@@ -1505,27 +1538,128 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   }
 
   // ---------- Start ----------
-  // Browser/tablet Back button: opening a book adds a history entry (#bog),
-  // so Back returns to the start screen instead of leaving the app.
-  function showApp() {
+  let view: "read" | "workshop" = "read";
+  function currentLocation(mode = view): BookLocation {
+    return book ? { view: mode, bookId: book.id, pageId: pages[cur]?.id } : { view: "shelf" };
+  }
+  function writeLocation(target: BookLocation, push: boolean) {
+    const hash = locationHash(target);
+    if (location.hash === hash && history.state?.laese === target.view) return;   // Already recorded.
+    // Browsers cap how often a page may change its history (Safari and Firefox then throw),
+    // and some embedded views block it. Reading goes on; only the link is not updated.
+    try {
+      if (push && location.hash !== hash) history.pushState({ laese: target.view }, "", hash);
+      else history.replaceState({ laese: target.view }, "", hash);
+    } catch { /* Keep the previous link. */ }
+  }
+  function syncLocation() { writeLocation(currentLocation(), false); }
+  function showApp(mode: "read" | "workshop" = "read", push = true) {
+    navigationId++;
+    if (push && mode === "workshop" && !$("start").hidden) writeLocation(currentLocation("read"), true);
+    view = mode;
+    showEditEntry(false); showCheck(false); showSettings(false);
+    document.body.classList.remove("focus"); setFocusBtn();
+    document.body.classList.toggle("workshop", view === "workshop");
+    comparing = false; setCompareBtn();
     $("start").hidden = true; $("app").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0);
-    if (location.hash !== "#bog") { try { history.pushState(null, "", "#bog"); } catch {} }
+    writeLocation(currentLocation(), push);
+    $("delBookBtn").classList.remove("armed"); $("delBookBtn").textContent = t("deleteBook");
+    showCheck(mode === "workshop"); window.scrollTo(0, 0);
   }
-  window.addEventListener("popstate", () => {
-    if (!$("crop").hidden) return;
-    if (location.hash !== "#bog" && $("start").hidden) showStart(true);
-  });
-  if (location.hash === "#bog") { try { history.replaceState(null, "", location.pathname + location.search); } catch {} }
+  async function restoreLocation(fromAppHistory = false) {
+    // A crop has not been accepted or saved yet. Keep its history entry until it finishes.
+    if (!$("crop").hidden) { writeLocation(currentLocation(), true); return; }
+    const requestId = ++navigationId;
+    const target = parseLocation(location.hash);
+    seedHistory(target);
+    if (target.view === "shelf") { showStart(true); return; }
+    if (book?.id === target.bookId && pages.length) {
+      if (!(fromAppHistory && view === "workshop" && target.view === "read")) {
+        const i = pages.findIndex(pg => pg.id === target.pageId); if (i >= 0) cur = i;
+      }
+      showApp(target.view, false); render(); return;
+    }
+    if (target.bookId === "sample") { openDemo(false, target.view); return; }
+    let saved: Book | undefined;
+    try { saved = (await DB.all<Book>("books")).find(b => b.id === target.bookId); } catch (e) { storageFail(e); }
+    if (requestId !== navigationId) return;
+    if (!saved) { showStart(true); return; }
+    await openBook(saved, target, true);
+  }
+  window.addEventListener("popstate", e => { restoreLocation(e.state?.laese === "read"); });
   function showStart(fromHistory = false) {
-    if (!fromHistory && location.hash === "#bog") { history.back(); return; } // popstate calls this function again.
-    stopSpeech();
-    if (document.body.classList.contains("focus")) $<HTMLButtonElement>("focusBtn").click();
+    navigationId++;
+    // Return through the app's own history entries, also after deleting the book, so Back
+    // from the shelf never leads into a book that is no longer there.
+    if (!fromHistory && !$("app").hidden) { history.go(view === "workshop" ? -2 : -1); return; }
+    stopSpeech(); showEditEntry(false); showCheck(false);
+    document.body.classList.remove("focus", "workshop"); setFocusBtn();
     $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; showSettings(false);
-    document.body.classList.remove("editing");
-    saveBook();
-    renderShelf();
-    window.scrollTo(0, 0);
+    writeLocation({ view: "shelf" }, false);
+    saveBook(); renderShelf(); window.scrollTo(0, 0);
   }
+  function showEditEntry(on: boolean) {
+    if (!on) { cancelEditHold(); holdCompleted = false; }
+    $("editEntry").hidden = !on;
+    $("editBookBtn").setAttribute("aria-expanded", String(on));
+    $<HTMLButtonElement>("correctPageBtn").disabled = pages[cur]?.status !== "done";
+  }
+  function enterWorkshop(correct = false) {
+    showApp("workshop"); render();
+    if (correct && pages[cur]?.status === "done") { showCheck(true); $<HTMLTextAreaElement>("text").focus(); }
+  }
+  const editEntryButton = $<HTMLButtonElement>("editBookBtn");
+  let holdStarted: number | null = null, holdFrame = 0, holdCompleted = false;
+  function cancelEditHold() {
+    cancelAnimationFrame(holdFrame); holdStarted = null;
+    editEntryButton.classList.remove("holding"); editEntryButton.style.removeProperty("--hold-progress");
+  }
+  function advanceEditHold() {
+    if (holdStarted === null) return;
+    const progress = holdProgress(performance.now() - holdStarted);
+    editEntryButton.style.setProperty("--hold-progress", `${progress * 100}%`);
+    if (progress === 1) { holdCompleted = true; cancelEditHold(); showEditEntry(true); }
+    else holdFrame = requestAnimationFrame(advanceEditHold);
+  }
+  function startEditHold() {
+    // An open entry closes with a plain press; holding is only needed to open it.
+    if (S.gate !== "an" || holdStarted !== null || $("editEntry").hidden === false) return;
+    holdCompleted = false; holdStarted = performance.now(); editEntryButton.classList.add("holding"); advanceEditHold();
+  }
+  /** A finished click or key press on "Edit book". */
+  function pressEditEntry() {
+    if (holdCompleted) { holdCompleted = false; return; }   // The hold has just opened the entry.
+    const open = $("editEntry").hidden === false;
+    if (S.gate === "an" && !open) toast(t("holdToEdit"));
+    else showEditEntry(!open);
+  }
+  editEntryButton.onclick = pressEditEntry;
+  // A long press must not turn into a context menu, callout or text selection, which can cancel the hold.
+  editEntryButton.oncontextmenu = e => { if (S.gate === "an") e.preventDefault(); };
+  editEntryButton.onpointerdown = e => {
+    if (e.button !== 0 || S.gate !== "an") return;
+    editEntryButton.setPointerCapture(e.pointerId); startEditHold();
+  };
+  editEntryButton.onpointermove = e => {
+    if (holdStarted === null) return;
+    const r = editEntryButton.getBoundingClientRect();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) cancelEditHold();
+  };
+  editEntryButton.onpointerup = editEntryButton.onpointercancel = editEntryButton.onlostpointercapture = cancelEditHold;
+  editEntryButton.onkeydown = e => {
+    if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); if (!e.repeat) startEditHold(); }
+  };
+  editEntryButton.onkeyup = e => {
+    if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); cancelEditHold(); pressEditEntry(); }
+  };
+  editEntryButton.onblur = cancelEditHold;
+  window.addEventListener("blur", cancelEditHold);
+  document.addEventListener("visibilitychange", () => { if (document.hidden) cancelEditHold(); });
+  $("openWorkshopBtn").onclick = () => enterWorkshop();
+  $("correctPageBtn").onclick = () => enterWorkshop(true);
+  document.addEventListener("pointerdown", e => { if (!(e.target as Element).closest(".reading-entry")) showEditEntry(false); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("editEntry").hidden) { showEditEntry(false); $<HTMLButtonElement>("editBookBtn").focus(); } });
+  $("readBookBtn").onclick = () => { saveBook(); history.back(); };
   $<HTMLButtonElement>("homeBtn").onclick = () => showStart();
   $("home").onclick = () => showStart();
   $("home").onkeydown = e => { if (e.key === "Enter") showStart(); };
@@ -1537,12 +1671,13 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   drop.addEventListener("drop", e => { newBook(); addFiles(e.dataTransfer?.files ?? null); });
   document.addEventListener("paste", e => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { if ($("app").hidden) newBook(); addFiles(f); } });
 
-  $<HTMLButtonElement>("demoBtn").onclick = () => {
+  function openDemo(push = true, mode: "read" | "workshop" = "read") {
     newBook(true);
-    pages.push({ img: null, status: "done", progress: 1, lang: S.lang, text: DEMO[S.lang] });
-    cur = 0; showApp(); render();
+    pages.push({ id: "sample-page", img: null, status: "done", progress: 1, lang: S.lang, text: DEMO[S.lang] });
+    cur = 0; showApp(mode, push); render();
     getWorker(S.lang); // Preload recognition in the background.
-  };
+  }
+  $<HTMLButtonElement>("demoBtn").onclick = () => openDemo();
 
   // Show the install button when the browser offers installation (Chrome, Edge, Samsung Internet).
   interface InstallPrompt extends Event { prompt(): Promise<void> }
@@ -1558,3 +1693,14 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
 
   applySettings();
   applyTexts();
+
+  // Seed the internal Back path for direct links; reload keeps the existing history.
+  function seedHistory(initialLocation: BookLocation) {
+    if (history.state?.laese) return;
+    writeLocation({ view: "shelf" }, false);
+    if (initialLocation.view !== "shelf") {
+      writeLocation({ ...initialLocation, view: "read" }, true);
+      if (initialLocation.view === "workshop") writeLocation(initialLocation, true);
+    }
+  }
+  restoreLocation();

@@ -104,10 +104,16 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .startrow .lbl { font-size: 15px; color: var(--muted); margin-right: 8px; }
 .linkbtn { background: none; border: 0; padding: 12px 0; color: var(--blue); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
 /* Bookshelf */
-.shelf { margin: 44px 0 0; }
+.shelf { margin: 20px 0 0; }
 .shelf h2 { font-size: 20px; margin: 0 0 14px; }
-.books { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 18px 16px; }
-.book { border: 0; background: none; padding: 0; text-align: left; }
+.books { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 16px; }
+@media (min-width: 600px) { .books { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); } }
+@media (min-width: 840px) { .wrap:has(> #start.has-books:not([hidden])) { max-width: 1160px; } }
+#start.has-books .hero { padding-top: 28px; }
+#start.has-books .hero h1, #start.has-books .lead, #start.has-books .how, #start.has-books .cta .sub { display: none; }
+#start.has-books .cta { display: inline-flex; width: auto; max-width: 100%; gap: 10px; padding: 12px 16px; color: var(--ink); background: #fff; border: 1.5px solid var(--line); }
+#start.has-books .cta .ic { width: 28px; height: 28px; background: none; }
+.book { border: 0; background: none; padding: 0; text-align: left; min-width: 0; overflow-wrap: anywhere; }
 .book .cover { aspect-ratio: 3 / 4; border-radius: 10px; background: #fff center / cover no-repeat; box-shadow: 0 0 0 1px var(--line), 0 6px 16px -10px rgba(29,33,49,.4); }
 .book b { display: block; margin-top: 8px; font-size: 16px; line-height: 1.3; }
 .book span { display: block; font-size: 14px; color: var(--muted); }
@@ -115,17 +121,15 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .bookbar input { flex: 1; min-width: 0; font-size: 22px; font-weight: 700; border: 0; background: transparent; padding: 6px 2px; border-bottom: 1.5px solid transparent; border-radius: 0; }
 .bookbar input:focus { border-bottom-color: var(--line); outline: none; }
 .btn-ghost.small { min-height: 44px; justify-content: center; padding: 10px 14px; font-size: 15px; white-space: nowrap; }
-.editbar { display: none; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
-body.editing .editbar { display: flex; }
 .btn-danger { border: 1.5px solid #c9372c; color: #c9372c; background: #fff; border-radius: 12px; padding: 10px 16px; font-weight: 700; }
 .btn-danger.armed { background: #c9372c; color: #fff; }
 .thumb { position: relative; flex: 0 0 auto; }
 .thumb .ctl { display: none; gap: 4px; margin-top: 6px; }
-body.editing .thumb { display: flex; flex-direction: column; align-items: center; }
-body.editing .thumb .ctl { display: flex; }
+body.workshop .thumb { display: flex; flex-direction: column; align-items: center; }
+body.workshop .thumb .ctl { display: flex; }
 .thumb .ctl button { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--ink); color: #fff; font-size: 22px; line-height: 1; padding: 0; box-shadow: none; }
 .thumb .ctl .x { background: #c9372c; }
-body.editing .thumbs { gap: 16px; }
+body.workshop .thumbs { gap: 16px; }
 .btn-ghost { display: inline-flex; align-items: center; gap: 10px; border: 1.5px solid var(--ink); background: #fff; color: var(--ink); border-radius: 12px; padding: 11px 18px; font-weight: 700; }
 
 .how { list-style: none; counter-reset: s; margin: 48px 0 0; padding: 22px 0 0; display: grid; gap: 16px; border-top: 1px solid var(--line); }
@@ -139,6 +143,31 @@ body.editing .thumbs { gap: 16px; }
 .disclaimer summary { cursor: pointer; font-weight: 700; color: var(--ink); padding: 12px 0; }
 .disclaimer p { margin-top: 8px; line-height: 1.55; }
 
+/* Reading and making books have separate entry points. */
+#editBookBtn { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }   /* Long press for the parent gate. */
+#editBookBtn.holding { background: linear-gradient(to right, var(--sky) var(--hold-progress, 0%), #fff var(--hold-progress, 0%)); }
+.reading-entry { position: relative; }
+.entry-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 25; display: grid; width: min(300px, calc(100vw - 36px)); padding: 6px; background: white; border-radius: 14px; box-shadow: 0 0 0 1px var(--line), 0 16px 40px -16px rgba(23,25,59,.45); }
+.entry-menu button { min-height: 48px; padding: 8px 14px; border: 0; background: none; border-radius: 10px; font-weight: 700; text-align: left; }
+.entry-menu button:hover { background: var(--sky); }
+#readingTitle { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+body:not(.workshop) .bookbar input,
+body:not(.workshop) #edit, body:not(.workshop) #thumbs,
+body:not(.workshop) #compareBtn, body:not(.workshop) .workshop-only,
+body.workshop .reading-only { display: none !important; }
+body.workshop:not(.focus) .workshop-grid { display: grid; gap: 16px; }
+.workshop-tools { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+body.workshop #thumbs { display: grid; grid-template-columns: repeat(auto-fit, minmax(144px, 1fr)); align-content: start; gap: 16px; overflow: visible; }
+body.workshop #thumbs > .thumb { min-width: 0; }
+body.workshop .thumb > button { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; }
+.recognition { max-width: 160px; font-size: 13px; overflow-wrap: anywhere; }
+body.workshop .thumbs .add { width: 100%; min-height: 74px; height: auto; }
+body.workshop .workshop-grid > * { min-width: 0; }
+@media (min-width: 840px) {
+  body.workshop:not(.focus) .wrap { max-width: min(1280px, calc(100vw - 136px)); }
+  body.workshop:not(.focus) .workshop-grid { grid-template-columns: 192px minmax(0, 1fr); align-items: start; }
+  body.workshop:not(.focus) #thumbs { flex-wrap: wrap; margin: 0; }
+}
 /* Reader view */
 .pagecard { background: var(--page-bg); border-radius: 16px; overflow: hidden; overflow: clip; box-shadow: 0 0 0 1px var(--line); }   /* clip: keeps the photo sticky beside the text */
 .orig { display: flex; justify-content: center; background: #e9ebef; padding: 14px; }
@@ -313,13 +342,6 @@ input[type=range] { width: 100%; height: 44px; margin: 0; accent-color: var(--bl
 .installrow { margin: 18px 0 0; }
 .importrow { margin: 10px 0 0; }
 .importrow .linkbtn { cursor: pointer; }
-#bookMenuBtn { gap: 6px; }
-#bookMenuBtn svg { width: 20px; height: 20px; }
-@media (max-width: 520px) { #bookMenuBtn span { display: none; } }
-.bookmenu { position: relative; }
-.menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 25; display: grid; min-width: 250px; padding: 6px; background: #fff; border-radius: 14px; box-shadow: 0 0 0 1px var(--line), 0 16px 40px -16px rgba(23,25,59,.45); }
-.menu button { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 14px; border: 0; background: none; border-radius: 10px; font-weight: 700; text-align: left; white-space: nowrap; }
-@media (hover: hover) { .menu button:hover { background: var(--sky); } }
 .profrow { display: flex; gap: 8px; margin-top: 8px; }
 .profrow select, .profrow input { flex: 1; min-width: 0; }
 .profrow input { border: 1.5px solid var(--line); border-radius: 12px; padding: 8px 12px; background: #fff; }
@@ -335,7 +357,7 @@ input[type=range] { width: 100%; height: 44px; margin: 0; accent-color: var(--bl
 @media (max-width: 480px) { .own { margin-left: 0; padding-left: 0; border-left: 0; } }
 
 /* Focus mode: text only */
-body.focus header.top, body.focus .bookbar, body.focus .orig, body.focus .edit, body.focus .editbar, body.focus .thumbs, body.focus .settings, body.focus .foot, body.focus .dock > :not(.keep) { display: none !important; }
+body.focus .workshop-tools, body.focus header.top, body.focus .bookbar, body.focus .orig, body.focus .edit, body.focus .thumbs, body.focus .settings, body.focus .foot, body.focus .dock > :not(.keep) { display: none !important; }
 body.focus .wrap { max-width: none; padding: 0; }
 body.focus .pagecard { border-radius: 0; box-shadow: none; min-height: 100vh; }
 body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
@@ -400,6 +422,10 @@ body.focus .together { display: none !important; }
 
   <!-- Start screen -->
   <section id="start">
+    <section class="shelf" id="shelf" hidden>
+      <h2 data-t="shelfTitle"></h2>
+      <div class="books" id="books"></div>
+    </section>
     <div class="hero">
       <h1 id="heroWord"></h1>
       <p class="lead" data-t="startIntro"></p>
@@ -421,10 +447,6 @@ body.focus .together { display: none !important; }
       <p class="importrow"><label class="linkbtn"><input type="file" id="importFile" accept=".epub,application/epub+zip" hidden><span data-t="importBook"></span></label></p>
       <p class="installrow" id="installRow" hidden><button class="btn-ghost" id="installBtn"><svg class="i"><use href="#i-plus"/></svg><span data-t="install"></span></button></p>
     </div>
-    <section class="shelf" id="shelf" hidden>
-      <h2 data-t="shelfTitle"></h2>
-      <div class="books" id="books"></div>
-    </section>
     <ol class="how">
       <li><div><b data-t="how1t"></b><span data-t="how1"></span></div></li>
       <li><div><b data-t="how2t"></b><span data-t="how2"></span></div></li>
@@ -439,17 +461,24 @@ body.focus .together { display: none !important; }
   <!-- Reader view -->
   <section id="app" hidden>
     <div class="bookbar">
-      <input id="bookTitle" autocomplete="off" data-tp="titlePh">
-      <!-- Tools for adults sit in one menu, so the reading screen stays calm. -->
-      <div class="bookmenu">
-        <button class="btn-ghost small" id="bookMenuBtn" data-ta="bookTools" aria-haspopup="menu" aria-expanded="false" aria-controls="bookMenu"><svg class="i"><use href="#i-book"/></svg><span data-t="bookTools"></span></button>
-        <div class="menu" id="bookMenu" role="menu" hidden>
-          <button role="menuitem" id="checkTextBtn"><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></button>
-          <button role="menuitem" id="editPagesBtn"><svg class="i"><use href="#i-crop"/></svg><span data-t="editPages"></span></button>
-          <button role="menuitem" id="exportBtn"><svg class="i"><use href="#i-download"/></svg><span data-t="exportBook"></span></button>
+      <strong id="readingTitle" class="reading-only"></strong>
+      <div class="reading-entry reading-only">
+        <button class="btn-ghost small" id="editBookBtn" data-t="editBook" aria-haspopup="menu" aria-expanded="false" aria-controls="editEntry"></button>
+        <div class="entry-menu" id="editEntry" role="menu" hidden>
+          <button role="menuitem" id="correctPageBtn" data-t="correctPage"></button>
+          <button role="menuitem" id="openWorkshopBtn" data-t="editBook"></button>
         </div>
       </div>
+      <button class="btn-ghost small workshop-only" id="readBookBtn" data-t="readBook"></button>
+      <input id="bookTitle" autocomplete="off" data-tp="titlePh">
     </div>
+    <div class="workshop-tools workshop-only">
+      <button class="btn-ghost" id="checkTextBtn"><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></button>
+      <button class="btn-ghost" id="exportBtn"><svg class="i"><use href="#i-download"/></svg><span data-t="exportBook"></span></button>
+      <button class="btn-danger" id="delBookBtn" data-t="deleteBook"></button>
+    </div>
+    <div class="workshop-grid">
+    <div class="thumbs" id="thumbs"></div>
     <article class="pagecard">
       <div class="orig" id="orig"><img id="origImg" alt=""></div>
       <div class="reader" id="reader"></div>
@@ -471,8 +500,8 @@ body.focus .together { display: none !important; }
         </div>
       </details>
     </article>
-    <div class="thumbs" id="thumbs"></div>
-    <div class="editbar" id="editbar"><button class="btn-ghost" id="editDoneBtn" data-t="done"></button><button class="btn-danger" id="delBookBtn" data-t="deleteBook"></button></div>
+    </div>
+
     <button class="edgenav" id="edgePrev" data-ta="prevPage"><svg class="i"><use href="#i-prev"/></svg></button>
     <button class="edgenav next" id="edgeNext" data-ta="nextPage"><svg class="i"><use href="#i-next"/></svg></button>
   </section>
@@ -534,6 +563,11 @@ body.focus .together { display: none !important; }
       </div>
     </div>
     <h3 class="more wide" id="moreSettings" data-t="moreSettings"></h3>
+    <div class="field wide">
+      <span class="flabel" data-t="parentGate"></span>
+      <div class="seg" id="gateSet"><button data-v="aus" data-t="gateOff"></button><button data-v="an" data-t="gateOn"></button></div>
+      <p class="fhint" data-t="holdToEdit"></p><p class="fhint" data-t="gateHint"></p>
+    </div>
     <div class="field wide">
       <label for="profileSel" data-t="reader"></label>
       <div class="profrow"><select id="profileSel"></select><button class="btn-danger small" id="profileDel"></button></div>

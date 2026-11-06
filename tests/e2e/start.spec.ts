@@ -1,7 +1,40 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, fresh, waitForText } from "./helpers";
+import { addPhotos, bookTool, fresh, seedBooks, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
+
+test("Books show where reading stopped and reopen on that page", async ({ page }) => {
+  await seedBooks(page, [{ id: "continue", title: "Min læsebog", texts: ["Historiens begyndelse.", "Her fortsætter historien.", "Historiens slutning."], lastPage: 1 }]);
+  for (const [lang, action, progress] of [
+    ["da", "Ny bog", "Fortsæt på side 2 af 3"],
+    ["de", "Neues Buch", "Auf Seite 2 von 3 weiterlesen"],
+    ["en", "New book", "Continue on page 2 of 3"],
+  ]) {
+    await page.click(`#uiLang button[data-v=${lang}]`);
+    await expect(page.locator("#drop")).toContainText(action);
+    await expect(page.locator(".book")).toContainText(progress);
+  }
+  await page.locator(".book").click();
+  await expect(page.locator("#count")).toHaveText("2 / 3");
+  await expect(page.locator("#reader")).toContainText("Her fortsætter historien.");
+});
+
+test.describe("Books with recognition in progress", () => {
+  test.use({ serviceWorkers: "block" });
+  test("A ready first page can be read while later pages are still being recognised", async ({ page }) => {
+    await page.route("**/tesseract.min.js", route => route.fulfill({ contentType: "text/javascript", body:
+      "window.Tesseract = { createWorker: async () => { window.ocrWaiting = true; return new Promise(() => {}); } };",
+    }));
+    await seedBooks(page, [{ id: "pending", title: "En bog undervejs", texts: ["Den første side er klar.", ""], readyPages: 1 }]);
+    await page.locator(".book").click();
+    await page.waitForFunction(() => "ocrWaiting" in window);
+    await expect(page.locator("#reader")).toContainText("Den første side er klar.");
+    await page.click("#next");
+    await expect(page.locator("#reader .bar")).toBeVisible();
+    await page.click("#prev");
+    await expect(page.locator("#reader")).toContainText("Den første side er klar.");
+  });
+});
 
 test("The start page supports all three languages", async ({ page }) => {
   await expect(page.locator(".cta strong")).toHaveText("Tag et billede af en side");
@@ -213,7 +246,6 @@ test("Reader settings: create, switch and retain profiles", async ({ page }) => 
   await expect(page.locator("#size")).toHaveValue("50");
   await expect(page.locator("#reader")).not.toHaveClass(/mode-farbe/);
   await page.reload();
-  await page.click("#demoBtn");
   await expect(page.locator("#profileSel option:checked")).toHaveText("Bo");
   await expect(page.locator("#size")).toHaveValue("50");
   await page.click("#setBtn");

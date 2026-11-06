@@ -33,7 +33,10 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Overskrifter forbliver større end brødteksten, og fed skrift bliver fundet og vist med fed (kan rettes med `*ord*`)
 - Læsetilstand: kun teksten, i fuld skærm
 - Vis den oprindelige tekst med ét tryk for at finde fejl i genkendelsen
-- Bogreol: bøger gemmes på enheden, med titel, rækkefølge og læsestatus
+- Bogreolen først: gemte bøger åbnes via store forsider og viser, hvor læsningen stoppede. „Ny bog“ er en sekundær knap; uden bøger er fotografering den primære handling. Bøger, rækkefølge og læsestatus bliver på enheden.
+- Læsning og klargøring af bøger har hver sin visning. Læsning har sideskift, oplæsning og Aa-indstillinger; „Rediger bog“ åbner værkstedet. Tilbage fører gennem læsning til bogreolen, og sidelinks virker efter genindlæsning.
+- Bogværkstedet samler sidebilleder og genkendelsesstatus med beskæring, tekstrettelser, tekstfelter, rækkefølge, titel, EPUB-eksport og sletning. Brede skærme viser listen ved siden af editoren, smalle før den. „Tilbage til læsning“ vender tilbage til den valgte side. Under læsning fokuserer „Rediger bog“ → „Ret denne side“ den aktuelle sides tekst med to tryk; bagefter vender man tilbage til samme side.
+- Et valgfrit forældresikring under „Flere indstillinger“ kræver, at „Rediger bog“ holdes nede i to sekunder, og viser fremskridtet. Det virker med berøring, mus, Enter og mellemrum og er slået fra som standard. Det forebygger utilsigtede tryk og er ikke en sikkerhedslås.
 - Beskæring: siden findes automatisk på fotoet og rettes op; hjørner og kanter kan justeres, også på buede sider
 - E-bog: gem en bog som EPUB 3 (faste sider, kan åbnes i alle læse-apps) og hent den ind igen uden tab
 - Kan installeres som app og bruges offline
@@ -79,7 +82,7 @@ Læsehjælper er et læseværktøj, ikke en behandling. Indstillingerne bygger p
 - **Oplæsning** hjælper forståelsen; markering af hvert ord giver ikke ekstra (Keelor m.fl. 2023). At læse den samme tekst flere gange, gerne efter at have hørt den, gør læsningen mere flydende (Lee & Yoon 2017).
 - **Farvet baggrund eller farvede filtre** har ingen påvist effekt ud over placebo (Griffiths m.fl. 2016). Baggrundsfarven er kun et spørgsmål om, hvad der føles rart.
 - **Undervisning:** Systematisk arbejde med bogstaver og lyde er den bedst dokumenterede hjælp ved ordblindhed (Galuschka m.fl. 2014). Dansk er et af de sprog, hvor det tager længst tid at lære at læse sikkert (Seymour m.fl. 2003).
-- **En rolig læseskærm:** Interaktive ekstrafunktioner i digitale billedbøger kan distrahere fra historien (Takacs, Swart & Bus 2015). At samle voksenværktøjer i én bogmenu er et designvalg inspireret af den forskning; undersøgelsen afprøvede ikke denne menu og påviste ikke, at den forbedrer læsningen.
+- **En rolig læseskærm:** Interaktive ekstrafunktioner i digitale billedbøger kan distrahere fra historien (Takacs, Swart & Bus 2015). At samle voksenværktøjer i et separat værksted er et designvalg inspireret af den forskning; undersøgelsen afprøvede ikke denne navigation og påviste ikke, at den forbedrer læsningen.
 
 Kilder:
 

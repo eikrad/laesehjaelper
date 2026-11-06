@@ -33,7 +33,10 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Überschriften bleiben größer als der Fließtext, fett Gedrucktes wird erkannt und fett gesetzt (korrigierbar mit `*Wort*`)
 - Mit einem Tipp den Originaltext einblenden, um Erkennungsfehler zu finden
 - Lesemodus: nur der Text, bildschirmfüllend
-- Bücherregal: Bücher werden auf dem Gerät gespeichert, mit Titel, Seitenreihenfolge und Lesestand
+- Bücherregal zuerst: Gespeicherte Bücher lassen sich über große Cover öffnen und zeigen die zuletzt gelesene Seite. „Neues Buch“ bleibt eine Nebenaktion; ohne Bücher steht das Fotografieren im Vordergrund. Bücher, Seitenreihenfolge und Lesestand bleiben auf dem Gerät.
+- Lesen und Bücher vorbereiten haben getrennte Ansichten. Beim Lesen gibt es Blättern, Vorlesen und Aa-Einstellungen; „Buch bearbeiten“ öffnet die Werkstatt. Zurück führt über das Lesen zum Regal, und Seitenlinks bleiben nach dem Neuladen erhalten.
+- Die Buchwerkstatt vereint Seitenvorschauen und Erkennungsstatus mit Zuschnitt, Textkorrektur, Textfeldern, Seitenreihenfolge, Titel, EPUB-Export und Löschen. Breite Bildschirme zeigen die Liste neben dem Editor, schmale davor. „Zurück zum Lesen“ führt zur ausgewählten Seite zurück. Beim Lesen fokussiert „Buch bearbeiten“ → „Diese Seite korrigieren“ in zwei Schritten den Text der aktuellen Seite; danach geht es zur selben Seite zurück.
+- Ein optionaler Elternschutz unter „Weitere Einstellungen“ verlangt, „Buch bearbeiten“ zwei Sekunden gedrückt zu halten, und zeigt den Fortschritt. Das funktioniert mit Touch, Maus, Enter und Leertaste und ist standardmäßig aus. Es verhindert versehentliches Tippen und ist keine Sicherheitssperre.
 - Zuschneiden: Die Seite wird auf dem Foto automatisch gefunden und entzerrt; Ecken und Kanten lassen sich nachziehen, auch bei gewölbten Seiten
 - E-Book: ein Buch als EPUB 3 speichern (feste Seiten, lässt sich in jeder Lese-App öffnen) und verlustfrei wieder laden
 - Als App installierbar und offline nutzbar
@@ -79,7 +82,7 @@ Læsehjælper ist ein Lesewerkzeug, keine Behandlung. Die Einstellungen beruhen 
 - **Vorlesen** hilft beim Verstehen; eine Markierung jedes Worts bringt nichts zusätzlich (Keelor u. a. 2023). Denselben Text mehrmals zu lesen, am besten nachdem man ihn gehört hat, macht das Lesen flüssiger (Lee & Yoon 2017).
 - **Farbiger Hintergrund oder Farbfolien** haben keine nachgewiesene Wirkung über Placebo hinaus (Griffiths u. a. 2016). Die Hintergrundfarbe ist nur eine Frage dessen, was sich angenehm anfühlt.
 - **Unterricht:** Systematisches Üben von Buchstaben und Lauten ist die am besten belegte Hilfe bei Legasthenie (Galuschka u. a. 2014). Dänisch gehört zu den Sprachen, in denen sicheres Lesen am längsten dauert (Seymour u. a. 2003).
-- **Eine ruhige Leseansicht:** Interaktive Zusatzfunktionen in digitalen Bilderbüchern können von der Geschichte ablenken (Takacs, Swart & Bus 2015). Erwachsenenwerkzeuge in einem Buchmenü zu bündeln, ist eine daraus abgeleitete Gestaltungsentscheidung; die Studie hat dieses Menü nicht untersucht oder einen Nutzen für das Lesen belegt.
+- **Eine ruhige Leseansicht:** Interaktive Zusatzfunktionen in digitalen Bilderbüchern können von der Geschichte ablenken (Takacs, Swart & Bus 2015). Erwachsenenwerkzeuge in eine getrennte Werkstatt zu verlegen, ist eine daraus abgeleitete Gestaltungsentscheidung; die Studie hat diese Navigation nicht untersucht oder einen Nutzen für das Lesen belegt.
 
 Quellen:
 

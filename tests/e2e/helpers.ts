@@ -3,6 +3,25 @@ import path from "node:path";
 
 export const fixture = (name: string) => path.resolve("tests/fixtures", name);
 
+/** Original stored text pages, without depending on OCR for shelf and navigation checks. */
+export async function seedBooks(page: Page, books: { id: string; title: string; texts: string[]; lastPage?: number; readyPages?: number }[]) {
+  await page.evaluate(async books => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const r = indexedDB.open("laesehjaelper", 1);
+      r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
+    });
+    const tx = db.transaction(["books", "pages"], "readwrite");
+    for (const book of books) {
+      const pageIds = book.texts.map((_, i) => `${book.id}-${i}`);
+      tx.objectStore("books").put({ id: book.id, title: book.title, pageIds, lastPage: book.lastPage ?? 0, created: 1, cover: null });
+      book.texts.forEach((text, i) => tx.objectStore("pages").put({ id: pageIds[i], bookId: book.id, lang: "da", status: i < (book.readyPages ?? book.texts.length) ? "done" : "wait", text, rawText: text }));
+    }
+    await new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); });
+    db.close();
+  }, books);
+  await page.reload();
+}
+
 /** Fresh state: no settings or books. */
 export async function fresh(page: Page) {
   await page.goto("/");
@@ -28,8 +47,21 @@ export async function waitForText(page: Page) {
   await expect(page.locator("#reader .w").first()).toBeVisible({ timeout: 200_000 });
 }
 
-/** Choose a tool from the book menu in the book bar. */
-export async function bookTool(page: Page, id: "checkTextBtn" | "editPagesBtn" | "exportBtn") {
-  await page.click("#bookMenuBtn");
+/** Enter the current book's workshop if it is being read. */
+export async function openWorkshop(page: Page) {
+  if (await page.locator("#editBookBtn").isVisible()) {
+    await page.click("#editBookBtn");
+    await page.click("#openWorkshopBtn");
+  }
+}
+
+/** Return from preparing the selected page to reading it. */
+export async function readBook(page: Page) {
+  if (await page.locator("#readBookBtn").isVisible()) await page.click("#readBookBtn");
+}
+
+/** Choose a page or book tool in the workshop. */
+export async function bookTool(page: Page, id: "checkTextBtn" | "exportBtn") {
+  await openWorkshop(page);
   await page.click(`#${id}`);
 }
