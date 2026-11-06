@@ -11,7 +11,6 @@ test("Exported page layout is independent of the screen orientation", async ({ p
   const pages: string[] = [];
   for (const viewport of [{ width: 820, height: 1180 }, { width: 1180, height: 820 }]) {
     await page.setViewportSize(viewport);
-    await page.click("#bookMenuBtn");
     const [download] = await Promise.all([page.waitForEvent("download"), page.click("#exportBtn")]);
     const file = info.outputPath(`export-${viewport.width}.epub`);
     await download.saveAs(file);
@@ -27,7 +26,6 @@ test("Exports and reimports an e-book", async ({ page }, info) => {
   await addPhotos(page, ["side-da.jpg"]);
   await page.fill("#bookTitle", "Eksport");
   await waitForText(page);
-  await page.click("#bookMenuBtn");
   const [download] = await Promise.all([page.waitForEvent("download"), page.click("#exportBtn")]);
   expect(download.suggestedFilename()).toBe("Eksport.epub");
   const file = info.outputPath("Eksport.epub");
@@ -43,7 +41,7 @@ test("Exports and reimports an e-book", async ({ page }, info) => {
   await fresh(page);
   await page.setInputFiles("#importFile", file);
   await waitForText(page);
-  await expect(page.locator("#bookTitle")).toHaveValue("Eksport");
+  await expect(page.locator("#readingTitle")).toHaveText("Eksport");
   await expect(page.locator("#reader")).toHaveClass(/pagemode/);
   expect(await page.locator("#text").inputValue()).toContain("Pindsvinet");
   await bookTool(page, "checkTextBtn");

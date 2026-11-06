@@ -41,7 +41,7 @@ test("Preserves corrections when immediately turning the page", async ({ page })
   await page.waitForTimeout(300);
   await page.click("#prev");
   await expect(page.locator("#text")).toHaveValue("Rettet første side", { timeout: 1500 });
-  await page.reload(); await page.locator(".book").click();
+  await page.reload();
   await expect(page.locator("#text")).toHaveValue("Rettet første side");
 });
 
@@ -51,7 +51,7 @@ test("Additional paragraphs survive hyphen-setting changes and reopening", async
   await expect(page.locator('#reader .w[data-word="ekstra"]')).toHaveCount(1);
   await page.click("#setBtn"); await page.click('#hyphSet button[data-v="bog"]');
   await expect(page.locator("#text")).toHaveValue("Første side\n\nNy ekstra tekst", { timeout: 1500 });
-  await page.reload(); await page.locator(".book").click();
+  await page.reload();
   await expect(page.locator("#text")).toHaveValue("Første side\n\nNy ekstra tekst");
 });
 
@@ -59,7 +59,7 @@ test("The hyphen setting remains effective after reopening", async ({ page }) =>
   await openStoredBook(page, [{ text: "Vi går i sko-le" }]);
   await page.click("#setBtn"); await page.click('#hyphSet button[data-v="bog"]');
   await expect(page.locator("#text")).toHaveValue("Vi går i sko·le");
-  await page.reload(); await page.locator(".book").click();
+  await page.reload();
   await expect(page.locator('#hyphSet button[data-v="bog"]')).toHaveClass(/on/);
   await expect(page.locator("#text")).toHaveValue("Vi går i sko·le", { timeout: 1500 });
 });
@@ -73,7 +73,7 @@ test("Preserves manually entered numeric paragraphs after reopening", async ({ p
   await openStoredBook(page, [{ text: "En side" }]);
   await page.fill("#text", "En side\n\n42");
   await expect(page.locator("#reader")).toContainText("42");
-  await page.reload(); await page.locator(".book").click();
+  await page.reload();
   await expect(page.locator("#text")).toHaveValue("En side\n\n42", { timeout: 1500 });
 });
 
@@ -128,22 +128,22 @@ test("A page deleted during OCR stays deleted after reopening", async ({ page })
     }) };
   ` }));
   await page.reload();
-  const { addPhotos, bookTool, waitForText } = await import("./helpers");
+  const { addPhotos, openWorkshop, waitForText } = await import("./helpers");
   await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await page.waitForFunction(() => "finishRecognition" in window);
-  await bookTool(page, "editPagesBtn");
+  await openWorkshop(page);
   await page.locator(".thumb").first().locator(".ctl .x").click();
   await expect(page.locator(".thumb")).toHaveCount(1);
   await page.evaluate(() => (window as unknown as { finishRecognition: () => void }).finishRecognition());
   await waitForText(page);
-  await page.click("#homeBtn"); await page.locator(".book").click();
+  await page.click("#home"); await page.locator(".book").click();
   await expect(page.locator("#count")).toHaveText("1 / 1", { timeout: 1500 });
 });
 
 test("Releases images from previous book views when reopening", async ({ page }) => {
   await openStoredBook(page, [{ text: "En side med billede", image: true }]);
   const previousUrl = await page.locator("#origImg").getAttribute("src");
-  await page.click("#homeBtn"); await page.locator(".book").click();
+  await page.click("#home"); await page.locator(".book").click();
   await expect(page.locator("#text")).toHaveValue("En side med billede");
   await expect(page.locator("#origImg")).not.toHaveAttribute("src", previousUrl!);
   const isReadable = (url: string) => page.evaluate(async url => {

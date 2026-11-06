@@ -34,6 +34,9 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Mit einem Tipp den Originaltext einblenden, um Erkennungsfehler zu finden
 - Lesemodus: nur der Text, bildschirmfüllend
 - Bücherregal zuerst: Gespeicherte Bücher lassen sich über große Cover öffnen und zeigen die zuletzt gelesene Seite. „Neues Buch“ bleibt eine Nebenaktion; ohne Bücher steht das Fotografieren im Vordergrund. Bücher, Seitenreihenfolge und Lesestand bleiben auf dem Gerät.
+- Lesen und Bücher vorbereiten haben getrennte Ansichten. Beim Lesen gibt es Blättern, Vorlesen und Aa-Einstellungen; „Buch bearbeiten“ öffnet die Werkstatt. Zurück führt über das Lesen zum Regal, und Seitenlinks bleiben nach dem Neuladen erhalten.
+- Die Buchwerkstatt vereint Seitenvorschauen und Erkennungsstatus mit Zuschnitt, Textkorrektur, Textfeldern, Seitenreihenfolge, Titel, EPUB-Export und Löschen. Breite Bildschirme zeigen die Liste neben dem Editor, schmale davor. „Zurück zum Lesen“ führt zur ausgewählten Seite zurück. Beim Lesen fokussiert „Buch bearbeiten“ → „Diese Seite korrigieren“ in zwei Schritten den Text der aktuellen Seite; danach geht es zur selben Seite zurück.
+- Ein optionaler Elternschutz unter „Weitere Einstellungen“ verlangt, „Buch bearbeiten“ zwei Sekunden gedrückt zu halten, und zeigt den Fortschritt. Das funktioniert mit Touch, Maus, Enter und Leertaste und ist standardmäßig aus. Es verhindert versehentliches Tippen und ist keine Sicherheitssperre.
 - Zuschneiden: Die Seite wird auf dem Foto automatisch gefunden und entzerrt; Ecken und Kanten lassen sich nachziehen, auch bei gewölbten Seiten
 - E-Book: ein Buch als EPUB 3 speichern (feste Seiten, lässt sich in jeder Lese-App öffnen) und verlustfrei wieder laden
 - Als App installierbar und offline nutzbar
@@ -89,7 +92,7 @@ Læsehjælper ist ein Lesewerkzeug, keine Behandlung. Die Einstellungen beruhen 
 - **Erst hören, dann selbst lesen:** Denselben Text nach dem Hören noch einmal zu lesen, macht das Lesen flüssiger, vor allem beim geübten Text (Lee & Yoon 2017); in ganzen Klassen ist der Effekt klein (Lauer-Schmaltz u. a. 2014). Neue Seiten zu lesen hilft etwa genauso (Zimmermann u. a. 2021).
 - **Wort antippen:** Schwere Wörter beim Lesen auf Wunsch zu hören, half in Trainingsstudien – auch dänischen Schülern, die das Wort erst in Teilen und dann ganz hörten (Olson & Wise 1992; Elbro u. a. 1996).
 - **Farbiger Hintergrund oder Farbfolien** haben keine nachgewiesene Wirkung über Placebo hinaus (Griffiths u. a. 2016; Suttle u. a. 2018). Die Hintergrundfarbe ist nur eine Frage dessen, was sich angenehm anfühlt.
-- **Eine ruhige Leseansicht:** Interaktive Zusatzfunktionen in digitalen Bilderbüchern helfen Kindern nicht, die Geschichte zu verstehen, und Minispiele schaden dem Verstehen (Takacs, Swart & Bus 2015; Bus u. a. 2026). Erwachsenenwerkzeuge in einem Buchmenü zu bündeln, ist eine daraus abgeleitete Gestaltungsentscheidung; die Studien haben dieses Menü nicht untersucht.
+- **Eine ruhige Leseansicht:** Interaktive Zusatzfunktionen in digitalen Bilderbüchern helfen Kindern nicht, die Geschichte zu verstehen, und Minispiele schaden dem Verstehen (Takacs, Swart & Bus 2015; Bus u. a. 2026). Erwachsenenwerkzeuge in eine getrennte Werkstatt zu verlegen, ist eine daraus abgeleitete Gestaltungsentscheidung; die Studien haben diese Navigation nicht untersucht.
 - **Gemeinsam lesen:** Mit offenen Fragen über ein Buch zu sprechen, stärkt den Wortschatz kleiner Kinder (Mol u. a. 2008), vor allem im Alter von 2–3 Jahren; neuere Studien finden kleinere Effekte (Noble u. a. 2019). Die Fragen in Læsehjælper sind deshalb freiwillig und standardmäßig aus.
 
 Quellen:

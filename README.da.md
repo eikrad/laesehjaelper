@@ -34,6 +34,9 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Læsetilstand: kun teksten, i fuld skærm
 - Vis den oprindelige tekst med ét tryk for at finde fejl i genkendelsen
 - Bogreolen først: gemte bøger åbnes via store forsider og viser, hvor læsningen stoppede. „Ny bog“ er en sekundær knap; uden bøger er fotografering den primære handling. Bøger, rækkefølge og læsestatus bliver på enheden.
+- Læsning og klargøring af bøger har hver sin visning. Læsning har sideskift, oplæsning og Aa-indstillinger; „Rediger bog“ åbner værkstedet. Tilbage fører gennem læsning til bogreolen, og sidelinks virker efter genindlæsning.
+- Bogværkstedet samler sidebilleder og genkendelsesstatus med beskæring, tekstrettelser, tekstfelter, rækkefølge, titel, EPUB-eksport og sletning. Brede skærme viser listen ved siden af editoren, smalle før den. „Tilbage til læsning“ vender tilbage til den valgte side. Under læsning fokuserer „Rediger bog“ → „Ret denne side“ den aktuelle sides tekst med to tryk; bagefter vender man tilbage til samme side.
+- Et valgfrit forældresikring under „Flere indstillinger“ kræver, at „Rediger bog“ holdes nede i to sekunder, og viser fremskridtet. Det virker med berøring, mus, Enter og mellemrum og er slået fra som standard. Det forebygger utilsigtede tryk og er ikke en sikkerhedslås.
 - Beskæring: siden findes automatisk på fotoet og rettes op; hjørner og kanter kan justeres, også på buede sider
 - E-bog: gem en bog som EPUB 3 (faste sider, kan åbnes i alle læse-apps) og hent den ind igen uden tab
 - Kan installeres som app og bruges offline
@@ -89,7 +92,7 @@ Læsehjælper er et læseværktøj, ikke en behandling. Indstillingerne bygger p
 - **Lyt først, læs så selv:** At læse den samme tekst igen efter at have hørt den gør læsningen mere flydende, mest på den øvede tekst (Lee & Yoon 2017); i hele klasser er effekten lille (Lauer-Schmaltz m.fl. 2014). At læse nye sider hjælper omtrent lige så meget (Zimmermann m.fl. 2021).
 - **Tryk på et ord:** At kunne høre svære ord, mens barnet læser, hjalp i træningsundersøgelser – også danske elever, der hørte ordet i dele og derefter helt (Olson & Wise 1992; Elbro m.fl. 1996).
 - **Farvet baggrund eller farvede filtre** har ingen påvist effekt ud over placebo (Griffiths m.fl. 2016; Suttle m.fl. 2018). Baggrundsfarven er kun et spørgsmål om, hvad der føles rart.
-- **En rolig læseskærm:** Interaktive ekstrafunktioner i digitale billedbøger hjælper ikke børn med at forstå historien, og minispil skader forståelsen (Takacs, Swart & Bus 2015; Bus m.fl. 2026). At samle voksenværktøjer i én bogmenu er et designvalg inspireret af den forskning; undersøgelserne afprøvede ikke denne menu.
+- **En rolig læseskærm:** Interaktive ekstrafunktioner i digitale billedbøger hjælper ikke børn med at forstå historien, og minispil skader forståelsen (Takacs, Swart & Bus 2015; Bus m.fl. 2026). At samle voksenværktøjer i et separat værksted er et designvalg inspireret af den forskning; undersøgelserne afprøvede ikke denne navigation.
 - **Læs sammen:** At tale om en bog med åbne spørgsmål styrker små børns ordforråd (Mol m.fl. 2008), men mest i 2–3-årsalderen, og senere undersøgelser finder mindre effekter (Noble m.fl. 2019). Spørgsmålene i Læsehjælper er derfor valgfrie og slået fra som standard.
 
 Kilder:

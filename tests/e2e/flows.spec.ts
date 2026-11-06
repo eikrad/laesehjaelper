@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, fixture, fresh, waitForText } from "./helpers";
+import { addPhotos, bookTool, openWorkshop, fixture, fresh, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -49,13 +49,13 @@ test("Book with multiple pages: navigate, add, reorder and delete pages", async 
   await page.click("#cropOk");
   await expect(page.locator(".thumb")).toHaveCount(3);
   // Edit pages: move the first page to the right, then delete it.
-  await bookTool(page, "editPagesBtn");
+  await openWorkshop(page);
   const first = await page.locator(".thumb img").first().getAttribute("src");
   await page.locator(".thumb").first().locator(".ctl button").last().click();
   expect(await page.locator(".thumb img").nth(1).getAttribute("src")).toBe(first);
   await page.locator(".thumb").nth(1).locator(".ctl .x").click();
   await expect(page.locator(".thumb")).toHaveCount(2);
-  await page.click("#editDoneBtn");
+  await page.click("#readBookBtn");
 });
 
 test("Font, syllable hyphens in the book and reading mode", async ({ page }) => {
@@ -78,40 +78,23 @@ test("Font, syllable hyphens in the book and reading mode", async ({ page }) => 
   await expect(page.locator("body")).not.toHaveClass(/focus/);
 });
 
-test("Book tools sit in one menu, so the reading screen stays calm", async ({ page }) => {
+test("Workshop tools remain available behind the quiet reading entry", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
-  // The reading screen: page, toolbar and thumbnails; no tools for adults.
-  for (const id of ["#reader", "#dock", "#thumbs", "#bookMenuBtn"]) await expect(page.locator(id), id).toBeVisible();
-  for (const id of ["#exportBtn", "#editPagesBtn", "#edit"]) await expect(page.locator(id), id).toBeHidden();
-  // Each tool is two taps away.
-  await page.click("#bookMenuBtn");
-  for (const id of ["#checkTextBtn", "#editPagesBtn", "#exportBtn"]) await expect(page.locator(id), id).toBeVisible();
-  await page.click("#checkTextBtn");
-  await expect(page.locator("#bookMenu")).toBeHidden();
-  await expect(page.locator("#text")).toBeVisible();
-  await page.locator("#edit summary").click();   // Folding it away hides it again.
-  await expect(page.locator("#edit")).toBeHidden();
-  await page.click("#bookMenuBtn");
-  await page.click("#editPagesBtn");
-  await expect(page.locator("body")).toHaveClass(/editing/);
-  await page.click("#editDoneBtn");
-  await expect(page.locator("body")).not.toHaveClass(/editing/);
-  // Escape or a tap outside closes the menu.
-  await page.click("#bookMenuBtn");
-  await page.keyboard.press("Escape");
-  await expect(page.locator("#bookMenu")).toBeHidden();
-  await page.click("#bookMenuBtn");
-  await page.click("#bookTitle");
-  await expect(page.locator("#bookMenu")).toBeHidden();
+  await page.click("#readBookBtn");
+  await expect(page.locator("#bookMenuBtn")).toBeHidden();
+  await expect(page.locator("#thumbs")).toBeHidden();
+  await openWorkshop(page);
+  for (const id of ["#reader", "#dock", "#thumbs", "#checkTextBtn", "#exportBtn", "#delBookBtn", "#text"]) await expect(page.locator(id), id).toBeVisible();
+  await page.click("#readBookBtn");
+  for (const id of ["#bookTitle", "#thumbs", "#checkTextBtn", "#exportBtn", "#delBookBtn", "#edit"]) await expect(page.locator(id), id).toBeHidden();
 });
 
 test("Opening another book resets its editing tools", async ({ page }) => {
   await page.click("#demoBtn");
   await bookTool(page, "checkTextBtn");
   await expect(page.locator("#edit")).toBeVisible();
-  await page.click("#bookMenuBtn");
-  await page.goBack();
+  await page.click("#home");
   await expect(page.locator("#start")).toBeVisible();
   // Keyboard activation also starts a calm book, without relying on an outside pointer tap.
   await page.locator("#demoBtn").press("Enter");
@@ -143,7 +126,7 @@ test("Reading mode shows only the text, read aloud and close", async ({ page }) 
   await page.keyboard.press("Escape");
   await expect(page.locator("#bookTitle")).toBeVisible();
   // Page-management controls must also disappear if editing was already active.
-  await bookTool(page, "editPagesBtn");
+  await openWorkshop(page);
   await expect(page.locator("#delBookBtn")).toBeVisible();
   await page.click("#focusBtn");
   await expect(page.locator("#delBookBtn")).toBeHidden();

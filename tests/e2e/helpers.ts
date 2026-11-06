@@ -47,8 +47,28 @@ export async function waitForText(page: Page) {
   await expect(page.locator("#reader .w").first()).toBeVisible({ timeout: 200_000 });
 }
 
-/** Choose a tool from the book menu in the book bar. */
-export async function bookTool(page: Page, id: "checkTextBtn" | "editPagesBtn" | "exportBtn") {
-  await page.click("#bookMenuBtn");
+/** Enter the current book's workshop if it is being read. */
+export async function openWorkshop(page: Page) {
+  await bookOpen(page);
+  if (await page.locator("#editBookBtn").isVisible()) {
+    await page.click("#editBookBtn");
+    await page.click("#openWorkshopBtn");
+  }
+}
+
+/** Return from preparing the selected page to reading it. */
+export async function readBook(page: Page) {
+  await bookOpen(page);
+  if (await page.locator("#readBookBtn").isVisible()) await page.click("#readBookBtn");
+}
+
+/** Wait until a book is shown: opening one first reads its pages from storage, and isVisible() does not wait. */
+async function bookOpen(page: Page) {
+  await expect(page.locator("#app")).toBeVisible();
+}
+
+/** Choose a page or book tool in the workshop. */
+export async function bookTool(page: Page, id: "checkTextBtn" | "exportBtn") {
+  await openWorkshop(page);
   await page.click(`#${id}`);
 }

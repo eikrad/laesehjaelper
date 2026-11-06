@@ -34,6 +34,9 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Focus mode: just the text, full screen
 - Show the original text with one tap to spot recognition errors
 - Bookshelf first: stored books open from large covers and show the page where reading stopped. “New book” stays secondary; with no books yet, taking a photo is the main action. Books, page order and reading positions stay on the device.
+- Reading and preparing books have separate views. Reading has page turning, read-aloud and Aa settings; “Edit book” opens the workshop. Back returns through reading to the bookshelf, and page links survive reload.
+- The book workshop keeps page thumbnails and recognition status together with crop, text correction, moving text boxes, page order, title, EPUB export and deletion. Wide screens put the list beside the selected-page editor; narrow screens put it first. “Back to reading” returns to the selected page. From reading, “Edit book” → “Correct this page” focuses the current page’s text in two taps, and returns to that page after correction.
+- An optional parent gate under More settings asks for a two-second hold on “Edit book”, with visible progress. It works with touch, mouse, Enter and Space and is off by default. This prevents accidental taps; it is not a security lock.
 - Cropping: the page is found in the photo automatically and straightened; corners and edges can be adjusted, including for curved pages
 - E-book: save a book as EPUB 3 (fixed layout, opens in any reading app) and import it again losslessly
 - Installable as an app and usable offline
@@ -89,7 +92,7 @@ Læsehjælper is a reading tool, not a treatment. Its settings are based on what
 - **Listen first, then read:** Reading the same text again after hearing it makes reading more fluent, mostly on the practised text (Lee & Yoon 2017); in whole classes the effect is small (Lauer-Schmaltz et al. 2014). Reading new pages helps about as much (Zimmermann et al. 2021).
 - **Tap a word:** Hearing hard words on request while reading helped children in training studies, including Danish pupils who heard the word in parts and then whole (Olson & Wise 1992; Elbro et al. 1996).
 - **Coloured backgrounds or overlays** have no proven effect beyond placebo (Griffiths et al. 2016; Suttle et al. 2018). The background colour is purely a matter of comfort.
-- **A calm reading screen:** Interactive extras in digital storybooks do not help children understand the story, and mini-games harm understanding (Takacs, Swart & Bus 2015; Bus et al. 2026). Grouping adult tools in one book menu is a design inference from that research; the studies did not test this menu.
+- **A calm reading screen:** Interactive extras in digital storybooks do not help children understand the story, and mini-games harm understanding (Takacs, Swart & Bus 2015; Bus et al. 2026). Keeping adult tools in a separate workshop is a design inference from that research; the studies did not test this navigation.
 - **Reading together:** Talking about a book with open questions helps young children's vocabulary (Mol et al. 2008), but mainly at age 2–3, and later studies find smaller effects (Noble et al. 2019). The questions in Læsehjælper are therefore optional and off by default.
 
 Sources:

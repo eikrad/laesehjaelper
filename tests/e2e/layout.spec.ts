@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { addPhotos, fixture, fresh, seedBooks, waitForText } from "./helpers";
+import { addPhotos, fixture, fresh, openWorkshop, readBook, seedBooks, waitForText } from "./helpers";
 
 // Layout checks. Unlike the other specs, these run at every screen size the app is
 // designed for: phone, tablet portrait, tablet landscape and laptop (see playwright.config.ts).
@@ -25,11 +25,21 @@ test("Stored books come first, with large covers and a secondary new-book action
   await expect(page.locator("#installBtn")).toBeVisible();
 });
 
-test("The book-tools menu has a name in every language", async ({ page }) => {
+test("Reading has one quiet editing entry in every language and fits the screen", async ({ page }) => {
   await page.click("#demoBtn");
-  for (const [lang, name] of [["da", "Bogværktøjer"], ["de", "Buchwerkzeuge"], ["en", "Book tools"]]) {
+  for (const [lang, name] of [["da", "Rediger bog"], ["de", "Buch bearbeiten"], ["en", "Edit book"]]) {
     await page.click(`#uiLang button[data-v=${lang}]`);
-    await expect(page.locator("#bookMenuBtn")).toHaveAccessibleName(name);
+    await expect(page.locator("#editBookBtn")).toHaveAccessibleName(name);
+    await expect(page.locator("#bookTitle")).toBeHidden();
+    await expect(page.locator("#thumbs")).toBeHidden();
+    await page.click("#editBookBtn");
+    const entry = (await page.locator("#editEntry").boundingBox())!;
+    expect(entry.x).toBeGreaterThanOrEqual(0);
+    expect(entry.x + entry.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+    await expect.poll(() => smallControls(page, 44, ".reading-entry")).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#editEntry")).toBeHidden();
+    expect(await sidewaysScroll(page)).toBe(0);
   }
 });
 
@@ -45,15 +55,15 @@ const smallControls = (page: Page, min = 44, scope = "body") =>
       if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return [];
       const r = el.getBoundingClientRect();
       let { left, right, top, bottom } = r;
+      // An ancestor can clip a nominally large target down to a much smaller hit area. Inside a
+      // scroll container the target can be scrolled into view, so clipping stops there.
       let clipX = true, clipY = true;
-      // An ancestor can clip a nominally large target down to a much smaller hit area.
-      for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+      for (let parent = el.parentElement; parent && (clipX || clipY); parent = parent.parentElement) {
         const style = getComputedStyle(parent), clip = parent.getBoundingClientRect();
-        // A scroll container can bring the target into view; its outer clipping does not shrink the target.
         if (["auto", "scroll"].includes(style.overflowX)) clipX = false;
+        else if (clipX && ["hidden", "clip"].includes(style.overflowX)) { left = Math.max(left, clip.left); right = Math.min(right, clip.right); }
         if (["auto", "scroll"].includes(style.overflowY)) clipY = false;
-        if (clipX && ["hidden", "clip"].includes(style.overflowX)) { left = Math.max(left, clip.left); right = Math.min(right, clip.right); }
-        if (clipY && ["hidden", "clip"].includes(style.overflowY)) { top = Math.max(top, clip.top); bottom = Math.min(bottom, clip.bottom); }
+        else if (clipY && ["hidden", "clip"].includes(style.overflowY)) { top = Math.max(top, clip.top); bottom = Math.min(bottom, clip.bottom); }
       }
       const width = Math.max(0, right - left), height = Math.max(0, bottom - top);
       if (width >= min && height >= min) return [];
@@ -73,12 +83,14 @@ test("The start screen fits the screen width", async ({ page }) => {
 test("A book page fits the screen width", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
+  await readBook(page);
   expect(await sidewaysScroll(page)).toBe(0);
 });
 
 test("The toolbar fits on one line inside the screen in every language", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg"]);   // With a photo, so the compare button is shown too.
+  await addPhotos(page, ["side-da.jpg"]);   // Read a prepared photo page.
   await waitForText(page);
+  await readBook(page);
   const viewport = page.viewportSize()!;
   // Check both sides of the compact-toolbar breakpoint without repeating OCR.
   const widths = viewport.width === 360 ? [360, 440, 441, 600, 601] : [viewport.width];
@@ -127,10 +139,12 @@ test("On touch screens every control is at least 44 px", async ({ page }, info) 
   await expect.poll(() => smallControls(page), { message: "reader" }).toEqual([]);
   await expect.poll(() => smallControls(page, 48, "#dock"), { message: "reading toolbar" }).toEqual([]);
   await page.click("#setBtn");
+  // Measure the open sheet, not the first frame of its fade-in (all controls still invisible).
+  await expect(page.locator("#settings")).toHaveCSS("opacity", "1");
   await expect.poll(() => smallControls(page), { message: "settings" }).toEqual([]);
   await page.click("#setBtn");
   await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
-  await page.locator("#editPagesBtn").evaluate((b: HTMLButtonElement) => b.click());
+  await openWorkshop(page);
   await page.locator("#moveBtn").evaluate((b: HTMLButtonElement) => b.click());
   await expect.poll(() => smallControls(page), { message: "editing pages and text boxes" }).toEqual([]);
 });
@@ -162,6 +176,7 @@ async function expectPageOnScreen(page: Page) {
 test("The whole book page is on screen on tablets and laptops; phones use the full width", async ({ page }, info) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
+  await readBook(page);
   const { width, height } = page.viewportSize()!;
   if (width < 600) {
     const reader = (await page.locator("#reader").boundingBox())!;
@@ -183,7 +198,7 @@ test("The whole book page is on screen on tablets and laptops; phones use the fu
 test("Scrolled to the end, the toolbar covers nothing that can be tapped", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await waitForText(page);
-  await page.locator("#editPagesBtn").evaluate((b: HTMLButtonElement) => b.click());   // Editing adds the most controls below the page.
+  await openWorkshop(page);   // Editing adds the most controls below the page.
   await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   const dock = (await page.locator("#dock").boundingBox())!;
@@ -210,6 +225,7 @@ test("Swiping turns the page; taps, scrolling and moving text boxes do not", asy
   test.skip(!info.project.use.hasTouch, "Swiping needs a touch screen.");
   await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await waitForText(page);
+  await readBook(page);
   const count = page.locator("#count");
   await expect(count).toHaveText("1 / 2");
   await swipeOnReader(page, -150, 0);
@@ -219,6 +235,7 @@ test("Swiping turns the page; taps, scrolling and moving text boxes do not", asy
   await swipeOnReader(page, -10, 0);    // A tap.
   await swipeOnReader(page, -60, 200);  // Scrolling.
   await expect(count).toHaveText("1 / 2");
+  await openWorkshop(page);
   await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
   await page.locator("#moveBtn").evaluate((b: HTMLButtonElement) => b.click());
   await page.evaluate(() => window.scrollTo(0, 0));
@@ -229,6 +246,7 @@ test("Swiping turns the page; taps, scrolling and moving text boxes do not", asy
 test("On wide screens big buttons at the screen edges turn the page", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await waitForText(page);
+  await readBook(page);
   const width = page.viewportSize()!.width;
   const prev = page.locator("#edgePrev"), next = page.locator("#edgeNext");
   if (width < 840) {
@@ -249,6 +267,7 @@ test("On wide screens big buttons at the screen edges turn the page", async ({ p
 test("In text view on wide screens the photo sits beside the text, otherwise above it", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
+  await readBook(page);
   await page.click("#setBtn");
   await page.click("#viewSet button[data-v=tekst]");
   await page.click("#setBtn");
@@ -282,6 +301,7 @@ test("In text view on wide screens the photo sits beside the text, otherwise abo
 test("On wide screens the settings open beside the page, which stays visible; otherwise as a bottom sheet", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
+  await readBook(page);
   await page.click("#setBtn");
   const { width, height } = page.viewportSize()!;
   const panel = page.locator("#settings");
@@ -309,4 +329,43 @@ test("On wide screens the settings open beside the page, which stays visible; ot
   expect(focusedCard.width, "reading mode does not reserve an invisible settings panel").toBeGreaterThan(width - 4);
   await page.keyboard.press("Escape");
   await expect(page.locator("body")).not.toHaveClass(/focus/);
+});
+
+test("The workshop puts the page list beside its editor on wide screens and above it on narrow screens", async ({ page }) => {
+  await seedBooks(page, [{ id: "workshop", title: "En bog til værkstedet", texts: ["Første prøveside.", "Anden prøveside."] }]);
+  await page.locator(".book").click();
+  await openWorkshop(page);
+  const list = (await page.locator("#thumbs").boundingBox())!, editor = (await page.locator(".pagecard").boundingBox())!;
+  if (page.viewportSize()!.width >= 840) {
+    expect(list.x + list.width, "list left of editor").toBeLessThanOrEqual(editor.x);
+  } else {
+    expect(list.y + list.height, "list before editor").toBeLessThanOrEqual(editor.y);
+  }
+  expect(await sidewaysScroll(page)).toBe(0);
+  await expect.poll(() => smallControls(page), { message: "workshop controls" }).toEqual([]);
+  await page.locator(".thumb > button").nth(1).click();
+  await page.click("#readBookBtn");
+  await expect(page.locator("#reader")).toContainText("Anden prøveside.");
+  await expect(page).toHaveURL(/#read\/workshop\/workshop-1$/);
+});
+
+test("The parent gate supports a deliberate touch hold with visible progress", async ({ page }, info) => {
+  test.skip(!info.project.use.hasTouch, "Touch input needs a touch screen.");
+  await seedBooks(page, [{ id: "touch-gate", title: "En original prøvebog", texts: ["En original prøveside."] }]);
+  await page.locator(".book").click();
+  await page.click("#setBtn");
+  await page.click('#gateSet button[data-v="an"]');
+  await page.click("#setClose");
+  const button = page.locator("#editBookBtn"), r = (await button.boundingBox())!;
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: r.x + r.width / 2, y: r.y + r.height / 2 }] });
+  await page.waitForTimeout(400);
+  expect(await button.evaluate(el => parseFloat(el.style.getPropertyValue("--hold-progress")))).toBeGreaterThan(0);
+  expect(await button.evaluate(el => getComputedStyle(el).backgroundImage)).toContain("linear-gradient");
+  await page.waitForTimeout(1800);
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await cdp.detach();
+  await expect(page.locator("#editEntry")).toBeVisible();
+  await page.click("#correctPageBtn");
+  await expect(page.locator("#text")).toBeFocused();
 });
