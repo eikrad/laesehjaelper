@@ -246,7 +246,6 @@ test("Reader settings: create, switch and retain profiles", async ({ page }) => 
   await expect(page.locator("#size")).toHaveValue("50");
   await expect(page.locator("#reader")).not.toHaveClass(/mode-farbe/);
   await page.reload();
-  await page.click("#demoBtn");
   await expect(page.locator("#profileSel option:checked")).toHaveText("Bo");
   await expect(page.locator("#size")).toHaveValue("50");
   await page.click("#setBtn");

@@ -43,7 +43,7 @@ test("Exports and reimports an e-book", async ({ page }, info) => {
   await fresh(page);
   await page.setInputFiles("#importFile", file);
   await waitForText(page);
-  await expect(page.locator("#bookTitle")).toHaveValue("Eksport");
+  await expect(page.locator("#readingTitle")).toHaveText("Eksport");
   await expect(page.locator("#reader")).toHaveClass(/pagemode/);
   expect(await page.locator("#text").inputValue()).toContain("Pindsvinet");
   await bookTool(page, "checkTextBtn");
