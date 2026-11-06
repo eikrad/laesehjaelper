@@ -55,15 +55,15 @@ const smallControls = (page: Page, min = 44, scope = "body") =>
       if (!el.checkVisibility({ opacityProperty: true, visibilityProperty: true })) return [];
       const r = el.getBoundingClientRect();
       let { left, right, top, bottom } = r;
+      // An ancestor can clip a nominally large target down to a much smaller hit area. Inside a
+      // scroll container the target can be scrolled into view, so clipping stops there.
       let clipX = true, clipY = true;
-      // An ancestor can clip a nominally large target down to a much smaller hit area.
-      for (let parent = el.parentElement; parent; parent = parent.parentElement) {
+      for (let parent = el.parentElement; parent && (clipX || clipY); parent = parent.parentElement) {
         const style = getComputedStyle(parent), clip = parent.getBoundingClientRect();
-        // A scroll container can bring the target into view; its outer clipping does not shrink the target.
         if (["auto", "scroll"].includes(style.overflowX)) clipX = false;
+        else if (clipX && ["hidden", "clip"].includes(style.overflowX)) { left = Math.max(left, clip.left); right = Math.min(right, clip.right); }
         if (["auto", "scroll"].includes(style.overflowY)) clipY = false;
-        if (clipX && ["hidden", "clip"].includes(style.overflowX)) { left = Math.max(left, clip.left); right = Math.min(right, clip.right); }
-        if (clipY && ["hidden", "clip"].includes(style.overflowY)) { top = Math.max(top, clip.top); bottom = Math.min(bottom, clip.bottom); }
+        else if (clipY && ["hidden", "clip"].includes(style.overflowY)) { top = Math.max(top, clip.top); bottom = Math.min(bottom, clip.bottom); }
       }
       const width = Math.max(0, right - left), height = Math.max(0, bottom - top);
       if (width >= min && height >= min) return [];
@@ -139,6 +139,8 @@ test("On touch screens every control is at least 44 px", async ({ page }, info) 
   await expect.poll(() => smallControls(page), { message: "reader" }).toEqual([]);
   await expect.poll(() => smallControls(page, 48, "#dock"), { message: "reading toolbar" }).toEqual([]);
   await page.click("#setBtn");
+  // Measure the open sheet, not the first frame of its fade-in (all controls still invisible).
+  await expect(page.locator("#settings")).toHaveCSS("opacity", "1");
   await expect.poll(() => smallControls(page), { message: "settings" }).toEqual([]);
   await page.click("#setBtn");
   await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
