@@ -70,34 +70,69 @@ Projektet er skrevet i TypeScript (strict).
 - `src/types.ts`: fælles typer
 - `build.ts`: bygger `dist/` med esbuild og kopierer Tesseract-, OpenCV- og sprogfiler
 - `tests/`: unit-tests, end-to-end-tests og selvlavede testsider
+- `docs/research/`: litteraturgennemgangene bag „Hvad siger forskningen?“ (på engelsk)
 
 ## Hvad siger forskningen?
 
-Læsehjælper er et læseværktøj, ikke en behandling. Indstillingerne bygger på det, undersøgelser af børn, der lærer at læse, og af ordblinde børn viser:
+Læsehjælper er et læseværktøj, ikke en behandling. Indstillingerne bygger på det, undersøgelser af børn, der lærer at læse, og af ordblinde børn viser. De fulde litteraturgennemgange med alle kilder (på engelsk) ligger i [docs/research](docs/research/README.md).
 
-- **Afstand:** Mere afstand mellem bogstaverne hjælper mange ordblinde børn med at læse hurtigere og mere præcist (Zorzi m.fl. 2012) – men kun når ordafstanden vokser med (Galliussi m.fl. 2020). Derfor øger Læsehjælper ordafstanden automatisk.
-- **Korte linjer** hjælper nogle ordblinde læsere, især dem med svag visuel opmærksomhed; andre læser bedre med almindelige linjer (Schneps m.fl. 2013).
-- **Skrifttype:** Selve bogstavformen gør næppe en forskel. OpenDyslexic gav ingen fordel, og ingen af børnene foretrak den (Wery & Diliberto 2017; Galliussi m.fl. 2020). Standard er derfor Andika, en almindelig, tydelig skrift; OpenDyslexic kan vælges, hvis barnet kan lide den.
-- **Farvede stavelser** hjælper nogle børn i begyndelsen og andre ikke; bindestreger i ordene gør læsningen langsommere (Häikiö m.fl. 2015; Brügelmann 2025). Prøv, hvad barnet kan lide, og slå farverne fra, når det læser flydende.
-- **Oplæsning** hjælper forståelsen; markering af hvert ord giver ikke ekstra (Keelor m.fl. 2023). At læse den samme tekst flere gange, gerne efter at have hørt den, gør læsningen mere flydende (Lee & Yoon 2017).
-- **Farvet baggrund eller farvede filtre** har ingen påvist effekt ud over placebo (Griffiths m.fl. 2016). Baggrundsfarven er kun et spørgsmål om, hvad der føles rart.
-- **Undervisning:** Systematisk arbejde med bogstaver og lyde er den bedst dokumenterede hjælp ved ordblindhed (Galuschka m.fl. 2014). Dansk er et af de sprog, hvor det tager længst tid at lære at læse sikkert (Seymour m.fl. 2003).
-- **En rolig læseskærm:** Interaktive ekstrafunktioner i digitale billedbøger kan distrahere fra historien (Takacs, Swart & Bus 2015). At samle voksenværktøjer i et separat værksted er et designvalg inspireret af den forskning; undersøgelsen afprøvede ikke denne navigation og påviste ikke, at den forbedrer læsningen.
+**Det, der hjælper mest, er ikke en indstilling på skærmen.**
+
+- **Undervisning:** Systematisk, tidlig undervisning i bogstaver, lyde og lydering er den bedst dokumenterede hjælp ved ordblindhed. Effekterne er moderate og størst i de første skoleår og ved flere timer (Hall m.fl. 2023; McArthur m.fl. 2018; Galuschka m.fl. 2014). I et dansk forsøg faldt andelen af risikobørn, der næsten ikke kunne læse ved slutningen af 1. klasse, fra 37 % til 15 % med undervisning i små grupper (Gellert m.fl. 2024). Læsehjælper erstatter ikke denne undervisning. Dansk er et af de sprog, hvor det tager længst tid at lære at læse sikkert (Seymour m.fl. 2003).
+- **Øvelse sammen med en voksen:** Forældre hjælper mest, når de lytter, mens barnet læser, og hjælper med konkrete færdigheder – mere end når de kun læser højt for barnet (Sénéchal & Young 2008). I et dansk forsøg med 1.587 elever i 2. klasse forbedrede nogle få bøger og enkle råd læsningen: ros indsatsen, tal om historien, og ret ikke hver lille fejl (Andersen & Nielsen 2016). Læseapps virker langt bedre, når en voksen er med (McTigue m.fl. 2020).
+
+**Indstillingerne hjælper mindre og ikke alle børn:**
+
+- **Afstand:** Mere afstand mellem bogstaverne giver færre læsefejl hos nogle børn, men undersøgelserne er uenige, mange finder ingen forskel i tempo, og effekten gælder ikke kun ordblinde (Zorzi m.fl. 2012; Hakvoort m.fl. 2017; Łuniewska m.fl. 2022). Mere bogstavafstand uden mere ordafstand gør læsningen langsommere (Galliussi m.fl. 2020); derfor øger Læsehjælper ordafstanden automatisk.
+- **Korte linjer** hjælper nogle ordblinde læsere, især dem med svag visuel opmærksomhed; andre læser bedre med almindelige linjer. Undersøgelserne testede teenagere, ikke små børn (Schneps m.fl. 2013).
+- **Skrifttype:** Særlige ordblindeskrifter forbedrer hverken læsetempo eller sikkerhed (metaanalyse: Azzarello m.fl. 2026), og børn foretrækker ofte almindelige skrifter (Wery & Diliberto 2017). Standard er derfor Andika, en almindelig, tydelig skrift; OpenDyslexic kan vælges, hvis barnet kan lide den.
+- **Farvede stavelser** gjorde ingen forskel for læsetempoet i en eye-tracking-undersøgelse (Häikiö m.fl. 2015). Nogle svage begyndere læste enkeltord mere sikkert med dem (Lopes & Barrera 2019), og en tysk klasseundersøgelse fandt en lille gevinst i 2. klasse (Dreschinski 2022, en ph.d.-afhandling). Gevinsten ser ud til at være tidlig, lille og mest ved lange ord. Farvede stavelser er aldrig afprøvet på dansk, hvor skrevne og udtalte stavelser ofte er forskellige. En gennemgang anbefaler dem kun til nogle børn og kun i overgangen til flydende læsning (Brügelmann 2025, en rapport, ikke fagfællebedømt). Bindestreger i ordene gør læsningen langsommere (Häikiö m.fl. 2015).
+- **Orddele (dansk):** Undervisning i orddele hjælper børn med at læse og stave lange ord, også på dansk (Goodwin & Ahn 2010; Arnbak & Elbro 2000; Gellert m.fl. 2021). Visningen af orddele på siden bygger på det, men er ikke selv afprøvet.
+- **Oplæsning** hjælper børn med at forstå en tekst, men effekten er beskeden (Wood m.fl. 2018), og at lytte alene lærer ikke barnet at læse. Markering af hvert ord gav ikke bedre forståelse i en lille undersøgelse (Keelor m.fl. 2023) og hjalp ikke børn med at lære nye ord (Gerbier m.fl. 2018).
+- **Lyt først, læs så selv:** At læse den samme tekst igen efter at have hørt den gør læsningen mere flydende, mest på den øvede tekst (Lee & Yoon 2017); i hele klasser er effekten lille (Lauer-Schmaltz m.fl. 2014). At læse nye sider hjælper omtrent lige så meget (Zimmermann m.fl. 2021).
+- **Tryk på et ord:** At kunne høre svære ord, mens barnet læser, hjalp i træningsundersøgelser – også danske elever, der hørte ordet i dele og derefter helt (Olson & Wise 1992; Elbro m.fl. 1996).
+- **Farvet baggrund eller farvede filtre** har ingen påvist effekt ud over placebo (Griffiths m.fl. 2016; Suttle m.fl. 2018). Baggrundsfarven er kun et spørgsmål om, hvad der føles rart.
+- **En rolig læseskærm:** Interaktive ekstrafunktioner i digitale billedbøger hjælper ikke børn med at forstå historien, og minispil skader forståelsen (Takacs, Swart & Bus 2015; Bus m.fl. 2026). At samle voksenværktøjer i et separat værksted er et designvalg inspireret af den forskning; undersøgelserne afprøvede ikke denne navigation.
+- **Læs sammen:** At tale om en bog med åbne spørgsmål styrker små børns ordforråd (Mol m.fl. 2008), men mest i 2–3-årsalderen, og senere undersøgelser finder mindre effekter (Noble m.fl. 2019). Spørgsmålene i Læsehjælper er derfor valgfrie og slået fra som standard.
 
 Kilder:
 
-- Takacs, Swart & Bus 2015, *Review of Educational Research* — [doi:10.3102/0034654314566989](https://doi.org/10.3102/0034654314566989)
+- Hall m.fl. 2023, *Reading Research Quarterly* — [doi:10.1002/rrq.477](https://doi.org/10.1002/rrq.477)
+- McArthur m.fl. 2018, *Cochrane Database of Systematic Reviews* — [doi:10.1002/14651858.CD009115.pub3](https://doi.org/10.1002/14651858.CD009115.pub3)
+- Galuschka m.fl. 2014, *PLOS ONE* — [doi:10.1371/journal.pone.0089900](https://doi.org/10.1371/journal.pone.0089900)
+- Gellert m.fl. 2024, *NyS – Nydanske Sprogstudier* — [doi:10.7146/nys.v1i66.148749](https://doi.org/10.7146/nys.v1i66.148749)
+- Seymour m.fl. 2003, *British Journal of Psychology* — [doi:10.1348/000712603321661859](https://doi.org/10.1348/000712603321661859)
+- Sénéchal & Young 2008, *Review of Educational Research* — [doi:10.3102/0034654308320319](https://doi.org/10.3102/0034654308320319)
+- Andersen & Nielsen 2016, *PNAS* — [doi:10.1073/pnas.1607946113](https://doi.org/10.1073/pnas.1607946113)
+- McTigue m.fl. 2020, *Reading Research Quarterly* — [doi:10.1002/rrq.256](https://doi.org/10.1002/rrq.256)
 - Zorzi m.fl. 2012, *PNAS* — [doi:10.1073/pnas.1205566109](https://doi.org/10.1073/pnas.1205566109)
+- Hakvoort m.fl. 2017, *Journal of Experimental Child Psychology* — [doi:10.1016/j.jecp.2017.07.010](https://doi.org/10.1016/j.jecp.2017.07.010)
+- Łuniewska m.fl. 2022, *Learning and Instruction* — [doi:10.1016/j.learninstruc.2021.101576](https://doi.org/10.1016/j.learninstruc.2021.101576)
 - Galliussi m.fl. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
 - Schneps m.fl. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)
+- Azzarello m.fl. 2026, *Annals of Dyslexia* — [doi:10.1007/s11881-026-00389-8](https://doi.org/10.1007/s11881-026-00389-8)
 - Wery & Diliberto 2017, *Annals of Dyslexia* — [doi:10.1007/s11881-016-0127-1](https://doi.org/10.1007/s11881-016-0127-1)
 - Häikiö m.fl. 2015, *Journal of Cognitive Psychology* — [doi:10.1080/20445911.2014.982126](https://doi.org/10.1080/20445911.2014.982126)
-- Brügelmann 2025 — [pedocs.de](https://www.pedocs.de/volltexte/2025/34472/pdf/Bruegelmann_2025_Red_and_blue.pdf)
+- Lopes & Barrera 2019, *Estudos de Psicologia (Natal)* — [doi:10.22491/1678-4669.20190035](https://doi.org/10.22491/1678-4669.20190035)
+- Dreschinski 2022, ph.d.-afhandling, PH Heidelberg — [doi:10.46586/SLLD.254](https://doi.org/10.46586/SLLD.254)
+- Brügelmann 2025, rapport på peDOCS, ikke fagfællebedømt — [doi:10.25656/01:34472](https://doi.org/10.25656/01:34472)
+- Goodwin & Ahn 2010, *Annals of Dyslexia* — [doi:10.1007/s11881-010-0041-x](https://doi.org/10.1007/s11881-010-0041-x)
+- Arnbak & Elbro 2000, *Scandinavian Journal of Educational Research* — [doi:10.1080/00313830050154485](https://doi.org/10.1080/00313830050154485)
+- Gellert m.fl. 2021, *Reading Research Quarterly* — [doi:10.1002/rrq.325](https://doi.org/10.1002/rrq.325)
+- Wood m.fl. 2018, *Journal of Learning Disabilities* — [doi:10.1177/0022219416688170](https://doi.org/10.1177/0022219416688170)
 - Keelor m.fl. 2023, *Annals of Dyslexia* — [doi:10.1007/s11881-023-00281-9](https://doi.org/10.1007/s11881-023-00281-9)
+- Gerbier m.fl. 2018, *Computer Speech & Language* — [doi:10.1016/j.csl.2017.07.003](https://doi.org/10.1016/j.csl.2017.07.003)
 - Lee & Yoon 2017, *Journal of Learning Disabilities* — [doi:10.1177/0022219415605194](https://doi.org/10.1177/0022219415605194)
-- Galuschka m.fl. 2014, *PLOS ONE* — [doi:10.1371/journal.pone.0089900](https://doi.org/10.1371/journal.pone.0089900)
+- Lauer-Schmaltz m.fl. 2014, *Didaktik Deutsch* — [doi:10.25656/01:17152](https://doi.org/10.25656/01:17152)
+- Zimmermann m.fl. 2021, *Remedial and Special Education* — [doi:10.1177/0741932519855058](https://doi.org/10.1177/0741932519855058)
+- Olson & Wise 1992, *Reading and Writing* — [doi:10.1007/BF01027488](https://doi.org/10.1007/BF01027488)
+- Elbro m.fl. 1996, *Scandinavian Journal of Psychology* — [doi:10.1111/j.1467-9450.1996.tb00647.x](https://doi.org/10.1111/j.1467-9450.1996.tb00647.x)
 - Griffiths m.fl. 2016, *Ophthalmic & Physiological Optics* — [doi:10.1111/opo.12316](https://doi.org/10.1111/opo.12316)
-- Seymour m.fl. 2003, *British Journal of Psychology* — [doi:10.1348/000712603321661859](https://doi.org/10.1348/000712603321661859)
+- Suttle m.fl. 2018, *Clinical and Experimental Optometry* — [doi:10.1111/cxo.12676](https://doi.org/10.1111/cxo.12676)
+- Takacs, Swart & Bus 2015, *Review of Educational Research* — [doi:10.3102/0034654314566989](https://doi.org/10.3102/0034654314566989)
+- Bus m.fl. 2026, *Early Education and Development* — [doi:10.1080/10409289.2025.2571978](https://doi.org/10.1080/10409289.2025.2571978)
+- Mol m.fl. 2008, *Early Education and Development* — [doi:10.1080/10409280701838603](https://doi.org/10.1080/10409280701838603)
+- Noble m.fl. 2019, *Educational Research Review* — [doi:10.1016/j.edurev.2019.100290](https://doi.org/10.1016/j.edurev.2019.100290)
 
 ## Kendte begrænsninger
 

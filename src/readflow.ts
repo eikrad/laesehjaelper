@@ -1,9 +1,11 @@
 /**
  * "Listen first, then read yourself."
  *
- * Repeated reading greatly improves reading fluency; hearing the text read aloud
- * beforehand is among the most effective additions (Lee & Yoon 2017,
- * Journal of Learning Disabilities, doi:10.1177/0022219415605194).
+ * Repeated reading improves reading fluency, most on the practised text; hearing the text
+ * read aloud beforehand is among the most effective additions (Lee & Yoon 2017,
+ * Journal of Learning Disabilities, doi:10.1177/0022219415605194). In whole classes the
+ * effects are smaller and fade without continued practice (Lauer-Schmaltz et al. 2014,
+ * Didaktik Deutsch, doi:10.25656/01:17152).
  */
 
 /** Reading speed for each setting (SpeechSynthesisUtterance.rate). */
@@ -25,7 +27,10 @@ export interface WordStep { text: string; part: number | null; slow: boolean }
  * Tapped word: first the whole word, then slowly syllable by syllable, then the whole word again,
  * making the link between letters and sounds audible (systematic
  * letter-sound instruction is the best-supported intervention, Galuschka et al. 2014,
- * PLOS ONE, doi:10.1371/journal.pone.0089900).
+ * PLOS ONE, doi:10.1371/journal.pone.0089900). Speech feedback on hard words during the
+ * child's own reading helped in training studies, including segmented feedback followed by
+ * the whole word for Danish pupils (Olson & Wise 1992, doi:10.1007/BF01027488;
+ * Elbro, Rasmussen & Spelling 1996, doi:10.1111/j.1467-9450.1996.tb00647.x).
  */
 export function wordSteps(word: string, parts: string[]): WordStep[] {
   const whole: WordStep = { text: word, part: null, slow: false };

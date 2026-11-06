@@ -3,7 +3,10 @@
  * separate inflectional endings, e.g. “sommerfuglene” → sommer | fugl | +ene.
  *
  * Danish has a deep orthography (Seymour et al. 2003, doi:10.1348/000712603321661859);
- * familiar word parts help decode long words. Splitting uses a
+ * familiar word parts help decode long words. Teaching word parts helps children with
+ * reading difficulties (Goodwin & Ahn 2010, doi:10.1007/s11881-010-0041-x), also in Danish
+ * (Arnbak & Elbro 2000, doi:10.1080/00313830050154485; Gellert et al. 2021,
+ * doi:10.1002/rrq.325); showing word parts on the page has not been tested itself. Splitting uses a
  * word list (Stavekontrolden, see THIRD_PARTY_NOTICES.md) and simple rules. Limitations:
  * Words missing from the list stay whole; ambiguous words (“anden” = the duck
  * or the other one) are not split if listed themselves; prefixes

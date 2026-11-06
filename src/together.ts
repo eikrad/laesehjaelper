@@ -3,7 +3,11 @@
  *
  * Dialogic reading, where the child tells the story and the adult asks open questions, improves
  * expressive vocabulary (d = 0.59; Mol et al. 2008, Early Education and Development,
- * doi:10.1080/10409280701838603). The questions are generic (no content analysis),
+ * doi:10.1080/10409280701838603), mainly in 2- to 3-year-olds; later meta-analyses find
+ * smaller effects of shared reading (Noble et al. 2019, doi:10.1016/j.edurev.2019.100290).
+ * For school-age children, a Danish trial found that talking about the story, praising effort
+ * and not correcting every slip improved reading (Andersen & Nielsen 2016, PNAS,
+ * doi:10.1073/pnas.1607946113). The questions are generic (no content analysis),
  * follow dialogic-reading question types (open-ended, wh-questions, prediction, recall,
  * personal experience), and are deliberately not a quiz.
  */
