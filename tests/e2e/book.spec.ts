@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, fresh, waitForText } from "./helpers";
+import { addPhotos, bookTool, openWorkshop, fresh, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -61,7 +61,7 @@ test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
   await expect(page.locator("#readingTitle")).toHaveText("Min testbog");
   await expect(page.locator("#count")).toHaveText("2 / 2");   // Resume where reading stopped.
 
-  await bookTool(page, "editPagesBtn");
+  await openWorkshop(page);
   await page.locator(".thumb").nth(1).locator(".ctl button").first().click();   // Move page 2 to the left.
   await expect(page.locator("#count")).toHaveText("1 / 2");
   await expect(page.locator("#text")).toHaveValue(/Søren går en tur/);

@@ -47,9 +47,18 @@ export async function waitForText(page: Page) {
   await expect(page.locator("#reader .w").first()).toBeVisible({ timeout: 200_000 });
 }
 
-/** Choose a tool from the book menu in the book bar. */
-export async function bookTool(page: Page, id: "checkTextBtn" | "editPagesBtn" | "exportBtn") {
+/** Enter the current book's workshop if it is being read. */
+export async function openWorkshop(page: Page) {
   if (await page.locator("#editBookBtn").isVisible()) await page.click("#editBookBtn");
-  await page.click("#bookMenuBtn");
+}
+
+/** Return from preparing the selected page to reading it. */
+export async function readBook(page: Page) {
+  if (await page.locator("#readBookBtn").isVisible()) await page.click("#readBookBtn");
+}
+
+/** Choose a page or book tool in the workshop. */
+export async function bookTool(page: Page, id: "checkTextBtn" | "exportBtn") {
+  await openWorkshop(page);
   await page.click(`#${id}`);
 }

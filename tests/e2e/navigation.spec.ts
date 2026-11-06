@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { bookTool, fresh, seedBooks } from "./helpers";
+import { bookTool, fresh, openWorkshop, seedBooks } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -109,7 +109,7 @@ test("Deleting a book leaves no Back step into the deleted book", async ({ page 
   await page.goto("/");
   await seedBooks(page, [{ id: "gone", title: "En original bog", texts: ["En original side."] }]);
   await page.locator(".book").click();
-  await bookTool(page, "editPagesBtn");
+  await openWorkshop(page);
   await page.click("#delBookBtn");
   await page.click("#delBookBtn");
   await expect(page.locator("#start")).toBeVisible();

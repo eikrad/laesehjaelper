@@ -128,10 +128,10 @@ test("A page deleted during OCR stays deleted after reopening", async ({ page })
     }) };
   ` }));
   await page.reload();
-  const { addPhotos, bookTool, waitForText } = await import("./helpers");
+  const { addPhotos, openWorkshop, waitForText } = await import("./helpers");
   await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await page.waitForFunction(() => "finishRecognition" in window);
-  await bookTool(page, "editPagesBtn");
+  await openWorkshop(page);
   await page.locator(".thumb").first().locator(".ctl .x").click();
   await expect(page.locator(".thumb")).toHaveCount(1);
   await page.evaluate(() => (window as unknown as { finishRecognition: () => void }).finishRecognition());
