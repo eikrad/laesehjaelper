@@ -49,7 +49,10 @@ export async function waitForText(page: Page) {
 
 /** Enter the current book's workshop if it is being read. */
 export async function openWorkshop(page: Page) {
-  if (await page.locator("#editBookBtn").isVisible()) await page.click("#editBookBtn");
+  if (await page.locator("#editBookBtn").isVisible()) {
+    await page.click("#editBookBtn");
+    await page.click("#openWorkshopBtn");
+  }
 }
 
 /** Return from preparing the selected page to reading it. */

@@ -12,7 +12,7 @@ test("Reading has one quiet workshop entry and Back stays inside the book and sh
     await expect(page.locator(`#${id}`)).toBeHidden();
   }
   await expect(page.locator("#editBookBtn")).toHaveText("Rediger bog");
-  await page.click("#editBookBtn");
+  await openWorkshop(page);
   await expect(page).toHaveURL(/#edit\/route\/route-1$/);
   await expect(page.locator("#bookTitle")).toBeVisible();
   await page.reload();

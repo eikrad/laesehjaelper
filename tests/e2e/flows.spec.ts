@@ -84,7 +84,7 @@ test("Workshop tools remain available behind the quiet reading entry", async ({ 
   await page.click("#readBookBtn");
   await expect(page.locator("#bookMenuBtn")).toBeHidden();
   await expect(page.locator("#thumbs")).toBeHidden();
-  await page.click("#editBookBtn");
+  await openWorkshop(page);
   for (const id of ["#reader", "#dock", "#thumbs", "#checkTextBtn", "#exportBtn", "#delBookBtn", "#text"]) await expect(page.locator(id), id).toBeVisible();
   await page.click("#readBookBtn");
   for (const id of ["#bookTitle", "#thumbs", "#checkTextBtn", "#exportBtn", "#delBookBtn", "#edit"]) await expect(page.locator(id), id).toBeHidden();

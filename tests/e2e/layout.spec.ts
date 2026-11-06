@@ -32,6 +32,13 @@ test("Reading has one quiet editing entry in every language and fits the screen"
     await expect(page.locator("#editBookBtn")).toHaveAccessibleName(name);
     await expect(page.locator("#bookTitle")).toBeHidden();
     await expect(page.locator("#thumbs")).toBeHidden();
+    await page.click("#editBookBtn");
+    const entry = (await page.locator("#editEntry").boundingBox())!;
+    expect(entry.x).toBeGreaterThanOrEqual(0);
+    expect(entry.x + entry.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+    await expect.poll(() => smallControls(page, 44, ".reading-entry")).toEqual([]);
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#editEntry")).toBeHidden();
     expect(await sidewaysScroll(page)).toBe(0);
   }
 });
@@ -325,7 +332,7 @@ test("On wide screens the settings open beside the page, which stays visible; ot
 test("The workshop puts the page list beside its editor on wide screens and above it on narrow screens", async ({ page }) => {
   await seedBooks(page, [{ id: "workshop", title: "En bog til værkstedet", texts: ["Første prøveside.", "Anden prøveside."] }]);
   await page.locator(".book").click();
-  await page.click("#editBookBtn");
+  await openWorkshop(page);
   const list = (await page.locator("#thumbs").boundingBox())!, editor = (await page.locator(".pagecard").boundingBox())!;
   if (page.viewportSize()!.width >= 840) {
     expect(list.x + list.width, "list left of editor").toBeLessThanOrEqual(editor.x);

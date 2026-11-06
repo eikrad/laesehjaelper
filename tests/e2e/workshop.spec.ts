@@ -1,12 +1,12 @@
 import { expect, test } from "./fixtures";
-import { fresh, seedBooks } from "./helpers";
+import { fresh, openWorkshop, seedBooks } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
 test("The workshop exposes book and selected-page tools, with recognition status in the list", async ({ page }) => {
   await seedBooks(page, [{ id: "tools", title: "En værkstedsbog", texts: ["Første originale side.", "Anden originale side."] }]);
   await page.locator(".book").click();
-  await page.click("#editBookBtn");
+  await openWorkshop(page);
   await expect(page.locator("#text")).toBeVisible({ timeout: 1500 });
   await expect(page.locator("#exportBtn")).toBeVisible();
   await expect(page.locator("#delBookBtn")).toBeVisible();
@@ -30,7 +30,7 @@ test.describe("Workshop recognition status", () => {
     await seedBooks(page, [{ id: "status", title: "En bog undervejs", texts: ["En klar side.", "", ""], readyPages: 1 }]);
     await page.locator(".book").click();
     await page.waitForFunction(() => "ocrWaiting" in window);
-    await page.click("#editBookBtn");
+    await openWorkshop(page);
     await expect(page.locator(".thumb .recognition")).toHaveText(["Klar", "Teksten genkendes …", "Venter på genkendelse …"]);
     await page.locator(".thumb > button").nth(1).click();
     await expect(page.locator("#edit")).toBeHidden();
@@ -50,7 +50,7 @@ test.describe("Workshop recognition status", () => {
     await page.waitForFunction(() => "failRecognition" in window);
     // Thumbnails can be large photos; reading never shows them, so it does not build them.
     await expect(page.locator("#thumbs .thumb")).toHaveCount(0);
-    await page.click("#editBookBtn");
+    await openWorkshop(page);
     await expect(page.locator(".thumb .recognition")).toHaveText(["Klar", "Teksten genkendes …", "Venter på genkendelse …"]);
     await page.locator(".thumb > button").evaluateAll(buttons => { for (const b of buttons) (b as HTMLElement).dataset.drawn = "once"; });
     await page.evaluate(() => (window as unknown as { failRecognition: () => void }).failRecognition());
