@@ -943,16 +943,18 @@ const Lib = { detectPage, warpPage, orderCorners };
     renderThumbs();
   }
 
+  /** Recognition status of a page, as the workshop's page list shows it. */
+  const pageStatus = (pg: Page) => t(pg.status === "done" ? "pageReady" : pg.status === "error" ? "ocrFailed" : pg.status === "wait" ? "waiting" : "recognizing");
   function renderThumbs() {
     const box = $("thumbs"); box.innerHTML = "";
+    if (view !== "workshop") return;   // Only the workshop shows the page list; thumbnails can be large photos.
     pages.forEach((pg, i) => {
       const wrap = document.createElement("div"); wrap.className = "thumb";
       const b = document.createElement("button");
       b.className = i === cur ? "on" : ""; b.title = t("page") + " " + (i + 1);
-      const status = t(pg.status === "done" ? "pageReady" : pg.status === "error" ? "ocrFailed" : pg.status === "wait" ? "waiting" : "recognizing");
-      b.setAttribute("aria-label", `${b.title}, ${status}`);
       b.innerHTML = pg.img ? `<img src="${pg.img}" alt="">` : `<span class="demo">${b.title}</span>`;
-      const state = document.createElement("span"); state.className = "recognition"; state.textContent = status; b.append(state);
+      const state = document.createElement("span"); state.className = "recognition"; b.append(state);
+      setThumbStatus(b, pg);
       b.onclick = () => { cur = i; render(); saveBook(); };
       const ctl = document.createElement("div"); ctl.className = "ctl";
       ctl.innerHTML = `<button title="${t("moveLeft")}">‹</button><button class="x" title="${t("deletePage")}">×</button><button title="${t("moveRight")}">›</button>`;
@@ -965,6 +967,16 @@ const Lib = { detectPage, warpPage, orderCorners };
     add.className = "add"; add.title = t("addPages"); add.innerHTML = icon("plus") + `<input type="file" accept="image/*" multiple hidden>`;
     add.querySelector("input")!.onchange = e => addFiles((e.target as HTMLInputElement).files);
     box.append(add);
+  }
+  function setThumbStatus(b: HTMLElement, pg: Page) {
+    const status = pageStatus(pg);
+    b.setAttribute("aria-label", `${b.title}, ${status}`);
+    b.querySelector(".recognition")!.textContent = status;
+  }
+  /** Show a page's new recognition status without redrawing every thumbnail. */
+  function renderThumbStatus(pg: Page) {
+    const b = $("thumbs").querySelectorAll<HTMLElement>(".thumb > button")[pages.indexOf(pg)];
+    if (b) setThumbStatus(b, pg);
   }
 
   $<HTMLButtonElement>("prev").onclick = () => { if (cur > 0) { cur--; render(); saveBook(); } };
@@ -1399,7 +1411,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
       const pg = queue.shift()!;
       if (isRemoved(pg)) continue;
       active = pg; pg.status = "ocr"; pg.stage = "loadingCore";
-      if (pages[cur] === pg) render(); else renderThumbs();
+      if (pages[cur] === pg) render(); else renderThumbStatus(pg);
       try {
         const w = await getWorker(pg.lang);
         if (isRemoved(pg)) { active = null; continue; }
@@ -1432,7 +1444,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
         pg.status = "error"; pg.error = e instanceof Error ? e.message : String(e);
       }
       active = null;
-      if (pages[cur] === pg) render(); else renderThumbs();
+      if (pages[cur] === pg) render(); else renderThumbStatus(pg);
     }
     running = false;
   }
@@ -1532,8 +1544,13 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   }
   function writeLocation(target: BookLocation, push: boolean) {
     const hash = locationHash(target);
-    if (push && location.hash !== hash) history.pushState({ laese: target.view }, "", hash);
-    else history.replaceState({ laese: target.view }, "", hash);
+    if (location.hash === hash && history.state?.laese === target.view) return;   // Already recorded.
+    // Browsers cap how often a page may change its history (Safari and Firefox then throw),
+    // and some embedded views block it. Reading goes on; only the link is not updated.
+    try {
+      if (push && location.hash !== hash) history.pushState({ laese: target.view }, "", hash);
+      else history.replaceState({ laese: target.view }, "", hash);
+    } catch { /* Keep the previous link. */ }
   }
   function syncLocation() { writeLocation(currentLocation(), false); }
   function showApp(mode: "read" | "workshop" = "read", push = true) {
@@ -1572,7 +1589,9 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   window.addEventListener("popstate", e => { restoreLocation(e.state?.laese === "read"); });
   function showStart(fromHistory = false) {
     navigationId++;
-    if (!fromHistory && !$("app").hidden && book) { history.go(view === "workshop" ? -2 : -1); return; }
+    // Return through the app's own history entries, also after deleting the book, so Back
+    // from the shelf never leads into a book that is no longer there.
+    if (!fromHistory && !$("app").hidden) { history.go(view === "workshop" ? -2 : -1); return; }
     stopSpeech(); showEditEntry(false); showCheck(false);
     document.body.classList.remove("focus", "workshop"); setFocusBtn();
     $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; showSettings(false);
@@ -1603,14 +1622,20 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     else holdFrame = requestAnimationFrame(advanceEditHold);
   }
   function startEditHold() {
-    if (S.gate !== "an" || holdStarted !== null) return;
+    // An open entry closes with a plain press; holding is only needed to open it.
+    if (S.gate !== "an" || holdStarted !== null || $("editEntry").hidden === false) return;
     holdCompleted = false; holdStarted = performance.now(); editEntryButton.classList.add("holding"); advanceEditHold();
   }
-  editEntryButton.onclick = () => {
-    if (S.gate !== "an") showEditEntry($("editEntry").hidden !== false);
-    else if (!holdCompleted) toast(t("holdToEdit"));
-    holdCompleted = false;
-  };
+  /** A finished click or key press on "Edit book". */
+  function pressEditEntry() {
+    if (holdCompleted) { holdCompleted = false; return; }   // The hold has just opened the entry.
+    const open = $("editEntry").hidden === false;
+    if (S.gate === "an" && !open) toast(t("holdToEdit"));
+    else showEditEntry(!open);
+  }
+  editEntryButton.onclick = pressEditEntry;
+  // A long press must not turn into a context menu, callout or text selection, which can cancel the hold.
+  editEntryButton.oncontextmenu = e => { if (S.gate === "an") e.preventDefault(); };
   editEntryButton.onpointerdown = e => {
     if (e.button !== 0 || S.gate !== "an") return;
     editEntryButton.setPointerCapture(e.pointerId); startEditHold();
@@ -1625,7 +1650,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); if (!e.repeat) startEditHold(); }
   };
   editEntryButton.onkeyup = e => {
-    if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); cancelEditHold(); if (!holdCompleted) toast(t("holdToEdit")); holdCompleted = false; }
+    if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); cancelEditHold(); pressEditEntry(); }
   };
   editEntryButton.onblur = cancelEditHold;
   window.addEventListener("blur", cancelEditHold);

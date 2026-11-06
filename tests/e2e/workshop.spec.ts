@@ -38,6 +38,26 @@ test.describe("Workshop recognition status", () => {
     await page.locator(".thumb > button").first().click();
     await expect(page.locator("#text")).toHaveValue("En klar side.");
   });
+
+  test("Recognition updates the list's status without redrawing the thumbnails, and reading draws no list", async ({ page }) => {
+    // Every recognition attempt waits until the test lets it fail.
+    await page.route("**/tesseract.min.js", route => route.fulfill({ contentType: "text/javascript", body:
+      "window.recognitionGate = new Promise(r => { window.failRecognition = r; });" +
+      "window.Tesseract = { createWorker: () => window.recognitionGate.then(() => { throw new Error('Recognition unavailable'); }) };",
+    }));
+    await seedBooks(page, [{ id: "redraw", title: "En bog undervejs", texts: ["En klar side.", "", ""], readyPages: 1 }]);
+    await page.locator(".book").click();
+    await page.waitForFunction(() => "failRecognition" in window);
+    // Thumbnails can be large photos; reading never shows them, so it does not build them.
+    await expect(page.locator("#thumbs .thumb")).toHaveCount(0);
+    await openWorkshop(page);
+    await expect(page.locator(".thumb .recognition")).toHaveText(["Klar", "Teksten genkendes …", "Venter på genkendelse …"]);
+    await page.locator(".thumb > button").evaluateAll(buttons => { for (const b of buttons) (b as HTMLElement).dataset.drawn = "once"; });
+    await page.evaluate(() => (window as unknown as { failRecognition: () => void }).failRecognition());
+    await expect(page.locator(".thumb .recognition")).toHaveText(["Klar", "Genkendelsen mislykkedes.", "Genkendelsen mislykkedes."]);
+    await expect(page.locator(".thumb > button").nth(2)).toHaveAccessibleName("Side 3, Genkendelsen mislykkedes.");
+    await expect(page.locator('.thumb > button[data-drawn="once"]'), "same thumbnails, not redrawn").toHaveCount(3);
+  });
 });
 
 test.describe("Workshop recognition recovery", () => {

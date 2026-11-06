@@ -74,3 +74,41 @@ test("The parent-gate setting and short-press explanation are translated and per
   await page.click("#setBtn");
   await expect(page.locator("#gateSet button.on")).toHaveAttribute("data-v", "an");
 });
+
+test("Holding the gated entry opens no browser menu or text selection", async ({ page }) => {
+  await page.click("#setBtn");
+  await page.click('#gateSet button[data-v="an"]');
+  await page.click("#setClose");
+  // Tablets turn a long press into a context menu, a callout or a text selection, which can cancel the hold.
+  const press = await page.locator("#editBookBtn").evaluate(el => {
+    const menu = new MouseEvent("contextmenu", { bubbles: true, cancelable: true });
+    el.dispatchEvent(menu);
+    return { menuPrevented: menu.defaultPrevented, selectable: getComputedStyle(el).userSelect };
+  });
+  expect(press).toEqual({ menuPrevented: true, selectable: "none" });
+});
+
+test("With the parent gate on, tapping the open entry closes it again", async ({ page }) => {
+  await page.click("#setBtn");
+  await page.click('#gateSet button[data-v="an"]');
+  await page.click("#setClose");
+  const button = page.locator("#editBookBtn");
+  await button.focus();
+  await page.keyboard.down("Enter");
+  await page.waitForTimeout(2200);
+  await page.keyboard.up("Enter");
+  await expect(page.locator("#editEntry")).toBeVisible({ timeout: 1500 });
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#editEntry")).toBeHidden();
+  await expect(page.locator("#toast")).not.toHaveClass(/show/);
+  await expect(button).not.toHaveClass(/holding/);
+  const r = (await button.boundingBox())!;
+  await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(2200);
+  await page.mouse.up();
+  await expect(page.locator("#editEntry")).toBeVisible();
+  await button.click();
+  await expect(page.locator("#editEntry")).toBeHidden();
+  await expect(page.locator("#toast")).not.toHaveClass(/show/);
+});

@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { fresh, openWorkshop, seedBooks } from "./helpers";
+import { bookTool, fresh, openWorkshop, seedBooks } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -112,4 +112,53 @@ test("An explicit reading link selects its requested page from the workshop", as
   await page.goBack();
   await expect(page).toHaveURL(/#read\/link\/link-1$/);
   await expect(page.locator("#count")).toHaveText("2 / 3");
+});
+
+test("Deleting a book leaves no Back step into the deleted book", async ({ page }) => {
+  await page.goto("about:blank");   // A page before the app, so leaving the app is visible.
+  await page.goto("/");
+  await seedBooks(page, [{ id: "gone", title: "En original bog", texts: ["En original side."] }]);
+  await page.locator(".book").click();
+  await openWorkshop(page);
+  await page.click("#delBookBtn");
+  await page.click("#delBookBtn");
+  await expect(page.locator("#start")).toBeVisible();
+  await expect(page).toHaveURL(/#shelf$/);
+  // Back from the shelf leaves the app, as it does after the Home button.
+  await page.goBack();
+  await expect(page).toHaveURL("about:blank");
+});
+
+test("Correcting text does not rewrite the browser history while the page stays the same", async ({ page }) => {
+  await seedBooks(page, [{ id: "typing", title: "En original bog", texts: ["En original side."] }]);
+  await page.locator(".book").click();
+  await bookTool(page, "checkTextBtn");
+  // Browsers cap how often a page may change its history, so only real changes should count.
+  await page.evaluate(() => {
+    const w = window as unknown as { historyWrites: number };
+    w.historyWrites = 0;
+    for (const name of ["pushState", "replaceState"] as const) {
+      const original = history[name].bind(history);
+      history[name] = (...args: Parameters<History["pushState"]>) => { w.historyWrites++; original(...args); };
+    }
+  });
+  for (const letter of "abc") {
+    await page.locator("#text").press("End");
+    await page.locator("#text").pressSequentially(letter);
+    await page.waitForTimeout(350);   // Longer than the 250 ms pause after which the page is drawn again.
+  }
+  await expect(page.locator("#reader")).toContainText("side.abc");
+  expect(await page.evaluate(() => (window as unknown as { historyWrites: number }).historyWrites)).toBe(0);
+});
+
+test("Books still open and turn pages when the browser refuses history updates", async ({ page }) => {
+  await seedBooks(page, [{ id: "refused", title: "En original bog", texts: ["Første originale side.", "Anden originale side."] }]);
+  await page.addInitScript(() => {
+    History.prototype.pushState = History.prototype.replaceState = () => { throw new DOMException("Too many history updates", "SecurityError"); };
+  });
+  await page.reload();
+  await page.locator(".book").click();
+  await expect(page.locator("#reader")).toContainText("Første originale side.");
+  await page.click("#next");
+  await expect(page.locator("#reader")).toContainText("Anden originale side.");
 });
