@@ -1660,7 +1660,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   document.addEventListener("pointerdown", e => { if (!(e.target as Element).closest(".reading-entry")) showEditEntry(false); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("editEntry").hidden) { showEditEntry(false); $<HTMLButtonElement>("editBookBtn").focus(); } });
   $("readBookBtn").onclick = () => { saveBook(); history.back(); };
-  $<HTMLButtonElement>("homeBtn").onclick = () => { if (view === "workshop") history.back(); else showStart(); };
+  $<HTMLButtonElement>("homeBtn").onclick = () => showStart();
   $("home").onclick = () => showStart();
   $("home").onkeydown = e => { if (e.key === "Enter") showStart(); };
 
