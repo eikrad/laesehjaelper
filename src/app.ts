@@ -1010,15 +1010,16 @@ const Lib = { detectPage, warpPage, orderCorners };
 
   const queue: Page[] = [];
   // Page photo actions in the workshop: insert photos before or after the selected page, or replace its photo.
-  // The chooser may stay open while the user moves on, so remember the page by its ID rather than the object.
+  // The chooser may stay open while the user moves on, so remember the page by its ID rather than the object,
+  // and the navigation step: after any navigation, even one still loading another book, the photo is ignored.
   type PhotoAction = Exclude<Placement, "end"> | "replace";
-  let photoRequest: { bookId: string; pageId: string; action: PhotoAction } | null = null;
+  let photoRequest: { bookId: string; pageId: string; action: PhotoAction; navigation: number } | null = null;
   const pagePhotoFile = $in("pagePhotoFile");
   for (const [id, action] of [["insertBeforeBtn", "before"], ["insertAfterBtn", "after"], ["replacePhotoBtn", "replace"]] as const) {
     $(id).onclick = () => {
       const pageId = pages[cur]?.id;
       if (!book || book.demo || !pageId) return;
-      photoRequest = { bookId: book.id, pageId, action };
+      photoRequest = { bookId: book.id, pageId, action, navigation: navigationId };
       pagePhotoFile.value = "";
       pagePhotoFile.multiple = action !== "replace";
       pagePhotoFile.click();
@@ -1028,7 +1029,8 @@ const Lib = { detectPage, warpPage, orderCorners };
   pagePhotoFile.onchange = () => {
     const request = photoRequest; photoRequest = null;
     const files = [...(pagePhotoFile.files || [])]; pagePhotoFile.value = "";
-    const target = request && book?.id === request.bookId ? pages.find(pg => pg.id === request.pageId) : undefined;
+    const current = request && request.navigation === navigationId && book?.id === request.bookId;
+    const target = current ? pages.find(pg => pg.id === request.pageId) : undefined;
     if (!request || !target) return;
     if (request.action !== "replace") addFiles(files, target, request.action);
     else if (files[0]) replacePhoto(target, files[0]);

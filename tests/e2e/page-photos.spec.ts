@@ -204,10 +204,17 @@ test("A photo chosen after leaving a book cannot change another book", async ({ 
   await page.click("#replacePhotoBtn");
   const dialog = await chooser;
   await page.click("#home");
-  await page.locator(".book", { hasText: "Book B" }).click();
-  await dialog.setFiles(fixture("side-da.jpg"));
-  await expect(page.locator("#crop")).toBeHidden();
+  await expect(page.locator("#start")).toBeVisible();
+  // Book B is still being read from storage when the photo arrives.
+  const release = await holdStorage(page);
+  try {
+    await page.locator(".book", { hasText: "Book B" }).click();
+    await dialog.setFiles(fixture("side-da.jpg"));
+    await page.waitForTimeout(500); // Time to decode the photo, if it were taken.
+    await expect(page.locator("#crop")).toBeHidden();
+  } finally { await release(); }
   await expect(page.locator("#reader")).toContainText("Original page B.");
+  await expect(page.locator("#crop")).toBeHidden();
   await expect(page.locator("#count")).toHaveText("1 / 1");
   await page.reload();
   await expect(page.locator("#reader")).toContainText("Original page B.");
