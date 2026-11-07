@@ -25,7 +25,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Læs sammen: et par åbne spørgsmål til den voksne for hver side, også egne spørgsmål (kan slås til)
 - Tryk på et ord for at høre det – først helt, så langsomt stavelse for stavelse, så helt igen
 - Få hele siden læst op med markering af hvert ord, langsomt eller normalt; bagefter er det barnets tur („Hør igen“)
-- Indstilling „Bindestreger i bogen“: til læsebøger, der selv deler ord i stavelser med bindestreg („sko-le“)
+- Indstilling „Bindestreger i bogen“: til læsebøger, der selv deler ord i stavelser med bindestreg eller prik („sko-le“, „sko·le“); tegn, som tekstgenkendelsen overser, bliver fundet i fotoet
 - Skæve fotos bliver rettet op, og „tekst“, som tekstgenkendelsen finder i tegningerne, bliver sorteret fra
 - Hver side genkendes to gange (som den er og med udlignet baggrund), så også tekst på farvede billeder bliver fundet
 - Ret den genkendte tekst; sæt selv stavelsesgrænser med `·` (f.eks. `hun·den`)
