@@ -369,3 +369,33 @@ test("The parent gate supports a deliberate touch hold with visible progress", a
   await page.click("#correctPageBtn");
   await expect(page.locator("#text")).toBeFocused();
 });
+
+test("Page photo actions fit the workshop in every language and stay out of reading", async ({ page }) => {
+  await seedBooks(page, [{ id: "photo-tools", title: "Original book", texts: ["En original side."] }]);
+  for (const [ui, labels] of [
+    ["da", ["Indsæt side før", "Indsæt side efter", "Erstat foto"]],
+    ["de", ["Seite davor einfügen", "Seite danach einfügen", "Foto ersetzen"]],
+    ["en", ["Insert page before", "Insert page after", "Replace photo"]],
+  ] as const) {
+    await page.click(`#uiLang button[data-v=${ui}]`);
+    await page.locator(".book").click();
+    await expect(page.locator("#pagePhotoTools")).toBeHidden();
+    await openWorkshop(page);
+    for (const [i, id] of ["insertBeforeBtn", "insertAfterBtn", "replacePhotoBtn"].entries()) {
+      const button = page.locator(`#${id}`);
+      await expect(button).toHaveText(labels[i]);
+      await button.scrollIntoViewIfNeeded();
+      const box = (await button.boundingBox())!;
+      expect(box.height).toBeGreaterThanOrEqual(48);
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+    }
+    await page.click("#focusBtn");
+    await expect(page.locator("#pagePhotoTools")).toBeHidden();
+    await page.click("#focusBtn");
+    await page.click("#readBookBtn");
+    await expect(page.locator("#pagePhotoTools")).toBeHidden();
+    await page.click("#home");
+    await expect(page.locator("#start")).toBeVisible();
+  }
+});
