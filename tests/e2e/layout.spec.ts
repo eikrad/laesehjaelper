@@ -390,6 +390,7 @@ test("Page photo actions fit the workshop in every language and stay out of read
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
     }
+    await expect(page.locator("#replacePhotoHint")).toHaveCSS("font-size", "14px");
     await page.click("#focusBtn");
     await expect(page.locator("#pagePhotoTools")).toBeHidden();
     await page.click("#focusBtn");

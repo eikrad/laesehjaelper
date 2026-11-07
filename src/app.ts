@@ -11,6 +11,7 @@ import { wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
 import { silben } from "./silben";
 import { swipeDirection } from "./swipe";
 import { resumePage } from "./bookshelf";
+import { insertIndex, selectedIndex, type Placement } from "./pagelist";
 import { holdProgress } from "./hold";
 import { locationHash, parseLocation, type BookLocation } from "./navigation";
 import { cleanOcr, parasFromOcr } from "./layout";
@@ -333,8 +334,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   const pages: Page[] = [];
   let cur = 0;
   const removedPages = new Set<string>();
-  const retiredPages = new WeakSet<Page>();
-  const isRemoved = (pg: Page) => retiredPages.has(pg) || (!!pg.id && removedPages.has(pg.id));
+  const isRemoved = (pg: Page) => !!pg.id && removedPages.has(pg.id);
 
   // ---------- Book storage (IndexedDB, on this device only) ----------
   let storageWarned = false;
@@ -389,10 +389,14 @@ const Lib = { detectPage, warpPage, orderCorners };
     const bookId = pg.bookId || (book && !book.demo ? (pg.bookId = book.id) : null);
     if (!bookId) return;
     pg.id = pg.id || uid();
+    const { canvas, photo } = pg;
     try {
-      if (pg.canvas && !pg.inputBlob) pg.inputBlob = await canvasBlob(pg.canvas);
-      if (pg.photo && !pg.photoBlob) pg.photoBlob = await canvasBlob(pg.photo, 0.8);
-      if (isRemoved(pg)) return; // The page may also have been deleted while toBlob() was pending.
+      const inputBlob = pg.inputBlob || (canvas ? await canvasBlob(canvas) : null);
+      const photoBlob = pg.photoBlob || (photo ? await canvasBlob(photo, 0.8) : null);
+      // While toBlob() was pending, the page may have been deleted, or given a new picture
+      // that its own save stores.
+      if (isRemoved(pg) || pg.canvas !== canvas || pg.photo !== photo) return;
+      pg.inputBlob = inputBlob; pg.photoBlob = photoBlob;
       await DB.put<PageRecord>("pages", {
         id: pg.id, bookId, lang: pg.lang, status: pg.status === "done" ? "done" : "wait",
         text: pg.text, rawText: pg.rawText, paras: pg.paras || null, workW: pg.workW, workH: pg.workH,
@@ -464,8 +468,9 @@ const Lib = { detectPage, warpPage, orderCorners };
   function movePage(i: number, d: number) {
     const j = i + d;
     if (j < 0 || j >= pages.length) return;
+    const selected = pages[cur];
     [pages[i], pages[j]] = [pages[j], pages[i]];
-    if (cur === i) cur = j; else if (cur === j) cur = i;
+    cur = selectedIndex(pages, selected, cur);
     if ((i === 0 || j === 0) && book) book.cover = null;
     saveBook(); render();
   }
@@ -846,7 +851,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     $<HTMLButtonElement>("correctPageBtn").disabled = pg?.status !== "done";
     $("readingTitle").textContent = book?.title || t("untitled");
     if (!$("app").hidden) syncLocation();
-    $("pagePhotoTools").hidden = !pg || !book || !!book.demo;
+    $("pagePhotoTools").hidden = !pg?.id || !book || !!book.demo;
     if (!pg) { showStatus(t("noText")); renderThumbs(); return; }
     const pending = pg.status === "wait" || pg.status === "ocr";
     $("edit").hidden = !checking || pending;
@@ -990,16 +995,18 @@ const Lib = { detectPage, warpPage, orderCorners };
   }
 
   const queue: Page[] = [];
-  type PhotoAction = "before" | "after" | "replace";
-  type PhotoTarget = { page: Page; mode: PhotoAction };
-  let photoRequest: (PhotoTarget & { book: Book }) | null = null;
+  // Page photo actions in the workshop: insert photos before or after the selected page, or replace its photo.
+  // The chooser may stay open while the user moves on, so remember the page by its ID rather than the object.
+  type PhotoAction = Exclude<Placement, "end"> | "replace";
+  let photoRequest: { bookId: string; pageId: string; action: PhotoAction } | null = null;
   const pagePhotoFile = $in("pagePhotoFile");
-  for (const [id, mode] of [["insertBeforeBtn", "before"], ["insertAfterBtn", "after"], ["replacePhotoBtn", "replace"]] as const) {
+  for (const [id, action] of [["insertBeforeBtn", "before"], ["insertAfterBtn", "after"], ["replacePhotoBtn", "replace"]] as const) {
     $(id).onclick = () => {
-      if (!book || book.demo || !pages[cur]) return;
-      photoRequest = { book, page: pages[cur], mode };
+      const pageId = pages[cur]?.id;
+      if (!book || book.demo || !pageId) return;
+      photoRequest = { bookId: book.id, pageId, action };
       pagePhotoFile.value = "";
-      pagePhotoFile.multiple = mode !== "replace";
+      pagePhotoFile.multiple = action !== "replace";
       pagePhotoFile.click();
     };
   }
@@ -1007,41 +1014,34 @@ const Lib = { detectPage, warpPage, orderCorners };
   pagePhotoFile.onchange = () => {
     const request = photoRequest; photoRequest = null;
     const files = [...(pagePhotoFile.files || [])]; pagePhotoFile.value = "";
-    if (request && request.book === book && pages.includes(request.page)) addFiles(files, request);
+    const target = request && book?.id === request.bookId ? pages.find(pg => pg.id === request.pageId) : undefined;
+    if (!request || !target) return;
+    if (request.action !== "replace") addFiles(files, target, request.action);
+    else if (files[0]) replacePhoto(target, files[0]);
   };
 
-  async function addFiles(files: FileList | File[] | null, target?: PhotoTarget) {
+  /** Add photos as new pages: at the end, or before or after a page. A batch stays together and in order. */
+  async function addFiles(files: FileList | File[] | null, target: Page | null = null, placement: Placement = "end") {
     const list = [...(files || [])].filter(f => f.type.startsWith("image/"));
-    if (!list.length || !book || (target && !pages.includes(target.page))) return;
-    if (target?.mode === "replace") list.splice(1);
+    if (!list.length || !book) return;
     const owner = book;
     showApp("workshop");
     const generation = navigationId;
-    let anchor = target?.page;
-    let mode: PhotoAction | "append" = target?.mode || "append";
-    const ownsPreparation = () => book === owner && navigationId === generation && (!anchor || pages.includes(anchor));
-    let firstPage: Page | null = null;
+    const ownsPreparation = () => book === owner && navigationId === generation;
+    const added: Page[] = [];
     for (const [n, f] of list.entries()) {
       try {
         const { canvas: photo } = await loadImage(f);
         if (!ownsPreparation()) return;
         const { canvas, corners } = await cropFlow(photo, null, list.length > 1 ? t("cropOf", { a: n + 1, b: list.length }) : "");
         if (!ownsPreparation()) return;
-        const index = anchor ? pages.indexOf(anchor) + (mode === "after" ? 1 : 0) : pages.length;
-        const replacing = mode === "replace" ? anchor : undefined;
-        const pg: Page = {
-          id: replacing?.id, bookId: !owner.demo ? owner.id : null, photo, corners,
-          img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: anchor?.lang || S.lang,
-          question: replacing?.question, text: "", status: "wait", progress: 0,
-        };
-        // Commit only after the new photo has decoded and its crop was accepted.
-        // Retire the old object, not its ID: an old OCR job must not overwrite the new photo.
-        if (replacing) { retiredPages.add(replacing); releasePageImages(replacing); }
-        pages.splice(index, replacing ? 1 : 0, pg); queue.push(pg);
-        if (index === 0) owner.cover = null;
-        firstPage ||= pg;
-        if (n === 0) { cur = index; render(); }
-        anchor = pg; mode = "after"; // Keep a batch together and in the chosen order.
+        // A stored book's page gets its ID right away: page actions refer to pages by ID.
+        const pg: Page = { id: owner.demo ? undefined : uid(), bookId: !owner.demo ? owner.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: target?.lang || S.lang, text: "", status: "wait", progress: 0 };
+        // Pages may have been deleted or moved since the last photo: place it by the pages themselves.
+        const at = insertIndex(pages, added, target, placement);
+        pages.splice(at, 0, pg); added.push(pg); queue.push(pg);
+        if (at === 0) owner.cover = null;
+        cur = selectedIndex(pages, added[0], cur); render();
         await savePage(pg);
         // Navigation may cancel the remaining batch, but an accepted page still needs its book record.
         if (book === owner) await saveBook();
@@ -1049,9 +1049,23 @@ const Lib = { detectPage, warpPage, orderCorners };
         if (!ownsPreparation()) return;
       } catch (e) { toast(e instanceof Error ? e.message : String(e)); }
     }
-    if (!ownsPreparation() || !firstPage) return;
-    cur = pages.indexOf(firstPage);
+    if (!ownsPreparation() || !added.length) return;
+    cur = selectedIndex(pages, added[0], cur);
     render();
+  }
+
+  /** Give a page a new photo: same page, position and link; its text is recognised again. */
+  async function replacePhoto(pg: Page, file: File) {
+    const owner = book, generation = navigationId;
+    const owns = () => book === owner && navigationId === generation && pages.includes(pg);
+    try {
+      const { canvas: photo } = await loadImage(file);
+      if (!owns()) return;
+      const crop = await cropFlow(photo, null, "");
+      // Only an accepted crop of a readable photo replaces anything.
+      if (!owns()) return;
+      restartPage(pg, crop, { photo, photoBlob: null, text: "", rawText: "" });
+    } catch (e) { toast(e instanceof Error ? e.message : String(e)); }
   }
 
 
@@ -1336,16 +1350,20 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     });
   }
 
+  /** A page has a new picture (cropped again or replaced): show it and recognise its text again. */
+  function restartPage(pg: Page, { canvas, corners }: CropResult, change: Partial<Page> = {}) {
+    releasePageImages(pg);
+    Object.assign(pg, { canvas, corners, img: canvas.toDataURL("image/jpeg", 0.88), status: "wait", progress: 0, paras: null, clean: null, inputBlob: null, cleanBlob: null }, change);
+    if (pg === pages[0] && book) book.cover = null;
+    savePage(pg); saveBook();
+    queue.push(pg); render(); runQueue();
+  }
+
   $<HTMLButtonElement>("recropBtn").onclick = async () => {
     const pg = pages[cur];
     if (!pg || !(pg.photo || pg.photoBlob)) return;
     if (!pg.photo) pg.photo = await blobToCanvas(pg.photoBlob!);
-    const { canvas, corners } = await cropFlow(pg.photo, toFrame(pg.corners), "");
-    releasePageImages(pg);
-    Object.assign(pg, { canvas, corners, img: canvas.toDataURL("image/jpeg", 0.88), status: "wait", progress: 0, paras: null, clean: null, inputBlob: null, cleanBlob: null });
-    if (pg === pages[0] && book) book.cover = null;
-    savePage(pg); saveBook();
-    queue.push(pg); render(); runQueue();
+    restartPage(pg, await cropFlow(pg.photo, toFrame(pg.corners), ""));
   };
 
   // Recognize the current page again, for example after an app update improves OCR.
@@ -1396,44 +1414,53 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     return workers[code];
   }
 
+  // A recognition job owns its page while the page's status is "ocr". Anything that gives the page a new
+  // picture or language sets it back to "wait" and queues it again; the old job then drops its result.
+  // Results are committed in one step after the last await, so a page never mixes two pictures.
   let running = false;
   async function runQueue() {
     if (running) return; running = true;
     while (queue.length) {
       const pg = queue.shift()!;
-      if (isRemoved(pg)) continue;
+      // Skip deleted pages, and pages already recognised from an earlier entry in the queue.
+      if (isRemoved(pg) || pg.status !== "wait") continue;
+      const stale = () => isRemoved(pg) || pg.status !== "ocr";
       active = pg; pg.status = "ocr"; pg.stage = "loadingCore";
       if (pages[cur] === pg) render(); else renderThumbStatus(pg);
       try {
         const w = await getWorker(pg.lang);
-        if (isRemoved(pg)) { active = null; continue; }
+        if (stale()) { active = null; continue; }
         // rotateAuto straightens tilted photos; positions then refer to the rotated image
         // returned as imageColor.
         const input = pg.canvas || await blobToCanvas(pg.inputBlob!);
+        if (stale()) { active = null; continue; }
         // Recognize text on the flattened background; display and erase text on the color image,
         // rotated the same way as Tesseract.
         // Two passes: the straightened original and the same page with a flattened background
         // (for tinted illustrations or uneven lighting). Keep the more confident result per line.
         const { data } = await w.recognize(input, { rotateAuto: true }, { text: true, blocks: true });
-        if (isRemoved(pg)) { active = null; continue; }
+        if (stale()) { active = null; continue; }
         const work = rotateLike(input, data.rotateRadians || 0);
-      markBold(data, work);
+        markBold(data, work);
         pg.stage = "recognizing2";
         const { data: flat } = await w.recognize(flattenBackground(work), {}, { blocks: true });
-        if (isRemoved(pg)) { active = null; continue; }
-        pg.workW = work.width; pg.workH = work.height;
-        pg.paras = transferPlaces(pg.paras, Layout.parasFromOcr(data, flat));
-        pg.rawText = data.text || "";
-        retext(pg);
+        if (stale()) { active = null; continue; }
+        const paras = transferPlaces(pg.paras, Layout.parasFromOcr(data, flat));
         // OpenCV is usually loaded already for cropping; without it, text on pictures is painted over.
-        const cleanCanvas = pg.paras.length ? erasePage(work, pg.paras, await getCv().catch(() => null)) : null;
+        const cleanCanvas = paras.length ? erasePage(work, paras, await getCv().catch(() => null)) : null;
+        const cleanBlob = cleanCanvas ? await canvasBlob(cleanCanvas) : null;
+        if (stale()) { active = null; continue; }
+        // Commit: nothing from here on waits, so the page cannot change half-way.
+        Object.assign(pg, { workW: work.width, workH: work.height, paras, rawText: data.text || "" });
+        retext(pg);
         releaseImage(pg.clean);
         pg.clean = cleanCanvas ? cleanCanvas.toDataURL("image/jpeg", 0.9) : null;
-        pg.cleanBlob = cleanCanvas ? await canvasBlob(cleanCanvas) : null;
+        pg.cleanBlob = cleanBlob;
         pg.status = "done";
         savePage(pg);
       } catch (e) {
         console.error(e);
+        if (stale()) { active = null; continue; }
         pg.status = "error"; pg.error = e instanceof Error ? e.message : String(e);
       }
       active = null;
