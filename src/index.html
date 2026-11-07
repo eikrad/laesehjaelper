@@ -37,6 +37,7 @@
   --ws: 0.25em;
   --ws-box: 0.12em;
   --lh: 1.9;
+  --lh-box: 1.6;
   --ui: "Atkinson Hyperlegible", system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
@@ -236,7 +237,7 @@ body.workshop .workshop-grid > * { min-width: 0; }
   #reader.pagemode { background: #e9ebef; }
   #reader.pagemode .pageview { margin: 0 auto; width: min(100%, calc((100vh - 220px) * var(--ar, 1))); width: min(100%, calc((100dvh - 220px) * var(--ar, 1))); }
 }
-.tbox { position: absolute; overflow: hidden; line-height: min(var(--lh), 1.6); word-spacing: var(--ws-box); }
+.tbox { position: absolute; overflow: hidden; letter-spacing: var(--ls); line-height: var(--lh-box); word-spacing: var(--ws-box); }
 .tbox-text { height: 100%; overflow: hidden; }
 .tbox p { margin: 0 0 .35em; max-width: none; }
 .tbox p:last-child { margin-bottom: 0; }
@@ -544,6 +545,7 @@ body.focus .together { display: none !important; }
     <div class="field wide">
       <label for="size" data-t="size"></label>
       <input type="range" id="size" min="18" max="64" step="1">
+      <p class="fhint" id="sizeHint" data-t="sizeHint" hidden></p>
     </div>
     <div class="field wide">
       <span class="flabel" data-t="syllables"></span>
