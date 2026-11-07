@@ -31,7 +31,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Correct the recognized text; set your own syllable breaks with `·` (e.g. `hun·den`)
 - Move or resize text boxes on the book page with your finger (under “Check and correct the text”), e.g. if the new text runs into a picture
 - Headings stay larger than body text, and bold words are detected and set in bold (editable with `*word*`)
-- Focus mode: just the text, full screen
+- Reading mode: just the text. On tablets and laptops it fills the whole screen without browser bars (Fullscreen API), and leaving fullscreen with the system gesture also ends reading mode. iPhone and the installed app keep the plain reading mode
 - Show the original text with one tap to spot recognition errors
 - Bookshelf first: stored books open from large covers and show the page where reading stopped. “New book” stays secondary; with no books yet, taking a photo is the main action. Books, page order and reading positions stay on the device.
 - Reading and preparing books have separate views. Reading has page turning, read-aloud and Aa settings; “Edit book” opens the workshop. Back returns through reading to the bookshelf, and page links survive reload.
