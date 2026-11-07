@@ -123,6 +123,16 @@ describe("Letting the screen sleep when nobody reads", () => {
     expect(f.held()).toBe(0);
   });
 
+  it("Counts only the end of reading aloud as activity, not stopping speech that was not running", async () => {
+    const f = fakeApi(), wake = screenWakeLock(f.api, () => visible);
+    wake.keepOn(true);
+    f.pending.shift()!.grant(); await settle();
+    await vi.advanceTimersByTimeAsync(IDLE_MS - 1000);
+    wake.busy(false); // for example when the page is redrawn
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(f.held()).toBe(0);
+  });
+
   it("Does not count time on the bookshelf", async () => {
     const f = fakeApi(), wake = screenWakeLock(f.api, () => visible);
     wake.keepOn(true);

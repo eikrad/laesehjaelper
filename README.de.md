@@ -41,6 +41,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Wähle in der Werkstatt eine Seite aus und nutze ‹ / › unter der Vorschau zum Sortieren. „Seite davor einfügen“ und „Seite danach einfügen“ ergänzen fehlende Fotos an dieser Stelle, auch mehrere in der gewählten Reihenfolge. „Foto ersetzen“ behält die Position und den Seitenlink bei; erst nach dem Bestätigen des Zuschnitts ersetzen das neue Foto und der erkannte Text den bisherigen Inhalt. Manuelle Textkorrekturen auf der ersetzten Seite gehen dabei verloren.
 - E-Book: ein Buch als EPUB 3 speichern (feste Seiten, lässt sich in jeder Lese-App öffnen) und verlustfrei wieder laden
 - Als App installierbar und offline nutzbar
+- Der Bildschirm bleibt an, solange ein Buch offen ist, damit er nicht mitten auf einer Seite dunkel wird; nach 10 Minuten ohne Berührung oder Vorlesen darf er wieder ausgehen (in Browsern mit der Screen Wake Lock API)
 
 ## Entwicklung
 

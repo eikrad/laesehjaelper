@@ -71,8 +71,9 @@ export function screenWakeLock(api: ScreenLockApi | undefined, visible: () => bo
     activity,
     /** Reading aloud keeps the screen on however long it takes; the 10 minutes start when it ends. */
     busy(on: boolean) {
+      const ended = busy && !on;
       busy = on;
-      if (!on) activity();
+      if (ended) activity();
     },
     /** The app became visible or hidden. */
     visibilityChanged() { sync(); },

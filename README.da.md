@@ -41,6 +41,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Vælg en side i værkstedet, og brug ‹ / › under sidebilledet til at ændre rækkefølgen. „Indsæt side før“ og „Indsæt side efter“ tilføjer manglende fotos på den valgte plads, også flere fotos i den valgte rækkefølge. „Erstat foto“ bevarer sidens plads og link; det nye foto og den genkendte tekst erstatter først det gamle indhold, når du godkender beskæringen. Manuelle tekstrettelser på den erstattede side slettes.
 - E-bog: gem en bog som EPUB 3 (faste sider, kan åbnes i alle læse-apps) og hent den ind igen uden tab
 - Kan installeres som app og bruges offline
+- Skærmen forbliver tændt, mens en bog er åben, så den ikke bliver mørk midt på en side; efter 10 minutter uden berøring eller oplæsning må den slukke igen (i browsere med Screen Wake Lock API)
 
 ## Udvikling
 
