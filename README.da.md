@@ -38,6 +38,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Bogværkstedet samler sidebilleder og genkendelsesstatus med beskæring, tekstrettelser, tekstfelter, rækkefølge, titel, EPUB-eksport og sletning. Brede skærme viser listen ved siden af editoren, smalle før den. „Tilbage til læsning“ vender tilbage til den valgte side. Under læsning fokuserer „Rediger bog“ → „Ret denne side“ den aktuelle sides tekst med to tryk; bagefter vender man tilbage til samme side.
 - Et valgfrit forældresikring under „Flere indstillinger“ kræver, at „Rediger bog“ holdes nede i to sekunder, og viser fremskridtet. Det virker med berøring, mus, Enter og mellemrum og er slået fra som standard. Det forebygger utilsigtede tryk og er ikke en sikkerhedslås.
 - Beskæring: foreslår og retter en side i midten af fotoet op, også når én kant går ud af billedet. Hjørner og buede kanter kan justeres; manuelle rettelser har forrang for automatikken og gemmes til næste beskæring.
+- Vælg en side i værkstedet, og brug ‹ / › under sidebilledet til at ændre rækkefølgen. „Indsæt side før“ og „Indsæt side efter“ tilføjer manglende fotos på den valgte plads, også flere fotos i den valgte rækkefølge. „Erstat foto“ bevarer sidens plads og link; det nye foto og den genkendte tekst erstatter først det gamle indhold, når du godkender beskæringen. Manuelle tekstrettelser på den erstattede side slettes.
 - E-bog: gem en bog som EPUB 3 (faste sider, kan åbnes i alle læse-apps) og hent den ind igen uden tab
 - Kan installeres som app og bruges offline
 
