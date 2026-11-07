@@ -4,6 +4,8 @@ import { fixture, fresh } from "./helpers";
 test("Curved page: drag an edge point and flatten the page", async ({ page }) => {
   await fresh(page);
   await page.setInputFiles("#file", fixture("side-curved.jpg"));
+  // The message is empty until the dialog opens; its buttons respond once the search has finished.
+  await expect(page.locator("#crop")).toBeVisible();
   await expect(page.locator("#cropMsg")).not.toContainText("…", { timeout: 120_000 });
   const handles = page.locator("#cropStage .h");
   await expect(handles).toHaveCount(8);   // 4 corners + 4 edge midpoints

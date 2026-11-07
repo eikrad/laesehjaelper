@@ -145,8 +145,7 @@ test("A superseded recognition job cannot write old text over the replacement ph
   ` }));
   await page.reload();
   await page.setInputFiles("#file", fixture("side-da.jpg"));
-  await expect(page.locator("#cropMsg")).not.toContainText("…", { timeout: 120_000 });
-  await page.click("#cropWhole");
+  await acceptCrop(page);
   await page.waitForFunction(() => (window as unknown as { ocrCalls: number }).ocrCalls === 1, undefined, { timeout: 20_000 });
   const original = await storedPages(page);
   await choosePhoto(page, "#replacePhotoBtn", ["side-overskrift.jpg"]);
