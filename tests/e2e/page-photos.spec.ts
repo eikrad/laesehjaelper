@@ -302,3 +302,33 @@ test("A replaced photo stays replaced when the previous photo was still being sa
   // side-overskrift.jpg is 1000 px wide, side-da.jpg 1200 px.
   await expect.poll(() => page.locator("#origImg").evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1000);
 });
+
+test("Recognition left over from an earlier visit cannot overwrite a page after the book is reopened", async ({ page }) => {
+  await holdRecognition(page);
+  await fresh(page);
+  // side-da.jpg is 1200 px wide, side-overskrift.jpg 1000 px.
+  await page.setInputFiles("#file", ["side-da.jpg", "side-overskrift.jpg"].map(fixture));
+  await acceptCrop(page);
+  await acceptCrop(page);
+  // Page 1 is being recognised and page 2 waits when the book is left and opened again.
+  await page.waitForFunction(() => (window as unknown as Ocr).ocrCalls === 1);
+  await expect.poll(async () => (await storedPages(page)).length).toBe(2);
+  await page.click("#home");
+  await expect(page.locator("#start")).toBeVisible();
+  await page.locator(".book").click();
+  await openWorkshop(page);
+  await page.locator(".thumb > button").nth(1).click();
+  await choosePhoto(page, "#replacePhotoBtn", ["side-da.jpg"]);
+  // Let four recognition passes finish: both pages once, each in two passes.
+  for (let call = 1; call <= 4; call++) {
+    await page.waitForFunction(call => !!(window as unknown as Ocr).ocrReleases[call], call);
+    await page.evaluate(call => (window as unknown as Ocr).ocrReleases[call](), call);
+  }
+  await expect.poll(async () => (await storedPages(page)).map(p => p.status)).toEqual(["done", "done"]);
+  await page.waitForTimeout(500);
+  expect(await page.evaluate(() => (window as unknown as Ocr).ocrCalls)).toBe(4);
+  await page.reload();
+  await openWorkshop(page);
+  await page.locator(".thumb > button").nth(1).click();
+  await expect.poll(() => page.locator("#origImg").evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1200);
+});
