@@ -1251,10 +1251,12 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     }
     handles.forEach((h, i) => {
       h.onpointerdown = (e) => {
-        adjusted = true; // A late-loading detector must not replace the user's frame.
         h.setPointerCapture(e.pointerId);
         const r = stage.getBoundingClientRect();
         h.onpointermove = (ev: PointerEvent) => {
+          // A late-loading detector must not replace a frame the user dragged; a resting finger is no drag.
+          if (!adjusted && Math.hypot(ev.clientX - e.clientX, ev.clientY - e.clientY) < 4) return;
+          adjusted = true;
           pts[i] = [Math.min(W, Math.max(0, (ev.clientX - r.left - ox) / scale)), Math.min(H, Math.max(0, (ev.clientY - r.top - oy) / scale))];
           if (i >= 4) midMoved[i - 4] = true; else followMids();
           draw();
