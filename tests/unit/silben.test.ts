@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { silben } from "../../src/silben";
+import { LONG_WORD_SYLLABLES, marksSyllables, silben } from "../../src/silben";
 
 describe("silben", () => {
   it("Splits Danish words", () => {
@@ -21,5 +21,19 @@ describe("silben", () => {
   });
   it("Falls back to Danish for an unknown language", () => {
     expect(silben("sommerfugl", "xx")).toEqual(["som", "mer", "fugl"]);
+  });
+});
+
+describe("Syllable marks only on long words", () => {
+  it("Marks every word unless only long words are wanted", () => {
+    expect(marksSyllables(1, false)).toBe(true);
+    expect(marksSyllables(2, false)).toBe(true);
+  });
+  it("Marks only words with three or more syllables when only long words are wanted", () => {
+    expect(LONG_WORD_SYLLABLES).toBe(3);
+    expect(marksSyllables(1, true)).toBe(false);
+    expect(marksSyllables(2, true)).toBe(false);
+    expect(marksSyllables(3, true)).toBe(true);
+    expect(marksSyllables(5, true)).toBe(true);
   });
 });

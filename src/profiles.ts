@@ -7,7 +7,7 @@
  */
 
 /** Settings that belong to a profile. */
-export const PROFILE_KEYS = ["font", "size", "ls", "lh", "mode", "colors", "bg", "lines", "rate", "turn"] as const;
+export const PROFILE_KEYS = ["font", "size", "ls", "lh", "mode", "sylWords", "colors", "bg", "lines", "rate", "turn"] as const;
 export type ProfileKey = typeof PROFILE_KEYS[number];
 
 type Values = Record<string, string | number>;
