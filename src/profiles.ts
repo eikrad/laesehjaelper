@@ -43,10 +43,14 @@ export function syncActive(st: ProfileStore, S: object): ProfileStore {
   return { ...st, list: st.list.map(p => (p.id === st.active ? { ...p, settings: pick(S) } : p)) };
 }
 
-/** Create and activate a new profile, starting with the current settings. */
-export function addProfile(st: ProfileStore, name: string, S: object): ProfileStore {
+/**
+ * Create and activate a new profile, starting with the current settings except `start`, which the
+ * new child gets instead (syllable colours start off: each child should only get help that suits them).
+ */
+export function addProfile(st: ProfileStore, name: string, S: object, start: Values = {}): ProfileStore {
   const synced = syncActive(st, S);
   const id = newId();
+  Object.assign(S, start);
   return { active: id, list: [...synced.list, { id, name: name.trim() || "?", settings: pick(S) }] };
 }
 

@@ -234,6 +234,7 @@ test("Reader settings: create, switch and retain profiles", async ({ page }) => 
   await expect(page.locator("#profileSel option")).toHaveCount(1);
   await expect(page.locator("#profileDel")).toBeHidden();
   await size("26");
+  await page.click("#mode button[data-v=farbe]");   // Syllable colours start off; reader 1 turns them on.
   await page.fill("#profileName", "Bo");
   await page.click("#profileAdd");
   await expect(page.locator("#profileSel option")).toHaveCount(2);

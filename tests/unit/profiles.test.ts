@@ -29,6 +29,18 @@ describe("profiles", () => {
     expect(S.size).toBe(48); expect(S.mode).toBe("aus");
     expect(st.active).toBe(bo);
   });
+  it("Starts a new reader with given settings, such as syllable colours off, and copies the rest", () => {
+    let st = initProfiles(null, base, "Ida");
+    const S = { ...base, size: 44 };
+    st = addProfile(st, "Bo", S, { mode: "aus" });
+    expect(S.mode).toBe("aus");              // The new reader is active and shows its own setting.
+    const [ida, bo] = st.list;
+    expect(bo.settings.mode).toBe("aus");
+    expect(bo.settings.size).toBe(44);
+    expect(ida.settings.mode).toBe("farbe"); // The earlier reader keeps its colours.
+    st = switchProfile(st, ida.id, S);
+    expect(S.mode).toBe("farbe");
+  });
   it("Deletes profiles while keeping at least one", () => {
     let st = initProfiles(null, base, "Ida");
     const S = { ...base };
