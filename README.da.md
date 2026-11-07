@@ -37,7 +37,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Læsning og klargøring af bøger har hver sin visning. Læsning har sideskift, oplæsning og Aa-indstillinger; „Rediger bog“ åbner værkstedet. Tilbage fører gennem læsning til bogreolen, og sidelinks virker efter genindlæsning.
 - Bogværkstedet samler sidebilleder og genkendelsesstatus med beskæring, tekstrettelser, tekstfelter, rækkefølge, titel, EPUB-eksport og sletning. Brede skærme viser listen ved siden af editoren, smalle før den. „Tilbage til læsning“ vender tilbage til den valgte side. Under læsning fokuserer „Rediger bog“ → „Ret denne side“ den aktuelle sides tekst med to tryk; bagefter vender man tilbage til samme side.
 - Et valgfrit forældresikring under „Flere indstillinger“ kræver, at „Rediger bog“ holdes nede i to sekunder, og viser fremskridtet. Det virker med berøring, mus, Enter og mellemrum og er slået fra som standard. Det forebygger utilsigtede tryk og er ikke en sikkerhedslås.
-- Beskæring: siden findes automatisk på fotoet og rettes op; hjørner og kanter kan justeres, også på buede sider
+- Beskæring: foreslår og retter en side i midten af fotoet op, også når én kant går ud af billedet. Hjørner og buede kanter kan justeres; manuelle rettelser har forrang for automatikken og gemmes til næste beskæring.
 - E-bog: gem en bog som EPUB 3 (faste sider, kan åbnes i alle læse-apps) og hent den ind igen uden tab
 - Kan installeres som app og bruges offline
 
@@ -141,6 +141,7 @@ Kilder:
 - Tekst oven på illustrationer eller i dekorative skrifttyper bliver genkendt dårligere.
 - Den gamle tekst bliver malet over med baggrundsfarven omkring den. Står teksten på en illustration, bliver billedet i stedet udfyldt under de gamle bogstaver (inpainting), og den nye tekst får en blød, lys glorie. Fine, regelmæssige mønstre kan se lidt slørede ud, hvor teksten stod.
 - Den nye skrift kan kun blive så stor, som der er plads til på siden. Til rigtig stor skrift er visningen „Kun teksten“ bedre.
+- Sidegenkendelsen er forsigtig: fotografér én side i midten af billedet med mindst tre synlige kanter. Skygger, illustrationer og hele opslag kan stadig forvirre den. Kontrollér rammen, før du godkender.
 - Buede sider skal indtil videre rettes ud i hånden (se [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
 
 ## Roadmap

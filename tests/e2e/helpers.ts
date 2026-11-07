@@ -22,6 +22,25 @@ export async function seedBooks(page: Page, books: { id: string; title: string; 
   await page.reload();
 }
 
+/** Stored pages of a book (the first one by default) in book order, as saved on the device. */
+export async function storedPages(page: Page, bookId?: string) {
+  return page.evaluate(async bookId => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const r = indexedDB.open("laesehjaelper", 1);
+      r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
+    });
+    const tx = db.transaction(["books", "pages"]);
+    const books = tx.objectStore("books").getAll(), pages = tx.objectStore("pages").getAll();
+    await new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); });
+    db.close();
+    const book = bookId ? books.result.find(b => b.id === bookId) : books.result[0];
+    return ((book?.pageIds || []) as string[]).map(id => {
+      const p = pages.result.find(p => p.id === id);
+      return { id, text: p?.text as string, status: p?.status as string, corners: !!p?.corners, photo: !!p?.photoBlob };
+    });
+  }, bookId);
+}
+
 /** Fresh state: no settings or books. */
 export async function fresh(page: Page) {
   await page.goto("/");
