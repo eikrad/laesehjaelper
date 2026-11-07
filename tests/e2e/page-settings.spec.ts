@@ -7,7 +7,7 @@ import { fresh } from "./helpers";
 
 const W = 1000, H = 1400;
 const box = (x0: number, y0: number, x1: number, y1: number) => ({ x0, y0, x1, y1 });
-const para = (text: string, b: ReturnType<typeof box>, lh: number): Para => ({ raw: text, text, bbox: b, lines: [b], words: [b], lh });
+const para = (text: string, b: ReturnType<typeof box>, lh: number, lines = 1): Para => ({ raw: text, text, bbox: b, lines: Array(lines).fill(b), words: [b], lh });
 
 /** Open a self-made recognised page (white picture, a heading and two paragraphs) in the book-page view. */
 async function openBookPage(page: Page, paras: Para[]) {
@@ -103,4 +103,18 @@ test("On a book page with little room, larger spacing keeps the text size and ad
   await expect.poll(async () => (await style(page, 0)).letters).toBeGreaterThan(before.letters);
   expect(Math.round((await style(page, 0)).size)).toBe(32);
   await expect(page.locator("#sizeHint")).toBeVisible();
+});
+
+test("Body text has one size on the book page, also when a long paragraph is measured larger", async ({ page }) => {
+  // As on a tilted photo: the third paragraph's long lines measure taller than the rest.
+  await openBookPage(page, [
+    para("Bamse", box(80, 40, 400, 110), 60),
+    para("Der var engang en lille bjørn, som hed Bamse.", box(80, 160, 700, 300), 34, 2),
+    para("Den boede ude i skoven sammen med sin far og mor.", box(80, 330, 700, 470), 34, 2),
+    para("Bjørnefar og bjørnemor og Bamse boede i en hule, og det var en lun og god hule, men bjørnefar havde også selv lavet den.", box(80, 500, 980, 1000), 46, 4),
+  ]);
+  await expect.poll(async () => Math.round((await style(page, 1)).size)).toBeGreaterThan(0);
+  const sizes = await Promise.all([1, 2, 3].map(async i => Math.round((await style(page, i)).size)));
+  expect(new Set(sizes).size).toBe(1);
+  expect((await style(page, 0)).size).toBeGreaterThan(sizes[0]);
 });

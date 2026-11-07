@@ -692,6 +692,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       const x0 = Math.max(0, g.x0 - pad), y0 = Math.max(0, g.y0 - pad);
       const x1 = Math.min(W, g.x1 + pad), y1 = Math.min(H, g.y1 + pad);
       box.dataset.lh = String(pa.lh / H);
+      box.dataset.lines = String(pa.lines?.length || 1);
       Object.assign(box.style, { left: x0 / W * 100 + "%", top: y0 / H * 100 + "%", width: (x1 - x0) / W * 100 + "%", height: (y1 - y0) / H * 100 + "%" });
       // Text on a picture: a soft halo where the picture was inpainted, otherwise its own panel.
       if (pa.inpainted && pa.rgb) box.style.textShadow = halo(pa.rgb);
@@ -808,7 +809,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       sizes.set(box, lo);
     });
     // 2. Equal text equal, headings larger, and the body text no larger than the wished size.
-    const fitted = harmonizeSizes(boxes.map(b => ({ lh: parseFloat(b.dataset.lh || "0"), fit: sizes.get(b) || 0 })));
+    const fitted = harmonizeSizes(boxes.map(b => ({ lh: parseFloat(b.dataset.lh || "0"), fit: sizes.get(b) || 0, lines: Number(b.dataset.lines) || 1 })));
     const scaled = target ? scaleToTarget(fitted, boxes.map(b => (b.textContent || "").length), target) : { sizes: fitted, limited: false };
     // 3. The reader's spacing, as far as it fits at that size: a full box keeps its text size.
     let reduced = false;
