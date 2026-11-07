@@ -31,7 +31,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Ret den genkendte tekst; sæt selv stavelsesgrænser med `·` (f.eks. `hun·den`)
 - Flyt tekstfelter på bogens side med fingeren, eller ændr deres størrelse (under „Tjek og ret teksten“), f.eks. hvis den nye tekst går ind i et billede
 - Overskrifter forbliver større end brødteksten, og fed skrift bliver fundet og vist med fed (kan rettes med `*ord*`)
-- Læsetilstand: kun teksten, i fuld skærm
+- Læsetilstand: kun teksten. På tablets og computere fylder den hele skærmen uden browserens bjælker (Fullscreen API), og forlader man fuld skærm med systemets bevægelse, slutter læsetilstanden også. På iPhone og i den installerede app er læsetilstanden som før
 - Vis den oprindelige tekst med ét tryk for at finde fejl i genkendelsen
 - Bogreolen først: gemte bøger åbnes via store forsider og viser, hvor læsningen stoppede. „Ny bog“ er en sekundær knap; uden bøger er fotografering den primære handling. Bøger, rækkefølge og læsestatus bliver på enheden.
 - Læsning og klargøring af bøger har hver sin visning. Læsning har sideskift, oplæsning og Aa-indstillinger; „Rediger bog“ åbner værkstedet. Tilbage fører gennem læsning til bogreolen, og sidelinks virker efter genindlæsning.
