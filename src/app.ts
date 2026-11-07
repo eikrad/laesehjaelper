@@ -13,6 +13,7 @@ import { swipeDirection } from "./swipe";
 import { resumePage } from "./bookshelf";
 import { insertIndex, selectedIndex, type Placement } from "./pagelist";
 import { holdProgress } from "./hold";
+import { screenWakeLock } from "./wakelock";
 import { locationHash, parseLocation, type BookLocation } from "./navigation";
 import { cleanOcr, parasFromOcr } from "./layout";
 import { detectPage, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
@@ -329,6 +330,12 @@ const Lib = { detectPage, warpPage, orderCorners };
     const t = $("toast"); t.textContent = msg; t.classList.add("show");
     clearTimeout(toastTimer); toastTimer = window.setTimeout(() => t.classList.remove("show"), ms);
   }
+
+  // ---------- Screen ----------
+  // Keep the screen on while a book is open, so a slow reader's page does not go dark (src/wakelock.ts).
+  const wake = screenWakeLock("wakeLock" in navigator ? navigator.wakeLock : undefined, () => document.visibilityState === "visible");
+  for (const type of ["pointerdown", "keydown", "wheel"]) document.addEventListener(type, () => wake.activity(), { capture: true, passive: true });
+  document.addEventListener("visibilitychange", () => wake.visibilityChanged());
 
   // ---------- Pages ----------
   const pages: Page[] = [];
@@ -1493,7 +1500,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   }
   function clearHighlight() { document.querySelectorAll(".w.speaking, .s.speaking").forEach(x => x.classList.remove("speaking")); }
   let readId = 0;   // Ignore onend callbacks from canceled read-aloud sessions.
-  function stopSpeech() { readId++; if (synth) synth.cancel(); clearHighlight(); reading = false; setReadBtn(); $("yourTurn").hidden = true; }
+  function stopSpeech() { readId++; if (synth) synth.cancel(); clearHighlight(); setReading(false); $("yourTurn").hidden = true; }
 
   $("reader").onclick = e => {
     if (moving) return;   // Do not read aloud while moving text boxes.
@@ -1517,12 +1524,13 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   }
 
   let reading = false;
+  function setReading(on: boolean) { reading = on; setReadBtn(); wake.busy(on); }
   function readPage() {
     const sp = speech; if (!sp) return;
     stopSpeech();
     const my = readId;
     const spans = [...$("reader").querySelectorAll(".w")];
-    reading = true; setReadBtn();
+    setReading(true);
     speak(sp.full, (ev: SpeechSynthesisEvent) => {
       if (ev.name && ev.name !== "word") return;
       const hit = sp.wordPos.find(p => ev.charIndex >= p.start && ev.charIndex < p.end) || sp.wordPos.find(p => p.start >= ev.charIndex);
@@ -1531,7 +1539,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     }, () => {
       if (my !== readId) return;
       const finished = reading;
-      reading = false; clearHighlight(); setReadBtn();
+      setReading(false); clearHighlight();
       $("yourTurn").hidden = !showYourTurn(finished ? "end" : "stop", S.turn);
     });
   }
@@ -1585,6 +1593,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     writeLocation(currentLocation(), push);
     $("delBookBtn").classList.remove("armed"); $("delBookBtn").textContent = t("deleteBook");
     showCheck(mode === "workshop"); window.scrollTo(0, 0);
+    wake.keepOn(true);
   }
   async function restoreLocation(fromAppHistory = false) {
     // A crop has not been accepted or saved yet. Keep its history entry until it finishes.
@@ -1612,6 +1621,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     // Return through the app's own history entries, also after deleting the book, so Back
     // from the shelf never leads into a book that is no longer there.
     if (!fromHistory && !$("app").hidden) { history.go(view === "workshop" ? -2 : -1); return; }
+    wake.keepOn(false);
     stopSpeech(); showEditEntry(false); showCheck(false);
     document.body.classList.remove("focus", "workshop"); setFocusBtn();
     $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; showSettings(false);
