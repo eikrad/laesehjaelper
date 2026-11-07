@@ -1,7 +1,7 @@
-import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
 import { eraseText, halo, inkMask, type Pixels } from "../../src/erase";
 import type { Box, Para } from "../../src/types";
+import { loadCv } from "./opencv";
 
 type RGB = [number, number, number];
 const W = 320, H = 140;
@@ -43,12 +43,6 @@ const padded: Box = { x0: WORD.x0 - 12, y0: WORD.y0 - 12, x1: WORD.x1 + 12, y1: 
 
 // A stand-in for OpenCV that fails on any use: plain paper must not need it.
 const noCv = new Proxy({}, { get: () => { throw new Error("OpenCV used"); } });
-const loadCv = async () => {
-  let cv = createRequire(import.meta.url)("@techstark/opencv-js");
-  if (cv instanceof Promise) cv = await cv;
-  else if (!cv.Mat) await new Promise<void>(r => { cv.onRuntimeInitialized = r; });
-  return cv;
-};
 
 describe("Ink mask for text on an illustration", () => {
   const masked = (m: Uint8Array, x: number, y: number) => m[y * W + x] > 0;

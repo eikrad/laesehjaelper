@@ -1,9 +1,9 @@
-import { createRequire } from "node:module";
 import { describe, expect, it } from "vitest";
 import { detectPage, encloseContour } from "../../src/pagedetect";
 import type { Corners, Point } from "../../src/types";
+import { loadCv } from "./opencv";
 
-const cv = await createRequire(import.meta.url)("@techstark/opencv-js");
+const cv = await loadCv();
 
 /** Self-made paper on a similarly coloured table; its right edge leaves the photo. */
 function bookPhoto(curved: boolean, shadow = false) {
