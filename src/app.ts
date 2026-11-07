@@ -14,6 +14,7 @@ import { resumePage } from "./bookshelf";
 import { insertIndex, selectedIndex, type Placement } from "./pagelist";
 import { holdProgress } from "./hold";
 import { screenWakeLock } from "./wakelock";
+import { readingFullscreen } from "./fullscreen";
 import { locationHash, parseLocation, type BookLocation } from "./navigation";
 import { cleanOcr, parasFromOcr } from "./layout";
 import { detectPage, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
@@ -329,9 +330,25 @@ const Lib = { detectPage, warpPage, orderCorners };
   document.addEventListener("click", e => { if (swallowClick) { swallowClick = false; e.preventDefault(); e.stopPropagation(); } }, true);
   for (const [i, id] of ["c0", "c1"].entries())
     $(id).oninput = e => { const c = S.colors.split(","); c[i] = val(e); S.colors = c.join(","); applySettings(); };
-  $<HTMLButtonElement>("focusBtn").onclick = () => {
-    if (document.body.classList.toggle("focus")) showSettings(false);
+  // Reading mode fills the whole screen where the browser can (src/fullscreen.ts).
+  const installedApp = () => matchMedia("(display-mode: standalone)").matches || matchMedia("(display-mode: fullscreen)").matches
+    || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  const fullscreen = readingFullscreen({
+    enabled: () => !!document.fullscreenEnabled,
+    installed: installedApp,
+    element: () => document.fullscreenElement,
+    request: () => document.documentElement.requestFullscreen(),
+    exit: () => document.exitFullscreen(),
+  }, () => setReadingMode(false));
+  document.addEventListener("fullscreenchange", () => fullscreen.changed());
+  /** Reading mode: only the page and the reading controls. */
+  function setReadingMode(on: boolean) {
+    document.body.classList.toggle("focus", on);
+    if (on) { showSettings(false); fullscreen.enter(); } else fullscreen.leave();
     setFocusBtn();
+  }
+  $<HTMLButtonElement>("focusBtn").onclick = () => {
+    setReadingMode(!document.body.classList.contains("focus"));
     window.scrollTo(0, 0);
   };
 
@@ -1022,15 +1039,16 @@ const Lib = { detectPage, warpPage, orderCorners };
 
   const queue: Page[] = [];
   // Page photo actions in the workshop: insert photos before or after the selected page, or replace its photo.
-  // The chooser may stay open while the user moves on, so remember the page by its ID rather than the object.
+  // The chooser may stay open while the user moves on, so remember the page by its ID rather than the object,
+  // and the navigation step: after any navigation, even one still loading another book, the photo is ignored.
   type PhotoAction = Exclude<Placement, "end"> | "replace";
-  let photoRequest: { bookId: string; pageId: string; action: PhotoAction } | null = null;
+  let photoRequest: { bookId: string; pageId: string; action: PhotoAction; navigation: number } | null = null;
   const pagePhotoFile = $in("pagePhotoFile");
   for (const [id, action] of [["insertBeforeBtn", "before"], ["insertAfterBtn", "after"], ["replacePhotoBtn", "replace"]] as const) {
     $(id).onclick = () => {
       const pageId = pages[cur]?.id;
       if (!book || book.demo || !pageId) return;
-      photoRequest = { bookId: book.id, pageId, action };
+      photoRequest = { bookId: book.id, pageId, action, navigation: navigationId };
       pagePhotoFile.value = "";
       pagePhotoFile.multiple = action !== "replace";
       pagePhotoFile.click();
@@ -1040,7 +1058,8 @@ const Lib = { detectPage, warpPage, orderCorners };
   pagePhotoFile.onchange = () => {
     const request = photoRequest; photoRequest = null;
     const files = [...(pagePhotoFile.files || [])]; pagePhotoFile.value = "";
-    const target = request && book?.id === request.bookId ? pages.find(pg => pg.id === request.pageId) : undefined;
+    const current = request && request.navigation === navigationId && book?.id === request.bookId;
+    const target = current ? pages.find(pg => pg.id === request.pageId) : undefined;
     if (!request || !target) return;
     if (request.action !== "replace") addFiles(files, target, request.action);
     else if (files[0]) replacePhoto(target, files[0]);
@@ -1630,7 +1649,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     if (push && mode === "workshop" && !$("start").hidden) writeLocation(currentLocation("read"), true);
     view = mode;
     showEditEntry(false); showCheck(false); showSettings(false);
-    document.body.classList.remove("focus"); setFocusBtn();
+    setReadingMode(false);
     document.body.classList.toggle("workshop", view === "workshop");
     comparing = false; setCompareBtn();
     $("start").hidden = true; $("app").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0);
@@ -1667,7 +1686,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     if (!fromHistory && !$("app").hidden) { history.go(view === "workshop" ? -2 : -1); return; }
     wake.keepOn(false);
     stopSpeech(); showEditEntry(false); showCheck(false);
-    document.body.classList.remove("focus", "workshop"); setFocusBtn();
+    document.body.classList.remove("workshop"); setReadingMode(false);
     $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; showSettings(false);
     writeLocation({ view: "shelf" }, false);
     saveBook(); renderShelf(); window.scrollTo(0, 0);

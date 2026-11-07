@@ -32,7 +32,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Textfelder auf der Buchseite mit dem Finger verschieben oder vergrößern (unter „Text prüfen und korrigieren“), z. B. wenn der neue Text in ein Bild ragt
 - Überschriften bleiben größer als der Fließtext, fett Gedrucktes wird erkannt und fett gesetzt (korrigierbar mit `*Wort*`)
 - Mit einem Tipp den Originaltext einblenden, um Erkennungsfehler zu finden
-- Lesemodus: nur der Text, bildschirmfüllend
+- Lesemodus: nur der Text. Auf Tablets und Laptops füllt er den ganzen Bildschirm ohne Browserleisten (Fullscreen API), und wer den Vollbildmodus mit der Systemgeste verlässt, beendet auch den Lesemodus. Auf dem iPhone und in der installierten App bleibt der Lesemodus wie bisher
 - Bücherregal zuerst: Gespeicherte Bücher lassen sich über große Cover öffnen und zeigen die zuletzt gelesene Seite. „Neues Buch“ bleibt eine Nebenaktion; ohne Bücher steht das Fotografieren im Vordergrund. Bücher, Seitenreihenfolge und Lesestand bleiben auf dem Gerät.
 - Lesen und Bücher vorbereiten haben getrennte Ansichten. Beim Lesen gibt es Blättern, Vorlesen und Aa-Einstellungen; „Buch bearbeiten“ öffnet die Werkstatt. Zurück führt über das Lesen zum Regal, und Seitenlinks bleiben nach dem Neuladen erhalten.
 - Die Buchwerkstatt vereint Seitenvorschauen und Erkennungsstatus mit Zuschnitt, Textkorrektur, Textfeldern, Seitenreihenfolge, Titel, EPUB-Export und Löschen. Breite Bildschirme zeigen die Liste neben dem Editor, schmale davor. „Zurück zum Lesen“ führt zur ausgewählten Seite zurück. Beim Lesen fokussiert „Buch bearbeiten“ → „Diese Seite korrigieren“ in zwei Schritten den Text der aktuellen Seite; danach geht es zur selben Seite zurück.
