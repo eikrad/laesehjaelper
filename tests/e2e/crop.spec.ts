@@ -1,14 +1,21 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { bookTool, fixture, fresh, storedPages, waitForText } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
+/** Hold OpenCV back, as on a slow tablet loading it for the first photo; returns a function that lets it load. */
+async function holdOpenCv(page: Page) {
+  let release!: () => void;
+  const ready = new Promise<void>(resolve => { release = resolve; });
+  await page.route("**/opencv.js", async route => { await ready; await route.continue(); });
+  return release;
+}
+
 for (const [name, index] of [["corner", 0], ["edge midpoint", 6]] as const) {
   test(`Loading page detection preserves a manually adjusted ${name}`, async ({ page }) => {
     await fresh(page);
-    let release!: () => void;
-    const ready = new Promise<void>(resolve => { release = resolve; });
-    await page.route("**/opencv.js", async route => { await ready; await route.continue(); });
+    const release = await holdOpenCv(page);
     try {
       await page.setInputFiles("#file", fixture("foto-bord.jpg"));
       await expect(page.locator("#crop")).toBeVisible();
@@ -32,9 +39,7 @@ for (const [name, index] of [["corner", 0], ["edge midpoint", 6]] as const) {
 
 test("A tap on a handle while page detection loads still lets detection place the frame", async ({ page }) => {
   await fresh(page);
-  let release!: () => void;
-  const ready = new Promise<void>(resolve => { release = resolve; });
-  await page.route("**/opencv.js", async route => { await ready; await route.continue(); });
+  const release = await holdOpenCv(page);
   try {
     await page.setInputFiles("#file", fixture("foto-bord.jpg"));
     await expect(page.locator("#cropMsg")).toContainText("…");
@@ -79,4 +84,43 @@ test("A corrected automatic frame and its curved edge survive cropping and reloa
   await page.click("#cropOk");
   await waitForText(page);
   await expect(page.locator("#reader")).toContainText("Pindsvinet");
+});
+
+for (const [button, name] of [["#cropWhole", "Whole photo"], ["#cropOk", "Use on the untouched frame"]] as const) {
+  test(`${name} works at once while the page search is still loading`, async ({ page }) => {
+    await fresh(page);
+    const release = await holdOpenCv(page);
+    try {
+      await page.setInputFiles("#file", fixture("side-da.jpg"));
+      await expect(page.locator("#crop")).toBeVisible();
+      await expect(page.locator("#cropMsg")).toContainText("…");
+      await page.click(button);
+      // The whole photo needs no page search.
+      await expect(page.locator("#crop")).toBeHidden({ timeout: 2000 });
+      await expect.poll(async () => (await storedPages(page)).map(p => `photo ${p.photo}, frame ${p.corners}`)).toEqual(["photo true, frame false"]);
+    } finally { release(); }
+  });
+}
+
+test("Use on an adjusted frame while the page search loads straightens the page once OpenCV is ready", async ({ page }) => {
+  await fresh(page);
+  const release = await holdOpenCv(page);
+  try {
+    await page.setInputFiles("#file", fixture("foto-bord.jpg"));
+    await expect(page.locator("#crop")).toBeVisible();
+    await expect(page.locator("#cropMsg")).toContainText("…");
+    const box = (await page.locator("#cropStage .h").first().boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 30, box.y + box.height / 2 + 35, { steps: 4 });
+    await page.mouse.up();
+    await page.click("#cropOk");
+    // The tap is taken: the dialog says what it waits for, and cannot be answered twice.
+    await expect(page.locator("#cropMsg")).toContainText("Retter siden op");
+    await expect(page.locator("#cropOk")).toBeDisabled();
+    await expect(page.locator("#cropWhole")).toBeDisabled();
+    release();
+    await expect(page.locator("#crop")).toBeHidden({ timeout: 120_000 });
+    await expect.poll(async () => (await storedPages(page)).map(p => `photo ${p.photo}, frame ${p.corners}`)).toEqual(["photo true, frame true"]);
+  } finally { release(); }
 });
