@@ -1363,11 +1363,26 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     const ro = new ResizeObserver(layout); ro.observe(stage);
     layout();
 
-    // The buttons work at once: the whole photo needs no page search, and "Use" waits for OpenCV
-    // only to straighten the page. A search that finishes after the user decided changes nothing.
+    // The buttons work at once. The whole photo needs no page search; "Use" on the untouched frame
+    // of a new photo means the suggestion and waits for the search; "Use" on an adjusted frame waits
+    // for OpenCV only to straighten the page. A search that finishes after the user decided changes nothing.
     const cvReady: Promise<CV | null> = getCv().catch((e) => { console.error(e); return null; });
     const okBtn = $<HTMLButtonElement>("cropOk"), wholeBtn = $<HTMLButtonElement>("cropWhole");
-    let decided = false;
+    let decided = false, searched = false;
+    // Look for the page alongside: the user may adjust or accept the frame before the search is done.
+    const search = cvReady.then((cv) => {
+      if (decided) return;
+      try {
+        if (cv && !start && !adjusted) {
+          const found = Lib.detectPage(cv, photo);
+          if (found) { pts = [...found, ...frameFromCorners(found).mids]; draw(); }
+          msg(found ? "cropFound" : "cropNone");
+        } else msg("cropNone");
+      } catch (e) {
+        console.error(e);
+        msg("cropNone");
+      }
+    }).finally(() => { searched = true; });
     const result = new Promise<CropResult>((resolve) => {
       const finish = async (frame: Frame | null) => {
         if (decided) return;
@@ -1388,23 +1403,14 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
         if (isFull || !cv) return resolve({ canvas: photo, corners: null });
         resolve({ canvas: Lib.warpPage(cv, photo, frame!), corners: frame });
       };
-      okBtn.onclick = () => finish({ corners: pts.slice(0, 4) as Corners, mids: pts.slice(4, 8) as Corners });
+      okBtn.onclick = async () => {
+        if (!start && !adjusted && !searched) {
+          okBtn.disabled = wholeBtn.disabled = true;
+          await search;
+        }
+        finish({ corners: pts.slice(0, 4) as Corners, mids: pts.slice(4, 8) as Corners });
+      };
       wholeBtn.onclick = () => finish(null);
-    });
-
-    // Look for the page alongside: the user may adjust or accept the frame before the search is done.
-    cvReady.then((cv) => {
-      if (decided) return;
-      try {
-        if (cv && !start && !adjusted) {
-          const found = Lib.detectPage(cv, photo);
-          if (found) { pts = [...found, ...frameFromCorners(found).mids]; draw(); }
-          msg(found ? "cropFound" : "cropNone");
-        } else msg("cropNone");
-      } catch (e) {
-        console.error(e);
-        msg("cropNone");
-      }
     });
     return result;
   }
