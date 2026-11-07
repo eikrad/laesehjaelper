@@ -141,7 +141,7 @@ Kilder:
 - Tekst oven på illustrationer eller i dekorative skrifttyper bliver genkendt dårligere.
 - Den gamle tekst bliver malet over med baggrundsfarven omkring den. Står teksten på en illustration, bliver billedet i stedet udfyldt under de gamle bogstaver (inpainting), og den nye tekst får en blød, lys glorie. Fine, regelmæssige mønstre kan se lidt slørede ud, hvor teksten stod.
 - Den nye skrift kan kun blive så stor, som der er plads til på siden. Til rigtig stor skrift er visningen „Kun teksten“ bedre.
-- Sidegenkendelsen er forsigtig: fotografér én side i midten af billedet med mindst tre synlige kanter. Skygger, illustrationer og hele opslag kan stadig forvirre den. Kontrollér rammen, før du godkender; buede kanter kan efterlade lidt baggrund i beskæringen.
+- Sidegenkendelsen er forsigtig: fotografér én side i midten af billedet med mindst tre synlige kanter. Skygger, illustrationer og hele opslag kan stadig forvirre den. Kontrollér rammen, før du godkender.
 - Buede sider skal indtil videre rettes ud i hånden (se [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
 
 ## Roadmap

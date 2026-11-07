@@ -4,7 +4,8 @@
 // edges, and choose the largest plausible quadrilateral containing the image center. Check multiple
 // channels (grayscale, saturation, brightness) and sensitivities. If no quadrilateral has
 // approximately right angles, return null so the user can adjust the corners manually.
-// Close contours at the photo boundary and enclose rounded edges without clipping them.
+// Look for a page with its own outline first. Only if there is none, let the photo border close
+// the outline of a page that leaves the photo: otherwise a missed fold would let the facing page in.
 // Prefer no suggestion to an incorrect one.
 
 import type { Corners, Frame, Point } from "./types";
@@ -55,28 +56,6 @@ function plausiblePage(q: Corners, width: number, height: number): boolean {
   return q.filter((a, i) => atBorder(a, q[(i + 1) % 4])).length <= 1;
 }
 
-/** Enclose the contour rather than cutting across a rounded page edge. */
-export function encloseContour(q: Corners, contour: Point[], width: number, height: number): Corners {
-  // Outward normals of clockwise edges in image coordinates. Move each
-  // supporting line just far enough to contain every contour point.
-  const lines = q.map((a, i) => {
-    const b = q[(i + 1) % 4];
-    const nx = b[1] - a[1], ny = a[0] - b[0];
-    let c = nx * a[0] + ny * a[1];
-    for (const p of contour) c = Math.max(c, nx * p[0] + ny * p[1]);
-    return { nx, ny, c };
-  });
-  return lines.map((b, i): Point => {
-    const a = lines[(i + 3) % 4];
-    const det = a.nx * b.ny - b.nx * a.ny;
-    if (Math.abs(det) < 1e-6) return q[i];
-    return [
-      Math.max(0, Math.min(width - 1, (a.c * b.ny - b.c * a.ny) / det)),
-      Math.max(0, Math.min(height - 1, (a.nx * b.c - b.nx * a.c) / det)),
-    ];
-  }) as Corners;
-}
-
 // canvas: the photo. Returns four corners in image coordinates, or null.
 export function detectPage(cv: CV, canvas: HTMLCanvasElement): Corners | null {
   const k = SIZE / Math.max(canvas.width, canvas.height);
@@ -96,46 +75,45 @@ export function detectPage(cv: CV, canvas: HTMLCanvasElement): Corners | null {
     keep.push(channels[1], channels[2]);
     const kernel = cv.Mat.ones(9, 9, cv.CV_8U), small = cv.Mat.ones(3, 3, cv.CV_8U);
     keep.push(kernel, small);
-    let best: { score: number; q: Corners; contour: Point[] } | null = null;
-    for (const c of channels) {
+    const blurred = channels.map((c) => {
       const b = new cv.Mat(); keep.push(b);
       cv.GaussianBlur(c, b, new cv.Size(5, 5), 0);
       cv.morphologyEx(b, b, cv.MORPH_CLOSE, kernel); // remove dark text
-      for (const [lo, hi] of [[20, 60], [40, 120], [75, 200]]) {
-        const e = new cv.Mat(), cs = new cv.MatVector(), hier = new cv.Mat();
-        cv.Canny(b, e, lo, hi);
-        cv.dilate(e, e, small);
-        // A page may leave the photo (especially at the book fold). Close edge
-        // paths along the photo boundary so the visible page still forms a contour.
-        for (let x = 0; x < w; x++) { e.data[x] = 255; e.data[(h - 1) * w + x] = 255; }
-        for (let y = 0; y < h; y++) { e.data[y * w] = 255; e.data[y * w + w - 1] = 255; }
-        cv.findContours(e, cs, hier, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
-        for (let i = 0; i < cs.size(); i++) {
-          const cnt = cs.get(i);
-          const peri = cv.arcLength(cnt, true);
-          if (peri >= 0.5 * (w + h)) {
-            const ap = new cv.Mat();
-            cv.approxPolyDP(cnt, ap, 0.02 * peri, true);
-            if (ap.rows === 4 && cv.isContourConvex(ap)) {
-              const area = cv.contourArea(ap);
-              const q = orderCorners([0, 1, 2, 3].map((j): Point => [ap.data32S[j * 2], ap.data32S[j * 2 + 1]]));
-              if (area > 0.15 * w * h && area < 0.98 * w * h && anglesOk(q) && plausiblePage(q, w, h)) {
-                const score = area;
-                if (!best || score > best.score) {
-                  const contour: Point[] = [];
-                  for (let j = 0; j < cnt.rows; j++) contour.push([cnt.data32S[2 * j], cnt.data32S[2 * j + 1]]);
-                  best = { score, q, contour };
-                }
+      return b;
+    });
+    // The largest plausible quadrilateral over all channels and sensitivities.
+    const search = (closeBorder: boolean): Corners | null => {
+      let best: { area: number; q: Corners } | null = null;
+      for (const b of blurred) {
+        for (const [lo, hi] of [[20, 60], [40, 120], [75, 200]]) {
+          const e = new cv.Mat(), cs = new cv.MatVector(), hier = new cv.Mat();
+          cv.Canny(b, e, lo, hi);
+          cv.dilate(e, e, small);
+          // A page may leave the photo (especially at the book fold): the photo border then closes its outline.
+          if (closeBorder) cv.rectangle(e, new cv.Point(0, 0), new cv.Point(w - 1, h - 1), new cv.Scalar(255), 1);
+          cv.findContours(e, cs, hier, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+          for (let i = 0; i < cs.size(); i++) {
+            const cnt = cs.get(i);
+            const peri = cv.arcLength(cnt, true);
+            if (peri >= 0.5 * (w + h)) {
+              const ap = new cv.Mat();
+              cv.approxPolyDP(cnt, ap, 0.02 * peri, true);
+              if (ap.rows === 4 && cv.isContourConvex(ap)) {
+                const area = cv.contourArea(ap);
+                const q = orderCorners([0, 1, 2, 3].map((j): Point => [ap.data32S[j * 2], ap.data32S[j * 2 + 1]]));
+                if (area > 0.15 * w * h && area < 0.98 * w * h && anglesOk(q) && plausiblePage(q, w, h) && (!best || area > best.area)) best = { area, q };
               }
+              ap.delete();
             }
-            ap.delete();
+            cnt.delete();
           }
-          cnt.delete();
+          e.delete(); cs.delete(); hier.delete();
         }
-        e.delete(); cs.delete(); hier.delete();
       }
-    }
-    return best ? encloseContour(best.q, best.contour, w, h).map(([x, y]): Point => [x / k, y / k]) as Corners : null;
+      return best && best.q;
+    };
+    const found = search(false) ?? search(true);
+    return found && (found.map(([x, y]): Point => [x / k, y / k]) as Corners);
   } finally {
     keep.forEach((m) => m.delete());
   }
