@@ -362,10 +362,14 @@ const Lib = { detectPage, warpPage, orderCorners };
     if (src?.startsWith("blob:")) URL.revokeObjectURL(src);
   }
   function releasePageImages(pg: Page) { releaseImage(pg.img); releaseImage(pg.clean); }
+  /** Pages waiting for or in recognition. They outlive leaving their book, and reopening it reuses them. */
+  function recognitionPages(): Page[] { return active ? [active, ...queue] : [...queue]; }
   function newBook(demo = false) {
     navigationId++;
     showEditEntry(false); showCheck(false);
-    pages.forEach(releasePageImages);
+    // Pages still to be recognised keep their images; runQueue() lets them go when they are done.
+    const recognising = new Set(recognitionPages());
+    pages.forEach(pg => { if (!recognising.has(pg)) releasePageImages(pg); });
     book = { id: demo ? "sample" : uid(), title: "", pageIds: [], lastPage: 0, cover: null, created: Date.now(), demo };
     pages.length = 0; cur = 0;
   }
@@ -432,10 +436,13 @@ const Lib = { detectPage, warpPage, orderCorners };
     const byId: Record<string, PageRecord> = Object.fromEntries(recs.map(r => [r.id, r]));
     const ordered = (b.pageIds || []).map(id => byId[id]).filter(Boolean);
     recs.forEach(r => { if (!ordered.includes(r)) ordered.push(r); });
-    pages.push(...ordered.map(pageFromRecord));
+    // A page still waiting for or in recognition from an earlier visit stays the same object:
+    // a second copy of it could save its older state over the page shown now.
+    const recognising = new Map(recognitionPages().filter(pg => pg.id).map(pg => [pg.id, pg]));
+    pages.push(...ordered.map(r => recognising.get(r.id) ?? pageFromRecord(r)));
     cur = resumePage(b.lastPage, pages.length);
     if (target?.pageId) { const i = pages.findIndex(pg => pg.id === target.pageId); if (i >= 0) cur = i; }
-    pages.filter(p => p.status === "wait").forEach(p => queue.push(p));
+    pages.filter(p => p.status === "wait" && !queue.includes(p)).forEach(p => queue.push(p));
     showApp(target?.view ?? "read", !fromHistory); render(); runQueue();
   }
 
@@ -1424,54 +1431,60 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
   // A recognition job owns its page while the page's status is "ocr". Anything that gives the page a new
   // picture or language sets it back to "wait" and queues it again; the old job then drops its result.
   // Results are committed in one step after the last await, so a page never mixes two pictures.
+  async function recognise(pg: Page) {
+    const stale = () => isRemoved(pg) || pg.status !== "ocr";
+    active = pg; pg.status = "ocr"; pg.stage = "loadingCore";
+    if (pages[cur] === pg) render(); else renderThumbStatus(pg);
+    try {
+      const w = await getWorker(pg.lang);
+      if (stale()) return;
+      // rotateAuto straightens tilted photos; positions then refer to the rotated image
+      // returned as imageColor.
+      const input = pg.canvas || await blobToCanvas(pg.inputBlob!);
+      if (stale()) return;
+      // Recognize text on the flattened background; display and erase text on the color image,
+      // rotated the same way as Tesseract.
+      // Two passes: the straightened original and the same page with a flattened background
+      // (for tinted illustrations or uneven lighting). Keep the more confident result per line.
+      const { data } = await w.recognize(input, { rotateAuto: true }, { text: true, blocks: true });
+      if (stale()) return;
+      const work = rotateLike(input, data.rotateRadians || 0);
+      markBold(data, work);
+      pg.stage = "recognizing2";
+      const { data: flat } = await w.recognize(flattenBackground(work), {}, { blocks: true });
+      if (stale()) return;
+      const paras = transferPlaces(pg.paras, Layout.parasFromOcr(data, flat));
+      // OpenCV is usually loaded already for cropping; without it, text on pictures is painted over.
+      const cleanCanvas = paras.length ? erasePage(work, paras, await getCv().catch(() => null)) : null;
+      const cleanBlob = cleanCanvas ? await canvasBlob(cleanCanvas) : null;
+      if (stale()) return;
+      // Commit: nothing from here on waits, so the page cannot change half-way.
+      Object.assign(pg, { workW: work.width, workH: work.height, paras, rawText: data.text || "" });
+      retext(pg);
+      releaseImage(pg.clean);
+      pg.clean = cleanCanvas ? cleanCanvas.toDataURL("image/jpeg", 0.9) : null;
+      pg.cleanBlob = cleanBlob;
+      pg.status = "done";
+      savePage(pg);
+    } catch (e) {
+      console.error(e);
+      if (stale()) return;
+      pg.status = "error"; pg.error = e instanceof Error ? e.message : String(e);
+    } finally {
+      active = null;
+    }
+    if (pages[cur] === pg) render(); else renderThumbStatus(pg);
+  }
+
   let running = false;
   async function runQueue() {
     if (running) return; running = true;
     while (queue.length) {
       const pg = queue.shift()!;
       // Skip deleted pages, and pages already recognised from an earlier entry in the queue.
-      if (isRemoved(pg) || pg.status !== "wait") continue;
-      const stale = () => isRemoved(pg) || pg.status !== "ocr";
-      active = pg; pg.status = "ocr"; pg.stage = "loadingCore";
-      if (pages[cur] === pg) render(); else renderThumbStatus(pg);
-      try {
-        const w = await getWorker(pg.lang);
-        if (stale()) { active = null; continue; }
-        // rotateAuto straightens tilted photos; positions then refer to the rotated image
-        // returned as imageColor.
-        const input = pg.canvas || await blobToCanvas(pg.inputBlob!);
-        if (stale()) { active = null; continue; }
-        // Recognize text on the flattened background; display and erase text on the color image,
-        // rotated the same way as Tesseract.
-        // Two passes: the straightened original and the same page with a flattened background
-        // (for tinted illustrations or uneven lighting). Keep the more confident result per line.
-        const { data } = await w.recognize(input, { rotateAuto: true }, { text: true, blocks: true });
-        if (stale()) { active = null; continue; }
-        const work = rotateLike(input, data.rotateRadians || 0);
-        markBold(data, work);
-        pg.stage = "recognizing2";
-        const { data: flat } = await w.recognize(flattenBackground(work), {}, { blocks: true });
-        if (stale()) { active = null; continue; }
-        const paras = transferPlaces(pg.paras, Layout.parasFromOcr(data, flat));
-        // OpenCV is usually loaded already for cropping; without it, text on pictures is painted over.
-        const cleanCanvas = paras.length ? erasePage(work, paras, await getCv().catch(() => null)) : null;
-        const cleanBlob = cleanCanvas ? await canvasBlob(cleanCanvas) : null;
-        if (stale()) { active = null; continue; }
-        // Commit: nothing from here on waits, so the page cannot change half-way.
-        Object.assign(pg, { workW: work.width, workH: work.height, paras, rawText: data.text || "" });
-        retext(pg);
-        releaseImage(pg.clean);
-        pg.clean = cleanCanvas ? cleanCanvas.toDataURL("image/jpeg", 0.9) : null;
-        pg.cleanBlob = cleanBlob;
-        pg.status = "done";
-        savePage(pg);
-      } catch (e) {
-        console.error(e);
-        if (stale()) { active = null; continue; }
-        pg.status = "error"; pg.error = e instanceof Error ? e.message : String(e);
-      }
-      active = null;
-      if (pages[cur] === pg) render(); else renderThumbStatus(pg);
+      if (!isRemoved(pg) && pg.status === "wait") await recognise(pg);
+      // A page of a book that is no longer open, with no work left: nothing shows it any more.
+      if (!pages.includes(pg) && !queue.includes(pg)) releasePageImages(pg);
     }
     running = false;
   }
