@@ -219,6 +219,10 @@ body.workshop .workshop-grid > * { min-width: 0; }
 .mode-morf .w .s1 { color: var(--s1); }
 .mode-morf .w .s.suf { color: #7c8190; }
 .mode-boegen.mode-farbe .w .s1::after { border-color: var(--s1); }
+/* Only long words get syllable marks, if chosen (src/silben.ts). */
+.w.plain .s { color: inherit; }
+.mode-boegen .w.plain .s::after { content: none; }
+#sylWordsSet { margin-top: 8px; }
 
 .reader.pagemode { padding: 0; min-height: 0; }
 .reader.comparing { padding: 0; min-height: 0; }
@@ -549,6 +553,10 @@ body.focus .together { display: none !important; }
         <button data-v="boegen" data-t="arcs"></button>
         <button data-v="beides" data-t="both"></button>
         <button data-v="morf" data-t="morf"></button>
+      </div>
+      <div class="seg" id="sylWordsSet">
+        <button data-v="alle" data-t="sylWordsAll"></button>
+        <button data-v="lange" data-t="sylWordsLong"></button>
       </div>
       <p class="fhint" data-t="sylHint"></p>
     </div>

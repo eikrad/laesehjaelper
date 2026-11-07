@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 import { strFromU8, unzipSync } from "fflate";
 import fs from "node:fs";
-import { addPhotos, bookTool, fresh, waitForText } from "./helpers";
+import { addPhotos, bookTool, fresh, seedBooks, waitForText } from "./helpers";
 
 test("Exported page layout is independent of the screen orientation", async ({ page }, info) => {
   await fresh(page);
@@ -52,4 +52,23 @@ test("Exports and reimports an e-book", async ({ page }, info) => {
   await page.click("#cropWhole");
   await waitForText(page);
   expect(await page.locator("#text").inputValue()).toContain("Pindsvinet");
+});
+
+test("An exported book keeps syllable colours only on long words when chosen", async ({ page }, info) => {
+  await fresh(page);
+  await seedBooks(page, [{ id: "long", title: "Lange ord", texts: ["Det lille pindsvin snuser til blomsterne."] }]);
+  await page.locator(".book").click();
+  await expect(page.locator("#reader")).toContainText("blomsterne");
+  await page.click("#setBtn");
+  await page.click('#mode button[data-v="farbe"]');
+  await page.click('#sylWordsSet button[data-v="lange"]');
+  await page.click("#setBtn");
+  const [download] = await Promise.all([page.waitForEvent("download"), bookTool(page, "exportBtn")]);
+  const file = info.outputPath("long.epub");
+  await download.saveAs(file);
+  const files = unzipSync(new Uint8Array(fs.readFileSync(file)));
+  const xhtml = strFromU8(files["OEBPS/page1.xhtml"]);
+  expect(xhtml).toMatch(/class="w plain"[^>]*data-word="pindsvin"/);   // pinds·vin
+  expect(xhtml).toMatch(/class="w"[^>]*data-word="blomsterne"/);       // blom·ster·ne
+  expect(strFromU8(files["OEBPS/style.css"])).toContain(".w.plain .s { color: inherit; }");
 });
