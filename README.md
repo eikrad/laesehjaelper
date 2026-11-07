@@ -38,6 +38,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - The book workshop keeps page thumbnails and recognition status together with crop, text correction, moving text boxes, page order, title, EPUB export and deletion. Wide screens put the list beside the selected-page editor; narrow screens put it first. “Back to reading” returns to the selected page. From reading, “Edit book” → “Correct this page” focuses the current page’s text in two taps, and returns to that page after correction.
 - An optional parent gate under More settings asks for a two-second hold on “Edit book”, with visible progress. It works with touch, mouse, Enter and Space and is off by default. This prevents accidental taps; it is not a security lock.
 - Cropping: suggests and straightens a central page, including when one edge leaves the photo. Corners and curved edges can be adjusted; manual adjustments take priority over detection and are saved for later recropping.
+- In the workshop, select a page and use ‹ / › under its thumbnail to reorder it. “Insert page before” and “Insert page after” add missing photos at that position, including multiple photos in selection order. “Replace photo” keeps the page’s position and link; the new photo and its recognised text replace the old content only after you accept the crop. Manual text corrections on the replaced page are discarded.
 - E-book: save a book as EPUB 3 (fixed layout, opens in any reading app) and import it again losslessly
 - Installable as an app and usable offline
 

@@ -11,6 +11,7 @@ import { wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
 import { silben } from "./silben";
 import { swipeDirection } from "./swipe";
 import { resumePage } from "./bookshelf";
+import { insertIndex, selectedIndex, type Placement } from "./pagelist";
 import { holdProgress } from "./hold";
 import { locationHash, parseLocation, type BookLocation } from "./navigation";
 import { cleanOcr, parasFromOcr } from "./layout";
@@ -100,6 +101,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   // ---------- UI strings ----------
   const T: Record<string, Record<string, string>> = {
     da: {
+      insertBefore: "Indsæt side før", insertAfter: "Indsæt side efter", replacePhoto: "Erstat foto", replacePhotoHint: "Når du erstatter et foto, erstattes også sidens tekst og manuelle tekstrettelser. Fotoet bruges først, når du har godkendt beskæringen.",
       brand1: "Læse", brand2: "hjælper", docTitle: "Læsehjælper",
       startTitle: "Gør bogsider lettere at læse",
       heroWord: "Læ·se·hjæl·per", startIntro: "Børnebøger sat op, så de er lettere at læse: stor skrift, god luft og farvede stavelser.",
@@ -131,6 +133,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", shelfTitle: "Dine bøger", pagesN: "{n} sider", page1: "1 side", untitled: "Bog uden titel", titlePh: "Bogens titel", editPages: "Rediger sider", done: "Færdig", deleteBook: "Slet bogen", confirmDelete: "Tryk igen for at slette bogen", moveLeft: "Flyt til venstre", moveRight: "Flyt til højre", deletePage: "Slet side", evTitle: "Hvad siger forskningen?", evText: "Det, der hjælper mest, er tidlig, systematisk undervisning i bogstaver og lyde – og en voksen, der lytter, mens barnet læser, hjælper med svære ord og roser indsatsen. Indstillingerne her hjælper mindre.<br><br>Mere afstand mellem bogstaverne giver færre fejl hos nogle børn, men sjældent hurtigere læsning. Korte linjer hjælper nogle børn, men ikke alle. Oplæsning hjælper forståelsen, og at høre en side og så læse den selv gør læsningen mere flydende.<br><br>Farvede stavelser kan hjælpe nogle begyndere lidt, mest ved lange ord. Slå dem fra, når barnet læser flydende.<br><br>Særlige ordblindeskrifter som OpenDyslexic og farvet baggrund har ikke vist nogen effekt i undersøgelser. Brug dem gerne, hvis barnet synes, de er rare, men ikke som behandling. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.da.md#hvad-siger-forskningen\">Kilder</a>", rateLabel: "Oplæsning", rateSlow: "Langsom", rateNormal: "Normal", turnLabel: "Efter oplæsning", turnOn: "Din tur", turnOff: "Kun lyt", yourTurn: "Nu er det din tur. Læs siden selv.", again: "Hør igen", linesLabel: "Linjer", linesNormal: "Normale", linesShort: "Korte", linesHint: "Korte linjer med få ord hjælper nogle børn. Gælder kun, når teksten vises alene.", reader: "Læser", reader1: "Læser 1", addReader: "Tilføj", newReaderPh: "Navn på ny læser", removeReader: "Slet læser", confirmReader: "Tryk igen for at slette", readerHint: "Hver læser har sine egne indstillinger for skrift, afstand, stavelser og oplæsning.", sylHint: "Når barnet læser flydende, kan stavelserne slås fra.", togetherLabel: "Læs sammen", togetherOn: "Til", togetherOff: "Fra", togetherHint: "Viser et par åbne spørgsmål til den voksne, der læser med. Ikke en quiz – lad barnet fortælle.", togetherTitle: "Snak om siden", ownQ: "Eget spørgsmål", ownQPh: "Skriv et spørgsmål til denne side", save: "Gem", moveBoxes: "Flyt tekstfelter", moveDone: "Færdig med at flytte", resetPlace: "Nulstil placering", moveHint: "Træk i et felt for at flytte det, eller i hjørnet for at ændre størrelsen.", morf: "Orddele", morfOnlyDa: "Orddele findes indtil videre kun for dansk.", morfFail: "Ordlisten kunne ikke hentes.", aboutTitle: "Om Læsehjælper og ansvarsfraskrivelse", aboutText: "Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl – tjek derfor altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.<br><br>Billeder og bøger bliver kun behandlet og gemt på din egen enhed og bliver ikke sendt til nogen server. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug. Del ikke omdannede bøger med andre, medmindre du har rettighederne.<br><br>Brug sker på eget ansvar og uden garanti. Kildekoden er åben: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Bøgerne kan ikke gemmes i denne browser.", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", ocrAgain: "Genkend teksten igen", cropOf: "Billede {a} af {b}", exportBook: "Gem som e-bog", importBook: "Hent en e-bog (EPUB) fra Læsehjælper", exporting: "Laver e-bogen …", exported: "E-bogen er gemt: {name}", importFail: "Filen er ikke en e-bog fra Læsehjælper.", importing: "Henter e-bogen …", notReady: "Vent, til alle sider er genkendt.", install: "Installér som app på denne enhed", compare: "Vis den oprindelige tekst", compareOff: "Vis den nye tekst",
     },
     en: {
+      insertBefore: "Insert page before", insertAfter: "Insert page after", replacePhoto: "Replace photo", replacePhotoHint: "Replacing a photo also replaces the page’s text and manual corrections. The new photo is used after you accept the crop.",
       brand1: "Læse", brand2: "hjælper", docTitle: "Læsehjælper",
       startTitle: "Make book pages easier to read",
       heroWord: "Læ·se·hjæl·per", startIntro: "Children's books set to be easier to read: large type, generous spacing and coloured syllables.",
@@ -162,6 +165,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       example: "Sample", addPages: "Add pages", toStart: "Back to start", shelfTitle: "Your books", pagesN: "{n} pages", page1: "1 page", untitled: "Untitled book", titlePh: "Book title", editPages: "Edit pages", done: "Done", deleteBook: "Delete book", confirmDelete: "Tap again to delete the book", moveLeft: "Move left", moveRight: "Move right", deletePage: "Delete page", evTitle: "What does the research say?", evText: "What helps most is early, systematic teaching of letters and sounds – and an adult who listens while your child reads, helps with hard words and praises effort. The settings here help less.<br><br>More space between letters reduces errors for some children, but rarely makes reading faster. Short lines help some children, but not all. Reading aloud helps comprehension, and listening to a page and then reading it yourself makes reading more fluent.<br><br>Coloured syllables may help some beginners a little, mainly with long words. Switch them off once reading is fluent.<br><br>Special dyslexia fonts such as OpenDyslexic and coloured backgrounds have shown no effect in studies. Use them if your child finds them pleasant, but not as a treatment. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.md#what-does-the-research-say\">Sources</a>", rateLabel: "Reading aloud", rateSlow: "Slow", rateNormal: "Normal", turnLabel: "After reading aloud", turnOn: "Your turn", turnOff: "Just listen", yourTurn: "Now it's your turn. Read the page yourself.", again: "Listen again", linesLabel: "Lines", linesNormal: "Normal", linesShort: "Short", linesHint: "Short lines with a few words help some children. Only applies when the text is shown on its own.", reader: "Reader", reader1: "Reader 1", addReader: "Add", newReaderPh: "Name of new reader", removeReader: "Delete reader", confirmReader: "Tap again to delete", readerHint: "Each reader has their own settings for font, spacing, syllables and reading aloud.", sylHint: "Once your child reads fluently, you can switch the syllables off.", togetherLabel: "Read together", togetherOn: "On", togetherOff: "Off", togetherHint: "Shows a few open questions for the adult reading along. Not a quiz – let the child do the talking.", togetherTitle: "Talk about the page", ownQ: "Own question", ownQPh: "Write a question for this page", save: "Save", moveBoxes: "Move text boxes", moveDone: "Done moving", resetPlace: "Reset position", moveHint: "Drag a box to move it, or drag its corner to resize it.", morf: "Word parts", morfOnlyDa: "Word parts are only available for Danish so far.", morfFail: "The word list could not be loaded.", aboutTitle: "About Læsehjælper and disclaimer", aboutText: "Læsehjælper is a free hobby project, not a finished product. Text recognition and syllable splitting make mistakes, so always check the text before a child reads it. The app does not replace teaching, reading support or a dyslexia assessment.<br><br>Photos and books are processed and stored only on your own device and are never sent to a server. Books are protected by copyright: only use Læsehjælper for books you have access to, and only for private use. Do not share converted books unless you hold the rights.<br><br>Use at your own risk and without warranty. The source code is open: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Books cannot be saved in this browser.", cropTitle: "Adjust the page", cropFound: "Page found. Drag the corners if it doesn't fit.", cropNone: "Drag the corners to the edges of the page.", cropLoading: "Looking for the page …", cropUse: "Use", cropWhole: "Whole photo", cropAgain: "Crop the page again", ocrAgain: "Recognise the text again", cropOf: "Photo {a} of {b}", exportBook: "Save as e-book", importBook: "Open a Læsehjælper e-book (EPUB)", exporting: "Creating the e-book …", exported: "E-book saved: {name}", importFail: "This file is not a Læsehjælper e-book.", importing: "Loading the e-book …", notReady: "Wait until all pages have been recognised.", install: "Install as an app on this device", compare: "Show the original text", compareOff: "Show the new text",
     },
     de: {
+      insertBefore: "Seite davor einfügen", insertAfter: "Seite danach einfügen", replacePhoto: "Foto ersetzen", replacePhotoHint: "Beim Ersetzen eines Fotos gehen die bisherigen Textkorrekturen verloren. Übernommen wird das neue Foto erst nach dem Bestätigen des Zuschnitts.",
       brand1: "Lese", brand2: "helfer", docTitle: "Lesehelfer",
       startTitle: "Buchseiten leichter lesbar machen",
       heroWord: "Le·se·hel·fer", startIntro: "Kinderbücher so gesetzt, dass sie leichter zu lesen sind: große Schrift, viel Luft und farbige Silben.",
@@ -385,10 +389,14 @@ const Lib = { detectPage, warpPage, orderCorners };
     const bookId = pg.bookId || (book && !book.demo ? (pg.bookId = book.id) : null);
     if (!bookId) return;
     pg.id = pg.id || uid();
+    const { canvas, photo } = pg;
     try {
-      if (pg.canvas && !pg.inputBlob) pg.inputBlob = await canvasBlob(pg.canvas);
-      if (pg.photo && !pg.photoBlob) pg.photoBlob = await canvasBlob(pg.photo, 0.8);
-      if (isRemoved(pg)) return; // The page may also have been deleted while toBlob() was pending.
+      const inputBlob = pg.inputBlob || (canvas ? await canvasBlob(canvas) : null);
+      const photoBlob = pg.photoBlob || (photo ? await canvasBlob(photo, 0.8) : null);
+      // While toBlob() was pending, the page may have been deleted, or given a new picture
+      // that its own save stores.
+      if (isRemoved(pg) || pg.canvas !== canvas || pg.photo !== photo) return;
+      pg.inputBlob = inputBlob; pg.photoBlob = photoBlob;
       await DB.put<PageRecord>("pages", {
         id: pg.id, bookId, lang: pg.lang, status: pg.status === "done" ? "done" : "wait",
         text: pg.text, rawText: pg.rawText, paras: pg.paras || null, workW: pg.workW, workH: pg.workH,
@@ -460,8 +468,9 @@ const Lib = { detectPage, warpPage, orderCorners };
   function movePage(i: number, d: number) {
     const j = i + d;
     if (j < 0 || j >= pages.length) return;
+    const selected = pages[cur];
     [pages[i], pages[j]] = [pages[j], pages[i]];
-    if (cur === i) cur = j; else if (cur === j) cur = i;
+    cur = selectedIndex(pages, selected, cur);
     if ((i === 0 || j === 0) && book) book.cover = null;
     saveBook(); render();
   }
@@ -842,6 +851,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     $<HTMLButtonElement>("correctPageBtn").disabled = pg?.status !== "done";
     $("readingTitle").textContent = book?.title || t("untitled");
     if (!$("app").hidden) syncLocation();
+    $("pagePhotoTools").hidden = !pg?.id || !book || !!book.demo;
     if (!pg) { showStatus(t("noText")); renderThumbs(); return; }
     const pending = pg.status === "wait" || pg.status === "ocr";
     $("edit").hidden = !checking || pending;
@@ -906,6 +916,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       const ctl = document.createElement("div"); ctl.className = "ctl";
       ctl.innerHTML = `<button title="${t("moveLeft")}">‹</button><button class="x" title="${t("deletePage")}">×</button><button title="${t("moveRight")}">›</button>`;
       const [l, x, r] = ctl.querySelectorAll("button");
+      l.disabled = i === 0; r.disabled = i === pages.length - 1;
       l.onclick = () => movePage(i, -1); r.onclick = () => movePage(i, 1); x.onclick = () => deletePage(i);
       wrap.append(b, ctl);
       box.append(wrap);
@@ -984,23 +995,53 @@ const Lib = { detectPage, warpPage, orderCorners };
   }
 
   const queue: Page[] = [];
-  async function addFiles(files: FileList | File[] | null) {
+  // Page photo actions in the workshop: insert photos before or after the selected page, or replace its photo.
+  // The chooser may stay open while the user moves on, so remember the page by its ID rather than the object.
+  type PhotoAction = Exclude<Placement, "end"> | "replace";
+  let photoRequest: { bookId: string; pageId: string; action: PhotoAction } | null = null;
+  const pagePhotoFile = $in("pagePhotoFile");
+  for (const [id, action] of [["insertBeforeBtn", "before"], ["insertAfterBtn", "after"], ["replacePhotoBtn", "replace"]] as const) {
+    $(id).onclick = () => {
+      const pageId = pages[cur]?.id;
+      if (!book || book.demo || !pageId) return;
+      photoRequest = { bookId: book.id, pageId, action };
+      pagePhotoFile.value = "";
+      pagePhotoFile.multiple = action !== "replace";
+      pagePhotoFile.click();
+    };
+  }
+  pagePhotoFile.oncancel = () => { photoRequest = null; };
+  pagePhotoFile.onchange = () => {
+    const request = photoRequest; photoRequest = null;
+    const files = [...(pagePhotoFile.files || [])]; pagePhotoFile.value = "";
+    const target = request && book?.id === request.bookId ? pages.find(pg => pg.id === request.pageId) : undefined;
+    if (!request || !target) return;
+    if (request.action !== "replace") addFiles(files, target, request.action);
+    else if (files[0]) replacePhoto(target, files[0]);
+  };
+
+  /** Add photos as new pages: at the end, or before or after a page. A batch stays together and in order. */
+  async function addFiles(files: FileList | File[] | null, target: Page | null = null, placement: Placement = "end") {
     const list = [...(files || [])].filter(f => f.type.startsWith("image/"));
     if (!list.length || !book) return;
     const owner = book;
     showApp("workshop");
     const generation = navigationId;
     const ownsPreparation = () => book === owner && navigationId === generation;
-    const first = pages.length;
+    const added: Page[] = [];
     for (const [n, f] of list.entries()) {
       try {
         const { canvas: photo } = await loadImage(f);
         if (!ownsPreparation()) return;
         const { canvas, corners } = await cropFlow(photo, null, list.length > 1 ? t("cropOf", { a: n + 1, b: list.length }) : "");
         if (!ownsPreparation()) return;
-        const pg: Page = { bookId: !owner.demo ? owner.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: S.lang, text: "", status: "wait", progress: 0 };
-        pages.push(pg); queue.push(pg);
-        if (n === 0) { cur = pages.length - 1; render(); }
+        // A stored book's page gets its ID right away: page actions refer to pages by ID.
+        const pg: Page = { id: owner.demo ? undefined : uid(), bookId: !owner.demo ? owner.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: target?.lang || S.lang, text: "", status: "wait", progress: 0 };
+        // Pages may have been deleted or moved since the last photo: place it by the pages themselves.
+        const at = insertIndex(pages, added, target, placement);
+        pages.splice(at, 0, pg); added.push(pg); queue.push(pg);
+        if (at === 0) owner.cover = null;
+        cur = selectedIndex(pages, added[0], cur); render();
         await savePage(pg);
         // Navigation may cancel the remaining batch, but an accepted page still needs its book record.
         if (book === owner) await saveBook();
@@ -1008,9 +1049,23 @@ const Lib = { detectPage, warpPage, orderCorners };
         if (!ownsPreparation()) return;
       } catch (e) { toast(e instanceof Error ? e.message : String(e)); }
     }
-    if (!ownsPreparation() || !pages.length) return;
-    cur = Math.min(first, pages.length - 1);
+    if (!ownsPreparation() || !added.length) return;
+    cur = selectedIndex(pages, added[0], cur);
     render();
+  }
+
+  /** Give a page a new photo: same page, position and link; its text is recognised again. */
+  async function replacePhoto(pg: Page, file: File) {
+    const owner = book, generation = navigationId;
+    const owns = () => book === owner && navigationId === generation && pages.includes(pg);
+    try {
+      const { canvas: photo } = await loadImage(file);
+      if (!owns()) return;
+      const crop = await cropFlow(photo, null, "");
+      // Only an accepted crop of a readable photo replaces anything.
+      if (!owns()) return;
+      restartPage(pg, crop, { photo, photoBlob: null, text: "", rawText: "" });
+    } catch (e) { toast(e instanceof Error ? e.message : String(e)); }
   }
 
 
@@ -1295,16 +1350,20 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     });
   }
 
+  /** A page has a new picture (cropped again or replaced): show it and recognise its text again. */
+  function restartPage(pg: Page, { canvas, corners }: CropResult, change: Partial<Page> = {}) {
+    releasePageImages(pg);
+    Object.assign(pg, { canvas, corners, img: canvas.toDataURL("image/jpeg", 0.88), status: "wait", progress: 0, paras: null, clean: null, inputBlob: null, cleanBlob: null }, change);
+    if (pg === pages[0] && book) book.cover = null;
+    savePage(pg); saveBook();
+    queue.push(pg); render(); runQueue();
+  }
+
   $<HTMLButtonElement>("recropBtn").onclick = async () => {
     const pg = pages[cur];
     if (!pg || !(pg.photo || pg.photoBlob)) return;
     if (!pg.photo) pg.photo = await blobToCanvas(pg.photoBlob!);
-    const { canvas, corners } = await cropFlow(pg.photo, toFrame(pg.corners), "");
-    releasePageImages(pg);
-    Object.assign(pg, { canvas, corners, img: canvas.toDataURL("image/jpeg", 0.88), status: "wait", progress: 0, paras: null, clean: null, inputBlob: null, cleanBlob: null });
-    if (pg === pages[0] && book) book.cover = null;
-    savePage(pg); saveBook();
-    queue.push(pg); render(); runQueue();
+    restartPage(pg, await cropFlow(pg.photo, toFrame(pg.corners), ""));
   };
 
   // Recognize the current page again, for example after an app update improves OCR.
@@ -1355,44 +1414,53 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     return workers[code];
   }
 
+  // A recognition job owns its page while the page's status is "ocr". Anything that gives the page a new
+  // picture or language sets it back to "wait" and queues it again; the old job then drops its result.
+  // Results are committed in one step after the last await, so a page never mixes two pictures.
   let running = false;
   async function runQueue() {
     if (running) return; running = true;
     while (queue.length) {
       const pg = queue.shift()!;
-      if (isRemoved(pg)) continue;
+      // Skip deleted pages, and pages already recognised from an earlier entry in the queue.
+      if (isRemoved(pg) || pg.status !== "wait") continue;
+      const stale = () => isRemoved(pg) || pg.status !== "ocr";
       active = pg; pg.status = "ocr"; pg.stage = "loadingCore";
       if (pages[cur] === pg) render(); else renderThumbStatus(pg);
       try {
         const w = await getWorker(pg.lang);
-        if (isRemoved(pg)) { active = null; continue; }
+        if (stale()) { active = null; continue; }
         // rotateAuto straightens tilted photos; positions then refer to the rotated image
         // returned as imageColor.
         const input = pg.canvas || await blobToCanvas(pg.inputBlob!);
+        if (stale()) { active = null; continue; }
         // Recognize text on the flattened background; display and erase text on the color image,
         // rotated the same way as Tesseract.
         // Two passes: the straightened original and the same page with a flattened background
         // (for tinted illustrations or uneven lighting). Keep the more confident result per line.
         const { data } = await w.recognize(input, { rotateAuto: true }, { text: true, blocks: true });
-        if (isRemoved(pg)) { active = null; continue; }
+        if (stale()) { active = null; continue; }
         const work = rotateLike(input, data.rotateRadians || 0);
-      markBold(data, work);
+        markBold(data, work);
         pg.stage = "recognizing2";
         const { data: flat } = await w.recognize(flattenBackground(work), {}, { blocks: true });
-        if (isRemoved(pg)) { active = null; continue; }
-        pg.workW = work.width; pg.workH = work.height;
-        pg.paras = transferPlaces(pg.paras, Layout.parasFromOcr(data, flat));
-        pg.rawText = data.text || "";
-        retext(pg);
+        if (stale()) { active = null; continue; }
+        const paras = transferPlaces(pg.paras, Layout.parasFromOcr(data, flat));
         // OpenCV is usually loaded already for cropping; without it, text on pictures is painted over.
-        const cleanCanvas = pg.paras.length ? erasePage(work, pg.paras, await getCv().catch(() => null)) : null;
+        const cleanCanvas = paras.length ? erasePage(work, paras, await getCv().catch(() => null)) : null;
+        const cleanBlob = cleanCanvas ? await canvasBlob(cleanCanvas) : null;
+        if (stale()) { active = null; continue; }
+        // Commit: nothing from here on waits, so the page cannot change half-way.
+        Object.assign(pg, { workW: work.width, workH: work.height, paras, rawText: data.text || "" });
+        retext(pg);
         releaseImage(pg.clean);
         pg.clean = cleanCanvas ? cleanCanvas.toDataURL("image/jpeg", 0.9) : null;
-        pg.cleanBlob = cleanCanvas ? await canvasBlob(cleanCanvas) : null;
+        pg.cleanBlob = cleanBlob;
         pg.status = "done";
         savePage(pg);
       } catch (e) {
         console.error(e);
+        if (stale()) { active = null; continue; }
         pg.status = "error"; pg.error = e instanceof Error ? e.message : String(e);
       }
       active = null;
