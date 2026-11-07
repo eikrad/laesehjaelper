@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { PROFILE_KEYS, addProfile, initProfiles, removeProfile, switchProfile, syncActive } from "../../src/profiles";
+import { PROFILE_KEYS, addProfile, fromEarlier, initProfiles, removeProfile, switchProfile, syncActive } from "../../src/profiles";
 
-const base = { font: "A", size: 32, ls: 0.04, lh: 1.9, mode: "farbe", sylWords: "alle", colors: "#00f,#f00", bg: "#fff", lines: "normal", rate: "normal", turn: "an", ui: "da", lang: "da", view: "side" };
+const base = { font: "A", size: 32, ls: 0.04, lh: 1.9, mode: "farbe", sylWords: "alle", highlight: "an", colors: "#00f,#f00", bg: "#fff", lines: "normal", rate: "normal", turn: "an", ui: "da", lang: "da", view: "side" };
 
 describe("profiles", () => {
   it("Creates a profile with the current settings on first launch", () => {
@@ -55,5 +55,13 @@ describe("profiles", () => {
     const st = addProfile(initProfiles(null, base, "Ida"), "Bo", { ...base });
     expect(initProfiles(JSON.stringify(st), base, "x")).toEqual(st);
     expect(initProfiles("{kaputt", base, "Læser 1").list[0].name).toBe("Læser 1");
+  });
+  it("Completes settings saved by an earlier version with the behaviour readers had then", () => {
+    // Word highlighting during read-aloud was always on before it became a setting.
+    expect(fromEarlier({ size: 40 })).toEqual({ size: 40, highlight: "an" });
+    expect(fromEarlier({ highlight: "aus" })).toEqual({ highlight: "aus" });
+    const { highlight: _, ...old } = base;
+    const saved = { active: "a", list: [{ id: "a", name: "Ida", settings: old }] };
+    expect(initProfiles(JSON.stringify(saved), base, "x").list[0].settings.highlight).toBe("an");
   });
 });

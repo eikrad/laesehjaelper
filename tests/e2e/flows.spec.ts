@@ -147,6 +147,8 @@ test("Reading aloud highlights the current word", async ({ page }) => {
     };
     Object.defineProperty(window, "speechSynthesis", { value: fake, configurable: true });
   });
+  // Word highlighting is a setting per reader, off for new readers.
+  await page.evaluate(() => localStorage.setItem("lesehelfer", JSON.stringify({ highlight: "an" })));
   await page.reload();
   await page.click("#demoBtn");
   await page.click("#readBtn");

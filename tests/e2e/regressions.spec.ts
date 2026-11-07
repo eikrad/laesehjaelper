@@ -98,6 +98,8 @@ test("Speech highlighting stays aligned after hyphenated words", async ({ page }
       },
     }, configurable: true });
   });
+  // Word highlighting is a setting per reader, off for new readers.
+  await page.evaluate(() => localStorage.setItem("lesehelfer", JSON.stringify({ highlight: "an" })));
   await page.reload();
   await openStoredBook(page, [{ text: "rot-blau ist schön" }]);
   await page.click("#readBtn");
