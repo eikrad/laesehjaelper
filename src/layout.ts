@@ -54,12 +54,16 @@ function lineUnits(line: OcrLine): RawUnit[] {
     const ws = part.filter(usable);
     const pre: OcrWord[] = [];
     while (ws.length && !edgeOk(ws[0], 75)) pre.push(ws.shift()!);
-    // On the right, an uncertain word may stay if word-like and close to the preceding word
-    const closeRight = () => {
-      const a = ws[ws.length - 2], b = ws[ws.length - 1];
-      return !!a && WORDLIKE.test(b.text) && b.confidence >= 40 && b.bbox.x0 - a.bbox.x1 < 1.2 * h;
-    };
-    while (ws.length && !edgeOk(ws[ws.length - 1], 55) && !closeRight()) ws.pop();
+    // On the right, an uncertain word may stay if it continues the text: word-like, as tall as the
+    // line's words, and close to a word that stays itself. Marks in a picture beside the line can
+    // sit close to each other, but none of them is trusted.
+    const stays: boolean[] = [];
+    ws.forEach((b, i) => {
+      const a = ws[i - 1];
+      stays.push(edgeOk(b, 55) || (!!a && stays[i - 1] && WORDLIKE.test(b.text) && b.confidence >= 40 &&
+        b.bbox.x0 - a.bbox.x1 < 1.2 * h && b.bbox.y1 - b.bbox.y0 <= 1.5 * h));
+    });
+    while (ws.length && !stays[ws.length - 1]) ws.pop();
     if (!ws.length) continue;
     // Paint over nearby fragments (e.g. an uncertain word ending) without displaying them
     const i0 = part.indexOf(ws[0]), i1 = part.indexOf(ws[ws.length - 1]);
@@ -141,16 +145,20 @@ export function cleanOcr(raw: string, { bookSyllables = false }: { bookSyllables
 // For tilted page photos, Tesseract sometimes returns the same line twice (as two
 // overlapping lines). Keep the one with more reliable words; if equal, the one that kept more
 // words (beside an image, one pass may drop an uncertain word that the other reads well).
+// A line read twice (in both passes, or twice in one) shares its words with the other reading;
+// keep the more reliable one. A line that another line's box only reaches into (a tall word, a
+// mark in a picture) is a line of its own.
 function dedupe(units: Unit[]): Unit[] {
   const area = (b: Box): number => Math.max(0, b.x1 - b.x0) * Math.max(0, b.y1 - b.y0);
+  const overlap = (a: Box, b: Box): boolean => {
+    const i = { x0: Math.max(a.x0, b.x0), y0: Math.max(a.y0, b.y0), x1: Math.min(a.x1, b.x1), y1: Math.min(a.y1, b.y1) };
+    return area(i) > 0.5 * Math.min(area(a), area(b));
+  };
+  const shared = (u: Unit, k: Unit): boolean => 2 * u.ws.filter((w) => k.ws.some((v) => overlap(w.bbox, v.bbox))).length >= u.ws.length;
   const score = (u: Unit): number => u.ws.filter(strong).length;
   const kept: Unit[] = [];
   for (const u of [...units].sort((a, b) => score(b) - score(a) || b.ws.length - a.ws.length)) {
-    const clash = kept.some((k) => {
-      const i = { x0: Math.max(u.bbox.x0, k.bbox.x0), y0: Math.max(u.bbox.y0, k.bbox.y0), x1: Math.min(u.bbox.x1, k.bbox.x1), y1: Math.min(u.bbox.y1, k.bbox.y1) };
-      return area(i) > 0.5 * Math.min(area(u.bbox), area(k.bbox));
-    });
-    if (!clash) kept.push(u);
+    if (!kept.some((k) => overlap(u.bbox, k.bbox) && shared(u, k))) kept.push(u);
   }
   return kept;
 }
