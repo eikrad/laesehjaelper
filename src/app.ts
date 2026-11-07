@@ -18,9 +18,10 @@ import { detectPage, warpPage, orderCorners, frameFromCorners, toFrame } from ".
 import type { CV } from "./pagedetect";
 import { DB } from "./db";
 import { flattenBackground, rotateLike } from "./prep";
+import { eraseText, halo } from "./erase";
 import { buildEpub, readEpub } from "./epub";
 import type { DataPage, EpubFont, EpubPage } from "./epub";
-import type { Box, Corners, Frame, OcrData, Para, Point } from "./types";
+import type { Corners, Frame, OcrData, Para, Point } from "./types";
 
 declare const Tesseract: {
   createWorker(langs: unknown, oem: number, options: Record<string, unknown>): Promise<TessWorker>;
@@ -643,7 +644,9 @@ const Lib = { detectPage, warpPage, orderCorners };
       const x1 = Math.min(W, g.x1 + pad), y1 = Math.min(H, g.y1 + pad);
       box.dataset.lh = String(pa.lh / H);
       Object.assign(box.style, { left: x0 / W * 100 + "%", top: y0 / H * 100 + "%", width: (x1 - x0) / W * 100 + "%", height: (y1 - y0) / H * 100 + "%" });
-      if (pa.busy && pa.bg) box.style.background = pa.bg;
+      // Text on a picture: a soft halo where the picture was inpainted, otherwise its own panel.
+      if (pa.inpainted && pa.rgb) box.style.textShadow = halo(pa.rgb);
+      else if (pa.busy && pa.bg) box.style.background = pa.bg;
       const own = i === paras.length - 1 ? ps.slice(i) : ps.slice(i, i + 1);
       const text = document.createElement("div"); text.className = "tbox-text";
       own.forEach(p => text.append(p));
@@ -768,72 +771,15 @@ const Lib = { detectPage, warpPage, orderCorners };
     boldFlags(ratios).forEach((b, i) => { words[i].bold = b; });
   }
 
-  // Remove the original text from the photo by painting each line with its surrounding background color.
-  function eraseText(canvas: HTMLCanvasElement, paras: Para[]): HTMLCanvasElement {
+  // Remove the original text from the photo (src/erase.ts): painted over on plain paper,
+  // inpainted on illustrations when OpenCV is available. Then let boxes on plain paper grow.
+  function erasePage(canvas: HTMLCanvasElement, paras: Para[], cv: CV | null): HTMLCanvasElement {
     const c = document.createElement("canvas");
     c.width = canvas.width; c.height = canvas.height;
-    const ctx = c.getContext("2d")!;
-    ctx.drawImage(canvas, 0, 0);
-    const W = c.width, H = c.height;
-    const px = canvas.getContext("2d")!.getImageData(0, 0, W, H).data;
-    const med = (a: number[]): number => { a.sort((x, y) => x - y); return a[a.length >> 1]; };
-    // Line endings: ink directly adjacent to a recognized line, such as an uncertain word ending
-    // or a comma, belongs to the text and is also painted over.
-    const lum = (x: number, y: number): number => { const i = (y * W + x) * 4; return 0.3 * px[i] + 0.59 * px[i + 1] + 0.11 * px[i + 2]; };
-    function tails(l: Box, h: number): Box[] {
-      const out: Box[] = [];
-      const y0 = Math.max(0, Math.round(l.y0)), y1 = Math.min(H - 1, Math.round(l.y1));
-      let bg = 0;
-      for (let y = y0; y <= y1; y += 2) for (const x of [l.x0, l.x1]) { if (x >= 0 && x < W) bg = Math.max(bg, lum(Math.round(x), y)); }
-      const inkCol = (x: number): boolean => { for (let y = y0; y <= y1; y += 2) if (lum(x, y) < bg - 70) return true; return false; };
-      for (const dir of [1, -1]) {
-        let x = dir > 0 ? Math.round(l.x1) + 1 : Math.round(l.x0) - 1, gap = 0, last: number | null = null;
-        while (x > 0 && x < W - 1 && gap < 0.6 * h && Math.abs(x - (dir > 0 ? l.x1 : l.x0)) < 2.5 * h) {
-          if (inkCol(x)) { last = x; gap = 0; } else gap++;
-          x += dir;
-        }
-        if (last != null) out.push(dir > 0 ? { x0: l.x1, y0: l.y0, x1: last, y1: l.y1 } : { x0: last, y0: l.y0, x1: l.x0, y1: l.y1 });
-      }
-      return out;
-    }
-    for (const pa of paras) {
-      let spreadMax = 0;
-      const bgs: number[][] = [];
-      const extraBoxes = (pa.lines || []).flatMap(l => tails(l, pa.lh));
-      for (const l of [...(pa.words || pa.lines), ...extraBoxes]) {
-        const pad = Math.round(pa.lh * 0.28) + 3;
-        const x0 = Math.max(0, l.x0 - pad), y0 = Math.max(0, l.y0 - pad);
-        const x1 = Math.min(W - 1, l.x1 + pad), y1 = Math.min(H - 1, l.y1 + pad);
-        // Sample colors to the left and right of the word separately and paint a gradient
-        // to avoid bright or dark boxes under uneven lighting.
-        const ring = (sx0: number, sx1: number) => {
-          const R: number[] = [], G: number[] = [], B: number[] = [];
-          const take = (x: number, y: number) => { const i = (y * W + x) * 4; R.push(px[i]); G.push(px[i + 1]); B.push(px[i + 2]); };
-          for (let x = sx0; x <= sx1; x += 2) { take(x, y0); take(x, y1); }
-          if (sx0 === x0) for (let y = y0; y <= y1; y += 2) take(x0, y);
-          if (sx1 === x1) for (let y = y0; y <= y1; y += 2) take(x1, y);
-          const m = [med(R.slice()), med(G.slice()), med(B.slice())];
-          let dev = 0;
-          for (let i = 0; i < R.length; i++) dev += Math.abs(R[i] - m[0]) + Math.abs(G[i] - m[1]) + Math.abs(B[i] - m[2]);
-          return { m, dev: dev / R.length / 3 };
-        };
-        const mid = (x0 + x1) >> 1;
-        const L = ring(x0, mid), Rr = ring(mid, x1);
-        const m = L.m.map((v, k) => Math.round((v + Rr.m[k]) / 2));
-        spreadMax = Math.max(spreadMax, Math.min(L.dev, Rr.dev));
-        bgs.push(m);
-        const grad = ctx.createLinearGradient(x0, 0, x1, 0);
-        grad.addColorStop(0, `rgb(${L.m})`); grad.addColorStop(1, `rgb(${Rr.m})`);
-        ctx.fillStyle = grad;
-        ctx.fillRect(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
-      }
-      // Busy background (text over an illustration): give the text box its own panel.
-      const avg = [0, 1, 2].map(k => Math.round(bgs.reduce((a, b) => a + b[k], 0) / bgs.length));
-      pa.busy = spreadMax > 26;
-      pa.bg = `rgba(${avg[0]},${avg[1]},${avg[2]},.94)`;
-      pa.rgb = avg;
-    }
-    growBoxes(ctx.getImageData(0, 0, W, H).data, W, H, paras);
+    const img = canvas.getContext("2d")!.getImageData(0, 0, c.width, c.height);
+    eraseText(img, paras, cv);
+    c.getContext("2d")!.putImageData(img, 0, 0);
+    growBoxes(img.data, c.width, c.height, paras);
     return c;
   }
 
@@ -1434,7 +1380,8 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
         pg.paras = transferPlaces(pg.paras, Layout.parasFromOcr(data, flat));
         pg.rawText = data.text || "";
         retext(pg);
-        const cleanCanvas = pg.paras.length ? eraseText(work, pg.paras) : null;
+        // OpenCV is usually loaded already for cropping; without it, text on pictures is painted over.
+        const cleanCanvas = pg.paras.length ? erasePage(work, pg.paras, await getCv().catch(() => null)) : null;
         releaseImage(pg.clean);
         pg.clean = cleanCanvas ? cleanCanvas.toDataURL("image/jpeg", 0.9) : null;
         pg.cleanBlob = cleanCanvas ? await canvasBlob(cleanCanvas) : null;

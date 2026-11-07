@@ -28,6 +28,9 @@ export interface Para {
   place?: Box;
   /** Busy background (text on an image)? */
   busy?: boolean;
+  /** The old text on the busy background was inpainted (the picture continues beneath it),
+   *  so the new text needs no panel of its own. */
+  inpainted?: boolean;
   bg?: string;
   rgb?: number[];
   /** Area into which the replacement text may expand */

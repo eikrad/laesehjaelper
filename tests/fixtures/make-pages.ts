@@ -27,6 +27,35 @@ function bear(): string {
 
 const lines = (ls: string[]) => ls.map((l) => `<div>${l}</div>`).join("");
 
+// A meadow with grass blades and flowers filling the page: painting over text on it with
+// one colour would leave a patch. The blades differ in hue more than in brightness, so the
+// dark text stays easy to recognize.
+function meadow(): string {
+  const flowers: string[] = [];
+  const rnd = (n: number) => ((Math.sin(n) * 43758.5453) % 1 + 1) % 1;   // Same scatter on every run.
+  for (let i = 0; i < 70; i++) {
+    const x = Math.round(15 + rnd(2 * i + 1) * 1170), y = Math.round(545 + rnd(2 * i + 2) * 1040);
+    const petal = ["#ffffff", "#ffd23f", "#e85d75"][i % 3];
+    flowers.push(`<circle cx="${x}" cy="${y}" r="13" fill="${petal}"/><circle cx="${x}" cy="${y}" r="5" fill="#f39c12"/>`);
+  }
+  return `<svg width="1200" height="1600" viewBox="0 0 1200 1600" style="position:absolute;left:0;top:0">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cb4ea"/><stop offset="1" stop-color="#cfe6f7"/></linearGradient>
+      <pattern id="grass" width="34" height="34" patternUnits="userSpaceOnUse" patternTransform="rotate(28)">
+        <rect width="34" height="34" fill="#78c8d2"/><rect width="17" height="34" fill="#f5cd5a"/>
+      </pattern>
+    </defs>
+    <rect width="1200" height="520" fill="url(#sky)"/>
+    <rect y="520" width="1200" height="1080" fill="url(#grass)"/>${flowers.join("")}
+  </svg>`;
+}
+const meadowPage = (text: boolean) => `<body style="margin:0;width:1200px;height:1600px;font-family:'DejaVu Sans',sans-serif;font-weight:700;color:#1b2240">
+    ${meadow()}
+    <div style="position:absolute;left:110px;top:760px;font-size:56px;line-height:84px;${text ? "" : "visibility:hidden"}">
+      ${lines(["Engen er fuld af blomster.", "Søren løber i det høje græs."])}
+    </div>
+  </body>`;
+
 const pages: Record<string, string> = {
   // Lines that start right beside an illustration (issue #3).
   "side-bjorn.jpg": `<body style="margin:0;width:1200px;height:1600px;background:#fbf2dc;font-family:'DejaVu Serif',serif;color:#2a2420">
@@ -38,6 +67,9 @@ const pages: Record<string, string> = {
       ${lines(["Om morgenen spiser de honning", "og drikker vand fra søen."])}
     </div>
   </body>`,
+  // Text on an illustration (issue #4), and the same picture without the text to compare with.
+  "side-eng.jpg": meadowPage(true),
+  "side-eng-uden-tekst.jpg": meadowPage(false),
 };
 
 const browser = await chromium.launch();
