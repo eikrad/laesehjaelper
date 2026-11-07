@@ -37,7 +37,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Reading and preparing books have separate views. Reading has page turning, read-aloud and Aa settings; “Edit book” opens the workshop. Back returns through reading to the bookshelf, and page links survive reload.
 - The book workshop keeps page thumbnails and recognition status together with crop, text correction, moving text boxes, page order, title, EPUB export and deletion. Wide screens put the list beside the selected-page editor; narrow screens put it first. “Back to reading” returns to the selected page. From reading, “Edit book” → “Correct this page” focuses the current page’s text in two taps, and returns to that page after correction.
 - An optional parent gate under More settings asks for a two-second hold on “Edit book”, with visible progress. It works with touch, mouse, Enter and Space and is off by default. This prevents accidental taps; it is not a security lock.
-- Cropping: the page is found in the photo automatically and straightened; corners and edges can be adjusted, including for curved pages
+- Cropping: suggests and straightens a central page, including when one edge leaves the photo. Corners and curved edges can be adjusted; manual adjustments take priority over detection and are saved for later recropping.
 - E-book: save a book as EPUB 3 (fixed layout, opens in any reading app) and import it again losslessly
 - Installable as an app and usable offline
 
@@ -141,6 +141,7 @@ Sources:
 - Text on top of illustrations or in decorative fonts is recognized less reliably.
 - The old text is painted over with the surrounding background color. On an illustration, the picture is filled in under the old letters instead (inpainting), and the new text gets a soft light halo. Fine, regular patterns can look a little blurred where the text was.
 - The new text can only be as large as the page has room for. For really large text, use the text-only view.
+- Page detection is conservative: aim at one page in the middle of the photo, with at least three edges visible. Shadows, illustrations and two-page spreads can still confuse it. Check the frame before accepting; rounded edges may leave some background in the crop.
 - Curved pages currently have to be straightened by hand (see [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
 
 ## Roadmap

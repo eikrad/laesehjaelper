@@ -1200,6 +1200,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     let pts: Point[] = [...init.corners, ...init.mids].map((p): Point => [p[0], p[1]]);
     // Edge midpoints follow the corners until moved manually.
     const midMoved = [false, false, false, false];
+    let adjusted = false;
     if (start) start.mids.forEach((m, i) => {
       const a = start.corners[i], b = start.corners[(i + 1) % 4];
       midMoved[i] = Math.hypot(m[0] - (a[0] + b[0]) / 2, m[1] - (a[1] + b[1]) / 2) > 2;
@@ -1250,6 +1251,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     }
     handles.forEach((h, i) => {
       h.onpointerdown = (e) => {
+        adjusted = true; // A late-loading detector must not replace the user's frame.
         h.setPointerCapture(e.pointerId);
         const r = stage.getBoundingClientRect();
         h.onpointermove = (ev: PointerEvent) => {
@@ -1266,7 +1268,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}`;
     let cv: CV = null;
     try {
       cv = await getCv();
-      if (!start) {
+      if (!start && !adjusted) {
         const found = Lib.detectPage(cv, photo);
         if (found) { pts = [...found, ...frameFromCorners(found).mids]; draw(); }
         msg(found ? "cropFound" : "cropNone");

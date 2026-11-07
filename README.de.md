@@ -37,7 +37,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Lesen und Bücher vorbereiten haben getrennte Ansichten. Beim Lesen gibt es Blättern, Vorlesen und Aa-Einstellungen; „Buch bearbeiten“ öffnet die Werkstatt. Zurück führt über das Lesen zum Regal, und Seitenlinks bleiben nach dem Neuladen erhalten.
 - Die Buchwerkstatt vereint Seitenvorschauen und Erkennungsstatus mit Zuschnitt, Textkorrektur, Textfeldern, Seitenreihenfolge, Titel, EPUB-Export und Löschen. Breite Bildschirme zeigen die Liste neben dem Editor, schmale davor. „Zurück zum Lesen“ führt zur ausgewählten Seite zurück. Beim Lesen fokussiert „Buch bearbeiten“ → „Diese Seite korrigieren“ in zwei Schritten den Text der aktuellen Seite; danach geht es zur selben Seite zurück.
 - Ein optionaler Elternschutz unter „Weitere Einstellungen“ verlangt, „Buch bearbeiten“ zwei Sekunden gedrückt zu halten, und zeigt den Fortschritt. Das funktioniert mit Touch, Maus, Enter und Leertaste und ist standardmäßig aus. Es verhindert versehentliches Tippen und ist keine Sicherheitssperre.
-- Zuschneiden: Die Seite wird auf dem Foto automatisch gefunden und entzerrt; Ecken und Kanten lassen sich nachziehen, auch bei gewölbten Seiten
+- Zuschneiden: Eine Seite in der Bildmitte wird vorgeschlagen und entzerrt, auch wenn ein Rand aus dem Foto läuft. Ecken und gebogene Kanten lassen sich nachziehen; manuelle Korrekturen haben Vorrang vor der Automatik und bleiben für späteren Zuschnitt gespeichert.
 - E-Book: ein Buch als EPUB 3 speichern (feste Seiten, lässt sich in jeder Lese-App öffnen) und verlustfrei wieder laden
 - Als App installierbar und offline nutzbar
 
@@ -141,6 +141,7 @@ Quellen:
 - Text auf Illustrationen oder in Zierschriften wird weniger zuverlässig erkannt.
 - Die alte Schrift wird mit der umgebenden Hintergrundfarbe übermalt. Steht sie auf einer Illustration, wird stattdessen das Bild unter den alten Buchstaben ergänzt (Inpainting), und der neue Text bekommt einen weichen, hellen Schein. Feine, regelmäßige Muster können dort, wo der Text stand, etwas verwischt aussehen.
 - Der neue Text kann nur so groß werden, wie auf der Seite Platz ist. Für richtig große Schrift ist die Ansicht „Nur Text“ besser.
+- Die Seitenerkennung ist vorsichtig: Fotografiere eine Seite in der Bildmitte mit mindestens drei sichtbaren Rändern. Schatten, Illustrationen und Doppelseiten können sie weiterhin verwirren. Prüfe den Rahmen vor dem Bestätigen; bei gebogenen Rändern kann etwas Hintergrund im Zuschnitt bleiben.
 - Gewölbte Seiten muss man bisher von Hand glattziehen (siehe [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
 
 ## Roadmap
