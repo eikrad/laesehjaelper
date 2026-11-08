@@ -25,6 +25,18 @@ html = html
   .replace("%%OD_700%%", () => b64(`${od}-700-normal.woff2`));
 fs.writeFileSync(`${out}/index.html`, html);
 
+// Distribute the actual copyright and licence texts with the site, not just its source repository.
+const licenceFiles = fs.readdirSync("licenses").filter(f => f.endsWith(".txt")).sort();
+const notices = fs.readFileSync("THIRD_PARTY_NOTICES.md", "utf8") + "\n\n" + licenceFiles
+  .map(file => fs.readFileSync(`licenses/${file}`, "utf8")).join("\n\n" + "=".repeat(80) + "\n\n");
+const escapedNotices = notices.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+fs.writeFileSync(`${out}/licenses.html`, `<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Licences and fonts – Læsehjælper</title><style>body{font:16px/1.6 system-ui,sans-serif;margin:2rem auto;padding:0 1rem;max-width:80ch}pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere}</style><a href="./">Læsehjælper</a><h1>Licences and fonts</h1><pre>${escapedNotices}</pre></html>`);
+
+await build({
+  entryPoints: ["src/pdf-export.ts"], bundle: true, minify: !coverage, format: "iife", outfile: `${out}/pdf.js`,
+  ...(coverage ? { sourcemap: "inline" as const, sourceRoot: process.cwd() + "/" } : {}),
+});
+
 const copy = (from: string, to: string): void => fs.copyFileSync(from, `${out}/${to}`);
 
 // Version the service worker so each new version replaces the previous cache.

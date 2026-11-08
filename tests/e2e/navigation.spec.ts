@@ -8,7 +8,7 @@ test("Reading has one quiet workshop entry and Back stays inside the book and sh
   await page.locator(".book").click();
   await expect(page).toHaveURL(/#read\/route\/route-1$/);
   await expect(page.locator("#readingTitle")).toHaveText("En rolig bog");
-  for (const id of ["bookTitle", "bookMenuBtn", "checkTextBtn", "editPagesBtn", "exportBtn", "edit", "thumbs", "delBookBtn", "compareBtn"]) {
+  for (const id of ["bookTitle", "bookMenuBtn", "checkTextBtn", "editPagesBtn", "exportBtn", "pdfBtn", "edit", "thumbs", "delBookBtn", "compareBtn"]) {
     await expect(page.locator(`#${id}`)).toBeHidden();
   }
   await expect(page.locator("#editBookBtn")).toHaveText("Rediger bog");
