@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, fresh, seedBooks, waitForText } from "./helpers";
+import { bookTool, fresh, openRecognisedBook, seedBooks } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -117,8 +117,7 @@ test("Escape closes settings while the text editor has focus", async ({ page }) 
 });
 
 test("Dismissing settings does not drag a text box underneath", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg"]);
-  await waitForText(page);
+  await openRecognisedBook(page, ["side-da.jpg"]);
   await bookTool(page, "checkTextBtn");
   await page.click("#moveBtn");
   const box = page.locator("#reader .tbox").first();

@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, openWorkshop, fixture, fresh, waitForText } from "./helpers";
+import { addPhotos, bookTool, fixture, fresh, openRecognisedBook, openWorkshop, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -79,9 +79,7 @@ test("Font, syllable hyphens in the book and reading mode", async ({ page }) => 
 });
 
 test("Workshop tools remain available behind the quiet reading entry", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg"]);
-  await waitForText(page);
-  await page.click("#readBookBtn");
+  await openRecognisedBook(page, ["side-da.jpg"]);
   await expect(page.locator("#bookMenuBtn")).toBeHidden();
   await expect(page.locator("#thumbs")).toBeHidden();
   await openWorkshop(page);
@@ -103,8 +101,7 @@ test("Opening another book resets its editing tools", async ({ page }) => {
 });
 
 test("Closing the text editor also ends moving text boxes", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg"]);
-  await waitForText(page);
+  await openRecognisedBook(page, ["side-da.jpg"]);
   await bookTool(page, "checkTextBtn");
   await page.click("#moveBtn");
   await expect(page.locator("#reader .grip").first()).toBeVisible();
@@ -115,8 +112,8 @@ test("Closing the text editor also ends moving text boxes", async ({ page }) => 
 });
 
 test("Reading mode shows only the text, read aloud and close", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg"]);
-  await waitForText(page);
+  await openRecognisedBook(page, ["side-da.jpg"]);
+  await openWorkshop(page);
   await page.click("#focusBtn");
   await expect(page.locator("#reader")).toBeVisible();
   await expect(page.locator("#readBtn")).toBeVisible();
@@ -173,8 +170,7 @@ test("A broken image file displays a clear message", async ({ page }) => {
 });
 
 test("Preserves corrections when switching the syllable-hyphen setting", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg"]);
-  await waitForText(page);
+  await openRecognisedBook(page, ["side-da.jpg"]);
   await bookTool(page, "checkTextBtn");
   const t = await page.locator("#text").inputValue();
   await page.locator("#text").fill(t.replace("Pindsvinet", "Pindsvinet Bob-by"));

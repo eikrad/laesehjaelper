@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import fs from "node:fs";
 import path from "node:path";
 
 export const fixture = (name: string) => path.resolve("tests/fixtures", name);
@@ -20,6 +21,33 @@ export async function seedBooks(page: Page, books: { id: string; title: string; 
     db.close();
   }, books);
   await page.reload();
+}
+
+/**
+ * A book of self-made pages recognised beforehand (tests/fixtures/make-recognised.ts), opened for
+ * reading. For tests that need recognised pages but do not test recognition: much faster than
+ * recognising the photos again. `names` are fixture photos, e.g. "side-da.jpg".
+ */
+export async function openRecognisedBook(page: Page, names: string[]) {
+  const records = names.map(n => JSON.parse(fs.readFileSync(fixture(n.replace(/\.jpg$/, ".recognised.json")), "utf8")));
+  await page.evaluate(async records => {
+    const blob = (b64: string | null) => (b64 ? new Blob([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], { type: "image/jpeg" }) : null);
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const r = indexedDB.open("laesehjaelper", 1);
+      r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
+    });
+    const tx = db.transaction(["books", "pages"], "readwrite");
+    const ids = records.map((_, i) => `recognised-${i}`);
+    tx.objectStore("books").put({ id: "recognised", title: "Prøvebog", pageIds: ids, lastPage: 0, created: 1, cover: null });
+    records.forEach(({ input, photo, clean, ...r }, i) => tx.objectStore("pages").put({
+      ...r, id: ids[i], bookId: "recognised", status: "done", question: "", inputBlob: blob(input), photoBlob: blob(photo), cleanBlob: blob(clean),
+    }));
+    await new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); });
+    db.close();
+  }, records);
+  await page.reload();
+  await page.locator(".book").click();
+  await waitForText(page);
 }
 
 /** Stored pages of a book (the first one by default) in book order, as saved on the device. */

@@ -1,12 +1,12 @@
 import { expect, test } from "./fixtures";
 import { strFromU8, unzipSync } from "fflate";
 import fs from "node:fs";
-import { addPhotos, bookTool, fresh, seedBooks, waitForText } from "./helpers";
+import { addPhotos, bookTool, fresh, openRecognisedBook, openWorkshop, seedBooks, waitForText } from "./helpers";
 
 test("Exported page layout is independent of the screen orientation", async ({ page }, info) => {
   await fresh(page);
-  await addPhotos(page, ["side-da.jpg"]);
-  await waitForText(page);
+  await openRecognisedBook(page, ["side-da.jpg"]);
+  await openWorkshop(page);   // Export is a book tool.
   await page.evaluate(() => document.fonts.ready.then(() => {}));
   const pages: string[] = [];
   for (const viewport of [{ width: 820, height: 1180 }, { width: 1180, height: 820 }]) {

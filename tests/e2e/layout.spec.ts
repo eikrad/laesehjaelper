@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { addPhotos, fixture, fresh, openWorkshop, readBook, seedBooks, waitForText } from "./helpers";
+import { fixture, fresh, openRecognisedBook, openWorkshop, seedBooks } from "./helpers";
 
 // Layout checks. Unlike the other specs, these run at every screen size the app is
 // designed for: phone, tablet portrait, tablet landscape and laptop (see playwright.config.ts).
@@ -81,16 +81,12 @@ test("The start screen fits the screen width", async ({ page }) => {
 });
 
 test("A book page fits the screen width", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg"]);
-  await waitForText(page);
-  await readBook(page);
+  await openRecognisedBook(page, ["side-da.jpg"]);
   expect(await sidewaysScroll(page)).toBe(0);
 });
 
 test("The toolbar fits on one line inside the screen in every language", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg"]);   // Read a prepared photo page.
-  await waitForText(page);
-  await readBook(page);
+  await openRecognisedBook(page, ["side-da.jpg"]);
   const viewport = page.viewportSize()!;
   // Check both sides of the compact-toolbar breakpoint without repeating OCR.
   const widths = viewport.width === 360 ? [360, 440, 441, 600, 601] : [viewport.width];
@@ -134,17 +130,17 @@ test("The crop dialog fills the screen and keeps its buttons after turning the d
 test("On touch screens every control is at least 44 px", async ({ page }, info) => {
   test.skip(!info.project.use.hasTouch, "A mouse pointer hits smaller targets.");
   await expect.poll(() => smallControls(page), { message: "start screen" }).toEqual([]);
-  await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
-  await waitForText(page);
-  await expect.poll(() => smallControls(page), { message: "reader" }).toEqual([]);
+  await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
+  await expect.poll(() => smallControls(page), { message: "reading" }).toEqual([]);
   await expect.poll(() => smallControls(page, 48, "#dock"), { message: "reading toolbar" }).toEqual([]);
   await page.click("#setBtn");
   // Measure the open sheet, not the first frame of its fade-in (all controls still invisible).
   await expect(page.locator("#settings")).toHaveCSS("opacity", "1");
   await expect.poll(() => smallControls(page), { message: "settings" }).toEqual([]);
   await page.click("#setBtn");
-  await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
   await openWorkshop(page);
+  await expect.poll(() => smallControls(page), { message: "workshop" }).toEqual([]);
+  await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
   await page.locator("#moveBtn").evaluate((b: HTMLButtonElement) => b.click());
   await expect.poll(() => smallControls(page), { message: "editing pages and text boxes" }).toEqual([]);
 });
@@ -174,9 +170,7 @@ async function expectPageOnScreen(page: Page) {
 }
 
 test("The whole book page is on screen on tablets and laptops; phones use the full width", async ({ page }, info) => {
-  await addPhotos(page, ["side-da.jpg"]);
-  await waitForText(page);
-  await readBook(page);
+  await openRecognisedBook(page, ["side-da.jpg"]);
   const { width, height } = page.viewportSize()!;
   if (width < 600) {
     const reader = (await page.locator("#reader").boundingBox())!;
@@ -196,8 +190,7 @@ test("The whole book page is on screen on tablets and laptops; phones use the fu
 });
 
 test("Scrolled to the end, the toolbar covers nothing that can be tapped", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
-  await waitForText(page);
+  await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await openWorkshop(page);   // Editing adds the most controls below the page.
   await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
@@ -223,9 +216,7 @@ async function swipeOnReader(page: Page, dx: number, dy: number) {
 
 test("Swiping turns the page; taps, scrolling and moving text boxes do not", async ({ page }, info) => {
   test.skip(!info.project.use.hasTouch, "Swiping needs a touch screen.");
-  await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
-  await waitForText(page);
-  await readBook(page);
+  await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
   const count = page.locator("#count");
   await expect(count).toHaveText("1 / 2");
   await swipeOnReader(page, -150, 0);
@@ -244,9 +235,7 @@ test("Swiping turns the page; taps, scrolling and moving text boxes do not", asy
 });
 
 test("On wide screens big buttons at the screen edges turn the page", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
-  await waitForText(page);
-  await readBook(page);
+  await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
   const width = page.viewportSize()!.width;
   const prev = page.locator("#edgePrev"), next = page.locator("#edgeNext");
   if (width < 840) {
@@ -265,9 +254,7 @@ test("On wide screens big buttons at the screen edges turn the page", async ({ p
 });
 
 test("In text view on wide screens the photo sits beside the text, otherwise above it", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg"]);
-  await waitForText(page);
-  await readBook(page);
+  await openRecognisedBook(page, ["side-da.jpg"]);
   await page.click("#setBtn");
   await page.click("#viewSet button[data-v=tekst]");
   await page.click("#setBtn");
@@ -299,9 +286,7 @@ test("In text view on wide screens the photo sits beside the text, otherwise abo
 });
 
 test("On wide screens the settings open beside the page, which stays visible; otherwise as a bottom sheet", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg"]);
-  await waitForText(page);
-  await readBook(page);
+  await openRecognisedBook(page, ["side-da.jpg"]);
   await page.click("#setBtn");
   const { width, height } = page.viewportSize()!;
   const panel = page.locator("#settings");
