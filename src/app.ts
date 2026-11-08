@@ -1,13 +1,13 @@
 // Læsehjælper – application logic (UI, text recognition, bookshelf).
 import { addProfile, fromEarlier, initProfiles, removeProfile, switchProfile, syncActive, type ProfileStore } from "./profiles";
 import { pageQuestions } from "./together";
-import { harmonizeSizes } from "./fit";
+import { harmonizeSizes, scaleToTarget } from "./fit";
 import { boldFlags, strokeWidth } from "./bold";
 import { dragBox, transferPlaces } from "./place";
 import { morphParts } from "./morpheme";
 import { shortLineBreaks } from "./lines";
 import { speechRate, showYourTurn, wordSteps } from "./readflow";
-import { wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
+import { boxLineHeight, boxSpacing, DEFAULT_LH, DEFAULT_LS, wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
 import { marksSyllables, silben } from "./silben";
 import { swipeDirection } from "./swipe";
 import { resumePage } from "./bookshelf";
@@ -98,7 +98,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   // Word highlighting during read-aloud starts off as well: it has not been shown to help, and it can
   // pull children along with the voice (Gerbier, Bailly & Bosse 2018, doi:10.1016/j.csl.2017.07.003).
   // Settings saved before it was a setting keep it on (fromEarlier in src/profiles.ts).
-  const defaults: Settings = { gate: "aus", font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "aus", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus", sylWords: "alle", highlight: "aus" };
+  const defaults: Settings = { gate: "aus", font: '"Andika", sans-serif', size: 32, ls: DEFAULT_LS, lh: DEFAULT_LH, mode: "aus", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus", sylWords: "alle", highlight: "aus" };
   const S: Settings = { ...defaults };
   try { const saved = localStorage.getItem("lesehelfer"); if (saved) Object.assign(S, fromEarlier(JSON.parse(saved))); } catch {}
   const PROFILES = "laesehjaelper-profiles";
@@ -129,7 +129,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       how3t: "Læs", how3: "Tryk på et ord for at høre det. Tilpas skrift og farver.",
       prevPage: "Forrige side", nextPage: "Næste side", page: "Side", pageOf: "{a} / {b}",
       read: "Læs op", stop: "Stop", adjust: "Tilpas", closeSettings: "Luk indstillinger", moreSettings: "Flere indstillinger", focus: "Læsetilstand", close: "Luk læsetilstand",
-      font: "Skrift", andika: "Andika (til begyndere)", size: "Skriftstørrelse", letterSp: "Bogstavafstand", lineSp: "Linjeafstand",
+      font: "Skrift", andika: "Andika (til begyndere)", sizeHint: "Der er ikke plads til større skrift på bogens side. Vælg „Kun teksten“ for større skrift.", size: "Skriftstørrelse", letterSp: "Bogstavafstand", lineSp: "Linjeafstand",
       syllables: "Stavelser", off: "Fra", color: "Farve", arcs: "Buer", both: "Begge",
       sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse", view: "Visning", viewPage: "Bogens side", viewText: "Kun teksten", hyph: "Bindestreger i bogen", hyphNormal: "Almindelige", hyphBook: "Stavelsesdeling", hyphHint: "Vælg „Stavelsesdeling“, hvis bogen selv deler ord med bindestreg eller prik, f.eks. „sko-le“ eller „sko·le“.",
       background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
@@ -161,7 +161,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       how3t: "Read", how3: "Tap a word to hear it. Adjust the font and colours.",
       prevPage: "Previous page", nextPage: "Next page", page: "Page", pageOf: "{a} / {b}",
       read: "Read aloud", stop: "Stop", adjust: "Adjust", closeSettings: "Close settings", moreSettings: "More settings", focus: "Reading mode", close: "Close reading mode",
-      font: "Font", andika: "Andika (for beginners)", size: "Font size", letterSp: "Letter spacing", lineSp: "Line spacing",
+      font: "Font", andika: "Andika (for beginners)", sizeHint: "The book page has no room for larger text. Choose “Text only” for larger text.", size: "Font size", letterSp: "Letter spacing", lineSp: "Line spacing",
       syllables: "Syllables", off: "Off", color: "Colour", arcs: "Arcs", both: "Both",
       sylColors: "Syllable colours", cBlueRed: "Blue and red", cBlueBlack: "Blue and black", cRedBlack: "Red and black", cPurpleGreen: "Purple and green", syl1: "1st syllable", syl2: "2nd syllable", view: "View", viewPage: "Book page", viewText: "Text only", hyph: "Hyphens in the book", hyphNormal: "Normal", hyphBook: "Syllable breaks", hyphHint: "Choose “Syllable breaks” if the book itself splits words with hyphens or dots, e.g. “gar-den” or “gar·den”.",
       background: "Background", bWhite: "White", bCream: "Cream", bYellow: "Yellow", bBlue: "Light blue", bGreen: "Light green",
@@ -193,7 +193,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       how3t: "Lesen", how3: "Wort antippen zum Vorlesen. Schrift und Farben anpassen.",
       prevPage: "Vorherige Seite", nextPage: "Nächste Seite", page: "Seite", pageOf: "{a} / {b}",
       read: "Vorlesen", stop: "Stopp", adjust: "Anpassen", closeSettings: "Einstellungen schließen", moreSettings: "Weitere Einstellungen", focus: "Lesemodus", close: "Lesemodus schließen",
-      font: "Schrift", andika: "Andika (für Leseanfänger)", size: "Schriftgröße", letterSp: "Buchstabenabstand", lineSp: "Zeilenabstand",
+      font: "Schrift", andika: "Andika (für Leseanfänger)", sizeHint: "Auf der Buchseite ist kein Platz für größere Schrift. Wähle „Nur Text“ für größere Schrift.", size: "Schriftgröße", letterSp: "Buchstabenabstand", lineSp: "Zeilenabstand",
       syllables: "Silben", off: "Aus", color: "Farbe", arcs: "Bögen", both: "Beides",
       sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe", view: "Ansicht", viewPage: "Buchseite", viewText: "Nur Text", hyph: "Bindestriche im Buch", hyphNormal: "Normal", hyphBook: "Silbentrennung", hyphHint: "„Silbentrennung“ wählen, wenn das Buch Wörter selbst mit Bindestrich oder Punkt trennt, z. B. „Scho-ko-la-de“ oder „Scho·ko·la·de“.",
       background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
@@ -275,6 +275,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     r.setProperty("--ws", wordSpacing(S.ls, WORD_BASE_FLOW) + "em");
     r.setProperty("--ws-box", wordSpacing(S.ls, WORD_BASE_BOX) + "em");
     r.setProperty("--lh", String(S.lh));
+    r.setProperty("--lh-box", String(boxLineHeight(S.lh)));
     const [c0, c1] = S.colors.split(",");
     r.setProperty("--s0", c0); r.setProperty("--s1", c1);
     $in("c0").value = c0; $in("c1").value = c1;
@@ -293,7 +294,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     // Showing or hiding the original page only applies to text view. In book-page view,
     // the page itself is the image; use the eye button to compare it.
     $("origToggle").closest<HTMLElement>(".field")!.hidden = S.view === "side";
-    if ($("reader").classList.contains("pagemode")) requestAnimationFrame(() => fitBoxes());
+    if ($("reader").classList.contains("pagemode")) requestAnimationFrame(() => fitPage());
     save();
   }
   $("font").onchange = e => { S.font = val(e); applySettings(); };
@@ -668,6 +669,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     const built = buildText(pg.text, pg.lang);
     const ps = built.ps;
     rd.innerHTML = ""; speech = built.speech;
+    $("sizeHint").hidden = true;   // Only the book page can lack room for the wished size (fitPage).
     const page = isPageMode(pg);
     rd.classList.toggle("pagemode", page);
     if (!page) { ps.forEach(p => { if (S.lines === "kort") shortLines(p); rd.append(p); }); return; }
@@ -675,7 +677,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     const pv = buildPageView(pg, ps);
     const img = pv.querySelector("img")!;
     rd.append(pv);
-    const go = () => requestAnimationFrame(() => fitBoxes());
+    const go = () => requestAnimationFrame(() => fitPage());
     if (moving) addGrips();
     if (img.complete) go(); else img.onload = go;
     if (document.fonts) document.fonts.ready.then(go);
@@ -696,6 +698,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       const x0 = Math.max(0, g.x0 - pad), y0 = Math.max(0, g.y0 - pad);
       const x1 = Math.min(W, g.x1 + pad), y1 = Math.min(H, g.y1 + pad);
       box.dataset.lh = String(pa.lh / H);
+      box.dataset.lines = String(pa.lines?.length || 1);
       Object.assign(box.style, { left: x0 / W * 100 + "%", top: y0 / H * 100 + "%", width: (x1 - x0) / W * 100 + "%", height: (y1 - y0) / H * 100 + "%" });
       // Text on a picture: a soft halo where the picture was inpainted, otherwise its own panel.
       if (pa.inpainted && pa.rgb) box.style.textShadow = halo(pa.rgb);
@@ -761,37 +764,75 @@ const Lib = { detectPage, warpPage, orderCorners };
       if (pa && (cur0.x0 !== start.x0 || cur0.y0 !== start.y0 || cur0.x1 !== start.x1 || cur0.y1 !== start.y1)) {
         pa.place = cur0; savePage(pg);
         $<HTMLButtonElement>("resetPlaceBtn").hidden = false;
-        fitBoxes();
+        fitPage();
       }
     };
     el.addEventListener("pointermove", onMove); el.addEventListener("pointerup", onUp); el.addEventListener("pointercancel", onUp);
   });
 
   // Choose a font size for each box that fits the area of the original text.
-  function fitBoxes(root: ParentNode = document) {
+  /**
+   * Fit the text boxes of the book page on screen to the reader's text size: as large as wished
+   * where the page has room. Says in the settings when it has not.
+   */
+  function fitPage() {
+    $("sizeHint").hidden = !fitBoxes(document, S.size) || !$("reader").classList.contains("pagemode");
+  }
+
+  /**
+   * Fit the text of each book-page box: the largest size that fits, equal text equal and headings
+   * larger (harmonizeSizes), and with a `target` no larger than that size for the body text.
+   * Returns whether the boxes have no room for the target.
+   */
+  function fitBoxes(root: ParentNode = document, target?: number): boolean {
     const sizes = new Map<HTMLElement, number>();
     const boxes = [...root.querySelectorAll<HTMLElement>(".pageview .tbox")];
+    const fits = (box: HTMLElement) => {
+      const text = box.querySelector<HTMLElement>(".tbox-text")!;
+      return text.scrollHeight <= text.clientHeight + 1 && text.scrollWidth <= text.clientWidth + 1;
+    };
+    /** Spacing of one box, from the default (k = 0) to the reader's (k = 1). */
+    const space = (box: HTMLElement, k: number) => {
+      const sp = boxSpacing(S.ls, S.lh, k);
+      box.style.setProperty("--ls", sp.ls + "em");
+      box.style.setProperty("--lh-box", String(sp.lh));
+      box.style.setProperty("--ws-box", sp.ws + "em");
+    };
+    // 1. The largest size that fits each box with the default spacing.
     boxes.forEach(box => {
       const h = box.clientHeight, w = box.clientWidth;
       if (!h || !w) return;
-      const text = box.querySelector<HTMLElement>(".tbox-text")!;
+      space(box, 0);
       // Limit the size to a little over twice the original text size.
       const maxFs = parseFloat(box.dataset.lh || "1") * (box.parentElement?.clientHeight || h) * 2.4;
       let lo = 4, hi = Math.max(8, Math.min(h, maxFs));
       for (let k = 0; k < 12; k++) {
         const mid = (lo + hi) / 2;
         box.style.fontSize = mid + "px";
-        if (text.scrollHeight <= text.clientHeight + 1 && text.scrollWidth <= text.clientWidth + 1) lo = mid; else hi = mid;
+        if (fits(box)) lo = mid; else hi = mid;
       }
       box.style.fontSize = lo + "px";
       sizes.set(box, lo);
     });
-    // Preserve relative original sizes: equal text stays equal, and headings stay larger.
-    const fitted = harmonizeSizes(boxes.map(b => ({ lh: parseFloat(b.dataset.lh || "0"), fit: sizes.get(b) || 0 })));
-    boxes.forEach((b, i) => { if (sizes.has(b)) b.style.fontSize = fitted[i] + "px"; });
+    // 2. Equal text equal, headings larger, and the body text no larger than the wished size.
+    const fitted = harmonizeSizes(boxes.map(b => ({ lh: parseFloat(b.dataset.lh || "0"), fit: sizes.get(b) || 0, lines: Number(b.dataset.lines) || 1 })));
+    const scaled = target ? scaleToTarget(fitted, boxes.map(b => (b.textContent || "").length), target) : { sizes: fitted, limited: false };
+    // 3. The reader's spacing, as far as it fits at that size: a full box keeps its text size.
+    let reduced = false;
+    boxes.forEach((box, i) => {
+      if (!sizes.has(box)) return;
+      box.style.fontSize = scaled.sizes[i] + "px";
+      space(box, 1);
+      if (fits(box)) return;
+      reduced = true;
+      let lo = 0, hi = 1;
+      for (let k = 0; k < 8; k++) { const mid = (lo + hi) / 2; space(box, mid); if (fits(box)) lo = mid; else hi = mid; }
+      space(box, lo);
+    });
+    return scaled.limited || reduced;
   }
   let fitT = 0;
-  new ResizeObserver(() => { clearTimeout(fitT); fitT = window.setTimeout(() => fitBoxes(), 60); }).observe($("reader"));
+  new ResizeObserver(() => { clearTimeout(fitT); fitT = window.setTimeout(() => fitPage(), 60); }).observe($("reader"));
 
   /** Measure boldness and mark words; Tesseract does not provide font characteristics. */
   function greyOf(c: HTMLCanvasElement): Gray {
@@ -1162,7 +1203,7 @@ const Lib = { detectPage, warpPage, orderCorners };
 html, body { margin: 0; padding: 0; }
 .page { position: relative; overflow: hidden; background: ${S.bg}; color: #1d1d1f; font-family: ${S.font}; }
 .bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-.tbox { position: absolute; overflow: hidden; line-height: ${Math.min(S.lh, 1.6)}; letter-spacing: ${S.ls}em; word-spacing: ${wordSpacing(S.ls, WORD_BASE_BOX)}em; }
+.tbox { position: absolute; overflow: hidden; line-height: ${boxLineHeight(S.lh)}; letter-spacing: ${S.ls}em; word-spacing: ${wordSpacing(S.ls, WORD_BASE_BOX)}em; }
 .tbox p, .flow p { margin: 0 0 .35em; }
 .busy { border-radius: 12px; padding: 0 .3em; }
 .flow { position: absolute; left: 70px; right: 70px; top: 70px; line-height: ${S.lh}; letter-spacing: ${S.ls}em; word-spacing: ${wordSpacing(S.ls, WORD_BASE_FLOW)}em; }
@@ -1190,6 +1231,12 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
         const img = pv.querySelector("img")!;
         try { await img.decode(); } catch { /* Image unavailable: still lay out the text boxes. */ }
         fitBoxes(host);
+        // E-book readers may not support CSS variables: write each box's spacing out.
+        pv.querySelectorAll<HTMLElement>(".tbox").forEach(b => {
+          const cs = getComputedStyle(b);
+          Object.assign(b.style, { letterSpacing: cs.letterSpacing, lineHeight: cs.lineHeight, wordSpacing: cs.wordSpacing });
+          for (const v of ["--ls", "--lh-box", "--ws-box"]) b.style.removeProperty(v);
+        });
         img.remove();
         const boxes = [...pv.querySelectorAll<HTMLElement>(".tbox")].map(b => { b.removeAttribute("data-lh"); return ser.serializeToString(b); });
         out.push({ width: EXPORT_W, height: Math.round(EXPORT_W * pg.workH / pg.workW), image: (await blobBytes(pg.cleanBlob)) || (await urlBytes(pg.clean)), bodyHtml: boxes.join("\n") });
@@ -1375,11 +1422,26 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     const ro = new ResizeObserver(layout); ro.observe(stage);
     layout();
 
-    // The buttons work at once: the whole photo needs no page search, and "Use" waits for OpenCV
-    // only to straighten the page. A search that finishes after the user decided changes nothing.
+    // The buttons work at once. The whole photo needs no page search; "Use" on the untouched frame
+    // of a new photo means the suggestion and waits for the search; "Use" on an adjusted frame waits
+    // for OpenCV only to straighten the page. A search that finishes after the user decided changes nothing.
     const cvReady: Promise<CV | null> = getCv().catch((e) => { console.error(e); return null; });
     const okBtn = $<HTMLButtonElement>("cropOk"), wholeBtn = $<HTMLButtonElement>("cropWhole");
-    let decided = false;
+    let decided = false, searched = false;
+    // Look for the page alongside: the user may adjust or accept the frame before the search is done.
+    const search = cvReady.then((cv) => {
+      if (decided) return;
+      try {
+        if (cv && !start && !adjusted) {
+          const found = Lib.detectPage(cv, photo);
+          if (found) { pts = [...found, ...frameFromCorners(found).mids]; draw(); }
+          msg(found ? "cropFound" : "cropNone");
+        } else msg("cropNone");
+      } catch (e) {
+        console.error(e);
+        msg("cropNone");
+      }
+    }).finally(() => { searched = true; });
     const result = new Promise<CropResult>((resolve) => {
       const finish = async (frame: Frame | null) => {
         if (decided) return;
@@ -1400,23 +1462,14 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
         if (isFull || !cv) return resolve({ canvas: photo, corners: null });
         resolve({ canvas: Lib.warpPage(cv, photo, frame!), corners: frame });
       };
-      okBtn.onclick = () => finish({ corners: pts.slice(0, 4) as Corners, mids: pts.slice(4, 8) as Corners });
+      okBtn.onclick = async () => {
+        if (!start && !adjusted && !searched) {
+          okBtn.disabled = wholeBtn.disabled = true;
+          await search;
+        }
+        finish({ corners: pts.slice(0, 4) as Corners, mids: pts.slice(4, 8) as Corners });
+      };
       wholeBtn.onclick = () => finish(null);
-    });
-
-    // Look for the page alongside: the user may adjust or accept the frame before the search is done.
-    cvReady.then((cv) => {
-      if (decided) return;
-      try {
-        if (cv && !start && !adjusted) {
-          const found = Lib.detectPage(cv, photo);
-          if (found) { pts = [...found, ...frameFromCorners(found).mids]; draw(); }
-          msg(found ? "cropFound" : "cropNone");
-        } else msg("cropNone");
-      } catch (e) {
-        console.error(e);
-        msg("cropNone");
-      }
     });
     return result;
   }

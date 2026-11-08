@@ -1,11 +1,11 @@
 // Remove the original text from the page image.
 //
-// Plain paper: paint each word with the colours around it, as a left-to-right gradient so that
-// uneven lighting leaves no bright or dark boxes.
-// Text on an illustration: a fill would leave a visible patch. Instead, mask only the letter
-// strokes and let OpenCV fill them in from the surrounding picture (inpainting with the fast
-// marching method: Telea, 2004, Journal of Graphics Tools, DOI 10.1080/10867651.2004.10487596).
-// Without OpenCV, fall back to the fill; the page view then gives the text its own panel.
+// Mask only the letter strokes and let OpenCV fill them in from their surroundings (inpainting with
+// the fast marching method: Telea, 2004, Journal of Graphics Tools, DOI 10.1080/10867651.2004.10487596).
+// On an illustration a fill would leave a visible patch; on a photographed page the paper has a
+// texture and uneven light, so a painted box shows too. Everything around the letters stays as it was.
+// Without OpenCV, paint each word with the colours around it, as a left-to-right gradient; on a
+// picture the page view then gives the text its own panel.
 
 import type { CV } from "./pagedetect";
 import type { Box, Para } from "./types";
@@ -17,6 +17,11 @@ type RGB = [number, number, number];
 const med = (a: number[]): number => { a.sort((x, y) => x - y); return a[a.length >> 1]; };
 const lumOf = (r: number, g: number, b: number) => 0.3 * r + 0.59 * g + 0.11 * b;
 const dist = (a: ArrayLike<number>, b: ArrayLike<number>) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]);
+/** How much the colours around a paragraph's words may vary (mean per channel) before its text
+ *  counts as standing on a picture, which gets a halo in the page view. */
+const BUSY = 26;
+/** Colour distance (sum over the channels) within which a pixel matches the ground around a word. */
+const PLAIN_TOL = 36;
 /** Padding around a word that the fill covers and whose border tells the background. */
 const padOf = (lh: number) => Math.round(lh * 0.28) + 3;
 
@@ -57,17 +62,30 @@ export function eraseText(img: Pixels, paras: Para[], cv: CV | null = null): voi
     });
     const spreadMax = Math.max(0, ...fills.map(f => Math.min(f.L.dev, f.R.dev)));
     const avg = [0, 1, 2].map(k => Math.round(fills.reduce((a, f) => a + (f.L.m[k] + f.R.m[k]) / 2, 0) / fills.length));
-    pa.busy = spreadMax > 26;
+    pa.busy = spreadMax > BUSY;
     pa.bg = `rgba(${avg[0]},${avg[1]},${avg[2]},.94)`;
     pa.rgb = avg;
     delete pa.inpainted;
-    if (pa.busy && cv) {
+    if (cv) {
       try {
-        // The region holds every masked pixel plus the picture around it that the fill draws on.
+        // The region holds every masked pixel plus the surroundings the inpainting draws from.
         const radius = Math.max(3, Math.round(pa.lh * 0.1)), m = reachOf(pa.lh) + grown(pa.lh) + radius + 2;
         const roi = clip(union([...words, ...extra].map(b => ({ x0: b.x0 - m, y0: b.y0 - m, x1: b.x1 + m, y1: b.y1 + m }))), W, H);
-        inpaint(cv, img, inkMask(orig, words, pa.lh, roi, extra), roi, radius, pa.lh >= 20 ? 2 : 1);
-        pa.inpainted = true;
+        // Each half of a word goes by its own surroundings, as a line can end on a picture. On plain
+        // ground the text is whatever clearly stands out from it; on a picture, whatever looks more
+        // like the text than like the picture.
+        const plain: Ground[] = [], onPicture: Box[] = [];
+        [...words, ...extra].forEach((r, k) => {
+          const { L, R } = fills[k], mid = (r.x0 + r.x1) / 2;
+          if (L.plain && R.plain) plain.push({ r, L: L.m, R: R.m });
+          else if (L.plain) { plain.push({ r: { ...r, x1: mid }, L: L.m, R: L.m }); onPicture.push({ ...r, x0: mid }); }
+          else if (R.plain) { plain.push({ r: { ...r, x0: mid }, L: R.m, R: R.m }); onPicture.push({ ...r, x1: mid }); }
+          else onPicture.push(r);
+        });
+        const mask = paperMask(orig, plain, pa.lh, roi), ink = inkMask(orig, words, pa.lh, roi, onPicture);
+        for (let i = 0; i < mask.length; i++) mask[i] |= ink[i];
+        inpaint(cv, img, mask, roi, radius, pa.lh >= 20 ? 2 : 1);
+        if (pa.busy) pa.inpainted = true;   // Text on a picture gets a halo in the page view.
         continue;
       } catch (e) {
         console.warn("Inpainting failed; painting over the text instead", e);
@@ -77,19 +95,35 @@ export function eraseText(img: Pixels, paras: Para[], cv: CV | null = null): voi
   }
 }
 
-/** Median colour along the border of r between columns sx0 and sx1, and how much the border
- *  deviates from it (mean per channel). */
+/** Median colour along the border of r between columns sx0 and sx1, how much the border deviates
+ *  from it (mean per channel), and whether the part runs along plain ground: at least three
+ *  quarters of the border above and below it match the ground, so a picture that only touches
+ *  the end of a word does not count, but one the word lies on does. */
 function ringStats(img: Pixels, r: Box, sx0: number, sx1: number) {
   const W = img.width, px = img.data;
-  const R: number[] = [], G: number[] = [], B: number[] = [];
-  const take = (x: number, y: number) => { const i = (y * W + x) * 4; R.push(px[i]); G.push(px[i + 1]); B.push(px[i + 2]); };
+  const R: number[] = [], G: number[] = [], B: number[] = [], xs: number[] = [];
+  const take = (x: number, y: number) => { const i = (y * W + x) * 4; R.push(px[i]); G.push(px[i + 1]); B.push(px[i + 2]); xs.push(x); };
   for (let x = sx0; x <= sx1; x += 2) { take(x, r.y0); take(x, r.y1); }
+  const rows = R.length;
   if (sx0 === r.x0) for (let y = r.y0; y <= r.y1; y += 2) take(r.x0, y);
   if (sx1 === r.x1) for (let y = r.y0; y <= r.y1; y += 2) take(r.x1, y);
   const m = [med(R.slice()), med(G.slice()), med(B.slice())];
   let dev = 0;
   for (let i = 0; i < R.length; i++) dev += Math.abs(R[i] - m[0]) + Math.abs(G[i] - m[1]) + Math.abs(B[i] - m[2]);
-  return { m, dev: dev / R.length / 3 };
+  // The ground along the rows can brighten or darken (uneven light): compare it with a straight
+  // line through the medians of the rows' left and right parts.
+  const xm = (sx0 + sx1) / 2, xa = (sx0 + xm) / 2, xb = (xm + sx1) / 2;
+  const part = (left: boolean) => {
+    const k = xs.slice(0, rows).flatMap((x, i) => ((x < xm) === left ? [i] : []));
+    return k.length ? [R, G, B].map(c => med(k.map(i => c[i]))) : m;
+  };
+  const a = part(true), b = part(false);
+  let along = 0;
+  for (let i = 0; i < rows; i++) {
+    const t = (xs[i] - xa) / Math.max(1, xb - xa), c = [R[i], G[i], B[i]];
+    if (c.reduce((d, v, k) => d + Math.abs(v - (a[k] + (b[k] - a[k]) * t)), 0) <= PLAIN_TOL) along++;
+  }
+  return { m, dev: dev / R.length / 3, plain: along >= rows * 0.75 };
 }
 
 /** Fill the box (inclusive edges) with a horizontal gradient from colour a to colour b,
@@ -118,10 +152,10 @@ const reachOf = (lh: number) => 2 + Math.round(lh * 0.08);
 /** How far the mask grows beyond the letters: anti-aliasing and JPEG blur around the strokes. */
 const grown = (lh: number) => 1 + Math.round(lh * 0.04);
 
-/** Mask (1 = text) over roi for the letters: pixels near the words, and in the extra areas
- *  (line endings), that are closer to the text colour than to every colour around the text.
- *  Picture parts inside a word box stay unmasked unless they look like the text. */
-export function inkMask(img: Pixels, words: Box[], lh: number, roi: Box, extra: Box[] = []): Uint8Array {
+/** Mask (1 = text) over roi for the letters in areas (words or parts of them, line endings): pixels
+ *  near them that are closer to the text colour, found in words, than to every colour around the
+ *  areas. Picture parts inside an area stay unmasked unless they look like the text. */
+export function inkMask(img: Pixels, words: Box[], lh: number, roi: Box, areas: Box[] = words): Uint8Array {
   const W = img.width, H = img.height, px = img.data;
   const rw = roi.x1 - roi.x0, rh = roi.y1 - roi.y0;
   const mask = new Uint8Array(rw * rh);
@@ -132,23 +166,20 @@ export function inkMask(img: Pixels, words: Box[], lh: number, roi: Box, extra: 
   const lumAt = (i: number) => lumOf(px[i], px[i + 1], px[i + 2]);
   const bucket = (i: number) => (px[i] >> 3) << 10 | (px[i + 1] >> 3) << 5 | px[i + 2] >> 3;
 
-  // Colours around the text: the borders of the padded boxes.
-  const around: number[] = [];
-  for (const b of [...words, ...extra]) {
-    const r = clip({ x0: b.x0 - pad, y0: b.y0 - pad, x1: b.x1 + pad, y1: b.y1 + pad }, W - 1, H - 1);
-    for (let x = r.x0; x <= r.x1; x += 2) around.push((r.y0 * W + x) * 4, (r.y1 * W + x) * 4);
-    for (let y = r.y0; y <= r.y1; y += 2) around.push((y * W + r.x0) * 4, (y * W + r.x1) * 4);
-  }
-  // Text colour: the most extreme tenth of the word pixels (every other one is enough), on
-  // whichever side of the surroundings the letters lie (dark on light or light on dark).
-  const inside: number[] = [];
-  for (const b of words) { const r = clip(b, W, H); for (let y = r.y0; y < r.y1; y += 2) for (let x = r.x0; x < r.x1; x += 2) inside.push((y * W + x) * 4); }
-  if (!inside.length || !around.length) return mask;
-  const bgLum = med(around.map(lumAt));
-  const lums = Float32Array.from(inside, lumAt).sort();
-  const lo = lums[Math.floor(lums.length * 0.1)], hi = lums[Math.ceil(lums.length * 0.9) - 1];
-  const dark = bgLum - lo >= hi - bgLum;
-  const core = inside.filter(i => (dark ? lumAt(i) <= lo : lumAt(i) >= hi));
+  // Colours around boxes: the borders of the padded boxes.
+  const ring = (bs: Box[]) => {
+    const out: number[] = [];
+    for (const b of bs) {
+      const r = clip({ x0: b.x0 - pad, y0: b.y0 - pad, x1: b.x1 + pad, y1: b.y1 + pad }, W - 1, H - 1);
+      for (let x = r.x0; x <= r.x1; x += 2) out.push((r.y0 * W + x) * 4, (r.y1 * W + x) * 4);
+      for (let y = r.y0; y <= r.y1; y += 2) out.push((y * W + r.x0) * 4, (y * W + r.x1) * 4);
+    }
+    return out;
+  };
+  const around = ring(areas);
+  if (!around.length) return mask;
+  const { core } = textPixels(img, words, med(ring(words).map(lumAt)));
+  if (!core.length) return mask;
   const text: RGB = [0, 1, 2].map(k => med(core.map(i => px[i + k]))) as RGB;
 
   // The surrounding palette: frequent colours (in 8-step buckets), without those that look like
@@ -162,13 +193,75 @@ export function inkMask(img: Pixels, words: Box[], lh: number, roi: Box, extra: 
 
   // Decide once per colour bucket: text if nearer to the text colour than to any background colour.
   const memo = new Int8Array(1 << 15).fill(-1);
-  for (const b of [...words.map(near), ...extra.map(e => clip(e, W, H))]) {
+  for (const b of areas.map(near)) {
     for (let y = Math.max(b.y0, roi.y0); y < Math.min(b.y1, roi.y1); y++)
       for (let x = Math.max(b.x0, roi.x0); x < Math.min(b.x1, roi.x1); x++) {
         const i = (y * W + x) * 4, key = bucket(i);
         if (memo[key] < 0) { const c = rgb(i), d = dist(c, text); memo[key] = palette.every(p => dist(c, p) > d) ? 1 : 0; }
         if (memo[key]) mask[(y - roi.y0) * rw + x - roi.x0] = 1;
       }
+  }
+  return dilate(mask, rw, rh, grown(lh));
+}
+
+/** The text's own pixels (offsets in img.data): the most extreme tenth of the word pixels (every
+ *  other one is enough), on whichever side of the background level the letters lie. */
+function textPixels(img: Pixels, words: Box[], bgLum: number): { dark: boolean; core: number[] } {
+  const W = img.width, H = img.height, px = img.data;
+  const lumAt = (i: number) => lumOf(px[i], px[i + 1], px[i + 2]);
+  const inside: number[] = [];
+  for (const b of words) { const r = clip(b, W, H); for (let y = r.y0; y < r.y1; y += 2) for (let x = r.x0; x < r.x1; x += 2) inside.push((y * W + x) * 4); }
+  if (!inside.length) return { dark: true, core: [] };
+  const lums = Float32Array.from(inside, lumAt).sort();
+  const lo = lums[Math.floor(lums.length * 0.1)], hi = lums[Math.ceil(lums.length * 0.9) - 1];
+  const dark = bgLum - lo >= hi - bgLum;   // Dark on light, or light on dark.
+  return { dark, core: inside.filter(i => (dark ? lumAt(i) <= lo : lumAt(i) >= hi)) };
+}
+
+/** A word, or the part of it, on plain ground with the ground's colour left (L) and right (R) of it. */
+type Ground = { r: Box; L: number[]; R: number[] };
+
+/** How much darker (or lighter) than the plain ground a pixel must be to count as print; the
+ *  texture of paper stays below this. */
+const PAPER_CONTRAST = 22;
+
+/** Mask (1 = text) over roi for words on plain ground (paper, light or dark): pixels near each word
+ *  that clearly stand out from the ground around it, on the side the text lies. Photographed print
+ *  has soft edges whose colour lies anywhere between the ink and the paper, and a picture next to a
+ *  line can share that colour, so on plain ground brightness is a surer sign than colour. The ground
+ *  level runs from the left to the right of each word (its colours L and R), so uneven light does
+ *  not count as text. */
+export function paperMask(img: Pixels, areas: Ground[], lh: number, roi: Box): Uint8Array {
+  const W = img.width, H = img.height, px = img.data;
+  const rw = roi.x1 - roi.x0, rh = roi.y1 - roi.y0, reach = reachOf(lh);
+  const mask = new Uint8Array(rw * rh);
+  if (!areas.length) return mask;
+  const ground = med(areas.flatMap(a => [lumOf(a.L[0], a.L[1], a.L[2]), lumOf(a.R[0], a.R[1], a.R[2])]));
+  const sign = textPixels(img, areas.map(a => a.r), ground).dark ? 1 : -1;
+  for (const a of areas) {
+    // Look a little beyond the box, which can cut off a stroke, but there take only print that joins
+    // the word's own strokes: a picture right next to the word stays as it is.
+    const r = clip(a.r, W, H), b = clip({ x0: a.r.x0 - reach, y0: a.r.y0 - reach, x1: a.r.x1 + reach, y1: a.r.y1 + reach }, W, H);
+    const bw = b.x1 - b.x0, bh = b.y1 - b.y0;
+    if (bw <= 0 || bh <= 0) continue;
+    const l0 = lumOf(a.L[0], a.L[1], a.L[2]), l1 = lumOf(a.R[0], a.R[1], a.R[2]);
+    const ink = new Uint8Array(bw * bh), todo: number[] = [];   // 1: stands out, 2: print of the word.
+    for (let y = b.y0; y < b.y1; y++) for (let x = b.x0; x < b.x1; x++) {
+      const i = (y * W + x) * 4, j = (y - b.y0) * bw + x - b.x0, level = l0 + (l1 - l0) * (x - b.x0) / bw;
+      if (sign * (level - lumOf(px[i], px[i + 1], px[i + 2])) <= PAPER_CONTRAST) continue;
+      const inBox = x >= r.x0 && x < r.x1 && y >= r.y0 && y < r.y1;
+      ink[j] = inBox ? 2 : 1;
+      if (inBox) todo.push(j);
+    }
+    while (todo.length) {
+      const j = todo.pop() as number, x = j % bw, y = (j - x) / bw;
+      for (let ny = Math.max(0, y - 1); ny <= Math.min(bh - 1, y + 1); ny++)
+        for (let nx = Math.max(0, x - 1); nx <= Math.min(bw - 1, x + 1); nx++)
+          if (ink[ny * bw + nx] === 1) { ink[ny * bw + nx] = 2; todo.push(ny * bw + nx); }
+    }
+    for (let y = Math.max(b.y0, roi.y0); y < Math.min(b.y1, roi.y1); y++)
+      for (let x = Math.max(b.x0, roi.x0); x < Math.min(b.x1, roi.x1); x++)
+        if (ink[(y - b.y0) * bw + x - b.x0] === 2) mask[(y - roi.y0) * rw + x - roi.x0] = 1;
   }
   return dilate(mask, rw, rh, grown(lh));
 }
