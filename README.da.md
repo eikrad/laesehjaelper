@@ -37,7 +37,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Læsning og klargøring af bøger har hver sin visning. Læsning har sideskift, oplæsning og Aa-indstillinger; „Rediger bog“ åbner værkstedet. Tilbage fører gennem læsning til bogreolen, og sidelinks virker efter genindlæsning.
 - Bogværkstedet samler sidebilleder og genkendelsesstatus med beskæring, tekstrettelser, tekstfelter, rækkefølge, titel, EPUB-eksport og sletning. Brede skærme viser listen ved siden af editoren, smalle før den. „Tilbage til læsning“ vender tilbage til den valgte side. Under læsning fokuserer „Rediger bog“ → „Ret denne side“ den aktuelle sides tekst med to tryk; bagefter vender man tilbage til samme side.
 - Et valgfrit forældresikring under „Flere indstillinger“ kræver, at „Rediger bog“ holdes nede i to sekunder, og viser fremskridtet. Det virker med berøring, mus, Enter og mellemrum og er slået fra som standard. Det forebygger utilsigtede tryk og er ikke en sikkerhedslås.
-- Beskæring: foreslår og retter en side i midten af fotoet op, også når én kant går ud af billedet. Hjørner og buede kanter kan justeres; manuelle rettelser har forrang for automatikken og gemmes til næste beskæring.
+- Beskæring: foreslår automatisk hjørner og buede kanter ud fra omridset af en side i midten af fotoet og retter den op, også når én kant går ud af billedet. Hjørner og buede kanter kan justeres; manuelle rettelser har forrang for automatikken og gemmes til næste beskæring.
 - Vælg en side i værkstedet, og brug ‹ / › under sidebilledet til at ændre rækkefølgen. „Indsæt side før“ og „Indsæt side efter“ tilføjer manglende fotos på den valgte plads, også flere fotos i den valgte rækkefølge. „Erstat foto“ bevarer sidens plads og link; det nye foto og den genkendte tekst erstatter først det gamle indhold, når du godkender beskæringen. Manuelle tekstrettelser på den erstattede side slettes.
 - E-bog: gem en bog som EPUB 3 (faste sider, kan åbnes i alle læse-apps) og hent den ind igen uden tab
 - Kan installeres som app og bruges offline
@@ -64,6 +64,7 @@ Projektet er skrevet i TypeScript (strict).
 - `src/app.ts`: app-logik (brugerflade, tekstgenkendelse, bogreol)
 - `src/layout.ts`: gør det rå OCR-resultat til rene tekstlinjer og afsnit med position (sorterer støj fra tegninger fra)
 - `src/pagedetect.ts`: finder siden på fotoet og retter den op (OpenCV), også buede sider
+- `src/pagecurve.ts`: tilpasser glatte kantkurver til det fundne omrids
 - `src/silben.ts`: stavelsesdeling (dansk, tysk, engelsk)
 - `src/db.ts`: lagring af bøger på enheden (IndexedDB)
 - `src/epub.ts`: eksport og import af EPUB
@@ -144,7 +145,7 @@ Kilder:
 - Kun de gamle bogstaver bliver fjernet: papiret eller billedet under dem bliver udfyldt ud fra omgivelserne (inpainting), så ujævnt lys og papirets struktur bliver, som de var. Står teksten på en illustration, får den nye tekst en blød, lys glorie. Fine, regelmæssige mønstre kan se lidt slørede ud, hvor teksten stod.
 - På bogens side gælder skriftstørrelse og afstande, så langt der er plads: størrelsen først, derefter så meget af afstanden, som kan være der. Er der ikke plads til den valgte størrelse, siger indstillingerne det; til rigtig stor skrift er visningen „Kun teksten“ bedre.
 - Sidegenkendelsen er forsigtig: fotografér én side i midten af billedet med mindst tre synlige kanter. Skygger, illustrationer og hele opslag kan stadig forvirre den. Kontrollér rammen, før du godkender.
-- Buede sider skal indtil videre rettes ud i hånden (se [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
+- Den automatiske krumning følger sidens synlige kanter. En skjult eller afskåret kant giver ingen oplysninger om krumningen; folder inde på siden og komplicerede buer kan stadig kræve, at kanternes midtpunkter justeres i hånden.
 
 ## Roadmap
 

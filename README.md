@@ -37,7 +37,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Reading and preparing books have separate views. Reading has page turning, read-aloud and Aa settings; “Edit book” opens the workshop. Back returns through reading to the bookshelf, and page links survive reload.
 - The book workshop keeps page thumbnails and recognition status together with crop, text correction, moving text boxes, page order, title, EPUB export and deletion. Wide screens put the list beside the selected-page editor; narrow screens put it first. “Back to reading” returns to the selected page. From reading, “Edit book” → “Correct this page” focuses the current page’s text in two taps, and returns to that page after correction.
 - An optional parent gate under More settings asks for a two-second hold on “Edit book”, with visible progress. It works with touch, mouse, Enter and Space and is off by default. This prevents accidental taps; it is not a security lock.
-- Cropping: suggests and straightens a central page, including when one edge leaves the photo. Corners and curved edges can be adjusted; manual adjustments take priority over detection and are saved for later recropping.
+- Cropping: automatically suggests corners and curved edges from the outline of a central page and straightens it, including when one edge leaves the photo. Corners and curved edges can be adjusted; manual adjustments take priority over detection and are saved for later recropping.
 - In the workshop, select a page and use ‹ / › under its thumbnail to reorder it. “Insert page before” and “Insert page after” add missing photos at that position, including multiple photos in selection order. “Replace photo” keeps the page’s position and link; the new photo and its recognised text replace the old content only after you accept the crop. Manual text corrections on the replaced page are discarded.
 - E-book: save a book as EPUB 3 (fixed layout, opens in any reading app) and import it again losslessly
 - Installable as an app and usable offline
@@ -64,6 +64,7 @@ The project is written in TypeScript (strict).
 - `src/app.ts`: app logic (UI, text recognition, bookshelf)
 - `src/layout.ts`: turns raw OCR output into clean text lines and paragraphs with positions (filters illustration noise)
 - `src/pagedetect.ts`: finds the page in the photo and straightens it (OpenCV), including curved pages
+- `src/pagecurve.ts`: fits smooth page-edge curves to the detected outline
 - `src/silben.ts`: syllable splitting (Danish, German, English)
 - `src/db.ts`: stores books on the device (IndexedDB)
 - `src/epub.ts`: EPUB export and import
@@ -144,7 +145,7 @@ Sources:
 - Only the old letters are removed: the paper or picture under them is filled in from their surroundings (inpainting), so uneven light and paper texture stay as they were. On an illustration, the new text gets a soft light halo. Fine, regular patterns can look a little blurred where the text was.
 - On the book page, text size and spacing apply as far as the page has room: the size comes first, then as much of the spacing as fits. When the page has no room for the chosen size, the settings say so; for really large text, use the text-only view.
 - Page detection is conservative: aim at one page in the middle of the photo, with at least three edges visible. Shadows, illustrations and two-page spreads can still confuse it. Check the frame before accepting.
-- Curved pages currently have to be straightened by hand (see [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
+- Automatic curvature follows the visible page edges. A hidden or clipped edge gives no curvature information; folds inside the page and complex bends can still need manual adjustment of the edge midpoints.
 
 ## Roadmap
 

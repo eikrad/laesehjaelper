@@ -127,6 +127,25 @@ test("The crop dialog fills the screen and keeps its buttons after turning the d
   }).toPass({ timeout: 5_000 });
 });
 
+test("The automatic curved frame and its controls fit the crop photo", async ({ page }) => {
+  await page.setInputFiles("#file", fixture("foto-curved-auto.jpg"));
+  await expect(page.locator("#cropMsg")).toContainText("Siden er fundet", { timeout: 120_000 });
+  const image = (await page.locator("#cropCanvas").boundingBox())!;
+  const handles = await page.locator("#cropStage .h").evaluateAll(hs => hs.map(h => {
+    const r = h.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+  }));
+  expect(handles).toHaveLength(8);
+  expect((handles[6].y - (handles[2].y + handles[3].y) / 2) / (image.width / 1200)).toBeGreaterThan(40);
+  for (const p of handles) {
+    expect(p.x).toBeGreaterThanOrEqual(image.x); expect(p.x).toBeLessThanOrEqual(image.x + image.width);
+    expect(p.y).toBeGreaterThanOrEqual(image.y); expect(p.y).toBeLessThanOrEqual(image.y + image.height);
+  }
+  for (const id of ["#cropOk", "#cropWhole"]) {
+    const b = (await page.locator(id).boundingBox())!;
+    expect(b.y + b.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  }
+});
+
 test("On touch screens every control is at least 44 px", async ({ page }, info) => {
   test.skip(!info.project.use.hasTouch, "A mouse pointer hits smaller targets.");
   await expect.poll(() => smallControls(page), { message: "start screen" }).toEqual([]);

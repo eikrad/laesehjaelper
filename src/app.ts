@@ -17,7 +17,7 @@ import { screenWakeLock } from "./wakelock";
 import { readingFullscreen } from "./fullscreen";
 import { locationHash, parseLocation, type BookLocation } from "./navigation";
 import { cleanOcr, parasFromOcr } from "./layout";
-import { detectPage, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
+import { detectFrame, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
 import type { CV } from "./pagedetect";
 import { DB } from "./db";
 import { flattenBackground, rotateLike } from "./prep";
@@ -81,7 +81,7 @@ type Speech = { full: string; wordPos: { start: number; end: number; i: number }
 
 const Silben = { silben };
 const Layout = { cleanOcr, parasFromOcr };
-const Lib = { detectPage, warpPage, orderCorners };
+const Lib = { detectFrame, warpPage, orderCorners };
 
   function $<E extends Element = HTMLElement>(id: string): E {
     const el = document.getElementById(id);
@@ -1356,10 +1356,11 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     // Edge midpoints follow the corners until moved manually.
     const midMoved = [false, false, false, false];
     let adjusted = false;
-    if (start) start.mids.forEach((m, i) => {
-      const a = start.corners[i], b = start.corners[(i + 1) % 4];
+    const keepCurves = (frame: Frame) => frame.mids.forEach((m, i) => {
+      const a = frame.corners[i], b = frame.corners[(i + 1) % 4];
       midMoved[i] = Math.hypot(m[0] - (a[0] + b[0]) / 2, m[1] - (a[1] + b[1]) / 2) > 2;
     });
+    if (start) keepCurves(start);
     const followMids = () => {
       for (let i = 0; i < 4; i++) if (!midMoved[i]) {
         const a = pts[i], b = pts[(i + 1) % 4];
@@ -1433,8 +1434,8 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
       if (decided) return;
       try {
         if (cv && !start && !adjusted) {
-          const found = Lib.detectPage(cv, photo);
-          if (found) { pts = [...found, ...frameFromCorners(found).mids]; draw(); }
+          const found = Lib.detectFrame(cv, photo);
+          if (found) { pts = [...found.corners, ...found.mids]; keepCurves(found); draw(); }
           msg(found ? "cropFound" : "cropNone");
         } else msg("cropNone");
       } catch (e) {

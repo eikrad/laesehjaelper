@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectPage } from "../../src/pagedetect";
+import { detectFrame, detectPage } from "../../src/pagedetect";
 import { loadCv } from "./opencv";
 
 const cv = await loadCv();
@@ -47,6 +47,20 @@ describe("Page detection on open books", () => {
       expect(bl[1]).toBeLessThan(585); expect(br[1]).toBeLessThan(585);
     } finally { photo.delete(); }
   });
+});
+
+it("Suggests the curve of visible page edges instead of their straight chords", () => {
+  const photo = bookPhoto(true);
+  try {
+    const frame = detectFrame({ ...cv, imread: () => photo.clone() }, { width: photo.cols, height: photo.rows } as HTMLCanvasElement);
+    expect(frame).not.toBeNull();
+    const [tl, tr, br, bl] = frame!.corners;
+    const top = (tl[1] + tr[1]) / 2, bottom = (bl[1] + br[1]) / 2;
+    expect(frame!.mids[0][1]).toBeLessThan(top - 10);
+    expect(frame!.mids[2][1]).toBeGreaterThan(bottom + 8);
+    // The right edge is the photo border, so it provides no curvature information.
+    expect(frame!.mids[1][0]).toBeCloseTo((tr[0] + br[0]) / 2, 0);
+  } finally { photo.delete(); }
 });
 
 it("Makes no suggestion for a uniform photo or table grain without a page", () => {
@@ -165,4 +179,33 @@ it("Keeps the page edges where they are when a bookmark or finger sticks out", (
       expect(Math.abs(y - expected[i][1])).toBeLessThanOrEqual(6);
     });
   } finally { photo.delete(); }
+});
+
+it("Keeps flat edges straight, also where a finger or bookmark covers part of the outline", () => {
+  for (const photo of [bookPhoto(false), heldPage()]) {
+    try {
+      const frame = detectFrame({ ...cv, imread: () => photo.clone() }, { width: photo.cols, height: photo.rows } as HTMLCanvasElement);
+      expect(frame).not.toBeNull();
+      frame!.mids.forEach((m, i) => {
+        const a = frame!.corners[i], b = frame!.corners[(i + 1) % 4];
+        expect(Math.hypot(m[0] - (a[0] + b[0]) / 2, m[1] - (a[1] + b[1]) / 2)).toBeLessThan(0.01);
+      });
+    } finally { photo.delete(); }
+  }
+});
+
+it("Does not turn a round illustration or irregular outline into a curved page", () => {
+  for (const round of [true, false]) {
+    const W = 360, H = 640, photo = new cv.Mat(H, W, cv.CV_8UC4);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const shape = round ? Math.hypot(x - 180, y - 320) < 150 :
+        x > 35 && x < 325 && y > 80 + 24 * Math.sin(x / 22) && y < 560 + 24 * Math.sin(x / 22);
+      const rgb = shape ? [235, 220, 195] : [135, 90, 55], i = (y * W + x) * 4;
+      for (let c = 0; c < 3; c++) photo.data[i + c] = rgb[c];
+      photo.data[i + 3] = 255;
+    }
+    try {
+      expect(detectFrame({ ...cv, imread: () => photo.clone() }, { width: W, height: H } as HTMLCanvasElement)).toBeNull();
+    } finally { photo.delete(); }
+  }
 });
