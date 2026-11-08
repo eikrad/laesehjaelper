@@ -25,6 +25,8 @@ import { type Gray, restoreMarks } from "./sylmarks";
 import { eraseText, halo } from "./erase";
 import { buildEpub, readEpub } from "./epub";
 import type { DataPage, EpubFont, EpubPage } from "./epub";
+import type { PdfPage } from "./pdf";
+import { measurePdfPage } from "./pdf-layout";
 import type { Corners, Frame, OcrData, Para, Point } from "./types";
 
 declare const Tesseract: {
@@ -34,7 +36,7 @@ interface TessWorker {
   setParameters(p: Record<string, string>): Promise<unknown>;
   recognize(image: HTMLCanvasElement | Blob, options?: Record<string, unknown>, output?: Record<string, boolean>): Promise<{ data: OcrData & { rotateRadians?: number } }>;
 }
-declare global { interface Window { cv: unknown; TRAINEDDATA: Record<string, string>; WORDS?: Record<string, string> } }
+declare global { interface Window { cv: unknown; TRAINEDDATA: Record<string, string>; WORDS?: Record<string, string>; LaesePdf?: typeof import("./pdf") } }
 
 interface Settings {
   font: string; size: number; ls: number; lh: number; mode: string; colors: string; bg: string;
@@ -113,6 +115,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   // ---------- UI strings ----------
   const T: Record<string, Record<string, string>> = {
     da: {
+      pdfBook: "Gem som PDF", pdfExporting: "Laver PDF-filen …", pdfSaved: "PDF-filen er gemt: {name}", pdfFallback: "PDF-filen er gemt med OpenDyslexic, fordi den valgte skrift ikke var tilgængelig: {name}", pdfFailed: "PDF-filen kunne ikke laves. Prøv igen.",
       insertBefore: "Indsæt side før", insertAfter: "Indsæt side efter", replacePhoto: "Erstat foto", replacePhotoHint: "Når du erstatter et foto, erstattes også sidens tekst og manuelle tekstrettelser. Fotoet bruges først, når du har godkendt beskæringen.",
       brand1: "Læse", brand2: "hjælper", docTitle: "Læsehjælper",
       startTitle: "Gør bogsider lettere at læse",
@@ -145,6 +148,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", shelfTitle: "Dine bøger", pagesN: "{n} sider", page1: "1 side", untitled: "Bog uden titel", titlePh: "Bogens titel", editPages: "Rediger sider", done: "Færdig", deleteBook: "Slet bogen", confirmDelete: "Tryk igen for at slette bogen", moveLeft: "Flyt til venstre", moveRight: "Flyt til højre", deletePage: "Slet side", evTitle: "Hvad siger forskningen?", evText: "Det, der hjælper mest, er tidlig, systematisk undervisning i bogstaver og lyde – og en voksen, der lytter, mens barnet læser, hjælper med svære ord og roser indsatsen. Indstillingerne her hjælper mindre.<br><br>Mere afstand mellem bogstaverne giver færre fejl hos nogle børn, men sjældent hurtigere læsning. Korte linjer hjælper nogle børn, men ikke alle. Oplæsning hjælper forståelsen, og at høre en side og så læse den selv gør læsningen mere flydende.<br><br>Farvede stavelser kan hjælpe nogle begyndere lidt, mest ved lange ord. Slå dem fra, når barnet læser flydende.<br><br>Særlige ordblindeskrifter som OpenDyslexic og farvet baggrund har ikke vist nogen effekt i undersøgelser. Brug dem gerne, hvis barnet synes, de er rare, men ikke som behandling. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.da.md#hvad-siger-forskningen\">Kilder</a>", rateLabel: "Oplæsning", rateSlow: "Langsom", rateNormal: "Normal", highlightLabel: "Fremhæv ordene ved oplæsning", highlightOn: "Til", highlightOff: "Fra", highlightHint: "Ordene lyser op, mens de bliver læst. Det har ikke vist sig at hjælpe, men nogle børn kan lide det.", turnLabel: "Efter oplæsning", turnOn: "Din tur", turnOff: "Kun lyt", yourTurn: "Nu er det din tur. Læs siden selv.", again: "Hør igen", linesLabel: "Linjer", linesNormal: "Normale", linesShort: "Korte", linesHint: "Korte linjer med få ord hjælper nogle børn. Gælder kun, når teksten vises alene.", reader: "Læser", reader1: "Læser 1", addReader: "Tilføj", newReaderPh: "Navn på ny læser", removeReader: "Slet læser", confirmReader: "Tryk igen for at slette", readerHint: "Hver læser har sine egne indstillinger for skrift, afstand, stavelser og oplæsning.", sylWordsAll: "Alle ord", sylWordsLong: "Kun lange ord", sylHint: "Farvede stavelser starter slået fra. Slå dem til, hvis de hjælper barnet, og fra igen, når det læser flydende.", togetherLabel: "Læs sammen", togetherOn: "Til", togetherOff: "Fra", togetherHint: "Viser et par åbne spørgsmål til den voksne, der læser med. Ikke en quiz – lad barnet fortælle.", togetherTitle: "Snak om siden", ownQ: "Eget spørgsmål", ownQPh: "Skriv et spørgsmål til denne side", save: "Gem", moveBoxes: "Flyt tekstfelter", moveDone: "Færdig med at flytte", resetPlace: "Nulstil placering", moveHint: "Træk i et felt for at flytte det, eller i hjørnet for at ændre størrelsen.", morf: "Orddele", morfOnlyDa: "Orddele findes indtil videre kun for dansk.", morfFail: "Ordlisten kunne ikke hentes.", aboutTitle: "Om Læsehjælper og ansvarsfraskrivelse", aboutText: "Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl – tjek derfor altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.<br><br>Billeder og bøger bliver kun behandlet og gemt på din egen enhed og bliver ikke sendt til nogen server. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug. Del ikke omdannede bøger med andre, medmindre du har rettighederne.<br><br>Brug sker på eget ansvar og uden garanti. Kildekoden er åben: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Bøgerne kan ikke gemmes i denne browser.", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropStraightening: "Retter siden op …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", ocrAgain: "Genkend teksten igen", cropOf: "Billede {a} af {b}", exportBook: "Gem som e-bog", importBook: "Hent en e-bog (EPUB) fra Læsehjælper", exporting: "Laver e-bogen …", exported: "E-bogen er gemt: {name}", importFail: "Filen er ikke en e-bog fra Læsehjælper.", importing: "Henter e-bogen …", notReady: "Vent, til alle sider er genkendt.", install: "Installér som app på denne enhed", compare: "Vis den oprindelige tekst", compareOff: "Vis den nye tekst",
     },
     en: {
+      pdfBook: "Save as PDF", pdfExporting: "Creating the PDF …", pdfSaved: "PDF saved: {name}", pdfFallback: "PDF saved with OpenDyslexic because the selected font was unavailable: {name}", pdfFailed: "The PDF could not be created. Try again.",
       insertBefore: "Insert page before", insertAfter: "Insert page after", replacePhoto: "Replace photo", replacePhotoHint: "Replacing a photo also replaces the page’s text and manual corrections. The new photo is used after you accept the crop.",
       brand1: "Læse", brand2: "hjælper", docTitle: "Læsehjælper",
       startTitle: "Make book pages easier to read",
@@ -177,6 +181,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       example: "Sample", addPages: "Add pages", toStart: "Back to start", shelfTitle: "Your books", pagesN: "{n} pages", page1: "1 page", untitled: "Untitled book", titlePh: "Book title", editPages: "Edit pages", done: "Done", deleteBook: "Delete book", confirmDelete: "Tap again to delete the book", moveLeft: "Move left", moveRight: "Move right", deletePage: "Delete page", evTitle: "What does the research say?", evText: "What helps most is early, systematic teaching of letters and sounds – and an adult who listens while your child reads, helps with hard words and praises effort. The settings here help less.<br><br>More space between letters reduces errors for some children, but rarely makes reading faster. Short lines help some children, but not all. Reading aloud helps comprehension, and listening to a page and then reading it yourself makes reading more fluent.<br><br>Coloured syllables may help some beginners a little, mainly with long words. Switch them off once reading is fluent.<br><br>Special dyslexia fonts such as OpenDyslexic and coloured backgrounds have shown no effect in studies. Use them if your child finds them pleasant, but not as a treatment. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.md#what-does-the-research-say\">Sources</a>", rateLabel: "Reading aloud", rateSlow: "Slow", rateNormal: "Normal", highlightLabel: "Highlight words when reading aloud", highlightOn: "On", highlightOff: "Off", highlightHint: "Words light up as they are read. This has not been shown to help, but some children like it.", turnLabel: "After reading aloud", turnOn: "Your turn", turnOff: "Just listen", yourTurn: "Now it's your turn. Read the page yourself.", again: "Listen again", linesLabel: "Lines", linesNormal: "Normal", linesShort: "Short", linesHint: "Short lines with a few words help some children. Only applies when the text is shown on its own.", reader: "Reader", reader1: "Reader 1", addReader: "Add", newReaderPh: "Name of new reader", removeReader: "Delete reader", confirmReader: "Tap again to delete", readerHint: "Each reader has their own settings for font, spacing, syllables and reading aloud.", sylWordsAll: "All words", sylWordsLong: "Long words only", sylHint: "Syllable colours start switched off. Turn them on if they help your child, and off again once reading is fluent.", togetherLabel: "Read together", togetherOn: "On", togetherOff: "Off", togetherHint: "Shows a few open questions for the adult reading along. Not a quiz – let the child do the talking.", togetherTitle: "Talk about the page", ownQ: "Own question", ownQPh: "Write a question for this page", save: "Save", moveBoxes: "Move text boxes", moveDone: "Done moving", resetPlace: "Reset position", moveHint: "Drag a box to move it, or drag its corner to resize it.", morf: "Word parts", morfOnlyDa: "Word parts are only available for Danish so far.", morfFail: "The word list could not be loaded.", aboutTitle: "About Læsehjælper and disclaimer", aboutText: "Læsehjælper is a free hobby project, not a finished product. Text recognition and syllable splitting make mistakes, so always check the text before a child reads it. The app does not replace teaching, reading support or a dyslexia assessment.<br><br>Photos and books are processed and stored only on your own device and are never sent to a server. Books are protected by copyright: only use Læsehjælper for books you have access to, and only for private use. Do not share converted books unless you hold the rights.<br><br>Use at your own risk and without warranty. The source code is open: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Books cannot be saved in this browser.", cropTitle: "Adjust the page", cropFound: "Page found. Drag the corners if it doesn't fit.", cropNone: "Drag the corners to the edges of the page.", cropLoading: "Looking for the page …", cropStraightening: "Straightening the page …", cropUse: "Use", cropWhole: "Whole photo", cropAgain: "Crop the page again", ocrAgain: "Recognise the text again", cropOf: "Photo {a} of {b}", exportBook: "Save as e-book", importBook: "Open a Læsehjælper e-book (EPUB)", exporting: "Creating the e-book …", exported: "E-book saved: {name}", importFail: "This file is not a Læsehjælper e-book.", importing: "Loading the e-book …", notReady: "Wait until all pages have been recognised.", install: "Install as an app on this device", compare: "Show the original text", compareOff: "Show the new text",
     },
     de: {
+      pdfBook: "Als PDF speichern", pdfExporting: "PDF wird erstellt …", pdfSaved: "PDF gespeichert: {name}", pdfFallback: "PDF mit OpenDyslexic gespeichert, da die gewählte Schrift nicht verfügbar war: {name}", pdfFailed: "Das PDF konnte nicht erstellt werden. Versuche es erneut.",
       insertBefore: "Seite davor einfügen", insertAfter: "Seite danach einfügen", replacePhoto: "Foto ersetzen", replacePhotoHint: "Beim Ersetzen eines Fotos gehen die bisherigen Textkorrekturen verloren. Übernommen wird das neue Foto erst nach dem Bestätigen des Zuschnitts.",
       brand1: "Lese", brand2: "helfer", docTitle: "Lesehelfer",
       startTitle: "Buchseiten leichter lesbar machen",
@@ -1167,9 +1172,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
   const urlBytes = async (u: string | null | undefined) => (u ? new Uint8Array(await (await fetch(u)).arrayBuffer()) : null);
   const EXPORT_W = 1000;
 
-  // Embed EPUB fonts: OpenDyslexic is already in the page; download Google Fonts.
-  async function exportFonts(): Promise<EpubFont[]> {
-    const family = (S.font.match(/"([^"]+)"/) || [])[1];
+  // Embed export fonts: OpenDyslexic is already in the page; download Google Fonts.
+  async function exportFonts(family = (S.font.match(/"([^"]+)"/) || [])[1]): Promise<EpubFont[]> {
     if (!family) return [];
     const fonts: EpubFont[] = [];
     try {
@@ -1218,11 +1222,11 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
 .w.plain .s { color: inherit; } .w.plain .s::after { content: none; }`;
   }
 
-  // Lay out pages offscreen and measure them so EPUB font sizes fit precisely.
-  async function exportPages(host: HTMLDivElement): Promise<EpubPage[]> {
+  // Lay out pages offscreen at a fixed size for EPUB and PDF.
+  async function exportPages(host: HTMLDivElement, sourcePages: readonly Page[] = pages): Promise<EpubPage[]> {
     const ser = new XMLSerializer();
     const out: EpubPage[] = [];
-    for (const pg of pages) {
+    for (const pg of sourcePages) {
       const { ps } = buildText(pg.text, pg.lang);
       host.innerHTML = "";
       if (pg.clean && pg.paras && pg.paras.length && pg.workW && pg.workH) {
@@ -1290,6 +1294,47 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     } finally { host.remove(); }
   }
   $<HTMLButtonElement>("exportBtn").onclick = () => { exportBook(); };
+
+  let pdfBusy = false;
+  $<HTMLButtonElement>("pdfBtn").onclick = async () => {
+    if (pdfBusy || !book || book.demo) return;
+    if (!pages.length || pages.some(p => p.status !== "done")) { toast(t("notReady")); return; }
+    const owner = book, title = book.title || t("untitled");
+    const snapshot = pages.map(pg => ({ ...pg, paras: pg.paras?.map(pa => ({ ...pa })) }));
+    const button = $<HTMLButtonElement>("pdfBtn"), host = document.createElement("div");
+    const faces: FontFace[] = [];
+    pdfBusy = button.disabled = true; toast(t("pdfExporting"), 60000);
+    host.className = $("reader").className.replace(/\b(comparing|moving)\b/g, "") + " pagemode exporthost";
+    Object.assign(host.style, { position: "fixed", left: "-20000px", top: "0", width: EXPORT_W + "px", fontSize: "32px", fontFamily: '"Laesehjaelper PDF"' });
+    document.body.append(host);
+    try {
+      let fonts = await exportFonts();
+      if (!window.LaesePdf) await loadScript("pdf.js");
+      const fallback = !fonts.length;
+      if (fallback) fonts = await exportFonts("OpenDyslexic");
+      // Measure with exactly the font bytes embedded in the PDF, including when offline.
+      for (const font of fonts) {
+        const face = new FontFace("Laesehjaelper PDF", font.data.slice().buffer, { weight: String(font.weight) });
+        await face.load(); document.fonts.add(face); faces.push(face);
+      }
+      const laidOut = await exportPages(host, snapshot), measured: PdfPage[] = [];
+      for (const pg of laidOut) {
+        host.style.height = pg.height + "px"; host.innerHTML = pg.bodyHtml;
+        // EPUB's stylesheet supplies the text-only margins; restore them before PDF measurement.
+        const flow = host.querySelector<HTMLElement>(".flow");
+        if (flow) Object.assign(flow.style, { position: "absolute", left: "70px", right: "70px", top: "70px" });
+        measured.push(measurePdfPage(host, pg));
+      }
+      const bytes = await window.LaesePdf!.buildPdf(title, measured, fonts);
+      if (book !== owner) { $("toast").classList.remove("show"); return; }
+      const name = (title.replace(/[\\/:*?"<>|]+/g, "").trim() || "laesehjaelper") + ".pdf";
+      const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type: "application/pdf" }));
+      const a = document.createElement("a"); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      toast(t(fallback ? "pdfFallback" : "pdfSaved", { name }), fallback ? 7000 : 4000);
+    } catch (e) { console.error(e); toast(t("pdfFailed")); }
+    finally { host.remove(); faces.forEach(face => document.fonts.delete(face)); pdfBusy = button.disabled = false; }
+  };
 
   async function importBook(file: File) {
     toast(t("importing"), 60000);

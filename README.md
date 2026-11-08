@@ -40,6 +40,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Cropping: automatically suggests corners and curved edges from the outline of a central page and straightens it, including when one edge leaves the photo. Corners and curved edges can be adjusted; manual adjustments take priority over detection and are saved for later recropping.
 - In the workshop, select a page and use ‹ / › under its thumbnail to reorder it. “Insert page before” and “Insert page after” add missing photos at that position, including multiple photos in selection order. “Replace photo” keeps the page’s position and link; the new photo and its recognised text replace the old content only after you accept the crop. Manual text corrections on the replaced page are discarded.
 - E-book: save a book as EPUB 3 (fixed layout, opens in any reading app) and import it again losslessly
+- PDF: “Save as PDF” in the book workshop downloads a printable book with the same page layout as the EPUB, including pictures, syllable colours and arcs. Fonts are embedded and text stays selectable. Pages keep the photo proportions; choose “Fit to page” when printing on A4. Export runs on the device and also works offline: if the selected font is unavailable, the PDF uses the bundled OpenDyslexic font and says so.
 - Installable as an app and usable offline
 - The screen stays on while a book is open, so it does not go dark in the middle of a page; after 10 minutes without a touch or reading aloud it may turn off again (in browsers with the Screen Wake Lock API)
 
@@ -68,6 +69,7 @@ The project is written in TypeScript (strict).
 - `src/silben.ts`: syllable splitting (Danish, German, English)
 - `src/db.ts`: stores books on the device (IndexedDB)
 - `src/epub.ts`: EPUB export and import
+- `src/pdf.ts`, `src/pdf-layout.ts`: PDF creation and measurement of the export's text layout
 - `src/prep.ts`: image preparation for OCR (background flattening)
 - `src/sw.ts`: service worker (offline, installation)
 - `src/types.ts`: shared types

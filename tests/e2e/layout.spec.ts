@@ -339,6 +339,10 @@ test("The workshop puts the page list beside its editor on wide screens and abov
   await seedBooks(page, [{ id: "workshop", title: "En bog til værkstedet", texts: ["Første prøveside.", "Anden prøveside."] }]);
   await page.locator(".book").click();
   await openWorkshop(page);
+  await expect(page.locator("#pdfBtn")).toBeVisible();
+  const pdf = (await page.locator("#pdfBtn").boundingBox())!;
+  expect(pdf.x).toBeGreaterThanOrEqual(0);
+  expect(pdf.x + pdf.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   const list = (await page.locator("#thumbs").boundingBox())!, editor = (await page.locator(".pagecard").boundingBox())!;
   if (page.viewportSize()!.width >= 840) {
     expect(list.x + list.width, "list left of editor").toBeLessThanOrEqual(editor.x);
@@ -350,6 +354,7 @@ test("The workshop puts the page list beside its editor on wide screens and abov
   await page.locator(".thumb > button").nth(1).click();
   await page.click("#readBookBtn");
   await expect(page.locator("#reader")).toContainText("Anden prøveside.");
+  await expect(page.locator("#pdfBtn")).toBeHidden();
   await expect(page).toHaveURL(/#read\/workshop\/workshop-1$/);
 });
 

@@ -40,6 +40,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Beskæring: foreslår automatisk hjørner og buede kanter ud fra omridset af en side i midten af fotoet og retter den op, også når én kant går ud af billedet. Hjørner og buede kanter kan justeres; manuelle rettelser har forrang for automatikken og gemmes til næste beskæring.
 - Vælg en side i værkstedet, og brug ‹ / › under sidebilledet til at ændre rækkefølgen. „Indsæt side før“ og „Indsæt side efter“ tilføjer manglende fotos på den valgte plads, også flere fotos i den valgte rækkefølge. „Erstat foto“ bevarer sidens plads og link; det nye foto og den genkendte tekst erstatter først det gamle indhold, når du godkender beskæringen. Manuelle tekstrettelser på den erstattede side slettes.
 - E-bog: gem en bog som EPUB 3 (faste sider, kan åbnes i alle læse-apps) og hent den ind igen uden tab
+- PDF: „Gem som PDF“ i bogværkstedet henter en bog, der kan udskrives, med samme sidelayout som EPUB, inklusive billeder, stavelsesfarver og buer. Skrifterne er indlejret, og teksten kan markeres. Siderne beholder fotoets proportioner; vælg „Tilpas til side“ ved udskrivning på A4. Eksporten sker på enheden og virker også offline: er den valgte skrift ikke tilgængelig, bruger PDF-filen den medfølgende OpenDyslexic og giver besked om det.
 - Kan installeres som app og bruges offline
 - Skærmen forbliver tændt, mens en bog er åben, så den ikke bliver mørk midt på en side; efter 10 minutter uden berøring eller oplæsning må den slukke igen (i browsere med Screen Wake Lock API)
 
@@ -68,6 +69,7 @@ Projektet er skrevet i TypeScript (strict).
 - `src/silben.ts`: stavelsesdeling (dansk, tysk, engelsk)
 - `src/db.ts`: lagring af bøger på enheden (IndexedDB)
 - `src/epub.ts`: eksport og import af EPUB
+- `src/pdf.ts`, `src/pdf-layout.ts`: PDF-oprettelse og opmåling af eksportens tekstlayout
 - `src/prep.ts`: billedforberedelse til tekstgenkendelse (udligning af baggrund)
 - `src/sw.ts`: service worker (offline, installation)
 - `src/types.ts`: fælles typer

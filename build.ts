@@ -25,6 +25,11 @@ html = html
   .replace("%%OD_700%%", () => b64(`${od}-700-normal.woff2`));
 fs.writeFileSync(`${out}/index.html`, html);
 
+await build({
+  entryPoints: ["src/pdf-export.ts"], bundle: true, minify: !coverage, format: "iife", outfile: `${out}/pdf.js`,
+  ...(coverage ? { sourcemap: "inline" as const, sourceRoot: process.cwd() + "/" } : {}),
+});
+
 const copy = (from: string, to: string): void => fs.copyFileSync(from, `${out}/${to}`);
 
 // Version the service worker so each new version replaces the previous cache.

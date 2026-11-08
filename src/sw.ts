@@ -10,7 +10,7 @@ declare const self: ServiceWorkerGlobalScope;
 declare const VERSION: string;
 
 const CACHE = `laesehjaelper-${VERSION}`;
-const SHELL = ["./", "index.html", "manifest.webmanifest", "tesseract.min.js", "worker.min.js", "icon-192.png", "icon-512.png"];
+const SHELL = ["./", "index.html", "manifest.webmanifest", "tesseract.min.js", "worker.min.js", "pdf.js", "icon-192.png", "icon-512.png"];
 
 async function install() {
   const cache = await caches.open(CACHE);
