@@ -1,13 +1,13 @@
 // Læsehjælper – application logic (UI, text recognition, bookshelf).
-import { addProfile, initProfiles, removeProfile, switchProfile, syncActive, type ProfileStore } from "./profiles";
+import { addProfile, fromEarlier, initProfiles, removeProfile, switchProfile, syncActive, type ProfileStore } from "./profiles";
 import { pageQuestions } from "./together";
-import { harmonizeSizes } from "./fit";
+import { harmonizeSizes, scaleToTarget } from "./fit";
 import { boldFlags, strokeWidth } from "./bold";
 import { dragBox, transferPlaces } from "./place";
 import { morphParts } from "./morpheme";
 import { shortLineBreaks } from "./lines";
 import { speechRate, showYourTurn, wordSteps } from "./readflow";
-import { wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
+import { boxLineHeight, boxSpacing, DEFAULT_LH, DEFAULT_LS, wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
 import { marksSyllables, silben } from "./silben";
 import { swipeDirection } from "./swipe";
 import { resumePage } from "./bookshelf";
@@ -40,9 +40,11 @@ interface Settings {
   gate: string; orig: string; view: string; hyph: string; lang: string; ui: string; rate: string; turn: string; lines: string; together: string;
   /** Syllable colours and arcs on all words ("alle") or only on long words ("lange"). */
   sylWords: string;
+  /** Highlight each word while the page is read aloud ("an") or not ("aus"). */
+  highlight: string;
 }
 /** Settings controlled by button groups (data-v). */
-type ChoiceKey = "gate" | "mode" | "colors" | "bg" | "orig" | "lang" | "ui" | "view" | "hyph" | "rate" | "turn" | "lines" | "together" | "sylWords";
+type ChoiceKey = "gate" | "mode" | "colors" | "bg" | "orig" | "lang" | "ui" | "view" | "hyph" | "rate" | "turn" | "lines" | "together" | "sylWords" | "highlight";
 
 interface Page {
   id?: string;
@@ -92,9 +94,12 @@ const Lib = { detectPage, warpPage, orderCorners };
   // ---------- Settings ----------
   // Syllable colours start off: they help only some beginners a little (README, "What does the research say?").
   // Settings are saved at every start, so devices that used the app before keep their own choice.
-  const defaults: Settings = { gate: "aus", font: '"Andika", sans-serif', size: 32, ls: 0.04, lh: 1.9, mode: "aus", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus", sylWords: "alle" };
+  // Word highlighting during read-aloud starts off as well: it has not been shown to help, and it can
+  // pull children along with the voice (Gerbier, Bailly & Bosse 2018, doi:10.1016/j.csl.2017.07.003).
+  // Settings saved before it was a setting keep it on (fromEarlier in src/profiles.ts).
+  const defaults: Settings = { gate: "aus", font: '"Andika", sans-serif', size: 32, ls: DEFAULT_LS, lh: DEFAULT_LH, mode: "aus", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus", sylWords: "alle", highlight: "aus" };
   const S: Settings = { ...defaults };
-  try { Object.assign(S, JSON.parse(localStorage.getItem("lesehelfer") || "{}")); } catch {}
+  try { const saved = localStorage.getItem("lesehelfer"); if (saved) Object.assign(S, fromEarlier(JSON.parse(saved))); } catch {}
   const PROFILES = "laesehjaelper-profiles";
   let prof: ProfileStore | null = null;   // Initialized after the UI strings (first profile name).
   const save = () => {
@@ -123,7 +128,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       how3t: "Læs", how3: "Tryk på et ord for at høre det. Tilpas skrift og farver.",
       prevPage: "Forrige side", nextPage: "Næste side", page: "Side", pageOf: "{a} / {b}",
       read: "Læs op", stop: "Stop", adjust: "Tilpas", closeSettings: "Luk indstillinger", moreSettings: "Flere indstillinger", focus: "Læsetilstand", close: "Luk læsetilstand",
-      font: "Skrift", andika: "Andika (til begyndere)", size: "Skriftstørrelse", letterSp: "Bogstavafstand", lineSp: "Linjeafstand",
+      font: "Skrift", andika: "Andika (til begyndere)", sizeHint: "Der er ikke plads til større skrift på bogens side. Vælg „Kun teksten“ for større skrift.", size: "Skriftstørrelse", letterSp: "Bogstavafstand", lineSp: "Linjeafstand",
       syllables: "Stavelser", off: "Fra", color: "Farve", arcs: "Buer", both: "Begge",
       sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse", view: "Visning", viewPage: "Bogens side", viewText: "Kun teksten", hyph: "Bindestreger i bogen", hyphNormal: "Almindelige", hyphBook: "Stavelsesdeling", hyphHint: "Vælg „Stavelsesdeling“, hvis bogen selv deler ord med bindestreg, f.eks. „sko-le“.",
       background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
@@ -136,7 +141,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       pageReady: "Klar", waiting: "Venter på genkendelse …", recognizing: "Teksten genkendes …", recognizing2: "Teksten tjekkes en gang til …", loadingCore: "Genkendelsen indlæses …",
       loadingLang: "Sprogdata indlæses …", preparing: "Gøres klar …",
       imgError: "Billedet kunne ikke åbnes.", noSpeech: "Oplæsning understøttes ikke af denne browser.",
-      example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", shelfTitle: "Dine bøger", pagesN: "{n} sider", page1: "1 side", untitled: "Bog uden titel", titlePh: "Bogens titel", editPages: "Rediger sider", done: "Færdig", deleteBook: "Slet bogen", confirmDelete: "Tryk igen for at slette bogen", moveLeft: "Flyt til venstre", moveRight: "Flyt til højre", deletePage: "Slet side", evTitle: "Hvad siger forskningen?", evText: "Det, der hjælper mest, er tidlig, systematisk undervisning i bogstaver og lyde – og en voksen, der lytter, mens barnet læser, hjælper med svære ord og roser indsatsen. Indstillingerne her hjælper mindre.<br><br>Mere afstand mellem bogstaverne giver færre fejl hos nogle børn, men sjældent hurtigere læsning. Korte linjer hjælper nogle børn, men ikke alle. Oplæsning hjælper forståelsen, og at høre en side og så læse den selv gør læsningen mere flydende.<br><br>Farvede stavelser kan hjælpe nogle begyndere lidt, mest ved lange ord. Slå dem fra, når barnet læser flydende.<br><br>Særlige ordblindeskrifter som OpenDyslexic og farvet baggrund har ikke vist nogen effekt i undersøgelser. Brug dem gerne, hvis barnet synes, de er rare, men ikke som behandling. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.da.md#hvad-siger-forskningen\">Kilder</a>", rateLabel: "Oplæsning", rateSlow: "Langsom", rateNormal: "Normal", turnLabel: "Efter oplæsning", turnOn: "Din tur", turnOff: "Kun lyt", yourTurn: "Nu er det din tur. Læs siden selv.", again: "Hør igen", linesLabel: "Linjer", linesNormal: "Normale", linesShort: "Korte", linesHint: "Korte linjer med få ord hjælper nogle børn. Gælder kun, når teksten vises alene.", reader: "Læser", reader1: "Læser 1", addReader: "Tilføj", newReaderPh: "Navn på ny læser", removeReader: "Slet læser", confirmReader: "Tryk igen for at slette", readerHint: "Hver læser har sine egne indstillinger for skrift, afstand, stavelser og oplæsning.", sylWordsAll: "Alle ord", sylWordsLong: "Kun lange ord", sylHint: "Farvede stavelser starter slået fra. Slå dem til, hvis de hjælper barnet, og fra igen, når det læser flydende.", togetherLabel: "Læs sammen", togetherOn: "Til", togetherOff: "Fra", togetherHint: "Viser et par åbne spørgsmål til den voksne, der læser med. Ikke en quiz – lad barnet fortælle.", togetherTitle: "Snak om siden", ownQ: "Eget spørgsmål", ownQPh: "Skriv et spørgsmål til denne side", save: "Gem", moveBoxes: "Flyt tekstfelter", moveDone: "Færdig med at flytte", resetPlace: "Nulstil placering", moveHint: "Træk i et felt for at flytte det, eller i hjørnet for at ændre størrelsen.", morf: "Orddele", morfOnlyDa: "Orddele findes indtil videre kun for dansk.", morfFail: "Ordlisten kunne ikke hentes.", aboutTitle: "Om Læsehjælper og ansvarsfraskrivelse", aboutText: "Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl – tjek derfor altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.<br><br>Billeder og bøger bliver kun behandlet og gemt på din egen enhed og bliver ikke sendt til nogen server. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug. Del ikke omdannede bøger med andre, medmindre du har rettighederne.<br><br>Brug sker på eget ansvar og uden garanti. Kildekoden er åben: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Bøgerne kan ikke gemmes i denne browser.", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropStraightening: "Retter siden op …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", ocrAgain: "Genkend teksten igen", cropOf: "Billede {a} af {b}", exportBook: "Gem som e-bog", importBook: "Hent en e-bog (EPUB) fra Læsehjælper", exporting: "Laver e-bogen …", exported: "E-bogen er gemt: {name}", importFail: "Filen er ikke en e-bog fra Læsehjælper.", importing: "Henter e-bogen …", notReady: "Vent, til alle sider er genkendt.", install: "Installér som app på denne enhed", compare: "Vis den oprindelige tekst", compareOff: "Vis den nye tekst",
+      example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", shelfTitle: "Dine bøger", pagesN: "{n} sider", page1: "1 side", untitled: "Bog uden titel", titlePh: "Bogens titel", editPages: "Rediger sider", done: "Færdig", deleteBook: "Slet bogen", confirmDelete: "Tryk igen for at slette bogen", moveLeft: "Flyt til venstre", moveRight: "Flyt til højre", deletePage: "Slet side", evTitle: "Hvad siger forskningen?", evText: "Det, der hjælper mest, er tidlig, systematisk undervisning i bogstaver og lyde – og en voksen, der lytter, mens barnet læser, hjælper med svære ord og roser indsatsen. Indstillingerne her hjælper mindre.<br><br>Mere afstand mellem bogstaverne giver færre fejl hos nogle børn, men sjældent hurtigere læsning. Korte linjer hjælper nogle børn, men ikke alle. Oplæsning hjælper forståelsen, og at høre en side og så læse den selv gør læsningen mere flydende.<br><br>Farvede stavelser kan hjælpe nogle begyndere lidt, mest ved lange ord. Slå dem fra, når barnet læser flydende.<br><br>Særlige ordblindeskrifter som OpenDyslexic og farvet baggrund har ikke vist nogen effekt i undersøgelser. Brug dem gerne, hvis barnet synes, de er rare, men ikke som behandling. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.da.md#hvad-siger-forskningen\">Kilder</a>", rateLabel: "Oplæsning", rateSlow: "Langsom", rateNormal: "Normal", highlightLabel: "Fremhæv ordene ved oplæsning", highlightOn: "Til", highlightOff: "Fra", highlightHint: "Ordene lyser op, mens de bliver læst. Det har ikke vist sig at hjælpe, men nogle børn kan lide det.", turnLabel: "Efter oplæsning", turnOn: "Din tur", turnOff: "Kun lyt", yourTurn: "Nu er det din tur. Læs siden selv.", again: "Hør igen", linesLabel: "Linjer", linesNormal: "Normale", linesShort: "Korte", linesHint: "Korte linjer med få ord hjælper nogle børn. Gælder kun, når teksten vises alene.", reader: "Læser", reader1: "Læser 1", addReader: "Tilføj", newReaderPh: "Navn på ny læser", removeReader: "Slet læser", confirmReader: "Tryk igen for at slette", readerHint: "Hver læser har sine egne indstillinger for skrift, afstand, stavelser og oplæsning.", sylWordsAll: "Alle ord", sylWordsLong: "Kun lange ord", sylHint: "Farvede stavelser starter slået fra. Slå dem til, hvis de hjælper barnet, og fra igen, når det læser flydende.", togetherLabel: "Læs sammen", togetherOn: "Til", togetherOff: "Fra", togetherHint: "Viser et par åbne spørgsmål til den voksne, der læser med. Ikke en quiz – lad barnet fortælle.", togetherTitle: "Snak om siden", ownQ: "Eget spørgsmål", ownQPh: "Skriv et spørgsmål til denne side", save: "Gem", moveBoxes: "Flyt tekstfelter", moveDone: "Færdig med at flytte", resetPlace: "Nulstil placering", moveHint: "Træk i et felt for at flytte det, eller i hjørnet for at ændre størrelsen.", morf: "Orddele", morfOnlyDa: "Orddele findes indtil videre kun for dansk.", morfFail: "Ordlisten kunne ikke hentes.", aboutTitle: "Om Læsehjælper og ansvarsfraskrivelse", aboutText: "Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl – tjek derfor altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.<br><br>Billeder og bøger bliver kun behandlet og gemt på din egen enhed og bliver ikke sendt til nogen server. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug. Del ikke omdannede bøger med andre, medmindre du har rettighederne.<br><br>Brug sker på eget ansvar og uden garanti. Kildekoden er åben: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Bøgerne kan ikke gemmes i denne browser.", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropStraightening: "Retter siden op …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", ocrAgain: "Genkend teksten igen", cropOf: "Billede {a} af {b}", exportBook: "Gem som e-bog", importBook: "Hent en e-bog (EPUB) fra Læsehjælper", exporting: "Laver e-bogen …", exported: "E-bogen er gemt: {name}", importFail: "Filen er ikke en e-bog fra Læsehjælper.", importing: "Henter e-bogen …", notReady: "Vent, til alle sider er genkendt.", install: "Installér som app på denne enhed", compare: "Vis den oprindelige tekst", compareOff: "Vis den nye tekst",
     },
     en: {
       insertBefore: "Insert page before", insertAfter: "Insert page after", replacePhoto: "Replace photo", replacePhotoHint: "Replacing a photo also replaces the page’s text and manual corrections. The new photo is used after you accept the crop.",
@@ -155,7 +160,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       how3t: "Read", how3: "Tap a word to hear it. Adjust the font and colours.",
       prevPage: "Previous page", nextPage: "Next page", page: "Page", pageOf: "{a} / {b}",
       read: "Read aloud", stop: "Stop", adjust: "Adjust", closeSettings: "Close settings", moreSettings: "More settings", focus: "Reading mode", close: "Close reading mode",
-      font: "Font", andika: "Andika (for beginners)", size: "Font size", letterSp: "Letter spacing", lineSp: "Line spacing",
+      font: "Font", andika: "Andika (for beginners)", sizeHint: "The book page has no room for larger text. Choose “Text only” for larger text.", size: "Font size", letterSp: "Letter spacing", lineSp: "Line spacing",
       syllables: "Syllables", off: "Off", color: "Colour", arcs: "Arcs", both: "Both",
       sylColors: "Syllable colours", cBlueRed: "Blue and red", cBlueBlack: "Blue and black", cRedBlack: "Red and black", cPurpleGreen: "Purple and green", syl1: "1st syllable", syl2: "2nd syllable", view: "View", viewPage: "Book page", viewText: "Text only", hyph: "Hyphens in the book", hyphNormal: "Normal", hyphBook: "Syllable breaks", hyphHint: "Choose “Syllable breaks” if the book itself splits words with hyphens, e.g. “gar-den”.",
       background: "Background", bWhite: "White", bCream: "Cream", bYellow: "Yellow", bBlue: "Light blue", bGreen: "Light green",
@@ -168,7 +173,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       pageReady: "Ready", waiting: "Waiting for recognition …", recognizing: "Recognising text …", recognizing2: "Double-checking the text …", loadingCore: "Loading text recognition …",
       loadingLang: "Loading language data …", preparing: "Getting ready …",
       imgError: "The photo could not be opened.", noSpeech: "Reading aloud is not supported in this browser.",
-      example: "Sample", addPages: "Add pages", toStart: "Back to start", shelfTitle: "Your books", pagesN: "{n} pages", page1: "1 page", untitled: "Untitled book", titlePh: "Book title", editPages: "Edit pages", done: "Done", deleteBook: "Delete book", confirmDelete: "Tap again to delete the book", moveLeft: "Move left", moveRight: "Move right", deletePage: "Delete page", evTitle: "What does the research say?", evText: "What helps most is early, systematic teaching of letters and sounds – and an adult who listens while your child reads, helps with hard words and praises effort. The settings here help less.<br><br>More space between letters reduces errors for some children, but rarely makes reading faster. Short lines help some children, but not all. Reading aloud helps comprehension, and listening to a page and then reading it yourself makes reading more fluent.<br><br>Coloured syllables may help some beginners a little, mainly with long words. Switch them off once reading is fluent.<br><br>Special dyslexia fonts such as OpenDyslexic and coloured backgrounds have shown no effect in studies. Use them if your child finds them pleasant, but not as a treatment. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.md#what-does-the-research-say\">Sources</a>", rateLabel: "Reading aloud", rateSlow: "Slow", rateNormal: "Normal", turnLabel: "After reading aloud", turnOn: "Your turn", turnOff: "Just listen", yourTurn: "Now it's your turn. Read the page yourself.", again: "Listen again", linesLabel: "Lines", linesNormal: "Normal", linesShort: "Short", linesHint: "Short lines with a few words help some children. Only applies when the text is shown on its own.", reader: "Reader", reader1: "Reader 1", addReader: "Add", newReaderPh: "Name of new reader", removeReader: "Delete reader", confirmReader: "Tap again to delete", readerHint: "Each reader has their own settings for font, spacing, syllables and reading aloud.", sylWordsAll: "All words", sylWordsLong: "Long words only", sylHint: "Syllable colours start switched off. Turn them on if they help your child, and off again once reading is fluent.", togetherLabel: "Read together", togetherOn: "On", togetherOff: "Off", togetherHint: "Shows a few open questions for the adult reading along. Not a quiz – let the child do the talking.", togetherTitle: "Talk about the page", ownQ: "Own question", ownQPh: "Write a question for this page", save: "Save", moveBoxes: "Move text boxes", moveDone: "Done moving", resetPlace: "Reset position", moveHint: "Drag a box to move it, or drag its corner to resize it.", morf: "Word parts", morfOnlyDa: "Word parts are only available for Danish so far.", morfFail: "The word list could not be loaded.", aboutTitle: "About Læsehjælper and disclaimer", aboutText: "Læsehjælper is a free hobby project, not a finished product. Text recognition and syllable splitting make mistakes, so always check the text before a child reads it. The app does not replace teaching, reading support or a dyslexia assessment.<br><br>Photos and books are processed and stored only on your own device and are never sent to a server. Books are protected by copyright: only use Læsehjælper for books you have access to, and only for private use. Do not share converted books unless you hold the rights.<br><br>Use at your own risk and without warranty. The source code is open: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Books cannot be saved in this browser.", cropTitle: "Adjust the page", cropFound: "Page found. Drag the corners if it doesn't fit.", cropNone: "Drag the corners to the edges of the page.", cropLoading: "Looking for the page …", cropStraightening: "Straightening the page …", cropUse: "Use", cropWhole: "Whole photo", cropAgain: "Crop the page again", ocrAgain: "Recognise the text again", cropOf: "Photo {a} of {b}", exportBook: "Save as e-book", importBook: "Open a Læsehjælper e-book (EPUB)", exporting: "Creating the e-book …", exported: "E-book saved: {name}", importFail: "This file is not a Læsehjælper e-book.", importing: "Loading the e-book …", notReady: "Wait until all pages have been recognised.", install: "Install as an app on this device", compare: "Show the original text", compareOff: "Show the new text",
+      example: "Sample", addPages: "Add pages", toStart: "Back to start", shelfTitle: "Your books", pagesN: "{n} pages", page1: "1 page", untitled: "Untitled book", titlePh: "Book title", editPages: "Edit pages", done: "Done", deleteBook: "Delete book", confirmDelete: "Tap again to delete the book", moveLeft: "Move left", moveRight: "Move right", deletePage: "Delete page", evTitle: "What does the research say?", evText: "What helps most is early, systematic teaching of letters and sounds – and an adult who listens while your child reads, helps with hard words and praises effort. The settings here help less.<br><br>More space between letters reduces errors for some children, but rarely makes reading faster. Short lines help some children, but not all. Reading aloud helps comprehension, and listening to a page and then reading it yourself makes reading more fluent.<br><br>Coloured syllables may help some beginners a little, mainly with long words. Switch them off once reading is fluent.<br><br>Special dyslexia fonts such as OpenDyslexic and coloured backgrounds have shown no effect in studies. Use them if your child finds them pleasant, but not as a treatment. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.md#what-does-the-research-say\">Sources</a>", rateLabel: "Reading aloud", rateSlow: "Slow", rateNormal: "Normal", highlightLabel: "Highlight words when reading aloud", highlightOn: "On", highlightOff: "Off", highlightHint: "Words light up as they are read. This has not been shown to help, but some children like it.", turnLabel: "After reading aloud", turnOn: "Your turn", turnOff: "Just listen", yourTurn: "Now it's your turn. Read the page yourself.", again: "Listen again", linesLabel: "Lines", linesNormal: "Normal", linesShort: "Short", linesHint: "Short lines with a few words help some children. Only applies when the text is shown on its own.", reader: "Reader", reader1: "Reader 1", addReader: "Add", newReaderPh: "Name of new reader", removeReader: "Delete reader", confirmReader: "Tap again to delete", readerHint: "Each reader has their own settings for font, spacing, syllables and reading aloud.", sylWordsAll: "All words", sylWordsLong: "Long words only", sylHint: "Syllable colours start switched off. Turn them on if they help your child, and off again once reading is fluent.", togetherLabel: "Read together", togetherOn: "On", togetherOff: "Off", togetherHint: "Shows a few open questions for the adult reading along. Not a quiz – let the child do the talking.", togetherTitle: "Talk about the page", ownQ: "Own question", ownQPh: "Write a question for this page", save: "Save", moveBoxes: "Move text boxes", moveDone: "Done moving", resetPlace: "Reset position", moveHint: "Drag a box to move it, or drag its corner to resize it.", morf: "Word parts", morfOnlyDa: "Word parts are only available for Danish so far.", morfFail: "The word list could not be loaded.", aboutTitle: "About Læsehjælper and disclaimer", aboutText: "Læsehjælper is a free hobby project, not a finished product. Text recognition and syllable splitting make mistakes, so always check the text before a child reads it. The app does not replace teaching, reading support or a dyslexia assessment.<br><br>Photos and books are processed and stored only on your own device and are never sent to a server. Books are protected by copyright: only use Læsehjælper for books you have access to, and only for private use. Do not share converted books unless you hold the rights.<br><br>Use at your own risk and without warranty. The source code is open: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Books cannot be saved in this browser.", cropTitle: "Adjust the page", cropFound: "Page found. Drag the corners if it doesn't fit.", cropNone: "Drag the corners to the edges of the page.", cropLoading: "Looking for the page …", cropStraightening: "Straightening the page …", cropUse: "Use", cropWhole: "Whole photo", cropAgain: "Crop the page again", ocrAgain: "Recognise the text again", cropOf: "Photo {a} of {b}", exportBook: "Save as e-book", importBook: "Open a Læsehjælper e-book (EPUB)", exporting: "Creating the e-book …", exported: "E-book saved: {name}", importFail: "This file is not a Læsehjælper e-book.", importing: "Loading the e-book …", notReady: "Wait until all pages have been recognised.", install: "Install as an app on this device", compare: "Show the original text", compareOff: "Show the new text",
     },
     de: {
       insertBefore: "Seite davor einfügen", insertAfter: "Seite danach einfügen", replacePhoto: "Foto ersetzen", replacePhotoHint: "Beim Ersetzen eines Fotos gehen die bisherigen Textkorrekturen verloren. Übernommen wird das neue Foto erst nach dem Bestätigen des Zuschnitts.",
@@ -187,7 +192,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       how3t: "Lesen", how3: "Wort antippen zum Vorlesen. Schrift und Farben anpassen.",
       prevPage: "Vorherige Seite", nextPage: "Nächste Seite", page: "Seite", pageOf: "{a} / {b}",
       read: "Vorlesen", stop: "Stopp", adjust: "Anpassen", closeSettings: "Einstellungen schließen", moreSettings: "Weitere Einstellungen", focus: "Lesemodus", close: "Lesemodus schließen",
-      font: "Schrift", andika: "Andika (für Leseanfänger)", size: "Schriftgröße", letterSp: "Buchstabenabstand", lineSp: "Zeilenabstand",
+      font: "Schrift", andika: "Andika (für Leseanfänger)", sizeHint: "Auf der Buchseite ist kein Platz für größere Schrift. Wähle „Nur Text“ für größere Schrift.", size: "Schriftgröße", letterSp: "Buchstabenabstand", lineSp: "Zeilenabstand",
       syllables: "Silben", off: "Aus", color: "Farbe", arcs: "Bögen", both: "Beides",
       sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe", view: "Ansicht", viewPage: "Buchseite", viewText: "Nur Text", hyph: "Bindestriche im Buch", hyphNormal: "Normal", hyphBook: "Silbentrennung", hyphHint: "„Silbentrennung“ wählen, wenn das Buch Wörter selbst mit Bindestrich trennt, z. B. „Scho-ko-la-de“.",
       background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
@@ -200,7 +205,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       pageReady: "Bereit", waiting: "Wartet auf Erkennung …", recognizing: "Text wird erkannt …", recognizing2: "Text wird ein zweites Mal geprüft …", loadingCore: "Erkennung wird geladen …",
       loadingLang: "Sprachdaten werden geladen …", preparing: "Wird vorbereitet …",
       imgError: "Bild konnte nicht geöffnet werden.", noSpeech: "Vorlesen wird von diesem Browser nicht unterstützt.",
-      example: "Beispiel", addPages: "Seiten hinzufügen", toStart: "Zur Startseite", shelfTitle: "Deine Bücher", pagesN: "{n} Seiten", page1: "1 Seite", untitled: "Buch ohne Titel", titlePh: "Titel des Buchs", editPages: "Seiten bearbeiten", done: "Fertig", deleteBook: "Buch löschen", confirmDelete: "Zum Löschen noch einmal tippen", moveLeft: "Nach links", moveRight: "Nach rechts", deletePage: "Seite löschen", evTitle: "Was sagt die Forschung?", evText: "Am meisten hilft frühes, systematisches Üben von Buchstaben und Lauten – und ein Erwachsener, der zuhört, während dein Kind liest, bei schweren Wörtern hilft und die Mühe lobt. Die Einstellungen hier helfen weniger.<br><br>Mehr Abstand zwischen den Buchstaben verringert bei manchen Kindern die Fehler, macht das Lesen aber selten schneller. Kurze Zeilen helfen manchen Kindern, aber nicht allen. Vorlesen hilft beim Verstehen, und eine Seite erst zu hören und dann selbst zu lesen macht das Lesen flüssiger.<br><br>Farbige Silben können manchen Leseanfängern ein wenig helfen, vor allem bei langen Wörtern. Schalte sie ab, sobald dein Kind flüssig liest.<br><br>Spezielle Legasthenie-Schriften wie OpenDyslexic und farbige Hintergründe haben in Studien keine Wirkung gezeigt. Nutze sie gern, wenn dein Kind sie angenehm findet, aber nicht als Behandlung. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.de.md#was-sagt-die-forschung\">Quellen</a>", rateLabel: "Vorlesen", rateSlow: "Langsam", rateNormal: "Normal", turnLabel: "Nach dem Vorlesen", turnOn: "Du bist dran", turnOff: "Nur zuhören", yourTurn: "Jetzt bist du dran. Lies die Seite selbst.", again: "Noch mal hören", linesLabel: "Zeilen", linesNormal: "Normal", linesShort: "Kurz", linesHint: "Kurze Zeilen mit wenigen Wörtern helfen manchen Kindern. Gilt nur, wenn der Text allein angezeigt wird.", reader: "Leser", reader1: "Leser 1", addReader: "Hinzufügen", newReaderPh: "Name des neuen Lesers", removeReader: "Leser löschen", confirmReader: "Zum Löschen noch einmal tippen", readerHint: "Jeder Leser hat eigene Einstellungen für Schrift, Abstände, Silben und Vorlesen.", sylWordsAll: "Alle Wörter", sylWordsLong: "Nur lange Wörter", sylHint: "Farbige Silben sind zu Beginn aus. Schalte sie ein, wenn sie deinem Kind helfen, und wieder aus, sobald es flüssig liest.", togetherLabel: "Gemeinsam lesen", togetherOn: "An", togetherOff: "Aus", togetherHint: "Zeigt ein paar offene Fragen für den Erwachsenen, der mitliest. Kein Quiz – lass das Kind erzählen.", togetherTitle: "Sprecht über die Seite", ownQ: "Eigene Frage", ownQPh: "Frage zu dieser Seite schreiben", save: "Speichern", moveBoxes: "Textfelder verschieben", moveDone: "Verschieben beenden", resetPlace: "Position zurücksetzen", moveHint: "Zieh ein Feld, um es zu verschieben, oder an seiner Ecke, um die Größe zu ändern.", morf: "Wortteile", morfOnlyDa: "Wortteile gibt es bisher nur für Dänisch.", morfFail: "Die Wortliste konnte nicht geladen werden.", aboutTitle: "Über Læsehjælper und Haftungsausschluss", aboutText: "Læsehjælper ist ein kostenloses Hobbyprojekt und kein fertiges Produkt. Texterkennung und Silbentrennung machen Fehler – prüfe den Text deshalb immer, bevor ein Kind ihn liest. Die App ersetzt keinen Unterricht, keine Leseförderung und keine Diagnostik bei Legasthenie.<br><br>Fotos und Bücher werden nur auf deinem eigenen Gerät verarbeitet und gespeichert und an keinen Server geschickt. Bücher sind urheberrechtlich geschützt: Nutze Læsehjælper nur für Bücher, auf die du selbst Zugriff hast, und nur privat. Gib umgewandelte Bücher nicht weiter, außer du hast die Rechte dazu.<br><br>Nutzung auf eigene Verantwortung und ohne Gewähr. Der Quellcode ist offen: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "In diesem Browser können keine Bücher gespeichert werden.", cropTitle: "Seite zuschneiden", cropFound: "Seite gefunden. Zieh an den Ecken, falls es nicht passt.", cropNone: "Zieh die Ecken an die Ränder der Seite.", cropLoading: "Seite wird gesucht …", cropStraightening: "Seite wird entzerrt …", cropUse: "Übernehmen", cropWhole: "Ganzes Bild", cropAgain: "Seite neu zuschneiden", ocrAgain: "Text neu erkennen", cropOf: "Bild {a} von {b}", exportBook: "Als E-Book speichern", importBook: "E-Book (EPUB) aus Læsehjælper laden", exporting: "E-Book wird erstellt …", exported: "E-Book gespeichert: {name}", importFail: "Die Datei ist kein E-Book aus Læsehjælper.", importing: "E-Book wird geladen …", notReady: "Warte, bis alle Seiten erkannt sind.", install: "Als App auf diesem Gerät installieren", compare: "Originaltext anzeigen", compareOff: "Neuen Text anzeigen",
+      example: "Beispiel", addPages: "Seiten hinzufügen", toStart: "Zur Startseite", shelfTitle: "Deine Bücher", pagesN: "{n} Seiten", page1: "1 Seite", untitled: "Buch ohne Titel", titlePh: "Titel des Buchs", editPages: "Seiten bearbeiten", done: "Fertig", deleteBook: "Buch löschen", confirmDelete: "Zum Löschen noch einmal tippen", moveLeft: "Nach links", moveRight: "Nach rechts", deletePage: "Seite löschen", evTitle: "Was sagt die Forschung?", evText: "Am meisten hilft frühes, systematisches Üben von Buchstaben und Lauten – und ein Erwachsener, der zuhört, während dein Kind liest, bei schweren Wörtern hilft und die Mühe lobt. Die Einstellungen hier helfen weniger.<br><br>Mehr Abstand zwischen den Buchstaben verringert bei manchen Kindern die Fehler, macht das Lesen aber selten schneller. Kurze Zeilen helfen manchen Kindern, aber nicht allen. Vorlesen hilft beim Verstehen, und eine Seite erst zu hören und dann selbst zu lesen macht das Lesen flüssiger.<br><br>Farbige Silben können manchen Leseanfängern ein wenig helfen, vor allem bei langen Wörtern. Schalte sie ab, sobald dein Kind flüssig liest.<br><br>Spezielle Legasthenie-Schriften wie OpenDyslexic und farbige Hintergründe haben in Studien keine Wirkung gezeigt. Nutze sie gern, wenn dein Kind sie angenehm findet, aber nicht als Behandlung. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.de.md#was-sagt-die-forschung\">Quellen</a>", rateLabel: "Vorlesen", rateSlow: "Langsam", rateNormal: "Normal", highlightLabel: "Wörter beim Vorlesen hervorheben", highlightOn: "An", highlightOff: "Aus", highlightHint: "Die Wörter leuchten auf, während sie vorgelesen werden. Ein Nutzen ist nicht belegt, aber manche Kinder mögen es.", turnLabel: "Nach dem Vorlesen", turnOn: "Du bist dran", turnOff: "Nur zuhören", yourTurn: "Jetzt bist du dran. Lies die Seite selbst.", again: "Noch mal hören", linesLabel: "Zeilen", linesNormal: "Normal", linesShort: "Kurz", linesHint: "Kurze Zeilen mit wenigen Wörtern helfen manchen Kindern. Gilt nur, wenn der Text allein angezeigt wird.", reader: "Leser", reader1: "Leser 1", addReader: "Hinzufügen", newReaderPh: "Name des neuen Lesers", removeReader: "Leser löschen", confirmReader: "Zum Löschen noch einmal tippen", readerHint: "Jeder Leser hat eigene Einstellungen für Schrift, Abstände, Silben und Vorlesen.", sylWordsAll: "Alle Wörter", sylWordsLong: "Nur lange Wörter", sylHint: "Farbige Silben sind zu Beginn aus. Schalte sie ein, wenn sie deinem Kind helfen, und wieder aus, sobald es flüssig liest.", togetherLabel: "Gemeinsam lesen", togetherOn: "An", togetherOff: "Aus", togetherHint: "Zeigt ein paar offene Fragen für den Erwachsenen, der mitliest. Kein Quiz – lass das Kind erzählen.", togetherTitle: "Sprecht über die Seite", ownQ: "Eigene Frage", ownQPh: "Frage zu dieser Seite schreiben", save: "Speichern", moveBoxes: "Textfelder verschieben", moveDone: "Verschieben beenden", resetPlace: "Position zurücksetzen", moveHint: "Zieh ein Feld, um es zu verschieben, oder an seiner Ecke, um die Größe zu ändern.", morf: "Wortteile", morfOnlyDa: "Wortteile gibt es bisher nur für Dänisch.", morfFail: "Die Wortliste konnte nicht geladen werden.", aboutTitle: "Über Læsehjælper und Haftungsausschluss", aboutText: "Læsehjælper ist ein kostenloses Hobbyprojekt und kein fertiges Produkt. Texterkennung und Silbentrennung machen Fehler – prüfe den Text deshalb immer, bevor ein Kind ihn liest. Die App ersetzt keinen Unterricht, keine Leseförderung und keine Diagnostik bei Legasthenie.<br><br>Fotos und Bücher werden nur auf deinem eigenen Gerät verarbeitet und gespeichert und an keinen Server geschickt. Bücher sind urheberrechtlich geschützt: Nutze Læsehjælper nur für Bücher, auf die du selbst Zugriff hast, und nur privat. Gib umgewandelte Bücher nicht weiter, außer du hast die Rechte dazu.<br><br>Nutzung auf eigene Verantwortung und ohne Gewähr. Der Quellcode ist offen: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "In diesem Browser können keine Bücher gespeichert werden.", cropTitle: "Seite zuschneiden", cropFound: "Seite gefunden. Zieh an den Ecken, falls es nicht passt.", cropNone: "Zieh die Ecken an die Ränder der Seite.", cropLoading: "Seite wird gesucht …", cropStraightening: "Seite wird entzerrt …", cropUse: "Übernehmen", cropWhole: "Ganzes Bild", cropAgain: "Seite neu zuschneiden", ocrAgain: "Text neu erkennen", cropOf: "Bild {a} von {b}", exportBook: "Als E-Book speichern", importBook: "E-Book (EPUB) aus Læsehjælper laden", exporting: "E-Book wird erstellt …", exported: "E-Book gespeichert: {name}", importFail: "Die Datei ist kein E-Book aus Læsehjælper.", importing: "E-Book wird geladen …", notReady: "Warte, bis alle Seiten erkannt sind.", install: "Als App auf diesem Gerät installieren", compare: "Originaltext anzeigen", compareOff: "Neuen Text anzeigen",
     },
   };
   const t = (k: string, vars: Record<string, string | number> = {}): string =>
@@ -222,7 +227,7 @@ const Lib = { detectPage, warpPage, orderCorners };
   $<HTMLButtonElement>("profileAdd").onclick = () => {
     const inp = $<HTMLInputElement>("profileName"); const name = inp.value.trim();
     if (!name) { inp.focus(); return; }
-    prof = addProfile(prof!, name, S, { mode: defaults.mode }); inp.value = ""; profileChanged();
+    prof = addProfile(prof!, name, S, { mode: defaults.mode, highlight: defaults.highlight }); inp.value = ""; profileChanged();
   };
   $<HTMLInputElement>("profileName").onkeydown = e => { if (e.key === "Enter") $<HTMLButtonElement>("profileAdd").click(); };
   $<HTMLButtonElement>("profileDel").onclick = () => {
@@ -260,7 +265,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     if (pages.length) render();
   }
 
-  const CHOICES: [string, ChoiceKey][] = [["gateSet", "gate"], ["mode", "mode"], ["sylWordsSet", "sylWords"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"], ["viewSet", "view"], ["hyphSet", "hyph"], ["rateSet", "rate"], ["turnSet", "turn"], ["linesSet", "lines"], ["togetherSet", "together"]];
+  const CHOICES: [string, ChoiceKey][] = [["gateSet", "gate"], ["mode", "mode"], ["sylWordsSet", "sylWords"], ["highlightSet", "highlight"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"], ["viewSet", "view"], ["hyphSet", "hyph"], ["rateSet", "rate"], ["turnSet", "turn"], ["linesSet", "lines"], ["togetherSet", "together"]];
   function applySettings() {
     const r = document.documentElement.style;
     r.setProperty("--font", S.font);
@@ -269,6 +274,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     r.setProperty("--ws", wordSpacing(S.ls, WORD_BASE_FLOW) + "em");
     r.setProperty("--ws-box", wordSpacing(S.ls, WORD_BASE_BOX) + "em");
     r.setProperty("--lh", String(S.lh));
+    r.setProperty("--lh-box", String(boxLineHeight(S.lh)));
     const [c0, c1] = S.colors.split(",");
     r.setProperty("--s0", c0); r.setProperty("--s1", c1);
     $in("c0").value = c0; $in("c1").value = c1;
@@ -287,7 +293,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     // Showing or hiding the original page only applies to text view. In book-page view,
     // the page itself is the image; use the eye button to compare it.
     $("origToggle").closest<HTMLElement>(".field")!.hidden = S.view === "side";
-    if ($("reader").classList.contains("pagemode")) requestAnimationFrame(() => fitBoxes());
+    if ($("reader").classList.contains("pagemode")) requestAnimationFrame(() => fitPage());
     save();
   }
   $("font").onchange = e => { S.font = val(e); applySettings(); };
@@ -662,6 +668,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     const built = buildText(pg.text, pg.lang);
     const ps = built.ps;
     rd.innerHTML = ""; speech = built.speech;
+    $("sizeHint").hidden = true;   // Only the book page can lack room for the wished size (fitPage).
     const page = isPageMode(pg);
     rd.classList.toggle("pagemode", page);
     if (!page) { ps.forEach(p => { if (S.lines === "kort") shortLines(p); rd.append(p); }); return; }
@@ -669,7 +676,7 @@ const Lib = { detectPage, warpPage, orderCorners };
     const pv = buildPageView(pg, ps);
     const img = pv.querySelector("img")!;
     rd.append(pv);
-    const go = () => requestAnimationFrame(() => fitBoxes());
+    const go = () => requestAnimationFrame(() => fitPage());
     if (moving) addGrips();
     if (img.complete) go(); else img.onload = go;
     if (document.fonts) document.fonts.ready.then(go);
@@ -690,6 +697,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       const x0 = Math.max(0, g.x0 - pad), y0 = Math.max(0, g.y0 - pad);
       const x1 = Math.min(W, g.x1 + pad), y1 = Math.min(H, g.y1 + pad);
       box.dataset.lh = String(pa.lh / H);
+      box.dataset.lines = String(pa.lines?.length || 1);
       Object.assign(box.style, { left: x0 / W * 100 + "%", top: y0 / H * 100 + "%", width: (x1 - x0) / W * 100 + "%", height: (y1 - y0) / H * 100 + "%" });
       // Text on a picture: a soft halo where the picture was inpainted, otherwise its own panel.
       if (pa.inpainted && pa.rgb) box.style.textShadow = halo(pa.rgb);
@@ -755,37 +763,75 @@ const Lib = { detectPage, warpPage, orderCorners };
       if (pa && (cur0.x0 !== start.x0 || cur0.y0 !== start.y0 || cur0.x1 !== start.x1 || cur0.y1 !== start.y1)) {
         pa.place = cur0; savePage(pg);
         $<HTMLButtonElement>("resetPlaceBtn").hidden = false;
-        fitBoxes();
+        fitPage();
       }
     };
     el.addEventListener("pointermove", onMove); el.addEventListener("pointerup", onUp); el.addEventListener("pointercancel", onUp);
   });
 
   // Choose a font size for each box that fits the area of the original text.
-  function fitBoxes(root: ParentNode = document) {
+  /**
+   * Fit the text boxes of the book page on screen to the reader's text size: as large as wished
+   * where the page has room. Says in the settings when it has not.
+   */
+  function fitPage() {
+    $("sizeHint").hidden = !fitBoxes(document, S.size) || !$("reader").classList.contains("pagemode");
+  }
+
+  /**
+   * Fit the text of each book-page box: the largest size that fits, equal text equal and headings
+   * larger (harmonizeSizes), and with a `target` no larger than that size for the body text.
+   * Returns whether the boxes have no room for the target.
+   */
+  function fitBoxes(root: ParentNode = document, target?: number): boolean {
     const sizes = new Map<HTMLElement, number>();
     const boxes = [...root.querySelectorAll<HTMLElement>(".pageview .tbox")];
+    const fits = (box: HTMLElement) => {
+      const text = box.querySelector<HTMLElement>(".tbox-text")!;
+      return text.scrollHeight <= text.clientHeight + 1 && text.scrollWidth <= text.clientWidth + 1;
+    };
+    /** Spacing of one box, from the default (k = 0) to the reader's (k = 1). */
+    const space = (box: HTMLElement, k: number) => {
+      const sp = boxSpacing(S.ls, S.lh, k);
+      box.style.setProperty("--ls", sp.ls + "em");
+      box.style.setProperty("--lh-box", String(sp.lh));
+      box.style.setProperty("--ws-box", sp.ws + "em");
+    };
+    // 1. The largest size that fits each box with the default spacing.
     boxes.forEach(box => {
       const h = box.clientHeight, w = box.clientWidth;
       if (!h || !w) return;
-      const text = box.querySelector<HTMLElement>(".tbox-text")!;
+      space(box, 0);
       // Limit the size to a little over twice the original text size.
       const maxFs = parseFloat(box.dataset.lh || "1") * (box.parentElement?.clientHeight || h) * 2.4;
       let lo = 4, hi = Math.max(8, Math.min(h, maxFs));
       for (let k = 0; k < 12; k++) {
         const mid = (lo + hi) / 2;
         box.style.fontSize = mid + "px";
-        if (text.scrollHeight <= text.clientHeight + 1 && text.scrollWidth <= text.clientWidth + 1) lo = mid; else hi = mid;
+        if (fits(box)) lo = mid; else hi = mid;
       }
       box.style.fontSize = lo + "px";
       sizes.set(box, lo);
     });
-    // Preserve relative original sizes: equal text stays equal, and headings stay larger.
-    const fitted = harmonizeSizes(boxes.map(b => ({ lh: parseFloat(b.dataset.lh || "0"), fit: sizes.get(b) || 0 })));
-    boxes.forEach((b, i) => { if (sizes.has(b)) b.style.fontSize = fitted[i] + "px"; });
+    // 2. Equal text equal, headings larger, and the body text no larger than the wished size.
+    const fitted = harmonizeSizes(boxes.map(b => ({ lh: parseFloat(b.dataset.lh || "0"), fit: sizes.get(b) || 0, lines: Number(b.dataset.lines) || 1 })));
+    const scaled = target ? scaleToTarget(fitted, boxes.map(b => (b.textContent || "").length), target) : { sizes: fitted, limited: false };
+    // 3. The reader's spacing, as far as it fits at that size: a full box keeps its text size.
+    let reduced = false;
+    boxes.forEach((box, i) => {
+      if (!sizes.has(box)) return;
+      box.style.fontSize = scaled.sizes[i] + "px";
+      space(box, 1);
+      if (fits(box)) return;
+      reduced = true;
+      let lo = 0, hi = 1;
+      for (let k = 0; k < 8; k++) { const mid = (lo + hi) / 2; space(box, mid); if (fits(box)) lo = mid; else hi = mid; }
+      space(box, lo);
+    });
+    return scaled.limited || reduced;
   }
   let fitT = 0;
-  new ResizeObserver(() => { clearTimeout(fitT); fitT = window.setTimeout(() => fitBoxes(), 60); }).observe($("reader"));
+  new ResizeObserver(() => { clearTimeout(fitT); fitT = window.setTimeout(() => fitPage(), 60); }).observe($("reader"));
 
   /** Measure boldness and mark words; Tesseract does not provide font characteristics. */
   function markBold(data: OcrData, canvas: HTMLCanvasElement) {
@@ -1150,7 +1196,7 @@ const Lib = { detectPage, warpPage, orderCorners };
 html, body { margin: 0; padding: 0; }
 .page { position: relative; overflow: hidden; background: ${S.bg}; color: #1d1d1f; font-family: ${S.font}; }
 .bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-.tbox { position: absolute; overflow: hidden; line-height: ${Math.min(S.lh, 1.6)}; letter-spacing: ${S.ls}em; word-spacing: ${wordSpacing(S.ls, WORD_BASE_BOX)}em; }
+.tbox { position: absolute; overflow: hidden; line-height: ${boxLineHeight(S.lh)}; letter-spacing: ${S.ls}em; word-spacing: ${wordSpacing(S.ls, WORD_BASE_BOX)}em; }
 .tbox p, .flow p { margin: 0 0 .35em; }
 .busy { border-radius: 12px; padding: 0 .3em; }
 .flow { position: absolute; left: 70px; right: 70px; top: 70px; line-height: ${S.lh}; letter-spacing: ${S.ls}em; word-spacing: ${wordSpacing(S.ls, WORD_BASE_FLOW)}em; }
@@ -1178,6 +1224,12 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
         const img = pv.querySelector("img")!;
         try { await img.decode(); } catch { /* Image unavailable: still lay out the text boxes. */ }
         fitBoxes(host);
+        // E-book readers may not support CSS variables: write each box's spacing out.
+        pv.querySelectorAll<HTMLElement>(".tbox").forEach(b => {
+          const cs = getComputedStyle(b);
+          Object.assign(b.style, { letterSpacing: cs.letterSpacing, lineHeight: cs.lineHeight, wordSpacing: cs.wordSpacing });
+          for (const v of ["--ls", "--lh-box", "--ws-box"]) b.style.removeProperty(v);
+        });
         img.remove();
         const boxes = [...pv.querySelectorAll<HTMLElement>(".tbox")].map(b => { b.removeAttribute("data-lh"); return ser.serializeToString(b); });
         out.push({ width: EXPORT_W, height: Math.round(EXPORT_W * pg.workH / pg.workW), image: (await blobBytes(pg.cleanBlob)) || (await urlBytes(pg.clean)), bodyHtml: boxes.join("\n") });
@@ -1363,11 +1415,26 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     const ro = new ResizeObserver(layout); ro.observe(stage);
     layout();
 
-    // The buttons work at once: the whole photo needs no page search, and "Use" waits for OpenCV
-    // only to straighten the page. A search that finishes after the user decided changes nothing.
+    // The buttons work at once. The whole photo needs no page search; "Use" on the untouched frame
+    // of a new photo means the suggestion and waits for the search; "Use" on an adjusted frame waits
+    // for OpenCV only to straighten the page. A search that finishes after the user decided changes nothing.
     const cvReady: Promise<CV | null> = getCv().catch((e) => { console.error(e); return null; });
     const okBtn = $<HTMLButtonElement>("cropOk"), wholeBtn = $<HTMLButtonElement>("cropWhole");
-    let decided = false;
+    let decided = false, searched = false;
+    // Look for the page alongside: the user may adjust or accept the frame before the search is done.
+    const search = cvReady.then((cv) => {
+      if (decided) return;
+      try {
+        if (cv && !start && !adjusted) {
+          const found = Lib.detectPage(cv, photo);
+          if (found) { pts = [...found, ...frameFromCorners(found).mids]; draw(); }
+          msg(found ? "cropFound" : "cropNone");
+        } else msg("cropNone");
+      } catch (e) {
+        console.error(e);
+        msg("cropNone");
+      }
+    }).finally(() => { searched = true; });
     const result = new Promise<CropResult>((resolve) => {
       const finish = async (frame: Frame | null) => {
         if (decided) return;
@@ -1388,23 +1455,14 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
         if (isFull || !cv) return resolve({ canvas: photo, corners: null });
         resolve({ canvas: Lib.warpPage(cv, photo, frame!), corners: frame });
       };
-      okBtn.onclick = () => finish({ corners: pts.slice(0, 4) as Corners, mids: pts.slice(4, 8) as Corners });
+      okBtn.onclick = async () => {
+        if (!start && !adjusted && !searched) {
+          okBtn.disabled = wholeBtn.disabled = true;
+          await search;
+        }
+        finish({ corners: pts.slice(0, 4) as Corners, mids: pts.slice(4, 8) as Corners });
+      };
       wholeBtn.onclick = () => finish(null);
-    });
-
-    // Look for the page alongside: the user may adjust or accept the frame before the search is done.
-    cvReady.then((cv) => {
-      if (decided) return;
-      try {
-        if (cv && !start && !adjusted) {
-          const found = Lib.detectPage(cv, photo);
-          if (found) { pts = [...found, ...frameFromCorners(found).mids]; draw(); }
-          msg(found ? "cropFound" : "cropNone");
-        } else msg("cropNone");
-      } catch (e) {
-        console.error(e);
-        msg("cropNone");
-      }
     });
     return result;
   }
@@ -1593,7 +1651,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
       if (ev.name && ev.name !== "word") return;
       const hit = sp.wordPos.find(p => ev.charIndex >= p.start && ev.charIndex < p.end) || sp.wordPos.find(p => p.start >= ev.charIndex);
       clearHighlight();
-      if (hit && spans[hit.i]) spans[hit.i].classList.add("speaking");
+      if (hit && spans[hit.i] && S.highlight === "an") spans[hit.i].classList.add("speaking");
     }, () => {
       if (my !== readId) return;
       const finished = reading;

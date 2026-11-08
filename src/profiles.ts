@@ -7,7 +7,7 @@
  */
 
 /** Settings that belong to a profile. */
-export const PROFILE_KEYS = ["font", "size", "ls", "lh", "mode", "sylWords", "colors", "bg", "lines", "rate", "turn"] as const;
+export const PROFILE_KEYS = ["font", "size", "ls", "lh", "mode", "sylWords", "colors", "bg", "lines", "rate", "turn", "highlight"] as const;
 export type ProfileKey = typeof PROFILE_KEYS[number];
 
 type Values = Record<string, string | number>;
@@ -15,6 +15,18 @@ export interface Profile { id: string; name: string; settings: Values }
 export interface ProfileStore { active: string; list: Profile[] }
 
 const newId = () => Math.random().toString(36).slice(2, 10);
+
+/**
+ * Reading settings added later whose new default differs from what readers had before. Settings
+ * and profiles saved by an earlier version keep that behaviour; new devices and readers get the
+ * new default. Word highlighting during read-aloud was always on before it became a setting.
+ */
+const EARLIER_BEHAVIOUR: Values = { highlight: "an" };
+
+/** Saved settings from an earlier version, completed with the behaviour those readers had. */
+export function fromEarlier(saved: Values): Values {
+  return { ...EARLIER_BEHAVIOUR, ...saved };
+}
 
 function pick(S: object): Values {
   const src = S as Values, out: Values = {};
@@ -32,7 +44,10 @@ function valid(x: unknown): x is ProfileStore {
 /** Load saved profiles; if valid data is missing, create the first profile from current settings. */
 export function initProfiles(raw: string | null, S: object, firstName: string): ProfileStore {
   if (raw) {
-    try { const st = JSON.parse(raw); if (valid(st)) return st; } catch { /* create a new store */ }
+    try {
+      const st = JSON.parse(raw);
+      if (valid(st)) return { ...st, list: st.list.map(p => ({ ...p, settings: fromEarlier(p.settings) })) };
+    } catch { /* create a new store */ }
   }
   const id = newId();
   return { active: id, list: [{ id, name: firstName, settings: pick(S) }] };
