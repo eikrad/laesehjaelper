@@ -21,6 +21,7 @@ import { detectPage, warpPage, orderCorners, frameFromCorners, toFrame } from ".
 import type { CV } from "./pagedetect";
 import { DB } from "./db";
 import { flattenBackground, rotateLike } from "./prep";
+import { type Gray, restoreMarks } from "./sylmarks";
 import { eraseText, halo } from "./erase";
 import { buildEpub, readEpub } from "./epub";
 import type { DataPage, EpubFont, EpubPage } from "./epub";
@@ -130,7 +131,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       read: "Læs op", stop: "Stop", adjust: "Tilpas", closeSettings: "Luk indstillinger", moreSettings: "Flere indstillinger", focus: "Læsetilstand", close: "Luk læsetilstand",
       font: "Skrift", andika: "Andika (til begyndere)", sizeHint: "Der er ikke plads til større skrift på bogens side. Vælg „Kun teksten“ for større skrift.", size: "Skriftstørrelse", letterSp: "Bogstavafstand", lineSp: "Linjeafstand",
       syllables: "Stavelser", off: "Fra", color: "Farve", arcs: "Buer", both: "Begge",
-      sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse", view: "Visning", viewPage: "Bogens side", viewText: "Kun teksten", hyph: "Bindestreger i bogen", hyphNormal: "Almindelige", hyphBook: "Stavelsesdeling", hyphHint: "Vælg „Stavelsesdeling“, hvis bogen selv deler ord med bindestreg, f.eks. „sko-le“.",
+      sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse", view: "Visning", viewPage: "Bogens side", viewText: "Kun teksten", hyph: "Bindestreger i bogen", hyphNormal: "Almindelige", hyphBook: "Stavelsesdeling", hyphHint: "Vælg „Stavelsesdeling“, hvis bogen selv deler ord med bindestreg eller prik, f.eks. „sko-le“ eller „sko·le“.",
       background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
       original: "Originalside", show: "Vis", hide: "Skjul", origAlt: "Originalside",
       editSummary: "Tjek og ret teksten", bookTools: "Bogværktøjer", editBook: "Rediger bog", readBook: "Tilbage til læsning", correctPage: "Ret denne side", parentGate: "Forældresikring", gateOn: "Til", gateOff: "Fra", holdToEdit: "Hold knappen nede i to sekunder for at redigere bogen.", gateHint: "Forebygger utilsigtede tryk. Det er ikke en sikkerhedslås.",
@@ -162,7 +163,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       read: "Read aloud", stop: "Stop", adjust: "Adjust", closeSettings: "Close settings", moreSettings: "More settings", focus: "Reading mode", close: "Close reading mode",
       font: "Font", andika: "Andika (for beginners)", sizeHint: "The book page has no room for larger text. Choose “Text only” for larger text.", size: "Font size", letterSp: "Letter spacing", lineSp: "Line spacing",
       syllables: "Syllables", off: "Off", color: "Colour", arcs: "Arcs", both: "Both",
-      sylColors: "Syllable colours", cBlueRed: "Blue and red", cBlueBlack: "Blue and black", cRedBlack: "Red and black", cPurpleGreen: "Purple and green", syl1: "1st syllable", syl2: "2nd syllable", view: "View", viewPage: "Book page", viewText: "Text only", hyph: "Hyphens in the book", hyphNormal: "Normal", hyphBook: "Syllable breaks", hyphHint: "Choose “Syllable breaks” if the book itself splits words with hyphens, e.g. “gar-den”.",
+      sylColors: "Syllable colours", cBlueRed: "Blue and red", cBlueBlack: "Blue and black", cRedBlack: "Red and black", cPurpleGreen: "Purple and green", syl1: "1st syllable", syl2: "2nd syllable", view: "View", viewPage: "Book page", viewText: "Text only", hyph: "Hyphens in the book", hyphNormal: "Normal", hyphBook: "Syllable breaks", hyphHint: "Choose “Syllable breaks” if the book itself splits words with hyphens or dots, e.g. “gar-den” or “gar·den”.",
       background: "Background", bWhite: "White", bCream: "Cream", bYellow: "Yellow", bBlue: "Light blue", bGreen: "Light green",
       original: "Original page", show: "Show", hide: "Hide", origAlt: "Original page",
       editSummary: "Check and correct the text", bookTools: "Book tools", editBook: "Edit book", readBook: "Back to reading", correctPage: "Correct this page", parentGate: "Parent gate", gateOn: "On", gateOff: "Off", holdToEdit: "Hold for two seconds to edit the book.", gateHint: "Prevents accidental taps. This is not a security lock.",
@@ -194,7 +195,7 @@ const Lib = { detectPage, warpPage, orderCorners };
       read: "Vorlesen", stop: "Stopp", adjust: "Anpassen", closeSettings: "Einstellungen schließen", moreSettings: "Weitere Einstellungen", focus: "Lesemodus", close: "Lesemodus schließen",
       font: "Schrift", andika: "Andika (für Leseanfänger)", sizeHint: "Auf der Buchseite ist kein Platz für größere Schrift. Wähle „Nur Text“ für größere Schrift.", size: "Schriftgröße", letterSp: "Buchstabenabstand", lineSp: "Zeilenabstand",
       syllables: "Silben", off: "Aus", color: "Farbe", arcs: "Bögen", both: "Beides",
-      sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe", view: "Ansicht", viewPage: "Buchseite", viewText: "Nur Text", hyph: "Bindestriche im Buch", hyphNormal: "Normal", hyphBook: "Silbentrennung", hyphHint: "„Silbentrennung“ wählen, wenn das Buch Wörter selbst mit Bindestrich trennt, z. B. „Scho-ko-la-de“.",
+      sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe", view: "Ansicht", viewPage: "Buchseite", viewText: "Nur Text", hyph: "Bindestriche im Buch", hyphNormal: "Normal", hyphBook: "Silbentrennung", hyphHint: "„Silbentrennung“ wählen, wenn das Buch Wörter selbst mit Bindestrich oder Punkt trennt, z. B. „Scho-ko-la-de“ oder „Scho·ko·la·de“.",
       background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
       original: "Originalseite", show: "Zeigen", hide: "Verbergen", origAlt: "Originalseite",
       editSummary: "Text prüfen und korrigieren", bookTools: "Buchwerkzeuge", editBook: "Buch bearbeiten", readBook: "Zurück zum Lesen", correctPage: "Diese Seite korrigieren", parentGate: "Elternschutz", gateOn: "An", gateOff: "Aus", holdToEdit: "Zum Bearbeiten die Taste zwei Sekunden gedrückt halten.", gateHint: "Verhindert versehentliches Tippen. Dies ist keine Sicherheitssperre.",
@@ -834,6 +835,12 @@ const Lib = { detectPage, warpPage, orderCorners };
   new ResizeObserver(() => { clearTimeout(fitT); fitT = window.setTimeout(() => fitPage(), 60); }).observe($("reader"));
 
   /** Measure boldness and mark words; Tesseract does not provide font characteristics. */
+  function greyOf(c: HTMLCanvasElement): Gray {
+    const px = c.getContext("2d")!.getImageData(0, 0, c.width, c.height).data, g = new Uint8ClampedArray(c.width * c.height);
+    for (let i = 0, j = 0; j < g.length; i += 4, j++) g[j] = 0.3 * px[i] + 0.59 * px[i + 1] + 0.11 * px[i + 2];
+    return { data: g, width: c.width, height: c.height };
+  }
+
   function markBold(data: OcrData, canvas: HTMLCanvasElement) {
     const paras = (data.blocks || []).flatMap(b => b.paragraphs || []);
     const words = paras.flatMap(p => (p.lines || []).flatMap(l => l.words || []));
@@ -1556,6 +1563,9 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
       pg.stage = "recognizing2";
       const { data: flat } = await w.recognize(flattenBackground(work), {}, { blocks: true });
       if (stale()) return;
+      // Both passes refer to the straightened image: put back the book's syllable marks they dropped.
+      const grey = greyOf(work);
+      restoreMarks(data, grey); restoreMarks(flat, grey);
       const paras = transferPlaces(pg.paras, Layout.parasFromOcr(data, flat));
       // OpenCV is usually loaded already for cropping; without it, text on pictures is painted over.
       const cleanCanvas = paras.length ? erasePage(work, paras, await getCv().catch(() => null)) : null;

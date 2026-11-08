@@ -25,7 +25,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Gemeinsam lesen: ein paar offene Fragen pro Seite für den Erwachsenen, auch eigene Fragen (zuschaltbar)
 - Wort antippen und hören – erst ganz, dann langsam Silbe für Silbe, dann wieder ganz
 - Die ganze Seite vorlesen lassen, mit Markierung des gerade gelesenen Worts, langsam oder normal; danach ist das Kind dran („Noch mal hören“)
-- Einstellung „Bindestriche im Buch“: für Lesebücher, die Wörter selbst mit Bindestrich in Silben trennen („Scho-ko-la-de“)
+- Einstellung „Bindestriche im Buch“: für Lesebücher, die Wörter selbst mit Bindestrich oder Punkt in Silben trennen („Scho-ko-la-de“, „Scho·ko·la·de“); Zeichen, die die Texterkennung übersieht, werden im Foto gefunden
 - Schräge Fotos werden gerade gerückt, und vermeintlicher „Text“ in Zeichnungen wird aussortiert
 - Jede Seite wird zweimal erkannt (normal und mit ausgeglichenem Hintergrund), damit auch Text auf getönten Bildern erkannt wird
 - Erkannten Text korrigieren; eigene Silbengrenzen mit `·` setzen (z. B. `O·ma`)

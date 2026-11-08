@@ -25,7 +25,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Read together: a few open questions per page for the adult, including your own (optional)
 - Tap a word to hear it – first whole, then slowly syllable by syllable, then whole again
 - Have the whole page read aloud with word-by-word highlighting, slow or normal; afterwards it's the child's turn ("Listen again")
-- “Hyphens in the book” setting: for early readers that split words into syllables with hyphens themselves (“sko-le”)
+- “Hyphens in the book” setting: for early readers that split words into syllables with hyphens or dots themselves (“sko-le”, “sko·le”); marks that text recognition misses are found in the photo
 - Tilted photos are straightened, and “text” that OCR finds inside illustrations is filtered out
 - Every page is recognized twice (as is and with a flattened background), so text on tinted pictures is found too
 - Correct the recognized text; set your own syllable breaks with `·` (e.g. `hun·den`)
