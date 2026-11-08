@@ -2,33 +2,49 @@
  * Harmonize the font sizes of text boxes on a book page.
  *
  * Each box starts with the largest font that fits (`fit`). Then:
- * - Similar line heights are grouped within a 20% range and receive equal font sizes.
- * - Clearly larger original text (headings) stays visibly larger, by at least the
- *   ratio √(larger line height / smaller line height). If a heading lacks space, shrink
- *   the smaller text; never enlarge a box beyond its fitted font size.
+ * - The body text gets one size: the largest that fits every box of the main text (boxes of two
+ *   or more lines). A one-line fragment that fits less keeps its own, smaller size, so it does not
+ *   shrink the rest.
+ * - Only short boxes (at most two lines) whose original line height is clearly larger than the
+ *   body text's count as headings. They stay visibly larger, by at least the ratio
+ *   √(heading line height / body line height); if a heading lacks space, the body text shrinks.
+ *   Headings of similar line height get the same size. Never enlarge a box beyond its fit.
+ * - Everything else is body text. A measured line height says little on its own: on a tilted
+ *   photo long lines measure taller, and a heading that lost its capital measures smaller.
  */
-export interface FitItem { lh: number; fit: number }
+export interface FitItem { lh: number; fit: number; lines?: number }
 
 const SAME = 0.2;      // original font sizes count as equal when line heights are this close
 export function harmonizeSizes(items: FitItem[]): number[] {
   const s = items.map((it) => it.fit);
-  const order = items.map((_, i) => i).filter(i => items[i].fit > 0 && items[i].lh > 0)
-    .sort((a, b) => items[a].lh - items[b].lh);
+  const valid = items.map((_, i) => i).filter(i => items[i].fit > 0 && items[i].lh > 0);
+  if (!valid.length) return s;
+  const lines = (i: number) => items[i].lines ?? 1;
+  // The body line height: the median over all lines of text.
+  const byLh = [...valid].sort((a, b) => items[a].lh - items[b].lh);
+  const total = byLh.reduce((sum, i) => sum + lines(i), 0);
+  let seen = 0, bodyLh = items[byLh[0]].lh;
+  for (const i of byLh) { seen += lines(i); if (seen >= total / 2) { bodyLh = items[i].lh; break; } }
+  const heading = (i: number) => lines(i) <= 2 && items[i].lh >= bodyLh * (1 + SAME);
+  const body = valid.filter(i => !heading(i));
+  const main = body.filter(i => lines(i) >= 2);
+  let bodySize = Math.min(...(main.length ? main : body).map(i => items[i].fit));
+  // Headings, larger ones first; similar line heights share a size.
   const groups: { lh: number; size: number; indices: number[] }[] = [];
-  for (const i of order) {
+  for (const i of valid.filter(heading).sort((a, b) => items[a].lh - items[b].lh)) {
     const last = groups[groups.length - 1];
     if (last && items[i].lh / last.lh < 1 + SAME) {
       last.indices.push(i); last.size = Math.min(last.size, items[i].fit);
     } else groups.push({ lh: items[i].lh, size: items[i].fit, indices: [i] });
   }
-  // Each group has exactly one role, so equality cannot create a cycle with
-  // the heading rule. Resolve larger groups first.
-  for (let i = groups.length - 1; i >= 0; i--) {
-    for (let j = i + 1; j < groups.length; j++) {
-      groups[i].size = Math.min(groups[i].size, groups[j].size / Math.sqrt(groups[j].lh / groups[i].lh));
+  for (let g = groups.length - 1; g >= 0; g--) {
+    for (let h = g + 1; h < groups.length; h++) {
+      groups[g].size = Math.min(groups[g].size, groups[h].size / Math.sqrt(groups[h].lh / groups[g].lh));
     }
-    for (const index of groups[i].indices) s[index] = groups[i].size;
+    for (const index of groups[g].indices) s[index] = groups[g].size;
   }
+  for (const g of groups) bodySize = Math.min(bodySize, g.size / Math.sqrt(g.lh / bodyLh));
+  for (const i of body) s[i] = Math.min(items[i].fit, bodySize);
   return s;
 }
 

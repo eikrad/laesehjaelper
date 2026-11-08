@@ -23,6 +23,22 @@ describe("harmonizeSizes", () => {
   });
 });
 
+describe("One size for the body text of a page", () => {
+  // lines = number of lines in the box's paragraph.
+  it("Gives a long paragraph measured larger (a tilted photo) the body size", () => {
+    expect(harmonizeSizes([{ lh: 34, fit: 40, lines: 2 }, { lh: 44, fit: 60, lines: 4 }, { lh: 33, fit: 42, lines: 2 }])).toEqual([40, 40, 40]);
+  });
+  it("Keeps a short heading measured clearly larger larger", () => {
+    expect(harmonizeSizes([{ lh: 48, fit: 60, lines: 1 }, { lh: 35, fit: 40, lines: 8 }])).toEqual([60, 40]);
+  });
+  it("Gives a short line measured smaller (a heading missing its capital) the body size", () => {
+    expect(harmonizeSizes([{ lh: 24, fit: 50, lines: 1 }, { lh: 34, fit: 36, lines: 8 }, { lh: 34, fit: 38, lines: 5 }])).toEqual([36, 36, 36]);
+  });
+  it("Does not shrink the body text for a one-line fragment that fits only a small size", () => {
+    expect(harmonizeSizes([{ lh: 34, fit: 12, lines: 1 }, { lh: 34, fit: 36, lines: 6 }])).toEqual([12, 36]);
+  });
+});
+
 it("Harmonizes varying OCR line heights without repeated shrinking", () => {
   const items = [{ lh: 20, fit: 32 }, { lh: 23, fit: 32 }, { lh: 27, fit: 32 }];
   const sizes = harmonizeSizes(items);
