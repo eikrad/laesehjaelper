@@ -17,11 +17,11 @@ export interface ProfileStore { active: string; list: Profile[] }
 const newId = () => Math.random().toString(36).slice(2, 10);
 
 /**
- * Reading settings added later whose new default differs from what readers had before. Settings
- * and profiles saved by an earlier version keep that behaviour; new devices and readers get the
- * new default. Word highlighting during read-aloud was always on before it became a setting.
+ * Reading settings added after some devices and profiles were saved. Missing values keep the
+ * behaviour those readers had: word highlighting during read-aloud was on, and syllable marks
+ * applied to all words. Explicitly saved choices take precedence.
  */
-const EARLIER_BEHAVIOUR: Values = { highlight: "an" };
+const EARLIER_BEHAVIOUR: Values = { highlight: "an", sylWords: "alle" };
 
 /** Saved settings from an earlier version, completed with the behaviour those readers had. */
 export function fromEarlier(saved: Values): Values {

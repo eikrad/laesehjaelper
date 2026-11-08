@@ -58,10 +58,24 @@ describe("profiles", () => {
   });
   it("Completes settings saved by an earlier version with the behaviour readers had then", () => {
     // Word highlighting during read-aloud was always on before it became a setting.
-    expect(fromEarlier({ size: 40 })).toEqual({ size: 40, highlight: "an" });
-    expect(fromEarlier({ highlight: "aus" })).toEqual({ highlight: "aus" });
+    expect(fromEarlier({ size: 40 })).toEqual({ size: 40, highlight: "an", sylWords: "alle" });
+    expect(fromEarlier({ highlight: "aus", sylWords: "lange" })).toEqual({ highlight: "aus", sylWords: "lange" });
     const { highlight: _, ...old } = base;
     const saved = { active: "a", list: [{ id: "a", name: "Ida", settings: old }] };
     expect(initProfiles(JSON.stringify(saved), base, "x").list[0].settings.highlight).toBe("an");
+  });
+  it("Keeps older readers' syllable-word choices independent when switching profiles", () => {
+    const { sylWords: _sylWords, highlight: _highlight, ...old } = base;
+    const saved = { active: "ida", list: [
+      { id: "ida", name: "Ida", settings: old },
+      { id: "bo", name: "Bo", settings: old },
+    ] };
+    const S = { ...base };
+    let st = initProfiles(JSON.stringify(saved), S, "Ida");
+    S.sylWords = "lange";
+    st = switchProfile(st, "bo", S);
+    expect(S.sylWords).toBe("alle");
+    switchProfile(st, "ida", S);
+    expect(S.sylWords).toBe("lange");
   });
 });
