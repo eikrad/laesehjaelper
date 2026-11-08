@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, fixture, openWorkshop, fresh, waitForText } from "./helpers";
+import { addPhotos, bookTool, fixture, fresh, openRecognisedBook, openWorkshop, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -108,8 +108,7 @@ test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
 });
 
 test("Saves text corrections", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg"]);
-  await waitForText(page);
+  await openRecognisedBook(page, ["side-da.jpg"]);
   await bookTool(page, "checkTextBtn");
   const t = await page.locator("#text").inputValue();
   await page.fill("#text", t.replace("Pindsvinet", "Pind·svi·net"));
@@ -133,8 +132,7 @@ test("Keeps headings larger and bold words bold", async ({ page }) => {
 });
 
 test("Moves, saves and resets text boxes on the book page", async ({ page }) => {
-  await addPhotos(page, ["side-da.jpg"]);
-  await waitForText(page);
+  await openRecognisedBook(page, ["side-da.jpg"]);
   await bookTool(page, "checkTextBtn");
   await page.click("#moveBtn");
   await expect(page.locator("#reader")).toHaveClass(/moving/);
