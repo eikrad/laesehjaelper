@@ -141,7 +141,7 @@ Kilder:
 - Orddele bruger en ordliste og enkle regler: ord, der ikke står på listen, forbliver hele, og flertydige ord (f.eks. „anden“) deles ikke. Kun dansk indtil videre.
 - Orddelingsmønstrene deler ikke enkelte bogstaver fra i starten eller slutningen af et ord, og nogle danske delinger er forkerte (f.eks. `hund-en` i stedet for `hun-den`). Løsning: ret det i teksten med `·`.
 - Tekst oven på illustrationer eller i dekorative skrifttyper bliver genkendt dårligere.
-- Den gamle tekst bliver malet over med baggrundsfarven omkring den. Står teksten på en illustration, bliver billedet i stedet udfyldt under de gamle bogstaver (inpainting), og den nye tekst får en blød, lys glorie. Fine, regelmæssige mønstre kan se lidt slørede ud, hvor teksten stod.
+- Kun de gamle bogstaver bliver fjernet: papiret eller billedet under dem bliver udfyldt ud fra omgivelserne (inpainting), så ujævnt lys og papirets struktur bliver, som de var. Står teksten på en illustration, får den nye tekst en blød, lys glorie. Fine, regelmæssige mønstre kan se lidt slørede ud, hvor teksten stod.
 - På bogens side gælder skriftstørrelse og afstande, så langt der er plads: størrelsen først, derefter så meget af afstanden, som kan være der. Er der ikke plads til den valgte størrelse, siger indstillingerne det; til rigtig stor skrift er visningen „Kun teksten“ bedre.
 - Sidegenkendelsen er forsigtig: fotografér én side i midten af billedet med mindst tre synlige kanter. Skygger, illustrationer og hele opslag kan stadig forvirre den. Kontrollér rammen, før du godkender.
 - Buede sider skal indtil videre rettes ud i hånden (se [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
