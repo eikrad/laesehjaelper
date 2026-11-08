@@ -56,7 +56,28 @@ const meadowPage = (text: boolean) => `<body style="margin:0;width:1200px;height
     </div>
   </body>`;
 
+/** Invented text on a bowed page, with perspective, a fold shadow and an illustration. */
+function curvedPhoto(): string {
+  const text = ["Søren går en tur i haven.", "Han ser en lille fugl.", "Fuglen sidder i et træ.", "Der er blomster i græsset.", "Solen skinner på huset.", "Nu går Søren hjem igen."];
+  const paths = text.map((_, i) => {
+    const v = 0.18 + i * 0.085, x0 = 150 + 20 * v, x1 = 1050 - 40 * v;
+    const y0 = 150 + 1230 * v, y1 = 170 + 1230 * v, sag = 10 + 65 * v;
+    return `<path id="line${i}" d="M${x0},${y0} Q${(x0 + x1) / 2},${(y0 + y1) / 2 + 2 * sag} ${x1},${y1}"/>`;
+  }).join("");
+  return `<body style="margin:0;width:1200px;height:1600px;background:#895e39">
+    <svg width="1200" height="1600" xmlns="http://www.w3.org/2000/svg">
+      <defs>${paths}<linearGradient id="paper"><stop stop-color="#c4b5a0"/><stop offset=".18" stop-color="#f4eddc"/><stop offset="1" stop-color="#eee4cc"/></linearGradient></defs>
+      <path d="M150,150 Q600,180 1050,170 L1010,1400 Q590,1540 170,1380 Z" fill="url(#paper)"/>
+      <g fill="#30271e" font-family="DejaVu Serif" font-size="44">${text.map((t, i) => `<text><textPath href="#line${i}" startOffset="65">${t}</textPath></text>`).join("")}</g>
+      <path d="M650,1250 L830,1250 L830,1120 L740,1040 L650,1120 Z" fill="#b75d42"/>
+      <rect x="715" y="1170" width="50" height="80" fill="#654b36"/>
+      <circle cx="870" cy="1000" r="55" fill="#e6b147"/>
+    </svg>
+  </body>`;
+}
+
 const pages: Record<string, string> = {
+  "foto-curved-auto.jpg": curvedPhoto(),
   // Lines that start right beside an illustration (issue #3).
   "side-bjorn.jpg": `<body style="margin:0;width:1200px;height:1600px;background:#fbf2dc;font-family:'DejaVu Serif',serif;color:#2a2420">
     <div style="position:absolute;left:60px;top:120px">${bear()}</div>

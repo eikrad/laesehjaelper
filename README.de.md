@@ -37,7 +37,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Lesen und Bücher vorbereiten haben getrennte Ansichten. Beim Lesen gibt es Blättern, Vorlesen und Aa-Einstellungen; „Buch bearbeiten“ öffnet die Werkstatt. Zurück führt über das Lesen zum Regal, und Seitenlinks bleiben nach dem Neuladen erhalten.
 - Die Buchwerkstatt vereint Seitenvorschauen und Erkennungsstatus mit Zuschnitt, Textkorrektur, Textfeldern, Seitenreihenfolge, Titel, EPUB-Export und Löschen. Breite Bildschirme zeigen die Liste neben dem Editor, schmale davor. „Zurück zum Lesen“ führt zur ausgewählten Seite zurück. Beim Lesen fokussiert „Buch bearbeiten“ → „Diese Seite korrigieren“ in zwei Schritten den Text der aktuellen Seite; danach geht es zur selben Seite zurück.
 - Ein optionaler Elternschutz unter „Weitere Einstellungen“ verlangt, „Buch bearbeiten“ zwei Sekunden gedrückt zu halten, und zeigt den Fortschritt. Das funktioniert mit Touch, Maus, Enter und Leertaste und ist standardmäßig aus. Es verhindert versehentliches Tippen und ist keine Sicherheitssperre.
-- Zuschneiden: Eine Seite in der Bildmitte wird vorgeschlagen und entzerrt, auch wenn ein Rand aus dem Foto läuft. Ecken und gebogene Kanten lassen sich nachziehen; manuelle Korrekturen haben Vorrang vor der Automatik und bleiben für späteren Zuschnitt gespeichert.
+- Zuschneiden: Ecken und gebogene Kanten einer Seite in der Bildmitte werden anhand ihres Umrisses automatisch vorgeschlagen und entzerrt, auch wenn ein Rand aus dem Foto läuft. Ecken und gebogene Kanten lassen sich nachziehen; manuelle Korrekturen haben Vorrang vor der Automatik und bleiben für späteren Zuschnitt gespeichert.
 - Wähle in der Werkstatt eine Seite aus und nutze ‹ / › unter der Vorschau zum Sortieren. „Seite davor einfügen“ und „Seite danach einfügen“ ergänzen fehlende Fotos an dieser Stelle, auch mehrere in der gewählten Reihenfolge. „Foto ersetzen“ behält die Position und den Seitenlink bei; erst nach dem Bestätigen des Zuschnitts ersetzen das neue Foto und der erkannte Text den bisherigen Inhalt. Manuelle Textkorrekturen auf der ersetzten Seite gehen dabei verloren.
 - E-Book: ein Buch als EPUB 3 speichern (feste Seiten, lässt sich in jeder Lese-App öffnen) und verlustfrei wieder laden
 - Als App installierbar und offline nutzbar
@@ -64,6 +64,7 @@ Das Projekt ist in TypeScript geschrieben (strict).
 - `src/app.ts`: App-Logik (Oberfläche, Texterkennung, Bücherregal)
 - `src/layout.ts`: macht aus dem rohen OCR-Ergebnis saubere Textzeilen und Absätze mit Position (filtert Bildrauschen)
 - `src/pagedetect.ts`: findet die Seite auf dem Foto und entzerrt sie (OpenCV), auch gewölbte Seiten
+- `src/pagecurve.ts`: passt glatte Kantenkurven an den erkannten Seitenumriss an
 - `src/silben.ts`: Silbentrennung (Dänisch, Deutsch, Englisch)
 - `src/db.ts`: Speicherung der Bücher auf dem Gerät (IndexedDB)
 - `src/epub.ts`: EPUB-Export und -Import
@@ -144,7 +145,7 @@ Quellen:
 - Nur die alten Buchstaben werden entfernt: Papier oder Bild darunter werden aus der Umgebung ergänzt (Inpainting), sodass ungleichmäßiges Licht und die Papierstruktur erhalten bleiben. Steht die Schrift auf einer Illustration, bekommt der neue Text einen weichen, hellen Schein. Feine, regelmäßige Muster können dort, wo der Text stand, etwas verwischt aussehen.
 - Auf der Buchseite gelten Schriftgröße und Abstände, soweit Platz ist: zuerst die Größe, dann so viel Abstand, wie passt. Ist für die gewählte Größe kein Platz, sagen es die Einstellungen; für richtig große Schrift ist die Ansicht „Nur Text“ besser.
 - Die Seitenerkennung ist vorsichtig: Fotografiere eine Seite in der Bildmitte mit mindestens drei sichtbaren Rändern. Schatten, Illustrationen und Doppelseiten können sie weiterhin verwirren. Prüfe den Rahmen vor dem Bestätigen.
-- Gewölbte Seiten muss man bisher von Hand glattziehen (siehe [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
+- Die automatische Wölbung folgt den sichtbaren Seitenrändern. Ein verdeckter oder abgeschnittener Rand liefert keine Information über die Wölbung; innere Knicke und komplizierte Verformungen können weiterhin manuelles Nachziehen der Kantenmittelpunkte erfordern.
 
 ## Roadmap
 

@@ -1,14 +1,16 @@
 // Find and straighten a book page in a photo (using OpenCV.js).
 //
 // Use a document-scanner approach: downscale the image, smooth away text and image content, detect
-// edges, and choose the largest plausible quadrilateral containing the image center. Check multiple
-// channels (grayscale, saturation, brightness) and sensitivities. If no quadrilateral has
-// approximately right angles, return null so the user can adjust the corners manually.
+// edges, and choose the largest plausible page containing the image center. Fit four corners
+// and smooth quadratic edges to its contour, checking multiple channels (grayscale, saturation,
+// brightness) and sensitivities. Reject outlines that cannot describe a page with near-right-angle
+// corners and smooth edges, so the user can adjust the frame manually.
 // Look for a page with its own outline first. Only if there is none, let the photo border close
 // the outline of a page that leaves the photo: otherwise a missed fold would let the facing page in.
 // Prefer no suggestion to an incorrect one.
 
 import type { Corners, Frame, Point } from "./types";
+import { contourFrame } from "./pagecurve";
 
 // OpenCV.js lacks suitable types here, so use it without typing.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,8 +58,8 @@ function plausiblePage(q: Corners, width: number, height: number): boolean {
   return q.filter((a, i) => atBorder(a, q[(i + 1) % 4])).length <= 1;
 }
 
-// canvas: the photo. Returns four corners in image coordinates, or null.
-export function detectPage(cv: CV, canvas: HTMLCanvasElement): Corners | null {
+/** Suggested page outline, including curved edges, in photo coordinates. */
+export function detectFrame(cv: CV, canvas: HTMLCanvasElement): Frame | null {
   const k = SIZE / Math.max(canvas.width, canvas.height);
   const src = cv.imread(canvas);
   const sm = new cv.Mat(), hsv = new cv.Mat(), gray = new cv.Mat();
@@ -81,9 +83,9 @@ export function detectPage(cv: CV, canvas: HTMLCanvasElement): Corners | null {
       cv.morphologyEx(b, b, cv.MORPH_CLOSE, kernel); // remove dark text
       return b;
     });
-    // The largest plausible quadrilateral over all channels and sensitivities.
-    const search = (closeBorder: boolean): Corners | null => {
-      let best: { area: number; q: Corners } | null = null;
+    // Keep the contour as well as its corners: its curved edges supply the crop midpoints.
+    const search = (closeBorder: boolean): Frame | null => {
+      let best: { area: number; frame: Frame } | null = null;
       for (const b of blurred) {
         for (const [lo, hi] of [[20, 60], [40, 120], [75, 200]]) {
           const e = new cv.Mat(), cs = new cv.MatVector(), hier = new cv.Mat();
@@ -97,11 +99,19 @@ export function detectPage(cv: CV, canvas: HTMLCanvasElement): Corners | null {
             const peri = cv.arcLength(cnt, true);
             if (peri >= 0.5 * (w + h)) {
               const ap = new cv.Mat();
-              cv.approxPolyDP(cnt, ap, 0.02 * peri, true);
-              if (ap.rows === 4 && cv.isContourConvex(ap)) {
+              // A bowed outline needs more tolerance to locate its four corners. The fit below
+              // still checks the original contour, so this does not accept arbitrary polygons.
+              for (const epsilon of [0.02, 0.035, 0.05]) {
+                cv.approxPolyDP(cnt, ap, epsilon * peri, true);
+                if (ap.rows !== 4 || !cv.isContourConvex(ap)) continue;
                 const area = cv.contourArea(ap);
                 const q = orderCorners([0, 1, 2, 3].map((j): Point => [ap.data32S[j * 2], ap.data32S[j * 2 + 1]]));
-                if (area > 0.15 * w * h && area < 0.98 * w * h && anglesOk(q) && plausiblePage(q, w, h) && (!best || area > best.area)) best = { area, q };
+                if (area > 0.15 * w * h && area < 0.98 * w * h && anglesOk(q) && plausiblePage(q, w, h) && (!best || area > best.area)) {
+                  const points: Point[] = Array.from({ length: cnt.rows }, (_, j) => [cnt.data32S[j * 2], cnt.data32S[j * 2 + 1]]);
+                  const frame = contourFrame(q, points);
+                  if (frame) best = { area, frame };
+                }
+                break;
               }
               ap.delete();
             }
@@ -110,16 +120,22 @@ export function detectPage(cv: CV, canvas: HTMLCanvasElement): Corners | null {
           e.delete(); cs.delete(); hier.delete();
         }
       }
-      return best && best.q;
+      return best && best.frame;
     };
     const found = search(false) ?? search(true);
-    return found && (found.map(([x, y]): Point => [x / k, y / k]) as Corners);
+    const scale = (ps: Corners) => ps.map(([x, y]): Point => [x / k, y / k]) as Corners;
+    return found && { corners: scale(found.corners), mids: scale(found.mids) };
   } finally {
     keep.forEach((m) => m.delete());
   }
 }
 
 const mid = (a: Point, b: Point): Point => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+
+/** Corner-only view of the suggested crop for callers that do not need edge curvature. */
+export function detectPage(cv: CV, canvas: HTMLCanvasElement): Corners | null {
+  return detectFrame(cv, canvas)?.corners ?? null;
+}
 
 /** Build a straight-edged frame from four corners. */
 export function frameFromCorners(c: Corners): Frame {
