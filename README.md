@@ -164,3 +164,5 @@ The software is provided as is, without warranty of any kind.
 ## License
 
 The code is released under the [MIT License](LICENSE). Third-party components have their own licenses, see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Full font and PDF-component notices are in [`licenses/`](licenses/). The built app includes an offline “Licences and fonts” page, linked from the start page's about section.

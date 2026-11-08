@@ -164,3 +164,5 @@ Die Software wird so bereitgestellt, wie sie ist, ohne jede Gewährleistung.
 ## Lizenz
 
 Der Code steht unter der [MIT-Lizenz](LICENSE). Komponenten von Dritten haben eigene Lizenzen, siehe [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Die vollständigen Lizenz- und Copyright-Texte für Schriften und PDF-Komponenten liegen in [`licenses/`](licenses/). Die App enthält die auch offline lesbare Seite „Lizenzen und Schriften“, verlinkt im Infobereich der Startseite.

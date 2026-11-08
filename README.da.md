@@ -164,3 +164,5 @@ Softwaren stilles til rådighed, som den er, uden nogen form for garanti.
 ## Licens
 
 Koden er udgivet under [MIT-licensen](LICENSE). Komponenter fra tredjepart har deres egne licenser, se [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+De fulde licens- og ophavsretstekster for skrifter og PDF-komponenter findes i [`licenses/`](licenses/). Appen indeholder siden „Licenser og skrifter“, som også virker offline og er linket fra afsnittet om appen på forsiden.
