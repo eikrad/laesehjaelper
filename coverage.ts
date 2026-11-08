@@ -12,7 +12,7 @@ const results = await new CoverageReport({
   name: "Læsehjælper – Combined test coverage",
   inputDir,
   outputDir: "coverage/merged",
-  sourceFilter: { "**/src/**": true, "**/*": false },
+  sourceFilter: { "**/node_modules/**": false, "**/src/**": true, "**/*": false },
   reports: ["v8", "console-details", "lcovonly"],
 }).generate();
 

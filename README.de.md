@@ -40,6 +40,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Zuschneiden: Ecken und gebogene Kanten einer Seite in der Bildmitte werden anhand ihres Umrisses automatisch vorgeschlagen und entzerrt, auch wenn ein Rand aus dem Foto läuft. Ecken und gebogene Kanten lassen sich nachziehen; manuelle Korrekturen haben Vorrang vor der Automatik und bleiben für späteren Zuschnitt gespeichert.
 - Wähle in der Werkstatt eine Seite aus und nutze ‹ / › unter der Vorschau zum Sortieren. „Seite davor einfügen“ und „Seite danach einfügen“ ergänzen fehlende Fotos an dieser Stelle, auch mehrere in der gewählten Reihenfolge. „Foto ersetzen“ behält die Position und den Seitenlink bei; erst nach dem Bestätigen des Zuschnitts ersetzen das neue Foto und der erkannte Text den bisherigen Inhalt. Manuelle Textkorrekturen auf der ersetzten Seite gehen dabei verloren.
 - E-Book: ein Buch als EPUB 3 speichern (feste Seiten, lässt sich in jeder Lese-App öffnen) und verlustfrei wieder laden
+- PDF: „Als PDF speichern“ in der Buchwerkstatt lädt ein druckbares Buch mit demselben Seitenlayout wie das EPUB herunter, einschließlich Bildern, Silbenfarben und Bögen. Die Schriften werden eingebettet, und der Text bleibt auswählbar. Die Seiten behalten die Proportionen des Fotos; beim Drucken auf A4 „An Seite anpassen“ wählen. Der Export läuft auf dem Gerät und funktioniert auch offline: Ist die gewählte Schrift nicht verfügbar, verwendet das PDF die mitgelieferte OpenDyslexic-Schrift und weist darauf hin.
 - Als App installierbar und offline nutzbar
 - Der Bildschirm bleibt an, solange ein Buch offen ist, damit er nicht mitten auf einer Seite dunkel wird; nach 10 Minuten ohne Berührung oder Vorlesen darf er wieder ausgehen (in Browsern mit der Screen Wake Lock API)
 
@@ -68,6 +69,7 @@ Das Projekt ist in TypeScript geschrieben (strict).
 - `src/silben.ts`: Silbentrennung (Dänisch, Deutsch, Englisch)
 - `src/db.ts`: Speicherung der Bücher auf dem Gerät (IndexedDB)
 - `src/epub.ts`: EPUB-Export und -Import
+- `src/pdf.ts`, `src/pdf-layout.ts`: PDF-Erzeugung und Vermessung des Textlayouts für den Export
 - `src/prep.ts`: Bildaufbereitung für die Texterkennung (Hintergrundausgleich)
 - `src/sw.ts`: Service Worker (offline, Installation)
 - `src/types.ts`: gemeinsame Typen
@@ -162,3 +164,5 @@ Die Software wird so bereitgestellt, wie sie ist, ohne jede Gewährleistung.
 ## Lizenz
 
 Der Code steht unter der [MIT-Lizenz](LICENSE). Komponenten von Dritten haben eigene Lizenzen, siehe [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Die vollständigen Lizenz- und Copyright-Texte für Schriften und PDF-Komponenten liegen in [`licenses/`](licenses/). Die App enthält die auch offline lesbare Seite „Lizenzen und Schriften“, verlinkt im Infobereich der Startseite.

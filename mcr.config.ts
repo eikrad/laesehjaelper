@@ -3,5 +3,5 @@ export default {
   name: "Læsehjælper – Unit tests",
   outputDir: "coverage/unit",
   reports: ["raw", "console-summary"],
-  sourceFilter: { "**/src/**": true, "**/*": false },
+  sourceFilter: { "**/node_modules/**": false, "**/src/**": true, "**/*": false },
 };
