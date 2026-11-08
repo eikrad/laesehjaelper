@@ -25,7 +25,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Read together: a few open questions per page for the adult, including your own (optional)
 - Tap a word to hear it – first whole, then slowly syllable by syllable, then whole again
 - Have the whole page read aloud with word-by-word highlighting, slow or normal; afterwards it's the child's turn ("Listen again")
-- “Hyphens in the book” setting: for early readers that split words into syllables with hyphens themselves (“sko-le”)
+- “Hyphens in the book” setting: for early readers that split words into syllables with hyphens or dots themselves (“sko-le”, “sko·le”); marks that text recognition misses are found in the photo
 - Tilted photos are straightened, and “text” that OCR finds inside illustrations is filtered out
 - Every page is recognized twice (as is and with a flattened background), so text on tinted pictures is found too
 - Correct the recognized text; set your own syllable breaks with `·` (e.g. `hun·den`)
@@ -141,8 +141,8 @@ Sources:
 - Word parts rely on a word list and simple rules: words not on the list stay whole, and ambiguous words (e.g. “anden”) are not split. Danish only so far.
 - The hyphenation patterns don't split off single letters at the start or end of a word, and some Danish splits are off (e.g. `hund-en` instead of `hun-den`). Workaround: fix it in the text with `·`.
 - Text on top of illustrations or in decorative fonts is recognized less reliably.
-- The old text is painted over with the surrounding background color. On an illustration, the picture is filled in under the old letters instead (inpainting), and the new text gets a soft light halo. Fine, regular patterns can look a little blurred where the text was.
-- The new text can only be as large as the page has room for. For really large text, use the text-only view.
+- Only the old letters are removed: the paper or picture under them is filled in from their surroundings (inpainting), so uneven light and paper texture stay as they were. On an illustration, the new text gets a soft light halo. Fine, regular patterns can look a little blurred where the text was.
+- On the book page, text size and spacing apply as far as the page has room: the size comes first, then as much of the spacing as fits. When the page has no room for the chosen size, the settings say so; for really large text, use the text-only view.
 - Page detection is conservative: aim at one page in the middle of the photo, with at least three edges visible. Shadows, illustrations and two-page spreads can still confuse it. Check the frame before accepting.
 - Curved pages currently have to be straightened by hand (see [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
 

@@ -4,7 +4,11 @@
 export interface Box { x0: number; y0: number; x1: number; y1: number }
 
 /** The parts of the Tesseract result that we use. */
-export interface OcrWord { text: string; confidence: number; bbox: Box; /** bold in the image (measured locally) */ bold?: boolean }
+export interface OcrWord {
+  text: string; confidence: number; bbox: Box;
+  /** bold in the image (measured locally) */ bold?: boolean;
+  /** the word's characters with their boxes */ symbols?: { text: string; bbox: Box }[];
+}
 export interface OcrLine { text: string; bbox: Box; words: OcrWord[] }
 export interface OcrData {
   text?: string;

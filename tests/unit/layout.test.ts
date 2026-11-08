@@ -109,6 +109,25 @@ describe("parasFromOcr", () => {
     }
   });
 
+  it("Drops picture marks at the end of a line, also when they sit close together", () => {
+    // Fur beside the text read as "HV FE N": each mark is close to the next, but none is trusted.
+    const l = line(100, [["Han", 96], ["kunne", 96], ["bære", 96], ["et", 96], ["helt", 96], ["hus,", 96], ["HV", 47], ["FE", 0], ["N", 77]]);
+    const [hv, , n] = l.words.slice(-3);
+    hv.bbox.y0 = 92; hv.bbox.y1 = 152;    // Taller than the line's words
+    n.bbox.y1 = 190;
+    expect(texts(page(l))).toEqual(["Han kunne bære et helt hus,"]);
+  });
+
+  it("Keeps a line that a tall word of the line above reaches into in the other pass", () => {
+    // The second pass gives the last word of the first line a box that reaches into the next line.
+    const first = line(100, [["Han", 96], ["kunne", 96], ["bære", 96], ["et", 96], ["helt", 96], ["hus,", 96]]);
+    first.words[5].bbox.y1 = 160;
+    const second = line(140, [["hvis", 96], ["han", 96], ["ville,", 96]], 100);
+    const all = parasFromOcr(page(second), page(first)).map((p) => cleanOcr(p.raw)).join(" ");
+    expect(all).toContain("Han kunne bære et helt hus,");
+    expect(all).toContain("hvis han ville,");
+  });
+
   it("Returns positions for painting over text", () => {
     const [p] = parasFromOcr(page(line(100, [["Det", 96], ["bliver", 97], ["en", 97], ["lang", 96]])));
     expect(p.bbox.y0).toBe(100);

@@ -25,7 +25,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Gemeinsam lesen: ein paar offene Fragen pro Seite für den Erwachsenen, auch eigene Fragen (zuschaltbar)
 - Wort antippen und hören – erst ganz, dann langsam Silbe für Silbe, dann wieder ganz
 - Die ganze Seite vorlesen lassen, mit Markierung des gerade gelesenen Worts, langsam oder normal; danach ist das Kind dran („Noch mal hören“)
-- Einstellung „Bindestriche im Buch“: für Lesebücher, die Wörter selbst mit Bindestrich in Silben trennen („Scho-ko-la-de“)
+- Einstellung „Bindestriche im Buch“: für Lesebücher, die Wörter selbst mit Bindestrich oder Punkt in Silben trennen („Scho-ko-la-de“, „Scho·ko·la·de“); Zeichen, die die Texterkennung übersieht, werden im Foto gefunden
 - Schräge Fotos werden gerade gerückt, und vermeintlicher „Text“ in Zeichnungen wird aussortiert
 - Jede Seite wird zweimal erkannt (normal und mit ausgeglichenem Hintergrund), damit auch Text auf getönten Bildern erkannt wird
 - Erkannten Text korrigieren; eigene Silbengrenzen mit `·` setzen (z. B. `O·ma`)
@@ -141,8 +141,8 @@ Quellen:
 - Wortteile beruhen auf einer Wortliste und einfachen Regeln: Wörter, die nicht in der Liste stehen, bleiben ganz, und mehrdeutige Wörter (z. B. „anden“) werden nicht zerlegt. Bisher nur Dänisch.
 - Die Trennmuster trennen keine einzelnen Buchstaben am Wortanfang oder -ende ab („Oma“ bleibt ungetrennt), und manche dänischen Trennungen sind falsch (z. B. `hund-en` statt `hun-den`). Abhilfe: im Text mit `·` korrigieren.
 - Text auf Illustrationen oder in Zierschriften wird weniger zuverlässig erkannt.
-- Die alte Schrift wird mit der umgebenden Hintergrundfarbe übermalt. Steht sie auf einer Illustration, wird stattdessen das Bild unter den alten Buchstaben ergänzt (Inpainting), und der neue Text bekommt einen weichen, hellen Schein. Feine, regelmäßige Muster können dort, wo der Text stand, etwas verwischt aussehen.
-- Der neue Text kann nur so groß werden, wie auf der Seite Platz ist. Für richtig große Schrift ist die Ansicht „Nur Text“ besser.
+- Nur die alten Buchstaben werden entfernt: Papier oder Bild darunter werden aus der Umgebung ergänzt (Inpainting), sodass ungleichmäßiges Licht und die Papierstruktur erhalten bleiben. Steht die Schrift auf einer Illustration, bekommt der neue Text einen weichen, hellen Schein. Feine, regelmäßige Muster können dort, wo der Text stand, etwas verwischt aussehen.
+- Auf der Buchseite gelten Schriftgröße und Abstände, soweit Platz ist: zuerst die Größe, dann so viel Abstand, wie passt. Ist für die gewählte Größe kein Platz, sagen es die Einstellungen; für richtig große Schrift ist die Ansicht „Nur Text“ besser.
 - Die Seitenerkennung ist vorsichtig: Fotografiere eine Seite in der Bildmitte mit mindestens drei sichtbaren Rändern. Schatten, Illustrationen und Doppelseiten können sie weiterhin verwirren. Prüfe den Rahmen vor dem Bestätigen.
 - Gewölbte Seiten muss man bisher von Hand glattziehen (siehe [#1](https://github.com/eikrad/laesehjaelper/issues/1)).
 

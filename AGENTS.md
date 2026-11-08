@@ -63,7 +63,7 @@ src/silben.ts      syllables (TeX hyphenation patterns)
 src/morpheme.ts    Danish word parts (word list from Stavekontrolden)
 src/pagedetect.ts  page detection and dewarping (OpenCV.js)
 src/prep.ts        image preparation (background flattening, rotation)
-src/fit.ts, bold.ts, place.ts, lines.ts, spacing.ts, readflow.ts, profiles.ts, together.ts   small pure helpers
+src/fit.ts, bold.ts, sylmarks.ts, place.ts, lines.ts, spacing.ts, readflow.ts, profiles.ts, together.ts   small pure helpers
 src/epub.ts, db.ts EPUB export/import, IndexedDB
 build.ts           bundles everything into dist/ (esbuild)
 ```
