@@ -47,3 +47,29 @@ test("Syllable arcs follow the same choice", async ({ page }) => {
   await expect.poll(() => arc("pindsvin")).toBe(false);
   expect(await arc("blomsterne")).toBe(true);
 });
+
+test("Existing readers keep independent syllable-word choices after an update and reload", async ({ page }) => {
+  await fresh(page);
+  await page.evaluate(() => {
+    localStorage.setItem("lesehelfer", JSON.stringify({ mode: "farbe" }));
+    localStorage.setItem("laesehjaelper-profiles", JSON.stringify({ active: "ida", list: [
+      { id: "ida", name: "Ida", settings: { mode: "farbe" } },
+      { id: "bo", name: "Bo", settings: { mode: "farbe" } },
+    ] }));
+  });
+  await page.reload();
+  await page.click("#demoBtn");
+  await page.click("#setBtn");
+  await page.click('#sylWordsSet button[data-v="lange"]');
+  expect(await marked(page, "pindsvin")).toBe(false);
+  await page.selectOption("#profileSel", "bo");
+  await expect(page.locator('#sylWordsSet button[data-v="alle"]')).toHaveClass(/\bon\b/);
+  expect(await marked(page, "pindsvin")).toBe(true);
+  await page.reload();
+  await page.click("#setBtn");
+  await expect(page.locator("#profileSel")).toHaveValue("bo");
+  await expect(page.locator('#sylWordsSet button[data-v="alle"]')).toHaveClass(/\bon\b/);
+  await page.selectOption("#profileSel", "ida");
+  await expect(page.locator('#sylWordsSet button[data-v="lange"]')).toHaveClass(/\bon\b/);
+  expect(await marked(page, "pindsvin")).toBe(false);
+});
