@@ -31,3 +31,19 @@ export function harmonizeSizes(items: FitItem[]): number[] {
   }
   return s;
 }
+
+/**
+ * Respect the reader's text size on a book page. Boxes never get larger than what fits, but they
+ * are scaled down together until the body text has the wished size (`target`), so relative sizes
+ * (headings larger) stay. The body size is the size of most of the text (`weights`: amount of text
+ * per box). `limited`: the page has no room for the wished size.
+ */
+export function scaleToTarget(sizes: number[], weights: number[], target: number): { sizes: number[]; limited: boolean } {
+  const order = sizes.map((_, i) => i).filter(i => sizes[i] > 0 && weights[i] > 0).sort((a, b) => sizes[a] - sizes[b]);
+  const total = order.reduce((sum, i) => sum + weights[i], 0);
+  if (!total) return { sizes, limited: false };
+  let seen = 0, body = 0;
+  for (const i of order) { seen += weights[i]; if (seen >= total / 2) { body = sizes[i]; break; } }
+  if (body <= target) return { sizes, limited: body < target - 0.5 };
+  return { sizes: sizes.map(s => s * target / body), limited: false };
+}
