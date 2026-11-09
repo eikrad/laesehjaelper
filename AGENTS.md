@@ -42,7 +42,7 @@ npm run test:e2e       # end-to-end tests (needs dist/)
 npm run coverage       # unit + e2e coverage, merged, with minimum thresholds
 ```
 
-**Coverage:** `npm run coverage` merges unit and browser coverage (Monocart, V8) and fails below the minimums in `coverage.ts` (lines 88 %, branches 76 %, functions 90 % as of November 2026). CI runs it on every pull request (the `test` job merges the coverage of its parallel jobs); the HTML report is attached to the run as the `coverage` artifact. Raise the minimums when coverage goes up; never lower them to make a pull request pass.
+**Coverage:** `npm run coverage` merges unit and browser coverage (Monocart, V8) and fails below the minimums defined by `MIN` in `coverage.ts`. CI runs it on every pull request (the `test` job merges the coverage of its parallel jobs); the HTML report is attached to the run as the `coverage` artifact. Raise the minimums when coverage goes up; never lower them to make a pull request pass.
 
 ## Conventions
 
