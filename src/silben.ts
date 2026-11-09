@@ -1,15 +1,29 @@
-// Syllabification using TeX hyphenation patterns (Danish, reformed German spelling, British English).
+// Reading syllables: reviewed word corrections, then TeX patterns (Danish, German, British English).
 import { hyphenateSync as da } from "hyphen/da";
 import { hyphenateSync as de } from "hyphen/de-1996";
 import { hyphenateSync as en } from "hyphen/en-gb";
+import { readingWords } from "./syllable-words";
 
 const SHY = "­";
 const trenner = { da, de, en };
+const corrections = new Map(Object.entries(readingWords).map(([language, words]) =>
+  [language, new Map(words.map(word => [word.replaceAll("·", ""), word]))]));
 
 // Split a single word into syllables. Returns an array of syllables.
 export function silben(wort: string, sprache: string = "da"): string[] {
   if (wort.length < 3) return [wort];
-  const h = trenner[sprache as keyof typeof trenner] || da;
+  const language = sprache === "de" || sprache === "en" ? sprache : "da";
+  const marked = corrections.get(language)?.get(wort.toLowerCase());
+  if (marked) {
+    // Apply the boundary lengths to the original word so OCR spelling and capitalisation survive.
+    let start = 0;
+    return marked.split("·").map(part => {
+      const syllable = wort.slice(start, start + part.length);
+      start += part.length;
+      return syllable;
+    });
+  }
+  const h = trenner[language];
   return h(wort, { hyphenChar: SHY, minWordLength: 3 }).split(SHY).filter(Boolean);
 }
 

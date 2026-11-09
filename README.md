@@ -29,6 +29,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Tilted photos are straightened, and “text” that OCR finds inside illustrations is filtered out
 - Every page is recognized twice (as is and with a flattened background), so text on tinted pictures is found too
 - Correct the recognized text; set your own syllable breaks with `·` (e.g. `hun·den`)
+- Reviewed reading-word corrections supplement print hyphenation: for example `hun·den`, `O·ma` and `ap·ple`. The small lists cover common Danish, German and English words and preserve the original spelling and case.
 - Move or resize text boxes on the book page with your finger (under “Check and correct the text”), e.g. if the new text runs into a picture
 - Headings stay larger than body text, and bold words are detected and set in bold (editable with `*word*`)
 - Reading mode: just the text. On tablets and laptops it fills the whole screen without browser bars (Fullscreen API), and leaving fullscreen with the system gesture also ends reading mode. iPhone and the installed app keep the plain reading mode
@@ -67,6 +68,7 @@ The project is written in TypeScript (strict).
 - `src/pagedetect.ts`: finds the page in the photo and straightens it (OpenCV), including curved pages
 - `src/pagecurve.ts`: fits smooth page-edge curves to the detected outline
 - `src/silben.ts`: syllable splitting (Danish, German, English)
+- `src/syllable-words.ts`: reviewed word corrections for reading syllables
 - `src/db.ts`: stores books on the device (IndexedDB)
 - `src/epub.ts`: EPUB export and import
 - `src/pdf.ts`, `src/pdf-layout.ts`: PDF creation and measurement of the export's text layout
@@ -142,12 +144,14 @@ Sources:
 ## Known limitations
 
 - Word parts rely on a word list and simple rules: words not on the list stay whole, and ambiguous words (e.g. “anden”) are not split. Danish only so far.
-- The hyphenation patterns don't split off single letters at the start or end of a word, and some Danish splits are off (e.g. `hund-en` instead of `hun-den`). Workaround: fix it in the text with `·`.
+- Words outside the reviewed correction lists still use print hyphenation patterns, which may omit single-letter syllables or choose unsuitable reading boundaries. Written groups are not a phonetic transcription, especially in Danish; pronunciation can vary. Check the text and correct boundaries with `·`. These manual corrections stay in the book on the device and are not collected or uploaded.
 - Text on top of illustrations or in decorative fonts is recognized less reliably.
 - Only the old letters are removed: the paper or picture under them is filled in from their surroundings (inpainting), so uneven light and paper texture stay as they were. On an illustration, the new text gets a soft light halo. Fine, regular patterns can look a little blurred where the text was.
 - On the book page, text size and spacing apply as far as the page has room: the size comes first, then as much of the spacing as fits. When the page has no room for the chosen size, the settings say so; for really large text, use the text-only view.
 - Page detection is conservative: aim at one page in the middle of the photo, with at least three edges visible. Shadows, illustrations and two-page spreads can still confuse it. Check the frame before accepting.
 - Automatic curvature follows the visible page edges. A hidden or clipped edge gives no curvature information; folds inside the page and complex bends can still need manual adjustment of the edge midpoints.
+
+The reading-word corrections distinguish syllables from permitted print line breaks: see the [Danish Language Council's guidance](https://sproget.dk/typiske-problemer/orddeling/), [German official rules, §84](https://www.rechtschreibrat.com/DOX/RfdR_Amtliches-Regelwerk_2024.pdf), and [IES guidance on English syllable types](https://ies.ed.gov/use-work/resource-library/resource/other-resource/supporting-your-childs-reading-home). The lists are maintained in this project; no external dictionary is bundled for these corrections.
 
 ## Roadmap
 
