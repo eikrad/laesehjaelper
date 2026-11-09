@@ -5,7 +5,7 @@ import path from "node:path";
 export const fixture = (name: string) => path.resolve("tests/fixtures", name);
 
 /** Original stored text pages, without depending on OCR for shelf and navigation checks. */
-export async function seedBooks(page: Page, books: { id: string; title: string; texts: string[]; lastPage?: number; readyPages?: number }[]) {
+export async function seedBooks(page: Page, books: { id: string; title: string; texts: string[]; lang?: string; lastPage?: number; readyPages?: number }[]) {
   await page.evaluate(async books => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const r = indexedDB.open("laesehjaelper", 1);
@@ -15,7 +15,7 @@ export async function seedBooks(page: Page, books: { id: string; title: string; 
     for (const book of books) {
       const pageIds = book.texts.map((_, i) => `${book.id}-${i}`);
       tx.objectStore("books").put({ id: book.id, title: book.title, pageIds, lastPage: book.lastPage ?? 0, created: 1, cover: null });
-      book.texts.forEach((text, i) => tx.objectStore("pages").put({ id: pageIds[i], bookId: book.id, lang: "da", status: i < (book.readyPages ?? book.texts.length) ? "done" : "wait", text, rawText: text }));
+      book.texts.forEach((text, i) => tx.objectStore("pages").put({ id: pageIds[i], bookId: book.id, lang: book.lang || "da", status: i < (book.readyPages ?? book.texts.length) ? "done" : "wait", text, rawText: text }));
     }
     await new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); });
     db.close();

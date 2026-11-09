@@ -29,6 +29,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Schräge Fotos werden gerade gerückt, und vermeintlicher „Text“ in Zeichnungen wird aussortiert
 - Jede Seite wird zweimal erkannt (normal und mit ausgeglichenem Hintergrund), damit auch Text auf getönten Bildern erkannt wird
 - Erkannten Text korrigieren; eigene Silbengrenzen mit `·` setzen (z. B. `O·ma`)
+- Geprüfte Korrekturen für Lesewörter ergänzen die Trennmuster: etwa `hun·den`, `O·ma` und `ap·ple`. Die kleinen Listen umfassen häufige dänische, deutsche und englische Wörter und erhalten Schreibweise sowie Groß- und Kleinschreibung.
 - Textfelder auf der Buchseite mit dem Finger verschieben oder vergrößern (unter „Text prüfen und korrigieren“), z. B. wenn der neue Text in ein Bild ragt
 - Überschriften bleiben größer als der Fließtext, fett Gedrucktes wird erkannt und fett gesetzt (korrigierbar mit `*Wort*`)
 - Mit einem Tipp den Originaltext einblenden, um Erkennungsfehler zu finden
@@ -67,6 +68,7 @@ Das Projekt ist in TypeScript geschrieben (strict).
 - `src/pagedetect.ts`: findet die Seite auf dem Foto und entzerrt sie (OpenCV), auch gewölbte Seiten
 - `src/pagecurve.ts`: passt glatte Kantenkurven an den erkannten Seitenumriss an
 - `src/silben.ts`: Silbentrennung (Dänisch, Deutsch, Englisch)
+- `src/syllable-words.ts`: geprüfte Wortkorrekturen für Lesesilben
 - `src/db.ts`: Speicherung der Bücher auf dem Gerät (IndexedDB)
 - `src/epub.ts`: EPUB-Export und -Import
 - `src/pdf.ts`, `src/pdf-layout.ts`: PDF-Erzeugung und Vermessung des Textlayouts für den Export
@@ -142,12 +144,14 @@ Quellen:
 ## Bekannte Grenzen
 
 - Wortteile beruhen auf einer Wortliste und einfachen Regeln: Wörter, die nicht in der Liste stehen, bleiben ganz, und mehrdeutige Wörter (z. B. „anden“) werden nicht zerlegt. Bisher nur Dänisch.
-- Die Trennmuster trennen keine einzelnen Buchstaben am Wortanfang oder -ende ab („Oma“ bleibt ungetrennt), und manche dänischen Trennungen sind falsch (z. B. `hund-en` statt `hun-den`). Abhilfe: im Text mit `·` korrigieren.
+- Wörter außerhalb der Korrekturlisten verwenden weiterhin Muster für die Worttrennung am Zeilenende. Diese können Silben aus einzelnen Buchstaben auslassen oder zum Lesen ungeeignete Grenzen wählen. Schriftliche Gruppen sind keine Lautschrift, insbesondere im Dänischen; die Aussprache kann variieren. Prüfe den Text und korrigiere Grenzen mit `·`. Manuelle Korrekturen bleiben im Buch auf dem Gerät und werden nicht gesammelt oder hochgeladen.
 - Text auf Illustrationen oder in Zierschriften wird weniger zuverlässig erkannt.
 - Nur die alten Buchstaben werden entfernt: Papier oder Bild darunter werden aus der Umgebung ergänzt (Inpainting), sodass ungleichmäßiges Licht und die Papierstruktur erhalten bleiben. Steht die Schrift auf einer Illustration, bekommt der neue Text einen weichen, hellen Schein. Feine, regelmäßige Muster können dort, wo der Text stand, etwas verwischt aussehen.
 - Auf der Buchseite gelten Schriftgröße und Abstände, soweit Platz ist: zuerst die Größe, dann so viel Abstand, wie passt. Ist für die gewählte Größe kein Platz, sagen es die Einstellungen; für richtig große Schrift ist die Ansicht „Nur Text“ besser.
 - Die Seitenerkennung ist vorsichtig: Fotografiere eine Seite in der Bildmitte mit mindestens drei sichtbaren Rändern. Schatten, Illustrationen und Doppelseiten können sie weiterhin verwirren. Prüfe den Rahmen vor dem Bestätigen.
 - Die automatische Wölbung folgt den sichtbaren Seitenrändern. Ein verdeckter oder abgeschnittener Rand liefert keine Information über die Wölbung; innere Knicke und komplizierte Verformungen können weiterhin manuelles Nachziehen der Kantenmittelpunkte erfordern.
+
+Die Wortkorrekturen unterscheiden Lesesilben von erlaubten Trennstellen am Zeilenende: Grundlage sind die [Hinweise des Dänischen Sprachrats](https://sproget.dk/typiske-problemer/orddeling/), das [amtliche deutsche Regelwerk, §84](https://www.rechtschreibrat.com/DOX/RfdR_Amtliches-Regelwerk_2024.pdf) und die [IES-Hinweise zu englischen Silbentypen](https://ies.ed.gov/use-work/resource-library/resource/other-resource/supporting-your-childs-reading-home). Die Listen werden im Projekt gepflegt; für diese Korrekturen wird kein externes Wörterbuch mitgeliefert.
 
 ## Roadmap
 

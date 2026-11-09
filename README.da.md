@@ -29,6 +29,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Skæve fotos bliver rettet op, og „tekst“, som tekstgenkendelsen finder i tegningerne, bliver sorteret fra
 - Hver side genkendes to gange (som den er og med udlignet baggrund), så også tekst på farvede billeder bliver fundet
 - Ret den genkendte tekst; sæt selv stavelsesgrænser med `·` (f.eks. `hun·den`)
+- Kontrollerede rettelser til læseord supplerer orddelingsmønstrene: f.eks. `hun·den`, `O·ma` og `ap·ple`. De små lister dækker almindelige danske, tyske og engelske ord og bevarer den oprindelige stavning samt store og små bogstaver.
 - Flyt tekstfelter på bogens side med fingeren, eller ændr deres størrelse (under „Tjek og ret teksten“), f.eks. hvis den nye tekst går ind i et billede
 - Overskrifter forbliver større end brødteksten, og fed skrift bliver fundet og vist med fed (kan rettes med `*ord*`)
 - Læsetilstand: kun teksten. På tablets og computere fylder den hele skærmen uden browserens bjælker (Fullscreen API), og forlader man fuld skærm med systemets bevægelse, slutter læsetilstanden også. På iPhone og i den installerede app er læsetilstanden som før
@@ -67,6 +68,7 @@ Projektet er skrevet i TypeScript (strict).
 - `src/pagedetect.ts`: finder siden på fotoet og retter den op (OpenCV), også buede sider
 - `src/pagecurve.ts`: tilpasser glatte kantkurver til det fundne omrids
 - `src/silben.ts`: stavelsesdeling (dansk, tysk, engelsk)
+- `src/syllable-words.ts`: kontrollerede rettelser til læseordenes stavelsesgrænser
 - `src/db.ts`: lagring af bøger på enheden (IndexedDB)
 - `src/epub.ts`: eksport og import af EPUB
 - `src/pdf.ts`, `src/pdf-layout.ts`: PDF-oprettelse og opmåling af eksportens tekstlayout
@@ -142,12 +144,14 @@ Kilder:
 ## Kendte begrænsninger
 
 - Orddele bruger en ordliste og enkle regler: ord, der ikke står på listen, forbliver hele, og flertydige ord (f.eks. „anden“) deles ikke. Kun dansk indtil videre.
-- Orddelingsmønstrene deler ikke enkelte bogstaver fra i starten eller slutningen af et ord, og nogle danske delinger er forkerte (f.eks. `hund-en` i stedet for `hun-den`). Løsning: ret det i teksten med `·`.
+- Ord uden for rettelseslisterne bruger stadig mønstre til orddeling ved linjeskift, som kan udelade stavelser på ét bogstav eller vælge uhensigtsmæssige grænser til læsning. Skriftlige grupper er ikke lydskrift, især på dansk, og udtalen kan variere. Tjek teksten, og ret grænserne med `·`. De manuelle rettelser bliver i bogen på enheden og bliver ikke indsamlet eller uploadet.
 - Tekst oven på illustrationer eller i dekorative skrifttyper bliver genkendt dårligere.
 - Kun de gamle bogstaver bliver fjernet: papiret eller billedet under dem bliver udfyldt ud fra omgivelserne (inpainting), så ujævnt lys og papirets struktur bliver, som de var. Står teksten på en illustration, får den nye tekst en blød, lys glorie. Fine, regelmæssige mønstre kan se lidt slørede ud, hvor teksten stod.
 - På bogens side gælder skriftstørrelse og afstande, så langt der er plads: størrelsen først, derefter så meget af afstanden, som kan være der. Er der ikke plads til den valgte størrelse, siger indstillingerne det; til rigtig stor skrift er visningen „Kun teksten“ bedre.
 - Sidegenkendelsen er forsigtig: fotografér én side i midten af billedet med mindst tre synlige kanter. Skygger, illustrationer og hele opslag kan stadig forvirre den. Kontrollér rammen, før du godkender.
 - Den automatiske krumning følger sidens synlige kanter. En skjult eller afskåret kant giver ingen oplysninger om krumningen; folder inde på siden og komplicerede buer kan stadig kræve, at kanternes midtpunkter justeres i hånden.
+
+Rettelserne til læseord skelner mellem stavelser og tilladte orddelinger ved linjeskift: se [Dansk Sprognævns vejledning](https://sproget.dk/typiske-problemer/orddeling/), [de officielle tyske regler, §84](https://www.rechtschreibrat.com/DOX/RfdR_Amtliches-Regelwerk_2024.pdf) og [IES' vejledning om engelske stavelsestyper](https://ies.ed.gov/use-work/resource-library/resource/other-resource/supporting-your-childs-reading-home). Listerne vedligeholdes i projektet; rettelserne indeholder ingen ekstern ordbog.
 
 ## Roadmap
 
