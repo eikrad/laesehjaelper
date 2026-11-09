@@ -21,6 +21,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Skrifttyper: Andika (standard), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Justerbar skriftstørrelse, bogstavafstand, linjeafstand og baggrundsfarve
 - Korte linjer med 2–3 ord i tekstvisningen (kan vælges)
+- Valgfri „Linjehjælp“ under Aa: „Læselineal“ dæmper siden omkring den aktuelle linje; „Én linje“ ombryder teksten med større skrift og viser én linje ad gangen. Begge virker på bogsiden og i tekstvisningen, følger oplæsningen og starter slået fra for hver læser. Brug pilene eller tasterne ↑/↓, stryg lodret over linjetælleren, eller tryk på et ord for at vælge linjen og høre ordet.
 - Flere læsere: hvert barn har sine egne indstillinger for skrift, afstand, stavelser og oplæsning
 - Læs sammen: et par åbne spørgsmål til den voksne for hver side, også egne spørgsmål (kan slås til)
 - Tryk på et ord for at høre det – først helt, så langsomt stavelse for stavelse, så helt igen
@@ -69,6 +70,7 @@ Projektet er skrevet i TypeScript (strict).
 - `src/pagecurve.ts`: tilpasser glatte kantkurver til det fundne omrids
 - `src/silben.ts`: stavelsesdeling (dansk, tysk, engelsk)
 - `src/syllable-words.ts`: kontrollerede rettelser til læseordenes stavelsesgrænser
+- `src/guide.ts`, `src/guide-view.ts`: tekstens synlige linjer og den valgfri linjehjælp
 - `src/db.ts`: lagring af bøger på enheden (IndexedDB)
 - `src/epub.ts`: eksport og import af EPUB
 - `src/pdf.ts`, `src/pdf-layout.ts`: PDF-oprettelse og opmåling af eksportens tekstlayout
@@ -92,6 +94,7 @@ Læsehjælper er et læseværktøj, ikke en behandling. Indstillingerne bygger p
 
 - **Afstand:** Mere afstand mellem bogstaverne giver færre læsefejl hos nogle børn, men undersøgelserne er uenige, mange finder ingen forskel i tempo, og effekten gælder ikke kun ordblinde (Zorzi m.fl. 2012; Hakvoort m.fl. 2017; Łuniewska m.fl. 2022). Mere bogstavafstand uden mere ordafstand gør læsningen langsommere (Galliussi m.fl. 2020); derfor øger Læsehjælper ordafstanden automatisk.
 - **Korte linjer** hjælper nogle ordblinde læsere, især dem med svag visuel opmærksomhed; andre læser bedre med almindelige linjer. Undersøgelserne testede teenagere, ikke små børn (Schneps m.fl. 2013).
+- **Linjehjælp:** I en undersøgelse af 177 voksne gav nogle digitale linealer højere læsehastighed uden bedre forståelse (Niklaus m.fl. 2023). Det dokumenterer ikke en fordel ved vores maske eller enkeltlinjevisning for små børn. Begge starter slået fra.
 - **Skrifttype:** Særlige ordblindeskrifter forbedrer hverken læsetempo eller sikkerhed (metaanalyse: Azzarello m.fl. 2026), og børn foretrækker ofte almindelige skrifter (Wery & Diliberto 2017). Standard er derfor Andika, en almindelig, tydelig skrift; OpenDyslexic kan vælges, hvis barnet kan lide den.
 - **Farvede stavelser** gjorde ingen forskel for læsetempoet i en eye-tracking-undersøgelse (Häikiö m.fl. 2015). Nogle svage begyndere læste enkeltord mere sikkert med dem (Lopes & Barrera 2019). En separat tysk klasseundersøgelse fandt en lille gevinst i 2. klasse med stavelsesbuer, ikke farver (Dreschinski 2022, en ph.d.-afhandling); det dokumenterer ikke en gevinst ved farvede stavelser. En eventuel gevinst ved farver ser ud til at være tidlig, lille og mest ved lange ord. Farvede stavelser er aldrig afprøvet på dansk, hvor skrevne og udtalte stavelser ofte er forskellige. En gennemgang anbefaler dem kun til nogle børn og kun i overgangen til flydende læsning (Brügelmann 2025, en rapport, ikke fagfællebedømt). Bindestreger i ordene gør læsningen langsommere (Häikiö m.fl. 2015). Derfor starter farvede stavelser slået fra: de slås til med ét tryk under „Stavelser“ → „Farve“ i indstillingerne, og hver ny læser starter uden dem. Enheder, der har brugt appen før, beholder deres eget valg. Et ekstra valg pr. læser, „Kun lange ord“, markerer kun stavelser (farver eller buer) i ord med tre eller flere stavelser, hvor hjælpen ser ud til at virke bedst (Brügelmann 2025).
 - **Orddele (dansk):** Undervisning i orddele hjælper børn med at læse og stave lange ord, også på dansk (Goodwin & Ahn 2010; Arnbak & Elbro 2000; Gellert m.fl. 2021). Visningen af orddele på siden bygger på det, men er ikke selv afprøvet.
@@ -117,6 +120,7 @@ Kilder:
 - Łuniewska m.fl. 2022, *Learning and Instruction* — [doi:10.1016/j.learninstruc.2021.101576](https://doi.org/10.1016/j.learninstruc.2021.101576)
 - Galliussi m.fl. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
 - Schneps m.fl. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)
+- Niklaus m.fl. 2023, *CHI* — [doi:10.1145/3544548.3581367](https://doi.org/10.1145/3544548.3581367)
 - Azzarello m.fl. 2026, *Annals of Dyslexia* — [doi:10.1007/s11881-026-00389-8](https://doi.org/10.1007/s11881-026-00389-8)
 - Wery & Diliberto 2017, *Annals of Dyslexia* — [doi:10.1007/s11881-016-0127-1](https://doi.org/10.1007/s11881-016-0127-1)
 - Häikiö m.fl. 2015, *Journal of Cognitive Psychology* — [doi:10.1080/20445911.2014.982126](https://doi.org/10.1080/20445911.2014.982126)

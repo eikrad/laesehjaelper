@@ -21,6 +21,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Schriften: Andika (Standard), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Schriftgröße, Buchstaben- und Zeilenabstand sowie Hintergrundfarbe einstellbar
 - Kurze Zeilen mit 2–3 Wörtern in der Textansicht (wählbar)
+- Optionale „Zeilenhilfe“ unter Aa: „Leselineal“ dunkelt die Seite um die aktuelle Zeile ab; „Eine Zeile“ bricht den Text mit größerer Schrift neu um und zeigt jeweils eine Zeile. Beides funktioniert auf der Buchseite und in der Textansicht, folgt dem Vorlesen und ist für jedes Kind zunächst ausgeschaltet. Nutze die Pfeile oder ↑/↓, wische senkrecht über die Zeilenanzeige oder tippe ein Wort an, um seine Zeile auszuwählen und es zu hören.
 - Mehrere Leser: Jedes Kind hat eigene Einstellungen für Schrift, Abstände, Silben und Vorlesen
 - Gemeinsam lesen: ein paar offene Fragen pro Seite für den Erwachsenen, auch eigene Fragen (zuschaltbar)
 - Wort antippen und hören – erst ganz, dann langsam Silbe für Silbe, dann wieder ganz
@@ -69,6 +70,7 @@ Das Projekt ist in TypeScript geschrieben (strict).
 - `src/pagecurve.ts`: passt glatte Kantenkurven an den erkannten Seitenumriss an
 - `src/silben.ts`: Silbentrennung (Dänisch, Deutsch, Englisch)
 - `src/syllable-words.ts`: geprüfte Wortkorrekturen für Lesesilben
+- `src/guide.ts`, `src/guide-view.ts`: sichtbare Textzeilen und die optionale Zeilenhilfe
 - `src/db.ts`: Speicherung der Bücher auf dem Gerät (IndexedDB)
 - `src/epub.ts`: EPUB-Export und -Import
 - `src/pdf.ts`, `src/pdf-layout.ts`: PDF-Erzeugung und Vermessung des Textlayouts für den Export
@@ -92,6 +94,7 @@ Læsehjælper ist ein Lesewerkzeug, keine Behandlung. Die Einstellungen beruhen 
 
 - **Abstand:** Mehr Abstand zwischen den Buchstaben verringert bei manchen Kindern die Lesefehler, aber die Studien sind uneinig, viele finden keinen Unterschied im Tempo, und der Effekt betrifft nicht nur Kinder mit Legasthenie (Zorzi u. a. 2012; Hakvoort u. a. 2017; Łuniewska u. a. 2022). Mehr Buchstabenabstand ohne mehr Wortabstand bremst das Lesen (Galliussi u. a. 2020); Læsehjælper vergrößert den Wortabstand deshalb automatisch.
 - **Kurze Zeilen** helfen manchen Kindern mit Legasthenie, vor allem bei schwacher visueller Aufmerksamkeit; andere lesen mit normalen Zeilen besser. Die Studien untersuchten Jugendliche, keine jungen Kinder (Schneps u. a. 2013).
+- **Zeilenhilfe:** In einer Studie mit 177 Erwachsenen erhöhten manche digitalen Lineale das Lesetempo, ohne das Verständnis zu verbessern (Niklaus u. a. 2023). Ein Nutzen unserer Maske oder Einzelzeilenansicht für junge Kinder ist damit nicht belegt. Beide sind zunächst ausgeschaltet.
 - **Schrift:** Spezielle Legasthenie-Schriften verbessern weder Tempo noch Genauigkeit (Metaanalyse: Azzarello u. a. 2026), und Kinder mögen oft gewöhnliche Schriften lieber (Wery & Diliberto 2017). Standard ist deshalb Andika, eine klare, gewöhnliche Schrift; OpenDyslexic lässt sich wählen, wenn das Kind sie mag.
 - **Farbige Silben** machten in einer Blickbewegungsstudie keinen Unterschied für das Lesetempo (Häikiö u. a. 2015). Manche schwächeren Leseanfänger lasen einzelne Wörter damit genauer (Lopes & Barrera 2019). Eine separate deutsche Klassenstudie fand einen kleinen Gewinn in der 2. Klasse mit Silbenbögen statt Farben (Dreschinski 2022, eine Dissertation); das belegt keinen Nutzen farbiger Silben. Ein möglicher Nutzen der Farben scheint früh, klein und vor allem bei langen Wörtern zu liegen. Im Dänischen, wo geschriebene und gesprochene Silben oft nicht übereinstimmen, wurden farbige Silben nie untersucht. Eine Übersicht empfiehlt sie nur für manche Kinder und nur im Übergang zum flüssigen Lesen (Brügelmann 2025, ein Bericht, nicht begutachtet). Bindestriche in den Wörtern bremsen das Lesen (Häikiö u. a. 2015). Deshalb sind farbige Silben zu Beginn aus: Sie lassen sich mit einem Tipp unter „Silben“ → „Farbe“ in den Einstellungen einschalten, und jeder neue Leser startet ohne sie. Geräte, auf denen die App schon benutzt wurde, behalten ihre eigene Einstellung. Eine weitere Wahl pro Leser, „Nur lange Wörter“, markiert Silben (Farben oder Bögen) nur in Wörtern mit drei oder mehr Silben, wo die Hilfe am ehesten wirkt (Brügelmann 2025).
 - **Wortteile (Dänisch):** Wer lernt, auf Wortteile zu achten, liest und schreibt lange Wörter besser, auch im Dänischen (Goodwin & Ahn 2010; Arnbak & Elbro 2000; Gellert u. a. 2021). Die Anzeige der Wortteile auf der Seite baut darauf auf, wurde aber selbst nicht untersucht.
@@ -117,6 +120,7 @@ Quellen:
 - Łuniewska u. a. 2022, *Learning and Instruction* — [doi:10.1016/j.learninstruc.2021.101576](https://doi.org/10.1016/j.learninstruc.2021.101576)
 - Galliussi u. a. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
 - Schneps u. a. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)
+- Niklaus u. a. 2023, *CHI* — [doi:10.1145/3544548.3581367](https://doi.org/10.1145/3544548.3581367)
 - Azzarello u. a. 2026, *Annals of Dyslexia* — [doi:10.1007/s11881-026-00389-8](https://doi.org/10.1007/s11881-026-00389-8)
 - Wery & Diliberto 2017, *Annals of Dyslexia* — [doi:10.1007/s11881-016-0127-1](https://doi.org/10.1007/s11881-016-0127-1)
 - Häikiö u. a. 2015, *Journal of Cognitive Psychology* — [doi:10.1080/20445911.2014.982126](https://doi.org/10.1080/20445911.2014.982126)
