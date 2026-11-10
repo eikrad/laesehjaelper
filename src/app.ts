@@ -24,6 +24,7 @@ import { flattenBackground, rotateLike } from "./prep";
 import { type Gray, restoreMarks } from "./sylmarks";
 import { eraseText, halo } from "./erase";
 import { buildEpub, readEpub } from "./epub";
+import { ReadingGuide } from "./guide-view";
 import type { DataPage, EpubFont, EpubPage } from "./epub";
 import type { PdfPage } from "./pdf";
 import { measurePdfPage } from "./pdf-layout";
@@ -45,9 +46,10 @@ interface Settings {
   sylWords: string;
   /** Highlight each word while the page is read aloud ("an") or not ("aus"). */
   highlight: string;
+  guide: string;
 }
 /** Settings controlled by button groups (data-v). */
-type ChoiceKey = "gate" | "mode" | "colors" | "bg" | "orig" | "lang" | "ui" | "view" | "hyph" | "rate" | "turn" | "lines" | "together" | "sylWords" | "highlight";
+type ChoiceKey = "guide" | "gate" | "mode" | "colors" | "bg" | "orig" | "lang" | "ui" | "view" | "hyph" | "rate" | "turn" | "lines" | "together" | "sylWords" | "highlight";
 
 interface Page {
   id?: string;
@@ -100,7 +102,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   // Word highlighting during read-aloud starts off as well: it has not been shown to help, and it can
   // pull children along with the voice (Gerbier, Bailly & Bosse 2018, doi:10.1016/j.csl.2017.07.003).
   // Settings saved before it was a setting keep it on (fromEarlier in src/profiles.ts).
-  const defaults: Settings = { gate: "aus", font: '"Andika", sans-serif', size: 32, ls: DEFAULT_LS, lh: DEFAULT_LH, mode: "aus", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus", sylWords: "alle", highlight: "aus" };
+  const defaults: Settings = { guide: "aus", gate: "aus", font: '"Andika", sans-serif', size: 32, ls: DEFAULT_LS, lh: DEFAULT_LH, mode: "aus", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus", sylWords: "alle", highlight: "aus" };
   const S: Settings = { ...defaults };
   try { const saved = localStorage.getItem("lesehelfer"); if (saved) Object.assign(S, fromEarlier(JSON.parse(saved))); } catch {}
   const PROFILES = "laesehjaelper-profiles";
@@ -115,6 +117,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   // ---------- UI strings ----------
   const T: Record<string, Record<string, string>> = {
     da: {
+      guideLabel: "Linjehjælp", guideRuler: "Læselineal", guideLine: "Én linje", guideHint: "Brug pilene, eller stryg op eller ned over linjetælleren.", guidePrev: "Forrige linje", guideNext: "Næste linje", guideCount: "Linje {a} af {b}",
       licenses: "Licenser og skrifter",
       pdfBook: "Gem som PDF", pdfExporting: "Laver PDF-filen …", pdfSaved: "PDF-filen er gemt: {name}", pdfFallback: "PDF-filen er gemt med OpenDyslexic, fordi den valgte skrift ikke var tilgængelig: {name}", pdfFailed: "PDF-filen kunne ikke laves. Prøv igen.",
       insertBefore: "Indsæt side før", insertAfter: "Indsæt side efter", replacePhoto: "Erstat foto", replacePhotoHint: "Når du erstatter et foto, erstattes også sidens tekst og manuelle tekstrettelser. Fotoet bruges først, når du har godkendt beskæringen.",
@@ -149,6 +152,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", shelfTitle: "Dine bøger", pagesN: "{n} sider", page1: "1 side", untitled: "Bog uden titel", titlePh: "Bogens titel", editPages: "Rediger sider", done: "Færdig", deleteBook: "Slet bogen", confirmDelete: "Tryk igen for at slette bogen", moveLeft: "Flyt til venstre", moveRight: "Flyt til højre", deletePage: "Slet side", evTitle: "Hvad siger forskningen?", evText: "Det, der hjælper mest, er tidlig, systematisk undervisning i bogstaver og lyde – og en voksen, der lytter, mens barnet læser, hjælper med svære ord og roser indsatsen. Indstillingerne her hjælper mindre.<br><br>Mere afstand mellem bogstaverne giver færre fejl hos nogle børn, men sjældent hurtigere læsning. Korte linjer hjælper nogle børn, men ikke alle. Oplæsning hjælper forståelsen, og at høre en side og så læse den selv gør læsningen mere flydende.<br><br>Farvede stavelser kan hjælpe nogle begyndere lidt, mest ved lange ord. Slå dem fra, når barnet læser flydende.<br><br>Særlige ordblindeskrifter som OpenDyslexic og farvet baggrund har ikke vist nogen effekt i undersøgelser. Brug dem gerne, hvis barnet synes, de er rare, men ikke som behandling. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.da.md#hvad-siger-forskningen\">Kilder</a>", rateLabel: "Oplæsning", rateSlow: "Langsom", rateNormal: "Normal", highlightLabel: "Fremhæv ordene ved oplæsning", highlightOn: "Til", highlightOff: "Fra", highlightHint: "Ordene lyser op, mens de bliver læst. Det har ikke vist sig at hjælpe, men nogle børn kan lide det.", turnLabel: "Efter oplæsning", turnOn: "Din tur", turnOff: "Kun lyt", yourTurn: "Nu er det din tur. Læs siden selv.", again: "Hør igen", linesLabel: "Linjer", linesNormal: "Normale", linesShort: "Korte", linesHint: "Korte linjer med få ord hjælper nogle børn. Gælder kun, når teksten vises alene.", reader: "Læser", reader1: "Læser 1", addReader: "Tilføj", newReaderPh: "Navn på ny læser", removeReader: "Slet læser", confirmReader: "Tryk igen for at slette", readerHint: "Hver læser har sine egne indstillinger for skrift, afstand, stavelser og oplæsning.", sylWordsAll: "Alle ord", sylWordsLong: "Kun lange ord", sylHint: "Farvede stavelser starter slået fra. Slå dem til, hvis de hjælper barnet, og fra igen, når det læser flydende.", togetherLabel: "Læs sammen", togetherOn: "Til", togetherOff: "Fra", togetherHint: "Viser et par åbne spørgsmål til den voksne, der læser med. Ikke en quiz – lad barnet fortælle.", togetherTitle: "Snak om siden", ownQ: "Eget spørgsmål", ownQPh: "Skriv et spørgsmål til denne side", save: "Gem", moveBoxes: "Flyt tekstfelter", moveDone: "Færdig med at flytte", resetPlace: "Nulstil placering", moveHint: "Træk i et felt for at flytte det, eller i hjørnet for at ændre størrelsen.", morf: "Orddele", morfOnlyDa: "Orddele findes indtil videre kun for dansk.", morfFail: "Ordlisten kunne ikke hentes.", aboutTitle: "Om Læsehjælper og ansvarsfraskrivelse", aboutText: "Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl – tjek derfor altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.<br><br>Billeder og bøger bliver kun behandlet og gemt på din egen enhed og bliver ikke sendt til nogen server. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug. Del ikke omdannede bøger med andre, medmindre du har rettighederne.<br><br>Brug sker på eget ansvar og uden garanti. Kildekoden er åben: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Bøgerne kan ikke gemmes i denne browser.", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropStraightening: "Retter siden op …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", ocrAgain: "Genkend teksten igen", cropOf: "Billede {a} af {b}", exportBook: "Gem som e-bog", importBook: "Hent en e-bog (EPUB) fra Læsehjælper", exporting: "Laver e-bogen …", exported: "E-bogen er gemt: {name}", importFail: "Filen er ikke en e-bog fra Læsehjælper.", importing: "Henter e-bogen …", notReady: "Vent, til alle sider er genkendt.", install: "Installér som app på denne enhed", compare: "Vis den oprindelige tekst", compareOff: "Vis den nye tekst",
     },
     en: {
+      guideLabel: "Line guide", guideRuler: "Reading ruler", guideLine: "One line", guideHint: "Use the arrows or swipe up or down over the line counter.", guidePrev: "Previous line", guideNext: "Next line", guideCount: "Line {a} of {b}",
       licenses: "Licences and fonts",
       pdfBook: "Save as PDF", pdfExporting: "Creating the PDF …", pdfSaved: "PDF saved: {name}", pdfFallback: "PDF saved with OpenDyslexic because the selected font was unavailable: {name}", pdfFailed: "The PDF could not be created. Try again.",
       insertBefore: "Insert page before", insertAfter: "Insert page after", replacePhoto: "Replace photo", replacePhotoHint: "Replacing a photo also replaces the page’s text and manual corrections. The new photo is used after you accept the crop.",
@@ -183,6 +187,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       example: "Sample", addPages: "Add pages", toStart: "Back to start", shelfTitle: "Your books", pagesN: "{n} pages", page1: "1 page", untitled: "Untitled book", titlePh: "Book title", editPages: "Edit pages", done: "Done", deleteBook: "Delete book", confirmDelete: "Tap again to delete the book", moveLeft: "Move left", moveRight: "Move right", deletePage: "Delete page", evTitle: "What does the research say?", evText: "What helps most is early, systematic teaching of letters and sounds – and an adult who listens while your child reads, helps with hard words and praises effort. The settings here help less.<br><br>More space between letters reduces errors for some children, but rarely makes reading faster. Short lines help some children, but not all. Reading aloud helps comprehension, and listening to a page and then reading it yourself makes reading more fluent.<br><br>Coloured syllables may help some beginners a little, mainly with long words. Switch them off once reading is fluent.<br><br>Special dyslexia fonts such as OpenDyslexic and coloured backgrounds have shown no effect in studies. Use them if your child finds them pleasant, but not as a treatment. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.md#what-does-the-research-say\">Sources</a>", rateLabel: "Reading aloud", rateSlow: "Slow", rateNormal: "Normal", highlightLabel: "Highlight words when reading aloud", highlightOn: "On", highlightOff: "Off", highlightHint: "Words light up as they are read. This has not been shown to help, but some children like it.", turnLabel: "After reading aloud", turnOn: "Your turn", turnOff: "Just listen", yourTurn: "Now it's your turn. Read the page yourself.", again: "Listen again", linesLabel: "Lines", linesNormal: "Normal", linesShort: "Short", linesHint: "Short lines with a few words help some children. Only applies when the text is shown on its own.", reader: "Reader", reader1: "Reader 1", addReader: "Add", newReaderPh: "Name of new reader", removeReader: "Delete reader", confirmReader: "Tap again to delete", readerHint: "Each reader has their own settings for font, spacing, syllables and reading aloud.", sylWordsAll: "All words", sylWordsLong: "Long words only", sylHint: "Syllable colours start switched off. Turn them on if they help your child, and off again once reading is fluent.", togetherLabel: "Read together", togetherOn: "On", togetherOff: "Off", togetherHint: "Shows a few open questions for the adult reading along. Not a quiz – let the child do the talking.", togetherTitle: "Talk about the page", ownQ: "Own question", ownQPh: "Write a question for this page", save: "Save", moveBoxes: "Move text boxes", moveDone: "Done moving", resetPlace: "Reset position", moveHint: "Drag a box to move it, or drag its corner to resize it.", morf: "Word parts", morfOnlyDa: "Word parts are only available for Danish so far.", morfFail: "The word list could not be loaded.", aboutTitle: "About Læsehjælper and disclaimer", aboutText: "Læsehjælper is a free hobby project, not a finished product. Text recognition and syllable splitting make mistakes, so always check the text before a child reads it. The app does not replace teaching, reading support or a dyslexia assessment.<br><br>Photos and books are processed and stored only on your own device and are never sent to a server. Books are protected by copyright: only use Læsehjælper for books you have access to, and only for private use. Do not share converted books unless you hold the rights.<br><br>Use at your own risk and without warranty. The source code is open: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Books cannot be saved in this browser.", cropTitle: "Adjust the page", cropFound: "Page found. Drag the corners if it doesn't fit.", cropNone: "Drag the corners to the edges of the page.", cropLoading: "Looking for the page …", cropStraightening: "Straightening the page …", cropUse: "Use", cropWhole: "Whole photo", cropAgain: "Crop the page again", ocrAgain: "Recognise the text again", cropOf: "Photo {a} of {b}", exportBook: "Save as e-book", importBook: "Open a Læsehjælper e-book (EPUB)", exporting: "Creating the e-book …", exported: "E-book saved: {name}", importFail: "This file is not a Læsehjælper e-book.", importing: "Loading the e-book …", notReady: "Wait until all pages have been recognised.", install: "Install as an app on this device", compare: "Show the original text", compareOff: "Show the new text",
     },
     de: {
+      guideLabel: "Zeilenhilfe", guideRuler: "Leselineal", guideLine: "Eine Zeile", guideHint: "Nutze die Pfeile oder wische über die Zeilenanzeige nach oben oder unten.", guidePrev: "Vorherige Zeile", guideNext: "Nächste Zeile", guideCount: "Zeile {a} von {b}",
       licenses: "Lizenzen und Schriften",
       pdfBook: "Als PDF speichern", pdfExporting: "PDF wird erstellt …", pdfSaved: "PDF gespeichert: {name}", pdfFallback: "PDF mit OpenDyslexic gespeichert, da die gewählte Schrift nicht verfügbar war: {name}", pdfFailed: "Das PDF konnte nicht erstellt werden. Versuche es erneut.",
       insertBefore: "Seite davor einfügen", insertAfter: "Seite danach einfügen", replacePhoto: "Foto ersetzen", replacePhotoHint: "Beim Ersetzen eines Fotos gehen die bisherigen Textkorrekturen verloren. Übernommen wird das neue Foto erst nach dem Bestätigen des Zuschnitts.",
@@ -236,7 +241,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   $<HTMLButtonElement>("profileAdd").onclick = () => {
     const inp = $<HTMLInputElement>("profileName"); const name = inp.value.trim();
     if (!name) { inp.focus(); return; }
-    prof = addProfile(prof!, name, S, { mode: defaults.mode, highlight: defaults.highlight }); inp.value = ""; profileChanged();
+    prof = addProfile(prof!, name, S, { mode: defaults.mode, highlight: defaults.highlight, guide: defaults.guide }); inp.value = ""; profileChanged();
   };
   $<HTMLInputElement>("profileName").onkeydown = e => { if (e.key === "Enter") $<HTMLButtonElement>("profileAdd").click(); };
   $<HTMLButtonElement>("profileDel").onclick = () => {
@@ -274,7 +279,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     if (pages.length) render();
   }
 
-  const CHOICES: [string, ChoiceKey][] = [["gateSet", "gate"], ["mode", "mode"], ["sylWordsSet", "sylWords"], ["highlightSet", "highlight"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"], ["viewSet", "view"], ["hyphSet", "hyph"], ["rateSet", "rate"], ["turnSet", "turn"], ["linesSet", "lines"], ["togetherSet", "together"]];
+  const CHOICES: [string, ChoiceKey][] = [["guideSet", "guide"], ["gateSet", "gate"], ["mode", "mode"], ["sylWordsSet", "sylWords"], ["highlightSet", "highlight"], ["colors", "colors"], ["bg", "bg"], ["origToggle", "orig"], ["langStart", "lang"], ["langSet", "lang"], ["uiLang", "ui"], ["viewSet", "view"], ["hyphSet", "hyph"], ["rateSet", "rate"], ["turnSet", "turn"], ["linesSet", "lines"], ["togetherSet", "together"]];
   function applySettings() {
     const r = document.documentElement.style;
     r.setProperty("--font", S.font);
@@ -302,7 +307,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     // Showing or hiding the original page only applies to text view. In book-page view,
     // the page itself is the image; use the eye button to compare it.
     $("origToggle").closest<HTMLElement>(".field")!.hidden = S.view === "side";
-    if ($("reader").classList.contains("pagemode")) requestAnimationFrame(() => fitPage());
+    requestAnimationFrame(() => { if ($("reader").classList.contains("pagemode")) fitPage(); else guide.refresh(); });
     save();
   }
   $("font").onchange = e => { S.font = val(e); applySettings(); };
@@ -311,7 +316,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     $(id).onclick = e => { const b = (e.target as HTMLElement).closest("button"); if (b) {
       S[key] = b.dataset.v!; applySettings();
       if (key === "ui") applyTexts();
-      if ((key === "view" || key === "lines" || key === "mode" || key === "sylWords") && pages[cur]) render();
+      if ((key === "view" || key === "lines" || key === "mode" || key === "sylWords" || key === "guide") && pages[cur]) render();
       if (key === "together") renderTogether();
       if (key === "hyph") { pages.forEach(pg => { if (pg.status === "done") { retext(pg); savePage(pg); } }); if (pages[cur]) render(); }
       if (key === "lang" && pages[cur] && pages[cur].lang !== S.lang) relang(pages[cur]);
@@ -672,6 +677,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
 
   // Display a recognized page as a book page or plain text.
   let speech: Speech | null = null;   // Read-aloud data for the displayed page.
+  const guide = new ReadingGuide($("reader"), t, stopSpeech, w => { stopSpeech(); sayWord(w); });
   function renderContent(pg: Page) {
     const rd = $("reader");
     const built = buildText(pg.text, pg.lang);
@@ -785,6 +791,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
    */
   function fitPage() {
     $("sizeHint").hidden = !fitBoxes(document, S.size) || !$("reader").classList.contains("pagemode");
+    guide.refresh();
   }
 
   /**
@@ -997,6 +1004,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     }
     applySettings();
     renderThumbs();
+    guide.configure(view === "read" && pg.status === "done" && !comparing ? S.guide : "aus", `${book?.id}/${pg.id || cur}`);
   }
 
   /** Recognition status of a page, as the workshop's page list shows it. */
@@ -1680,6 +1688,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   $("reader").onclick = e => {
     if (moving) return;   // Do not read aloud while moving text boxes.
     const w = (e.target as HTMLElement).closest<HTMLElement>(".w"); if (!w) return;
+    guide.follow(Number(w.dataset.i));
     stopSpeech();
     sayWord(w);
   };
@@ -1707,10 +1716,13 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     const spans = [...$("reader").querySelectorAll(".w")];
     setReading(true);
     speak(sp.full, (ev: SpeechSynthesisEvent) => {
+      if (my !== readId) return;
       if (ev.name && ev.name !== "word") return;
       const hit = sp.wordPos.find(p => ev.charIndex >= p.start && ev.charIndex < p.end) || sp.wordPos.find(p => p.start >= ev.charIndex);
       clearHighlight();
+      if (hit) guide.follow(hit.i);
       if (hit && spans[hit.i] && S.highlight === "an") spans[hit.i].classList.add("speaking");
+      if (hit && S.highlight === "an") document.querySelector(`#guideLine .w[data-i="${hit.i}"]`)?.classList.add("speaking");
     }, () => {
       if (my !== readId) return;
       const finished = reading;

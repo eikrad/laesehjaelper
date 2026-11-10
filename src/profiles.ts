@@ -7,7 +7,7 @@
  */
 
 /** Settings that belong to a profile. */
-export const PROFILE_KEYS = ["font", "size", "ls", "lh", "mode", "sylWords", "colors", "bg", "lines", "rate", "turn", "highlight"] as const;
+export const PROFILE_KEYS = ["font", "size", "ls", "lh", "mode", "sylWords", "colors", "bg", "lines", "rate", "turn", "highlight", "guide"] as const;
 export type ProfileKey = typeof PROFILE_KEYS[number];
 
 type Values = Record<string, string | number>;
@@ -19,9 +19,9 @@ const newId = () => Math.random().toString(36).slice(2, 10);
 /**
  * Reading settings added after some devices and profiles were saved. Missing values keep the
  * behaviour those readers had: word highlighting during read-aloud was on, and syllable marks
- * applied to all words. Explicitly saved choices take precedence.
+ * applied to all words. The new line guide stays off. Explicitly saved choices take precedence.
  */
-const EARLIER_BEHAVIOUR: Values = { highlight: "an", sylWords: "alle" };
+const EARLIER_BEHAVIOUR: Values = { highlight: "an", sylWords: "alle", guide: "aus" };
 
 /** Saved settings from an earlier version, completed with the behaviour those readers had. */
 export function fromEarlier(saved: Values): Values {

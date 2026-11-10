@@ -7,6 +7,28 @@ import { fixture, fresh, openRecognisedBook, openWorkshop, seedBooks } from "./h
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
+test("Reading guides fit every screen with usable controls and a single large row", async ({ page }, info) => {
+  await openRecognisedBook(page, ["side-da.jpg"]);
+  for (const mode of ["ruler", "line"]) {
+    await page.click("#setBtn"); await page.click(`#guideSet button[data-v="${mode}"]`); await page.click("#setBtn");
+    await expect(page.locator("#guideTools")).toBeVisible();
+    const tools = (await page.locator("#guideTools").boundingBox())!;
+    expect(tools.x).toBeGreaterThanOrEqual(0);
+    expect(tools.x + tools.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+    expect(tools.y + tools.height).toBeLessThanOrEqual((await page.locator("#dock").boundingBox())!.y);
+    for (const id of ["guidePrev", "guideNext"]) {
+      const b = (await page.locator(`#${id}`).boundingBox())!;
+      expect(b.width).toBeGreaterThanOrEqual(44); expect(b.height).toBeGreaterThanOrEqual(44);
+    }
+    if (mode === "line") {
+      const tops = await page.locator("#guideLine .w").evaluateAll(ws => ws.map(w => w.getBoundingClientRect().top));
+      expect(Math.max(...tops) - Math.min(...tops)).toBeLessThan(2);
+      expect(await sidewaysScroll(page)).toBe(0);
+    }
+    await page.screenshot({ path: info.outputPath(`guide-${mode}.png`) });
+  }
+});
+
 test("Stored books come first, with large covers and a secondary new-book action", async ({ page }) => {
   await seedBooks(page, Array.from({ length: 6 }, (_, i) => ({ id: `shelf-${i}`, title: i === 5 ? "Enmegetlangselvskrevetprøvebogstiteludenmellemrum" : `Prøvebog ${i + 1}`, texts: ["En selvskrevet prøveside."] })));
   await expect(page.locator("#shelf")).toBeVisible();

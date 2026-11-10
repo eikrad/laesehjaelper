@@ -225,6 +225,23 @@ body.workshop .workshop-grid > * { min-width: 0; }
 .mode-boegen .w.plain .s::after { content: none; }
 #sylWordsSet { margin-top: 8px; }
 
+.guide-tools { position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 8; display: flex; align-items: center; gap: 10px; padding: 5px 8px; max-width: calc(100vw - 24px); background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 2px 12px #0002; color: var(--ink); font: 15px var(--ui); }
+.guide-tools button { min-width: 44px; min-height: 44px; font-size: 22px; }
+.guide-tools span { white-space: nowrap; }
+.guide-tools, .guide-line { touch-action: pan-x pinch-zoom; }
+#reader.guide-ruler { position: relative; overflow: clip; }
+#reader.guide-ruler:not(.pagemode) { padding-bottom: 100px; }
+#reader.guide-ruler .w { scroll-margin-top: 100px; scroll-margin-bottom: 180px; }
+.guide-window { position: absolute; pointer-events: none; z-index: 5; border: 2px solid var(--blue); border-radius: 4px; box-shadow: 0 0 0 10000px #0008; }
+#reader.guide-single, .pagecard.guide-single .orig { display: none !important; }
+#app.split .pagecard.guide-single { display: block; }
+.reader.guide-line { display: flex; align-items: center; min-height: 50dvh; font-size: max(40px, calc(var(--size) * 1.25)); padding-bottom: 100px; }
+#guideLineText { width: 100%; overflow-x: auto; white-space: nowrap; padding: 4px 0; }
+.reader.guide-measure { position: fixed; left: -20000px; top: 0; visibility: hidden; pointer-events: none; padding: 0; min-height: 0; }
+@media (min-width: 600px) {
+  #reader.guide-ruler.pagemode .pageview { width: min(100%, calc((100dvh - 280px) * var(--ar, 1))); }
+}
+
 .reader.pagemode { padding: 0; min-height: 0; }
 .reader.comparing { padding: 0; min-height: 0; }
 .reader .origfull { display: block; width: 100%; }
@@ -588,6 +605,11 @@ body.focus .together { display: none !important; }
       </div>
     </div>
     <h3 class="more wide" id="moreSettings" data-t="moreSettings"></h3>
+    <div class="field wide">
+      <span class="flabel" data-t="guideLabel"></span>
+      <div class="seg" id="guideSet"><button data-v="aus" data-t="off"></button><button data-v="ruler" data-t="guideRuler"></button><button data-v="line" data-t="guideLine"></button></div>
+      <p class="fhint" data-t="guideHint"></p>
+    </div>
     <div class="field wide">
       <span class="flabel" data-t="parentGate"></span>
       <div class="seg" id="gateSet"><button data-v="aus" data-t="gateOff"></button><button data-v="an" data-t="gateOn"></button></div>

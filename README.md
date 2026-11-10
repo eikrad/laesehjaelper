@@ -21,6 +21,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Fonts: Andika (default), OpenDyslexic, Atkinson Hyperlegible, Lexend, Verdana
 - Adjustable font size, letter spacing, line spacing and background color
 - Short lines with 2–3 words in the text view (optional)
+- Optional “Line guide” under Aa: “Reading ruler” dims the page around the current line; “One line” reflows the text at a larger size and shows one row at a time. Both work with book pages and text view, follow read-aloud words, and start off for each reader. Use the arrows, the ↑/↓ keys, swipe vertically over the line counter, or tap a word to select its line and hear it.
 - Several readers: each child has their own settings for font, spacing, syllables and reading aloud
 - Read together: a few open questions per page for the adult, including your own (optional)
 - Tap a word to hear it – first whole, then slowly syllable by syllable, then whole again
@@ -69,6 +70,7 @@ The project is written in TypeScript (strict).
 - `src/pagecurve.ts`: fits smooth page-edge curves to the detected outline
 - `src/silben.ts`: syllable splitting (Danish, German, English)
 - `src/syllable-words.ts`: reviewed word corrections for reading syllables
+- `src/guide.ts`, `src/guide-view.ts`: visual reading lines and the optional line-guide display
 - `src/db.ts`: stores books on the device (IndexedDB)
 - `src/epub.ts`: EPUB export and import
 - `src/pdf.ts`, `src/pdf-layout.ts`: PDF creation and measurement of the export's text layout
@@ -92,6 +94,7 @@ Læsehjælper is a reading tool, not a treatment. Its settings are based on what
 
 - **Spacing:** More space between letters reduces reading errors for some children, but studies disagree, many find no change in speed, and the benefit is not specific to dyslexia (Zorzi et al. 2012; Hakvoort et al. 2017; Łuniewska et al. 2022). Widening letter spacing without widening the gaps between words slows reading (Galliussi et al. 2020), so Læsehjælper widens word spacing automatically.
 - **Short lines** help some readers with dyslexia, especially those with weak visual attention; others read better with normal lines. The studies tested teenagers, not young children (Schneps et al. 2013).
+- **Line guide:** A study of 177 adults found speed gains for some digital ruler designs, without better comprehension (Niklaus et al. 2023). It does not establish benefits for our mask or one-line view in young children. Both start off.
 - **Font:** Special dyslexia fonts do not improve reading speed or accuracy (meta-analysis: Azzarello et al. 2026), and children often prefer ordinary fonts (Wery & Diliberto 2017). The default is therefore Andika, a plain, clear font; OpenDyslexic can be chosen if your child likes it.
 - **Coloured syllables** made no difference to reading speed in an eye-tracking study (Häikiö et al. 2015). Some weaker beginners read single words more accurately with them (Lopes & Barrera 2019). A separate German class study found a small gain in grade 2 using syllable arcs, not colours (Dreschinski 2022, a dissertation); this does not establish a benefit from coloured syllables. Any benefit from colours seems to be early, small and mainly for long words. Coloured syllables have never been tested in Danish, where written and spoken syllables often differ. A review recommends them only for some children and only while they move on to fluent reading (Brügelmann 2025, a report, not peer-reviewed). Hyphens inside words slow reading down (Häikiö et al. 2015). That is why syllable colours start switched off: they are one tap away under “Syllables” → “Colour” in the settings, and each new reader starts without them. Devices that used the app before keep their own choice. A further option per reader, “Long words only”, marks syllables (colours or arcs) only on words with three or more syllables, where the aids seem to help most (Brügelmann 2025).
 - **Word parts (Danish):** Teaching children to notice word parts helps them read and spell long words, also in Danish (Goodwin & Ahn 2010; Arnbak & Elbro 2000; Gellert et al. 2021). Showing word parts on the page builds on this but has not been tested itself.
@@ -117,6 +120,7 @@ Sources:
 - Łuniewska et al. 2022, *Learning and Instruction* — [doi:10.1016/j.learninstruc.2021.101576](https://doi.org/10.1016/j.learninstruc.2021.101576)
 - Galliussi et al. 2020, *Annals of Dyslexia* — [doi:10.1007/s11881-020-00194-x](https://doi.org/10.1007/s11881-020-00194-x)
 - Schneps et al. 2013, *PLOS ONE* — [doi:10.1371/journal.pone.0071161](https://doi.org/10.1371/journal.pone.0071161), [doi:10.1371/journal.pone.0075634](https://doi.org/10.1371/journal.pone.0075634)
+- Niklaus et al. 2023, *CHI* — [doi:10.1145/3544548.3581367](https://doi.org/10.1145/3544548.3581367)
 - Azzarello et al. 2026, *Annals of Dyslexia* — [doi:10.1007/s11881-026-00389-8](https://doi.org/10.1007/s11881-026-00389-8)
 - Wery & Diliberto 2017, *Annals of Dyslexia* — [doi:10.1007/s11881-016-0127-1](https://doi.org/10.1007/s11881-016-0127-1)
 - Häikiö et al. 2015, *Journal of Cognitive Psychology* — [doi:10.1080/20445911.2014.982126](https://doi.org/10.1080/20445911.2014.982126)
