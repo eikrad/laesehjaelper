@@ -1749,7 +1749,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   function relang(pg: Page) {
     pg.lang = S.lang;
     if (pg.canvas || pg.inputBlob) { pg.status = "wait"; pg.progress = 0; pg.cleanBlob = null; queue.push(pg); render(); runQueue(); }
-    else { if (Object.values(DEMO).includes(pg.text)) pg.text = DEMO[pg.lang]; render(); }
+    else { if (Object.values(DEMO).includes(pg.text)) pg.text = DEMO[pg.lang]; savePage(pg); render(); }
   }
 
   // ---------- Start ----------
