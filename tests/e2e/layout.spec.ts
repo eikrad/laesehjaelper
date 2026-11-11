@@ -7,6 +7,27 @@ import { expectSyllableBowsInsideBoxes, fixture, fresh, openRecognisedBook, open
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
+test("word practice fits every screen in each interface language", async ({ page }, info) => {
+  await seedBooks(page, [{ id: "practice", title: "Prøvebog", texts: ["En lille mus bor her."] }]);
+  await page.locator(".book").click();
+  for (const ui of ["da", "de", "en"]) {
+    await page.click(`#uiLang button[data-v="${ui}"]`); await page.click("#setBtn");
+    await page.click('#practiceSet button[data-v="an"]'); await page.click("#setBtn");
+    const word = page.locator('#reader .w[data-word="mus"]');
+    await word.focus(); await page.keyboard.press("Enter");
+    await page.click("#savePracticeWord"); await page.click("#practiceOpen");
+    await page.locator("#practiceReview summary").click();
+    const d = page.locator("#practiceReview"), bounds = (await d.boundingBox())!;
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+    expect(await d.evaluate(e => e.scrollWidth - e.clientWidth)).toBeLessThanOrEqual(1);
+    await expect.poll(() => smallControls(page, 44, "#practiceReview")).toEqual([]);
+    await d.screenshot({ path: info.outputPath(`practice-${ui}.png`), timeout: 5000 });
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#practiceOpen")).toBeFocused();
+  }
+});
+
 test("Adult reading tips fit every screen in every interface language", async ({ page }, info) => {
   await page.click("#demoBtn");
   await openWorkshop(page);
