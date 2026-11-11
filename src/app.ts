@@ -1689,8 +1689,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     const u = new SpeechSynthesisUtterance(text);
     const lang = pages[cur]?.lang || S.lang;
     u.lang = SPEECH[lang]; const voice = pickVoice(lang); if (voice) u.voice = voice;
-    u.rate = speechRate(S.rate);
-    if (slow) u.rate *= 0.75;
+    u.rate = speechRate(S.rate, slow, lang);
     if (onBoundary) u.onboundary = onBoundary;
     u.onend = u.onerror = () => onEnd && onEnd();
     synth.speak(u);
@@ -1706,10 +1705,10 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     stopSpeech();
     sayWord(w);
   };
-  /** Tapped word: whole, then slow highlighted syllables, then whole again. */
+  /** Tapped word: whole, slow support in the book language, then whole again. */
   function sayWord(w: HTMLElement) {
     const parts = [...w.querySelectorAll<HTMLElement>(".s")];
-    const steps = wordSteps(w.dataset.word || "", parts.map(p => p.textContent || ""));
+    const steps = wordSteps(w.dataset.word || "", parts.map(p => p.textContent || ""), pages[cur]?.lang || S.lang);
     const my = readId;
     const step = (i: number) => {
       clearHighlight();

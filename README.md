@@ -25,7 +25,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Several readers: each child has their own settings for font, spacing, syllables and reading aloud
 - Read together: a few open questions per page for the adult, including your own (optional)
 - “Tips for reading together” in the book workshop opens five short pointers for the adult. It starts closed and works offline.
-- Tap a word to hear it – first whole, then slowly syllable by syllable, then whole again
+- Tap a word to hear it: Danish words stay whole, with a gently slower repeat before the final whole word. German and English keep whole → slow syllables → whole. Words with only one written part are read once.
 - Have the whole page read aloud with word-by-word highlighting, slow or normal; afterwards it's the child's turn ("Listen again")
 - “Hyphens in the book” setting: for early readers that split words into syllables with hyphens or dots themselves (“sko-le”, “sko·le”); marks that text recognition misses are found in the photo
 - Tilted photos are straightened, and “text” that OCR finds inside illustrations is filtered out
@@ -103,7 +103,7 @@ The optional workshop tips draw on Andersen & Nielsen (2016) and Sénéchal & Yo
 - **Word parts (Danish):** Teaching children to notice word parts helps them read and spell long words, also in Danish (Goodwin & Ahn 2010; Arnbak & Elbro 2000; Gellert et al. 2021). Showing word parts on the page builds on this but has not been tested itself.
 - **Reading aloud** helps children understand a text, though the effect is modest (Wood et al. 2018), and listening alone does not teach reading. Highlighting each word did not add to comprehension in a small study (Keelor et al. 2023) and did not help children learn new words (Gerbier et al. 2018). In that study the children were pulled along by the voice, and most preferred no highlighting, though the weakest readers tended to like it. Word highlighting during read-aloud is therefore a setting per reader, off for new readers; devices that used the app before keep it on.
 - **Listen first, then read:** Reading the same text again after hearing it makes reading more fluent, mostly on the practised text (Lee & Yoon 2017); in whole classes the effect is small (Lauer-Schmaltz et al. 2014). Reading new pages helps about as much (Zimmermann et al. 2021).
-- **Tap a word:** Hearing hard words on request while reading helped children in training studies, including Danish pupils who heard the word in parts and then whole (Olson & Wise 1992; Elbro et al. 1996).
+- **Tap a word:** Hearing hard words on request while reading helped children in training studies, including Danish pupils who heard the word in parts and then whole (Olson & Wise 1992; Elbro et al. 1996). For Danish, the app keeps the slow word intact rather than asking a voice to pronounce isolated written syllables: reduced Danish speech makes context important (Trecca et al. 2021). This is a pronunciation safeguard, not a demonstrated reading benefit of this exact sequence. See the [listening-check notes](docs/research/danish-word-speech.md).
 - **Coloured backgrounds or overlays** have no proven effect beyond placebo (Griffiths et al. 2016; Suttle et al. 2018). The background colour is purely a matter of comfort.
 - **A calm reading screen:** Interactive extras in digital storybooks do not help children understand the story, and mini-games harm understanding (Takacs, Swart & Bus 2015; Bus et al. 2026). Keeping adult tools in a separate workshop is a design inference from that research; the studies did not test this navigation.
 - **Reading together:** Talking about a book with open questions helps young children's vocabulary (Mol et al. 2008), but mainly at age 2–3, and later studies find smaller effects (Noble et al. 2019). The questions in Læsehjælper are therefore optional and off by default.
@@ -141,6 +141,7 @@ Sources:
 - Zimmermann et al. 2021, *Remedial and Special Education* — [doi:10.1177/0741932519855058](https://doi.org/10.1177/0741932519855058)
 - Olson & Wise 1992, *Reading and Writing* — [doi:10.1007/BF01027488](https://doi.org/10.1007/BF01027488)
 - Elbro et al. 1996, *Scandinavian Journal of Psychology* — [doi:10.1111/j.1467-9450.1996.tb00647.x](https://doi.org/10.1111/j.1467-9450.1996.tb00647.x)
+- Trecca et al. 2021, *Language Learning* — [doi:10.1111/lang.12450](https://doi.org/10.1111/lang.12450)
 - Griffiths et al. 2016, *Ophthalmic & Physiological Optics* — [doi:10.1111/opo.12316](https://doi.org/10.1111/opo.12316)
 - Suttle et al. 2018, *Clinical and Experimental Optometry* — [doi:10.1111/cxo.12676](https://doi.org/10.1111/cxo.12676)
 - Takacs, Swart & Bus 2015, *Review of Educational Research* — [doi:10.3102/0034654314566989](https://doi.org/10.3102/0034654314566989)

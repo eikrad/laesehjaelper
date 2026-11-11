@@ -188,7 +188,10 @@ test("Listen, then read: show a prompt after reading aloud and allow speed selec
   await expect(page.locator("#yourTurn")).toBeHidden();
 });
 
-test("Tapping a word reads it whole, then highlights and reads each syllable", async ({ page }) => {
+for (const [language, word, expected, markedParts] of [
+  ["de", "Igel", ["Igel", "I", "gel", "Igel"], ["I", "gel"]],
+  ["en", "little", ["little", "lit", "tle", "little"], ["lit", "tle"]],
+] as const) test(`Tapping a ${language} word keeps whole–syllables–whole playback`, async ({ page }) => {
   await page.addInitScript(() => {
     const w = window as unknown as { __said: string[]; __marked: string[] };
     w.__said = []; w.__marked = [];
@@ -203,12 +206,13 @@ test("Tapping a word reads it whole, then highlights and reads each syllable", a
     Object.defineProperty(window, "speechSynthesis", { value: fake, configurable: true });
   });
   await page.reload();
+  await page.click(`#langStart button[data-v="${language}"]`);
   await page.click("#demoBtn");
-  await page.click('.w[data-word="pindsvin"]');
+  await page.click(`.w[data-word="${word}"]`);
   await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said.length)).toBe(4);
   const { said, marked } = await page.evaluate(() => { const w = window as unknown as { __said: string[]; __marked: string[] }; return { said: w.__said, marked: w.__marked }; });
-  expect(said).toEqual(["pindsvin", "pinds", "vin", "pindsvin"]);
-  expect(marked).toEqual(["pinds", "vin"]);
+  expect(said).toEqual([...expected]);
+  expect(marked).toEqual([...markedParts]);
   await expect(page.locator(".speaking")).toHaveCount(0);
 });
 

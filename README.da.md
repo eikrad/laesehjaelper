@@ -25,7 +25,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Flere læsere: hvert barn har sine egne indstillinger for skrift, afstand, stavelser og oplæsning
 - Læs sammen: et par åbne spørgsmål til den voksne for hver side, også egne spørgsmål (kan slås til)
 - „Gode råd til fælles læsning“ i bogværkstedet åbner fem korte råd til den voksne. Afsnittet starter lukket og virker offline.
-- Tryk på et ord for at høre det – først helt, så langsomt stavelse for stavelse, så helt igen
+- Tryk på et ord for at høre det: Danske ord læses helt, lidt langsommere og helt igen. Tysk og engelsk beholder helt ord → langsomme stavelser → helt ord. Ord med kun én skriftlig del læses én gang.
 - Få hele siden læst op med markering af hvert ord, langsomt eller normalt; bagefter er det barnets tur („Hør igen“)
 - Indstilling „Bindestreger i bogen“: til læsebøger, der selv deler ord i stavelser med bindestreg eller prik („sko-le“, „sko·le“); tegn, som tekstgenkendelsen overser, bliver fundet i fotoet
 - Skæve fotos bliver rettet op, og „tekst“, som tekstgenkendelsen finder i tegningerne, bliver sorteret fra
@@ -103,7 +103,7 @@ De valgfrie råd i værkstedet bygger på Andersen & Nielsen (2016) og Sénécha
 - **Orddele (dansk):** Undervisning i orddele hjælper børn med at læse og stave lange ord, også på dansk (Goodwin & Ahn 2010; Arnbak & Elbro 2000; Gellert m.fl. 2021). Visningen af orddele på siden bygger på det, men er ikke selv afprøvet.
 - **Oplæsning** hjælper børn med at forstå en tekst, men effekten er beskeden (Wood m.fl. 2018), og at lytte alene lærer ikke barnet at læse. Markering af hvert ord gav ikke bedre forståelse i en lille undersøgelse (Keelor m.fl. 2023) og hjalp ikke børn med at lære nye ord (Gerbier m.fl. 2018). I den undersøgelse blev børnene trukket med af stemmen, og de fleste foretrak ingen markering, selv om de svageste læsere var mere glade for den. Markering af ordene under oplæsning er derfor en indstilling pr. læser, slået fra for nye læsere; enheder, der har brugt appen før, beholder den slået til.
 - **Lyt først, læs så selv:** At læse den samme tekst igen efter at have hørt den gør læsningen mere flydende, mest på den øvede tekst (Lee & Yoon 2017); i hele klasser er effekten lille (Lauer-Schmaltz m.fl. 2014). At læse nye sider hjælper omtrent lige så meget (Zimmermann m.fl. 2021).
-- **Tryk på et ord:** At kunne høre svære ord, mens barnet læser, hjalp i træningsundersøgelser – også danske elever, der hørte ordet i dele og derefter helt (Olson & Wise 1992; Elbro m.fl. 1996).
+- **Tryk på et ord:** At kunne høre svære ord, mens barnet læser, hjalp i træningsundersøgelser – også danske elever, der hørte ordet i dele og derefter helt (Olson & Wise 1992; Elbro m.fl. 1996). På dansk bevares hele ordet i den langsomme gentagelse frem for at få stemmen til at udtale isolerede skriftlige stavelser: reduceret dansk tale gør konteksten vigtig (Trecca m.fl. 2021). Det beskytter udtalens sammenhæng; en læsegevinst ved netop denne rækkefølge er ikke dokumenteret. Se [noterne til høreprøven](docs/research/danish-word-speech.md).
 - **Farvet baggrund eller farvede filtre** har ingen påvist effekt ud over placebo (Griffiths m.fl. 2016; Suttle m.fl. 2018). Baggrundsfarven er kun et spørgsmål om, hvad der føles rart.
 - **En rolig læseskærm:** Interaktive ekstrafunktioner i digitale billedbøger hjælper ikke børn med at forstå historien, og minispil skader forståelsen (Takacs, Swart & Bus 2015; Bus m.fl. 2026). At samle voksenværktøjer i et separat værksted er et designvalg inspireret af den forskning; undersøgelserne afprøvede ikke denne navigation.
 - **Læs sammen:** At tale om en bog med åbne spørgsmål styrker små børns ordforråd (Mol m.fl. 2008), men mest i 2–3-årsalderen, og senere undersøgelser finder mindre effekter (Noble m.fl. 2019). Spørgsmålene i Læsehjælper er derfor valgfrie og slået fra som standard.
@@ -141,6 +141,7 @@ Kilder:
 - Zimmermann m.fl. 2021, *Remedial and Special Education* — [doi:10.1177/0741932519855058](https://doi.org/10.1177/0741932519855058)
 - Olson & Wise 1992, *Reading and Writing* — [doi:10.1007/BF01027488](https://doi.org/10.1007/BF01027488)
 - Elbro m.fl. 1996, *Scandinavian Journal of Psychology* — [doi:10.1111/j.1467-9450.1996.tb00647.x](https://doi.org/10.1111/j.1467-9450.1996.tb00647.x)
+- Trecca m.fl. 2021, *Language Learning* — [doi:10.1111/lang.12450](https://doi.org/10.1111/lang.12450)
 - Griffiths m.fl. 2016, *Ophthalmic & Physiological Optics* — [doi:10.1111/opo.12316](https://doi.org/10.1111/opo.12316)
 - Suttle m.fl. 2018, *Clinical and Experimental Optometry* — [doi:10.1111/cxo.12676](https://doi.org/10.1111/cxo.12676)
 - Takacs, Swart & Bus 2015, *Review of Educational Research* — [doi:10.3102/0034654314566989](https://doi.org/10.3102/0034654314566989)
