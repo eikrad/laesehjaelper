@@ -24,6 +24,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Optionale „Zeilenhilfe“ unter Aa: „Leselineal“ dunkelt die Seite um die aktuelle Zeile ab; „Eine Zeile“ bricht den Text mit größerer Schrift neu um und zeigt jeweils eine Zeile. Beides funktioniert auf der Buchseite und in der Textansicht, folgt dem Vorlesen und ist für jedes Kind zunächst ausgeschaltet. Nutze die Pfeile oder ↑/↓, wische senkrecht über die Zeilenanzeige oder tippe ein Wort an, um seine Zeile auszuwählen und es zu hören.
 - Mehrere Leser: Jedes Kind hat eigene Einstellungen für Schrift, Abstände, Silben und Vorlesen
 - Gemeinsam lesen: ein paar offene Fragen pro Seite für den Erwachsenen, auch eigene Fragen (zuschaltbar)
+- „Tipps zum gemeinsamen Lesen“ in der Buchwerkstatt öffnet fünf kurze Hinweise für Erwachsene. Der Abschnitt ist zunächst geschlossen und funktioniert offline.
 - Wort antippen und hören: Dänische Wörter bleiben ganz, mit einer sanft verlangsamten Wiederholung vor dem abschließenden ganzen Wort. Deutsch und Englisch behalten ganzes Wort → langsame Silben → ganzes Wort. Wörter mit nur einem schriftlichen Teil werden einmal gelesen.
 - Die ganze Seite vorlesen lassen, mit Markierung des gerade gelesenen Worts, langsam oder normal; danach ist das Kind dran („Noch mal hören“)
 - Einstellung „Bindestriche im Buch“: für Lesebücher, die Wörter selbst mit Bindestrich oder Punkt in Silben trennen („Scho-ko-la-de“, „Scho·ko·la·de“); Zeichen, die die Texterkennung übersieht, werden im Foto gefunden
@@ -89,6 +90,8 @@ Læsehjælper ist ein Lesewerkzeug, keine Behandlung. Die Einstellungen beruhen 
 
 - **Unterricht:** Systematisches, frühes Üben von Buchstaben, Lauten und Lautieren ist die am besten belegte Hilfe bei Legasthenie. Die Effekte sind mittelgroß und in den ersten Schuljahren und mit mehr Stunden größer (Hall u. a. 2023; McArthur u. a. 2018; Galuschka u. a. 2014). In einer dänischen Studie sank mit Kleingruppenunterricht der Anteil der Risikokinder, die am Ende der 1. Klasse kaum lesen konnten, von 37 % auf 15 % (Gellert u. a. 2024). Læsehjælper ersetzt diesen Unterricht nicht. Dänisch gehört zu den Sprachen, in denen sicheres Lesen am längsten dauert (Seymour u. a. 2003).
 - **Üben mit einem Erwachsenen:** Eltern helfen am meisten, wenn sie zuhören, während ihr Kind liest, und bei bestimmten Fertigkeiten helfen – mehr als wenn sie nur vorlesen (Sénéchal & Young 2008). In einer dänischen Studie mit 1.587 Zweitklässlern verbesserten ein paar Bücher und einfache Tipps das Lesen: die Mühe loben, über die Geschichte sprechen, nicht jeden kleinen Fehler verbessern (Andersen & Nielsen 2016). Lese-Apps wirken viel besser, wenn ein Erwachsener dabei ist (McTigue u. a. 2020).
+
+Die optionalen Tipps in der Werkstatt beruhen auf Andersen & Nielsen (2016) und Sénéchal & Young (2008), unten zitiert. Die dänische Studie untersuchte Bücher und Elternberatung gemeinsam; dieser App-Abschnitt wurde nicht getestet.
 
 **Die Einstellungen helfen weniger, und nicht jedem Kind:**
 

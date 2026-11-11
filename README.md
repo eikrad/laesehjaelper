@@ -24,6 +24,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Optional “Line guide” under Aa: “Reading ruler” dims the page around the current line; “One line” reflows the text at a larger size and shows one row at a time. Both work with book pages and text view, follow read-aloud words, and start off for each reader. Use the arrows, the ↑/↓ keys, swipe vertically over the line counter, or tap a word to select its line and hear it.
 - Several readers: each child has their own settings for font, spacing, syllables and reading aloud
 - Read together: a few open questions per page for the adult, including your own (optional)
+- “Tips for reading together” in the book workshop opens five short pointers for the adult. It starts closed and works offline.
 - Tap a word to hear it: Danish words stay whole, with a gently slower repeat before the final whole word. German and English keep whole → slow syllables → whole. Words with only one written part are read once.
 - Have the whole page read aloud with word-by-word highlighting, slow or normal; afterwards it's the child's turn ("Listen again")
 - “Hyphens in the book” setting: for early readers that split words into syllables with hyphens or dots themselves (“sko-le”, “sko·le”); marks that text recognition misses are found in the photo
@@ -89,6 +90,8 @@ Læsehjælper is a reading tool, not a treatment. Its settings are based on what
 
 - **Teaching:** Systematic, early teaching of letters, sounds and sounding out is the best-supported help for dyslexia. Effects are moderate, and larger in the first school years and with more hours (Hall et al. 2023; McArthur et al. 2018; Galuschka et al. 2014). In a Danish trial, small-group lessons in grade 1 cut the share of at-risk children who could hardly read from 37 % to 15 % (Gellert et al. 2024). Læsehjælper does not replace this teaching. Danish is one of the languages in which children take longest to read accurately (Seymour et al. 2003).
 - **Practice with an adult:** Parents help most when they listen to their child read and help with specific skills, more than when they only read to the child (Sénéchal & Young 2008). In a Danish trial with 1,587 second graders, a few books and simple advice – praise effort, talk about the story, don't correct every slip – improved reading (Andersen & Nielsen 2016). Reading apps work far better with an adult involved (McTigue et al. 2020).
+
+The optional workshop tips draw on Andersen & Nielsen (2016) and Sénéchal & Young (2008), cited below. The Danish trial tested books and parent advice together; it did not test this app guide.
 
 **The settings help less, and not every child:**
 
