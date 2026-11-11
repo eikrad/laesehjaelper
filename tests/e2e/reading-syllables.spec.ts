@@ -1,14 +1,16 @@
 import { expect, test } from "./fixtures";
 import { fresh, seedBooks } from "./helpers";
 
-test("Corrected Danish syllables are shown and read aloud while manual boundaries take priority", async ({ page }) => {
+test("Danish word speech stays intact while corrected and manual syllables remain visible", async ({ page }) => {
   await page.addInitScript(() => {
-    const w = window as unknown as { __said: string[] };
+    const w = window as unknown as { __said: unknown[] };
     w.__said = [];
     Object.defineProperty(window, "speechSynthesis", { configurable: true, value: {
       speaking: false, getVoices: () => [], cancel: () => {},
       speak: (u: SpeechSynthesisUtterance) => {
-        w.__said.push(u.text);
+        w.__said.push({ text: u.text, lang: u.lang, rate: Number(u.rate.toFixed(3)),
+          word: document.querySelector(".w.speaking")?.getAttribute("data-word"),
+          parts: document.querySelectorAll(".s.speaking").length });
         setTimeout(() => u.onend?.(new Event("end") as SpeechSynthesisEvent), 10);
       },
     } });
@@ -19,8 +21,12 @@ test("Corrected Danish syllables are shown and read aloud while manual boundarie
   await expect(page.locator('#reader .w[data-word="Hunden"] .s')).toHaveText(["Hun", "den"], { timeout: 1500 });
   await expect(page.locator('#reader .w[data-word="hunden"] .s')).toHaveText(["hund", "en"]);
   await page.locator('#reader .w[data-word="Hunden"]').click();
-  await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said))
-    .toEqual(["Hunden", "Hun", "den", "Hunden"]);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __said: unknown[] }).__said))
+    .toEqual([
+      { text: "Hunden", lang: "da-DK", rate: 0.85, word: "Hunden", parts: 0 },
+      { text: "Hunden", lang: "da-DK", rate: 0.765, word: "Hunden", parts: 0 },
+      { text: "Hunden", lang: "da-DK", rate: 0.85, word: "Hunden", parts: 0 },
+    ]);
 });
 
 for (const [language, text, words] of [

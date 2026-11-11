@@ -6,7 +6,7 @@ import { fresh } from "./helpers";
 const marked = (page: Page, word: string) => page.locator(`.w[data-word="${word}"]`).first().evaluate(w =>
   getComputedStyle(w.querySelector(".s")!).color !== getComputedStyle(w).color);
 
-test("With syllable colours only on long words, short words keep the text colour and can still be heard in syllables", async ({ page }) => {
+test("With syllable colours only on long words, short words keep the text colour and Danish speech stays whole", async ({ page }) => {
   await page.addInitScript(() => {
     const w = window as unknown as { __said: string[] };
     w.__said = [];
@@ -32,9 +32,9 @@ test("With syllable colours only on long words, short words keep the text colour
   await page.click('#mode button[data-v="farbe"]');
   await expect(page.locator('#sylWordsSet button[data-v="lange"]')).toHaveClass(/\bon\b/);
   await page.click("#setBtn");
-  // Tapping a word without colours still reads it whole, then syllable by syllable.
+  // Hidden syllable colours do not change the intact Danish playback sequence.
   await page.click('.w[data-word="pindsvin"]');
-  await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said)).toEqual(["pindsvin", "pinds", "vin", "pindsvin"]);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said)).toEqual(["pindsvin", "pindsvin", "pindsvin"]);
 });
 
 test("Syllable arcs follow the same choice", async ({ page }) => {
