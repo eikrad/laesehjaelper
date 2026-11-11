@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { PROFILE_KEYS, addProfile, fromEarlier, initProfiles, removeProfile, switchProfile, syncActive } from "../../src/profiles";
 
-const base = { font: "A", size: 32, ls: 0.04, lh: 1.9, mode: "farbe", sylWords: "alle", highlight: "an", guide: "aus", practice: "aus", colors: "#00f,#f00", bg: "#fff", lines: "normal", rate: "normal", turn: "an", ui: "da", lang: "da", view: "side" };
+const base = { font: "A", size: 32, ls: 0.04, lh: 1.9, mode: "farbe", sylWords: "alle", highlight: "an", guide: "aus", practice: "aus", phrases: "aus", colors: "#00f,#f00", bg: "#fff", lines: "normal", rate: "normal", turn: "an", ui: "da", lang: "da", view: "side" };
 
 describe("profiles", () => {
   it("keeps optional word practice off for older readers after switching", () => {
@@ -79,8 +79,8 @@ describe("profiles", () => {
   });
   it("Completes settings saved by an earlier version with the behaviour readers had then", () => {
     // Word highlighting during read-aloud was always on before it became a setting.
-    expect(fromEarlier({ size: 40 })).toEqual({ size: 40, highlight: "an", sylWords: "alle", guide: "aus", practice: "aus" });
-    expect(fromEarlier({ highlight: "aus", sylWords: "lange" })).toEqual({ highlight: "aus", sylWords: "lange", guide: "aus", practice: "aus" });
+    expect(fromEarlier({ size: 40 })).toEqual({ size: 40, highlight: "an", sylWords: "alle", guide: "aus", practice: "aus", phrases: "aus" });
+    expect(fromEarlier({ highlight: "aus", sylWords: "lange" })).toEqual({ highlight: "aus", sylWords: "lange", guide: "aus", practice: "aus", phrases: "aus" });
     const { highlight: _, ...old } = base;
     const saved = { active: "a", list: [{ id: "a", name: "Ida", settings: old }] };
     expect(initProfiles(JSON.stringify(saved), base, "x").list[0].settings.highlight).toBe("an");

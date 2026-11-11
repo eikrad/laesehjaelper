@@ -7,6 +7,28 @@ import { expectSyllableBowsInsideBoxes, fixture, fresh, openRecognisedBook, open
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
+test("adult phrase editing and large reading cues fit every screen and language", async ({ page }, info) => {
+  await seedBooks(page, [{ id: "phrases", title: "Prøvebog", texts: ["En lille mus bor her. Solen skinner."] }]);
+  await page.locator(".book").click();
+  for (const ui of ["da", "de", "en"]) {
+    await page.click(`#uiLang button[data-v="${ui}"]`); await openWorkshop(page);
+    await page.click("#phraseEdit");
+    const d = page.locator("#phraseEditor");
+    const boundary = d.locator('button[data-after="2"]');
+    await boundary.click(); await expect(boundary).toHaveAttribute("aria-pressed", "true");
+    expect(await d.evaluate(e => e.scrollWidth - e.clientWidth)).toBeLessThanOrEqual(1);
+    await expect.poll(() => smallControls(page, 44, "#phraseEditor")).toEqual([]);
+    await d.screenshot({ path: info.outputPath(`phrases-${ui}.png`) });
+    await page.click("#phraseSave"); await page.click("#readBookBtn");
+    await page.click("#setBtn"); await page.fill("#size", "48"); await page.click("#setBtn");
+    if (await page.locator("#phraseToggle").getAttribute("aria-pressed") === "false") await page.click("#phraseToggle");
+    await expect(page.locator("#reader .phrase-cue")).toHaveCount(1);
+    expect(await sidewaysScroll(page)).toBe(0);
+    // The next pass starts without old boundaries.
+    await openWorkshop(page); await page.click("#phraseEdit"); await page.click("#phraseClear"); await page.click("#phraseSave"); await page.click("#readBookBtn");
+  }
+});
+
 test("word practice fits every screen in each interface language", async ({ page }, info) => {
   await seedBooks(page, [{ id: "practice", title: "Prøvebog", texts: ["En lille mus bor her."] }]);
   await page.locator(".book").click();

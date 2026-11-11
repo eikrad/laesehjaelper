@@ -26,6 +26,8 @@ import { eraseText, halo } from "./erase";
 import { buildEpub, readEpub } from "./epub";
 import { ReadingGuide } from "./guide-view";
 import { PracticeView } from "./practice-view";
+import { PhraseEditor } from "./phrase-view";
+import { phraseBoundaries, renderPhraseCues, type PhraseCues } from "./phrases";
 import type { DataPage, EpubFont, EpubPage } from "./epub";
 import type { PdfPage } from "./pdf";
 import { measurePdfPage } from "./pdf-layout";
@@ -49,6 +51,7 @@ interface Settings {
   highlight: string;
   guide: string;
   practice: string;
+  phrases: string;
 }
 /** Settings controlled by button groups (data-v). */
 type ChoiceKey = "practice" | "guide" | "gate" | "mode" | "colors" | "bg" | "orig" | "lang" | "ui" | "view" | "hyph" | "rate" | "turn" | "lines" | "together" | "sylWords" | "highlight";
@@ -67,6 +70,7 @@ interface Page {
   workW?: number;
   workH?: number;
   corners?: Frame | Corners | null;
+  phraseCues?: PhraseCues;
   /** Custom question for reading together. */
   question?: string;
   /** Display URL for the (cropped) page: data: or blob:. */
@@ -104,7 +108,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   // Word highlighting during read-aloud starts off as well: it has not been shown to help, and it can
   // pull children along with the voice (Gerbier, Bailly & Bosse 2018, doi:10.1016/j.csl.2017.07.003).
   // Settings saved before it was a setting keep it on (fromEarlier in src/profiles.ts).
-  const defaults: Settings = { practice: "aus", guide: "aus", gate: "aus", font: '"Andika", sans-serif', size: 32, ls: DEFAULT_LS, lh: DEFAULT_LH, mode: "aus", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus", sylWords: "alle", highlight: "aus" };
+  const defaults: Settings = { phrases: "aus", practice: "aus", guide: "aus", gate: "aus", font: '"Andika", sans-serif', size: 32, ls: DEFAULT_LS, lh: DEFAULT_LH, mode: "aus", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus", sylWords: "alle", highlight: "aus" };
   const S: Settings = { ...defaults };
   try { const saved = localStorage.getItem("lesehelfer"); if (saved) Object.assign(S, fromEarlier(JSON.parse(saved))); } catch {}
   const PROFILES = "laesehjaelper-profiles";
@@ -119,6 +123,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   // ---------- UI strings ----------
   const T: Record<string, Record<string, string>> = {
     da: {
+      phraseEdit: "Markér læsegrupper", phraseHint: "Vælg naturlige grupper af ord. Tryk på en streg mellem ordene for at tilføje eller fjerne et skel. Tegnsætning og et fast antal ord kan ikke alene afgøre grupperne. Gem for at læse i tekstvisning.", phraseModel: "Læs med indlevelse for barnet, og lad barnet prøve med og uden mærker. Browserens stemme følger ikke nødvendigvis dine læsegrupper. Mærker erstatter korte linjer.", phrasePreview: "Forhåndsvisning", phraseAfter: "Skel efter {word}", phraseClear: "Fjern alle skel", phraseShow: "Vis læsegrupper", phraseHide: "Skjul læsegrupper",
       practicePrev: "Forrige ord", practiceNext: "Næste ord", practiceClose: "Luk", practiceTitle: "Mine øveord", practiceLabel: "Øv ord fra bogen", practiceHint: "Slå til for at vælge ord, der skal øves. Ret først eventuelle tekstfejl. Ordene gemmes kun for denne læser på enheden og følger ikke med i e-bogen.", practiceChoose: "Vælg selv, om ordet skal gemmes til øvelse.", practiceHear: "Hør ordet", practiceSave: "Gem øveord", practiceEmpty: "Vælg et ord i bogen, og gem det til øvelse.", practiceTry: "Prøv at læse ordet. Du kan få hjælp og bagefter læse det i sin sætning.", practiceContext: "Vis sætningen", practicePage: "Læs på siden", practiceUnavailable: "Siden er ændret eller fjernet. Gem ordet igen fra den rettede tekst for at få en ny sætning.", practiceAdult: "Til den voksne", practiceAdultHint: "Øv bogstaver og lyde sammen. Behold gerne kendte ord til genlæsning. Du bestemmer, hvornår et ord fjernes.", practiceFamiliar: "Kendt ord (vurderet af en voksen)", practiceRemove: "Fjern øveord",
 
       // Optional adult advice: Andersen & Nielsen (2016), doi:10.1073/pnas.1607946113;
@@ -162,6 +167,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", shelfTitle: "Dine bøger", pagesN: "{n} sider", page1: "1 side", untitled: "Bog uden titel", titlePh: "Bogens titel", editPages: "Rediger sider", done: "Færdig", deleteBook: "Slet bogen", confirmDelete: "Tryk igen for at slette bogen", moveLeft: "Flyt til venstre", moveRight: "Flyt til højre", deletePage: "Slet side", evTitle: "Hvad siger forskningen?", evText: "Det, der hjælper mest, er tidlig, systematisk undervisning i bogstaver og lyde – og en voksen, der lytter, mens barnet læser, hjælper med svære ord og roser indsatsen. Indstillingerne her hjælper mindre.<br><br>Mere afstand mellem bogstaverne giver færre fejl hos nogle børn, men sjældent hurtigere læsning. Korte linjer hjælper nogle børn, men ikke alle. Oplæsning hjælper forståelsen, og at høre en side og så læse den selv gør læsningen mere flydende.<br><br>Farvede stavelser kan hjælpe nogle begyndere lidt, mest ved lange ord. Slå dem fra, når barnet læser flydende.<br><br>Særlige ordblindeskrifter som OpenDyslexic og farvet baggrund har ikke vist nogen effekt i undersøgelser. Brug dem gerne, hvis barnet synes, de er rare, men ikke som behandling. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.da.md#hvad-siger-forskningen\">Kilder</a>", rateLabel: "Oplæsning", rateSlow: "Langsom", rateNormal: "Normal", highlightLabel: "Fremhæv ordene ved oplæsning", highlightOn: "Til", highlightOff: "Fra", highlightHint: "Ordene lyser op, mens de bliver læst. Det har ikke vist sig at hjælpe, men nogle børn kan lide det.", turnLabel: "Efter oplæsning", turnOn: "Din tur", turnOff: "Kun lyt", yourTurn: "Nu er det din tur. Læs siden selv.", again: "Hør igen", linesLabel: "Linjer", linesNormal: "Normale", linesShort: "Korte", linesHint: "Korte linjer med få ord hjælper nogle børn. Gælder kun, når teksten vises alene.", reader: "Læser", reader1: "Læser 1", addReader: "Tilføj", newReaderPh: "Navn på ny læser", removeReader: "Slet læser", confirmReader: "Tryk igen for at slette", readerHint: "Hver læser har sine egne indstillinger for skrift, afstand, stavelser og oplæsning.", sylWordsAll: "Alle ord", sylWordsLong: "Kun lange ord", sylHint: "Farvede stavelser starter slået fra. Slå dem til, hvis de hjælper barnet, og fra igen, når det læser flydende.", togetherLabel: "Læs sammen", togetherOn: "Til", togetherOff: "Fra", togetherHint: "Viser et par åbne spørgsmål til den voksne, der læser med. Ikke en quiz – lad barnet fortælle.", togetherTitle: "Snak om siden", ownQ: "Eget spørgsmål", ownQPh: "Skriv et spørgsmål til denne side", save: "Gem", moveBoxes: "Flyt tekstfelter", moveDone: "Færdig med at flytte", resetPlace: "Nulstil placering", moveHint: "Træk i et felt for at flytte det, eller i hjørnet for at ændre størrelsen.", morf: "Orddele", morfOnlyDa: "Orddele findes indtil videre kun for dansk.", morfFail: "Ordlisten kunne ikke hentes.", aboutTitle: "Om Læsehjælper og ansvarsfraskrivelse", aboutText: "Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl – tjek derfor altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.<br><br>Billeder og bøger bliver kun behandlet og gemt på din egen enhed og bliver ikke sendt til nogen server. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug. Del ikke omdannede bøger med andre, medmindre du har rettighederne.<br><br>Brug sker på eget ansvar og uden garanti. Kildekoden er åben: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Bøgerne kan ikke gemmes i denne browser.", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropStraightening: "Retter siden op …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", ocrAgain: "Genkend teksten igen", cropOf: "Billede {a} af {b}", exportBook: "Gem som e-bog", importBook: "Hent en e-bog (EPUB) fra Læsehjælper", exporting: "Laver e-bogen …", exported: "E-bogen er gemt: {name}", importFail: "Filen er ikke en e-bog fra Læsehjælper.", importing: "Henter e-bogen …", notReady: "Vent, til alle sider er genkendt.", install: "Installér som app på denne enhed", compare: "Vis den oprindelige tekst", compareOff: "Vis den nye tekst",
     },
     en: {
+      phraseEdit: "Mark phrase boundaries", phraseHint: "Choose natural groups of words. Select a line between words to add or remove a boundary. Punctuation and a fixed word count cannot determine every phrase. Save to read in text view.", phraseModel: "Model expressive reading for your child, then try with and without the marks. Browser speech may not follow your phrases. Phrase cues replace short-line wrapping.", phrasePreview: "Preview", phraseAfter: "Boundary after {word}", phraseClear: "Clear all boundaries", phraseShow: "Show phrase cues", phraseHide: "Hide phrase cues",
       practicePrev: "Previous word", practiceNext: "Next word", practiceClose: "Close", practiceTitle: "My practice words", practiceLabel: "Practise words from the book", practiceHint: "Turn on to choose words to practise. Correct text recognition errors first. Words stay with this reader on this device and are excluded from e-book exports.", practiceChoose: "Choose whether to save this word for practice.", practiceHear: "Hear the word", practiceSave: "Save practice word", practiceEmpty: "Choose a word in the book and save it for practice.", practiceTry: "Try reading the word. You can get help, then read it in its sentence.", practiceContext: "Show the sentence", practicePage: "Read on the page", practiceUnavailable: "The page has changed or been removed. Save the word again from the corrected text to get a new sentence.", practiceAdult: "For the adult", practiceAdultHint: "Practise letters and sounds together. Keep familiar words for rereading too. You decide when to remove a word.", practiceFamiliar: "Familiar word (adult judgement)", practiceRemove: "Remove practice word",
 
       tipsTitle: "Tips for reading together", tipsPractice: "Reading skills grow with practice.",
@@ -203,6 +209,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       example: "Sample", addPages: "Add pages", toStart: "Back to start", shelfTitle: "Your books", pagesN: "{n} pages", page1: "1 page", untitled: "Untitled book", titlePh: "Book title", editPages: "Edit pages", done: "Done", deleteBook: "Delete book", confirmDelete: "Tap again to delete the book", moveLeft: "Move left", moveRight: "Move right", deletePage: "Delete page", evTitle: "What does the research say?", evText: "What helps most is early, systematic teaching of letters and sounds – and an adult who listens while your child reads, helps with hard words and praises effort. The settings here help less.<br><br>More space between letters reduces errors for some children, but rarely makes reading faster. Short lines help some children, but not all. Reading aloud helps comprehension, and listening to a page and then reading it yourself makes reading more fluent.<br><br>Coloured syllables may help some beginners a little, mainly with long words. Switch them off once reading is fluent.<br><br>Special dyslexia fonts such as OpenDyslexic and coloured backgrounds have shown no effect in studies. Use them if your child finds them pleasant, but not as a treatment. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.md#what-does-the-research-say\">Sources</a>", rateLabel: "Reading aloud", rateSlow: "Slow", rateNormal: "Normal", highlightLabel: "Highlight words when reading aloud", highlightOn: "On", highlightOff: "Off", highlightHint: "Words light up as they are read. This has not been shown to help, but some children like it.", turnLabel: "After reading aloud", turnOn: "Your turn", turnOff: "Just listen", yourTurn: "Now it's your turn. Read the page yourself.", again: "Listen again", linesLabel: "Lines", linesNormal: "Normal", linesShort: "Short", linesHint: "Short lines with a few words help some children. Only applies when the text is shown on its own.", reader: "Reader", reader1: "Reader 1", addReader: "Add", newReaderPh: "Name of new reader", removeReader: "Delete reader", confirmReader: "Tap again to delete", readerHint: "Each reader has their own settings for font, spacing, syllables and reading aloud.", sylWordsAll: "All words", sylWordsLong: "Long words only", sylHint: "Syllable colours start switched off. Turn them on if they help your child, and off again once reading is fluent.", togetherLabel: "Read together", togetherOn: "On", togetherOff: "Off", togetherHint: "Shows a few open questions for the adult reading along. Not a quiz – let the child do the talking.", togetherTitle: "Talk about the page", ownQ: "Own question", ownQPh: "Write a question for this page", save: "Save", moveBoxes: "Move text boxes", moveDone: "Done moving", resetPlace: "Reset position", moveHint: "Drag a box to move it, or drag its corner to resize it.", morf: "Word parts", morfOnlyDa: "Word parts are only available for Danish so far.", morfFail: "The word list could not be loaded.", aboutTitle: "About Læsehjælper and disclaimer", aboutText: "Læsehjælper is a free hobby project, not a finished product. Text recognition and syllable splitting make mistakes, so always check the text before a child reads it. The app does not replace teaching, reading support or a dyslexia assessment.<br><br>Photos and books are processed and stored only on your own device and are never sent to a server. Books are protected by copyright: only use Læsehjælper for books you have access to, and only for private use. Do not share converted books unless you hold the rights.<br><br>Use at your own risk and without warranty. The source code is open: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Books cannot be saved in this browser.", cropTitle: "Adjust the page", cropFound: "Page found. Drag the corners if it doesn't fit.", cropNone: "Drag the corners to the edges of the page.", cropLoading: "Looking for the page …", cropStraightening: "Straightening the page …", cropUse: "Use", cropWhole: "Whole photo", cropAgain: "Crop the page again", ocrAgain: "Recognise the text again", cropOf: "Photo {a} of {b}", exportBook: "Save as e-book", importBook: "Open a Læsehjælper e-book (EPUB)", exporting: "Creating the e-book …", exported: "E-book saved: {name}", importFail: "This file is not a Læsehjælper e-book.", importing: "Loading the e-book …", notReady: "Wait until all pages have been recognised.", install: "Install as an app on this device", compare: "Show the original text", compareOff: "Show the new text",
     },
     de: {
+      phraseEdit: "Sinngruppen markieren", phraseHint: "Wähle natürliche Wortgruppen. Tippe einen Strich zwischen Wörtern an, um eine Grenze zu setzen oder zu entfernen. Satzzeichen und eine feste Wortzahl bestimmen nicht alle Gruppen. Speichern öffnet die Textansicht.", phraseModel: "Lies deinem Kind ausdrucksvoll vor und übt dann mit und ohne Markierungen. Die Browserstimme folgt deinen Sinngruppen möglicherweise nicht. Markierungen ersetzen den kurzen Zeilenumbruch.", phrasePreview: "Vorschau", phraseAfter: "Grenze nach {word}", phraseClear: "Alle Grenzen entfernen", phraseShow: "Sinngruppen zeigen", phraseHide: "Sinngruppen ausblenden",
       practicePrev: "Vorheriges Wort", practiceNext: "Nächstes Wort", practiceClose: "Schließen", practiceTitle: "Meine Übungswörter", practiceLabel: "Wörter aus dem Buch üben", practiceHint: "Einschalten, um Übungswörter auszuwählen. Zuerst Texterkennungsfehler berichtigen. Die Wörter bleiben für diesen Leser auf dem Gerät und werden nicht ins E-Book exportiert.", practiceChoose: "Entscheide selbst, ob du dieses Wort zum Üben speichern möchtest.", practiceHear: "Wort hören", practiceSave: "Übungswort speichern", practiceEmpty: "Wähle ein Wort im Buch und speichere es zum Üben.", practiceTry: "Versuche, das Wort zu lesen. Du kannst Hilfe bekommen und es danach im Satz lesen.", practiceContext: "Satz zeigen", practicePage: "Auf der Seite lesen", practiceUnavailable: "Die Seite wurde geändert oder entfernt. Speichere das Wort erneut aus dem berichtigten Text, um einen neuen Satz zu bekommen.", practiceAdult: "Für Erwachsene", practiceAdultHint: "Übt Buchstaben und Laute gemeinsam. Bekannte Wörter dürfen zum Wiederlesen bleiben. Du entscheidest, wann ein Wort entfernt wird.", practiceFamiliar: "Bekanntes Wort (Einschätzung eines Erwachsenen)", practiceRemove: "Übungswort entfernen",
 
       tipsTitle: "Tipps zum gemeinsamen Lesen", tipsPractice: "Lesen wird durch Üben besser.",
@@ -263,7 +270,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   $<HTMLButtonElement>("profileAdd").onclick = () => {
     const inp = $<HTMLInputElement>("profileName"); const name = inp.value.trim();
     if (!name) { inp.focus(); return; }
-    prof = addProfile(prof!, name, S, { mode: defaults.mode, highlight: defaults.highlight, guide: defaults.guide, practice: defaults.practice }); inp.value = ""; profileChanged();
+    prof = addProfile(prof!, name, S, { mode: defaults.mode, highlight: defaults.highlight, guide: defaults.guide, practice: defaults.practice, phrases: defaults.phrases }); inp.value = ""; profileChanged();
   };
   $<HTMLInputElement>("profileName").onkeydown = e => { if (e.key === "Enter") $<HTMLButtonElement>("profileAdd").click(); };
   $<HTMLButtonElement>("profileDel").onclick = () => {
@@ -337,7 +344,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   for (const k of ["size", "ls", "lh"] as const) $(k).oninput = e => { S[k] = parseFloat(val(e)); applySettings(); };
   for (const [id, key] of CHOICES)
     $(id).onclick = e => { const b = (e.target as HTMLElement).closest("button"); if (b) {
-      S[key] = b.dataset.v!; applySettings();
+      S[key] = b.dataset.v!; if (key === "lines" && S.lines === "kort") S.phrases = "aus"; applySettings();
       if (key === "ui") applyTexts();
       if ((key === "practice" || key === "view" || key === "lines" || key === "mode" || key === "sylWords" || key === "guide") && pages[cur]) render();
       if (key === "together") renderTogether();
@@ -458,7 +465,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   }
 
   /** Stored page record, without canvases or display URLs. */
-  type PageRecord = Pick<Page, "id" | "bookId" | "lang" | "status" | "text" | "rawText" | "paras" | "workW" | "workH" | "corners" | "question" | "inputBlob" | "photoBlob" | "cleanBlob">;
+  type PageRecord = Pick<Page, "id" | "bookId" | "lang" | "status" | "text" | "rawText" | "paras" | "workW" | "workH" | "corners" | "question" | "phraseCues" | "inputBlob" | "photoBlob" | "cleanBlob">;
 
   async function savePage(pg: Page | undefined) {
     if (!pg || isRemoved(pg)) return;
@@ -476,7 +483,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       await DB.put<PageRecord>("pages", {
         id: pg.id, bookId, lang: pg.lang, status: pg.status === "done" ? "done" : "wait",
         text: pg.text, rawText: pg.rawText, paras: pg.paras || null, workW: pg.workW, workH: pg.workH,
-        corners: pg.corners || null, question: pg.question || "", inputBlob: pg.inputBlob || null, photoBlob: pg.photoBlob || null, cleanBlob: pg.cleanBlob || null,
+        corners: pg.corners || null, question: pg.question || "", phraseCues: pg.phraseCues, inputBlob: pg.inputBlob || null, photoBlob: pg.photoBlob || null, cleanBlob: pg.cleanBlob || null,
       });
     } catch (e) { storageFail(e); }
   }
@@ -705,6 +712,9 @@ const Lib = { detectFrame, warpPage, orderCorners };
   const guide = new ReadingGuide($("reader"), t, stopSpeech, w => { stopSpeech(); if (S.practice === "an") practice.choose(Number(w.dataset.i)); else sayWord(w); });
   const practice = new PracticeView(t, () => ({ reader: prof!.active, book: book?.id || "", pages: pages.map(p => ({ ...p, id: p.id || (book?.demo ? "sample-page" : undefined) })), current: cur }), stopSpeech, (word, lang) => { stopSpeech(); speak(word, null, undefined, false, lang); }, index => { cur = index; render(); }, storageFail);
   $("practiceOpen").onclick = () => practice.open();
+  const phraseEditor = new PhraseEditor(t, stopSpeech);
+  $("phraseEdit").onclick = () => { const pg = pages[cur]; if (pg?.status === "done") phraseEditor.open(pg.text, pg.lang, pg.phraseCues, cues => { pg.phraseCues = cues; S.view = "tekst"; savePage(pg); applySettings(); render(); }); };
+  $("phraseToggle").onclick = () => { S.phrases = S.phrases === "an" ? "aus" : "an"; if (S.phrases === "an") S.lines = "normal"; applySettings(); render(); };
   function renderContent(pg: Page) {
     const rd = $("reader");
     const built = buildText(pg.text, pg.lang);
@@ -713,6 +723,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     $("sizeHint").hidden = true;   // Only the book page can lack room for the wished size (fitPage).
     const page = isPageMode(pg);
     rd.classList.toggle("pagemode", page);
+    if (!page && S.phrases === "an" && S.lines !== "kort") renderPhraseCues(ps, phraseBoundaries(pg.text, pg.phraseCues));
     if (!page) { ps.forEach(p => { if (S.lines === "kort") shortLines(p); rd.append(p); }); return; }
 
     const pv = buildPageView(pg, ps);
@@ -987,7 +998,14 @@ const Lib = { detectFrame, warpPage, orderCorners };
   }
 
   function render() {
+    phraseEditor.close();
     practice.close();
+    const phrasePage = pages[cur];
+    $<HTMLButtonElement>("phraseEdit").disabled = phrasePage?.status !== "done";
+    const phraseToggle = $<HTMLButtonElement>("phraseToggle");
+    phraseToggle.hidden = view !== "read" || !phrasePage || phrasePage.status !== "done" || isPageMode(phrasePage) || !phraseBoundaries(phrasePage.text, phrasePage.phraseCues).length;
+    phraseToggle.textContent = t(S.phrases === "an" ? "phraseHide" : "phraseShow");
+    phraseToggle.setAttribute("aria-pressed", String(S.phrases === "an"));
     $("practiceOpen").hidden = S.practice !== "an" || view !== "read" || pages[cur]?.status !== "done";
     const pg = pages[cur];
     $<HTMLButtonElement>("correctPageBtn").disabled = pg?.status !== "done";
@@ -1321,7 +1339,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
       const data: DataPage[] = [];
       for (const pg of pages) {
         data.push({
-          lang: pg.lang, text: pg.text, rawText: pg.rawText, paras: pg.paras, workW: pg.workW, workH: pg.workH, corners: pg.corners, question: pg.question || "",
+          lang: pg.lang, text: pg.text, rawText: pg.rawText, paras: pg.paras, workW: pg.workW, workH: pg.workH, corners: pg.corners, question: pg.question || "", phraseCues: pg.phraseCues,
           input: (await blobBytes(pg.inputBlob)) || (pg.canvas ? await blobBytes(await canvasBlob(pg.canvas)) : null),
           photo: (await blobBytes(pg.photoBlob)) || (pg.photo ? await blobBytes(await canvasBlob(pg.photo, 0.8)) : null),
           clean: (await blobBytes(pg.cleanBlob)) || (await urlBytes(pg.clean)),
@@ -1394,7 +1412,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
         const id = uid();
         const rec: PageRecord = {
           id, bookId: b.id, lang: p.lang, status: "done", text: p.text, rawText: p.rawText, paras: p.paras || null,
-          workW: p.workW, workH: p.workH, corners: p.corners || null, question: p.question || "",
+          workW: p.workW, workH: p.workH, corners: p.corners || null, question: p.question || "", phraseCues: p.phraseCues,
           inputBlob: p.input ? new Blob([p.input as BlobPart], { type: "image/jpeg" }) : null,
           photoBlob: p.photo ? new Blob([p.photo as BlobPart], { type: "image/jpeg" }) : null,
           cleanBlob: p.clean ? new Blob([p.clean as BlobPart], { type: "image/jpeg" }) : null,
@@ -1838,6 +1856,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   }
   window.addEventListener("popstate", e => { restoreLocation(e.state?.laese === "read"); });
   function showStart(fromHistory = false) {
+    phraseEditor.close();
     practice.close();
     navigationId++;
     // Return through the app's own history entries, also after deleting the book, so Back

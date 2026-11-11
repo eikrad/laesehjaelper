@@ -423,6 +423,13 @@ body.focus .together { display: none !important; }
 .practice-dialog input[type=checkbox] { width: 44px; height: 44px; vertical-align: middle; }
 .practice-dialog summary { min-height: 44px; padding: 10px 0; box-sizing: border-box; cursor: pointer; }
 .bookbar { flex-wrap: wrap; }
+.phrase-cue::before { content: "/"; color: #555; padding: 0 .18em; }
+#phraseChoices { font: 1.3rem var(--font); white-space: pre-wrap; line-height: 2.8; overflow-wrap: anywhere; }
+#phraseChoices button { min-width: 44px; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+#phraseChoices button.on { color: white; background: var(--blue); }
+.phrase-preview { font: 1.5rem/1.8 var(--font); overflow-wrap: anywhere; }
+.phrase-preview .w { white-space: normal; cursor: auto; }
+.practice-nav span { white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -499,6 +506,7 @@ body.focus .together { display: none !important; }
   <section id="app" hidden>
     <div class="bookbar">
       <strong id="readingTitle" class="reading-only"></strong>
+      <button id="phraseToggle" class="btn-ghost small reading-only" hidden aria-pressed="false"></button>
       <button id="practiceOpen" class="btn-ghost small reading-only" data-t="practiceTitle" hidden></button>
       <div class="reading-entry reading-only">
         <button class="btn-ghost small" id="editBookBtn" data-t="editBook" aria-haspopup="menu" aria-expanded="false" aria-controls="editEntry"></button>
@@ -530,6 +538,7 @@ body.focus .together { display: none !important; }
     <div class="workshop-grid">
     <div class="thumbs" id="thumbs"></div>
     <article class="pagecard">
+      <div class="workshop-only"><button class="btn-ghost" id="phraseEdit" data-t="phraseEdit"></button></div>
       <div class="workshop-only" id="pagePhotoTools" hidden>
         <div class="workshop-tools page-photo-tools">
           <button class="btn-ghost" id="insertBeforeBtn" data-t="insertBefore"></button>

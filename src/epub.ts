@@ -7,6 +7,7 @@
 // so Læsehjælper can import the book again without losing data.
 
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+import { phraseBoundaries, phraseCues, type PhraseCues } from "./phrases";
 import type { Zippable } from "fflate";
 import type { Corners, Frame, Para } from "./types";
 
@@ -32,6 +33,7 @@ export interface DataPage {
   corners?: Frame | Corners | null;
   /** custom question for reading together */
   question?: string;
+  phraseCues?: PhraseCues;
   input?: Uint8Array | null;
   /** Uncropped photo for later changes to the page frame. */
   photo?: Uint8Array | null;
@@ -110,7 +112,7 @@ ${pages.map((_, i) => `<li><a href="page${i + 1}.xhtml">${esc(opts.pageLabel)} $
       const pageImg = pages[i]?.image ? `../images/page${n}.jpg` : null;
       if (p.clean && !pageImg) add(`laesehjaelper/clean${n}.jpg`, p.clean, "image/jpeg", `dcl${n}`);
       return {
-        lang: p.lang, text: p.text, rawText: p.rawText, paras: p.paras, workW: p.workW, workH: p.workH, corners: p.corners, question: p.question || "",
+        lang: p.lang, text: p.text, rawText: p.rawText, paras: p.paras, workW: p.workW, workH: p.workH, corners: p.corners, question: p.question || "", phraseCues: p.phraseCues,
         input: p.input ? `input${n}.jpg` : null, photo: p.photo ? `photo${n}.jpg` : null, clean: pageImg || (p.clean ? `clean${n}.jpg` : null),
       };
     }),
@@ -165,6 +167,7 @@ export function readEpub(bytes: Uint8Array): DataBook | null {
       workH: p.workH as number | undefined,
       corners: (p.corners as Frame | Corners | null) ?? null,
       question: typeof p.question === "string" ? p.question : "",
+      phraseCues: p.phraseCues ? phraseCues(String(p.text || ""), phraseBoundaries(String(p.text || ""), p.phraseCues)) : undefined,
       input: file(p.input as string | null),
       photo: file(p.photo as string | null),
       clean: file(p.clean as string | null),
