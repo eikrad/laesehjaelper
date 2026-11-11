@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import type { Para } from "../../src/types";
 import { expect, test } from "./fixtures";
-import { fresh } from "./helpers";
+import { expectSyllableBowsInsideBoxes, fresh } from "./helpers";
 
 // Text size and spacing settings in the book-page view (text set on the photo).
 
@@ -45,6 +45,28 @@ const slide = (page: Page, id: string, value: number) =>
   page.locator(`#${id}`).evaluate((el: HTMLInputElement, v) => { el.value = String(v); el.dispatchEvent(new Event("input", { bubbles: true })); }, value);
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
+
+test("Syllable bows remain fully inside tightly fitted text boxes", async ({ page }) => {
+  const manual = para("Sommerfuglene flyver over blomsterne i haven.", box(80, 400, 700, 510), 40, 2);
+  manual.place = manual.bbox;
+  await openBookPage(page, [para("Sommerfuglen", box(80, 200, 920, 260), 40), manual]);
+  await page.click("#setBtn");
+  for (const font of ['Verdana, "DejaVu Sans", sans-serif', '"OpenDyslexic", sans-serif']) {
+    await page.selectOption("#font", font);
+    for (const mode of ["boegen", "beides"]) {
+      await page.click(`#mode button[data-v="${mode}"]`);
+      for (const size of [20, 64]) {
+        await slide(page, "size", size);
+        await expectSyllableBowsInsideBoxes(page);
+      }
+      await slide(page, "ls", 0.25);
+      await slide(page, "lh", 3);
+      await expectSyllableBowsInsideBoxes(page);
+    }
+  }
+  await page.click("#setBtn");
+  await expectSyllableBowsInsideBoxes(page);
+});
 
 test("The text size setting sets the size of the text on the book page, and headings stay larger", async ({ page }) => {
   await openBookPage(page, roomy);

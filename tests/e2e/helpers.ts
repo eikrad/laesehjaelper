@@ -94,6 +94,18 @@ export async function waitForText(page: Page) {
   await expect(page.locator("#reader .w").first()).toBeVisible({ timeout: 200_000 });
 }
 
+/** Complete syllable bows, including on the final line, stay inside both clipping elements. */
+export async function expectSyllableBowsInsideBoxes(page: Page) {
+  const syllables = page.locator("#reader.mode-boegen .tbox .w:not(.plain) .s");
+  await expect(syllables.first()).toBeVisible();
+  await expect.poll(() => syllables.evaluateAll(ss => ss.flatMap(s => {
+    const bow = getComputedStyle(s, "::after");
+    const bottom = s.getBoundingClientRect().bottom - parseFloat(bow.bottom);
+    const clip = Math.min(s.closest(".tbox-text")!.getBoundingClientRect().bottom, s.closest(".tbox")!.getBoundingClientRect().bottom);
+    return bottom > clip ? [{ syllable: s.textContent, clippedBy: bottom - clip, size: getComputedStyle(s).fontSize }] : [];
+  }))).toEqual([]);
+}
+
 /** Enter the current book's workshop if it is being read. */
 export async function openWorkshop(page: Page) {
   await bookOpen(page);

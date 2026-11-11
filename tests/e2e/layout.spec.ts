@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { fixture, fresh, openRecognisedBook, openWorkshop, seedBooks } from "./helpers";
+import { expectSyllableBowsInsideBoxes, fixture, fresh, openRecognisedBook, openWorkshop, seedBooks } from "./helpers";
 
 // Layout checks. Unlike the other specs, these run at every screen size the app is
 // designed for: phone, tablet portrait, tablet landscape and laptop (see playwright.config.ts).
@@ -126,6 +126,18 @@ test("The start screen fits the screen width", async ({ page }) => {
 test("A book page fits the screen width", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   expect(await sidewaysScroll(page)).toBe(0);
+});
+
+test("Syllable bows fit the book-page boxes at every screen size and after rotation", async ({ page }) => {
+  await openRecognisedBook(page, ["side-da.jpg"]);
+  await page.click("#setBtn");
+  await page.click('#mode button[data-v="beides"]');
+  await page.locator("#size").fill("64");
+  await page.click("#setBtn");
+  await expectSyllableBowsInsideBoxes(page);
+  const { width, height } = page.viewportSize()!;
+  await page.setViewportSize({ width: height, height: width });
+  await expectSyllableBowsInsideBoxes(page);
 });
 
 test("The toolbar fits on one line inside the screen in every language", async ({ page }) => {

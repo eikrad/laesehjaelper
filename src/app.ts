@@ -818,7 +818,13 @@ const Lib = { detectFrame, warpPage, orderCorners };
     const boxes = [...root.querySelectorAll<HTMLElement>(".pageview .tbox")];
     const fits = (box: HTMLElement) => {
       const text = box.querySelector<HTMLElement>(".tbox-text")!;
-      return text.scrollHeight <= text.clientHeight + 1 && text.scrollWidth <= text.clientWidth + 1;
+      // Scroll sizes are rounded to whole pixels and omit the bows' negative bottom offset.
+      // Keep the final line and its complete bow inside the actual clipping boundary.
+      const last = text.lastElementChild;
+      const syllable = text.querySelector(".w:not(.plain) .s");
+      const bow = syllable ? Math.max(0, -parseFloat(getComputedStyle(syllable, "::after").bottom) || 0) : 0;
+      return text.scrollHeight <= text.clientHeight + 1 && text.scrollWidth <= text.clientWidth + 1
+        && (!bow || !last || last.getBoundingClientRect().bottom + bow <= text.getBoundingClientRect().bottom);
     };
     /** Spacing of one box, from the default (k = 0) to the reader's (k = 1). */
     const space = (box: HTMLElement, k: number) => {
@@ -834,7 +840,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
       space(box, 0);
       // Limit the size to a little over twice the original text size.
       const maxFs = parseFloat(box.dataset.lh || "1") * (box.parentElement?.clientHeight || h) * 2.4;
-      let lo = 4, hi = Math.max(8, Math.min(h, maxFs));
+      // A short landscape viewport can scale a box below 4 px; it must still fit completely.
+      let lo = 0, hi = Math.max(8, Math.min(h, maxFs));
       for (let k = 0; k < 12; k++) {
         const mid = (lo + hi) / 2;
         box.style.fontSize = mid + "px";
