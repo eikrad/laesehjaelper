@@ -39,7 +39,7 @@ export function practiceKey(word: PracticeWord): string {
 export function savePracticeWord(words: PracticeWord[], word: PracticeWord): PracticeWord[] {
   const old = words.find(w => practiceKey(w) === practiceKey(word));
   if (!old) return [...words, word];
-  return old.source === word.source ? words : words.map(w => w === old ? { ...word, familiar: old.familiar } : w);
+  return old.source === word.source && old.pageId === word.pageId ? words : words.map(w => w === old ? { ...word, familiar: old.familiar } : w);
 }
 /** Both familiar and still-practised words remain available; no automatic mastery judgement. */
 export function reviewWords(words: PracticeWord[], readerId: string, bookId: string): PracticeWord[] {

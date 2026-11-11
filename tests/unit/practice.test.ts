@@ -7,6 +7,8 @@ describe("personal word practice", () => {
     const old = { ...practiceWord("a", "b", page, 1)!, familiar: true };
     const fresh = practiceWord("a", "b", { ...page, text: "En mus sover her." }, 1)!;
     expect(savePracticeWord([old], fresh)).toEqual([{ ...fresh, familiar: true }]);
+    const replacement = { ...old, pageId: "replacement" };
+    expect(savePracticeWord([old], replacement)).toEqual([replacement]);
   });
   it("keeps a chosen word connected to its sentence in the book", () => {
     const page = { id: "page-1", lang: "da", text: "Solen skinner. Den lille *mus* bor her.\n\nDen sover." };

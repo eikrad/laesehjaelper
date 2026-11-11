@@ -25,6 +25,14 @@ async function saveMouse(page: import("@playwright/test").Page) {
   await page.click('#reader .w[data-word="mus"]'); await page.click("#savePracticeWord");
 }
 
+test("word practice works from the one-line guide with a keyboard", async ({ page }) => {
+  await saveMouse(page);
+  await page.click("#setBtn"); await page.click('#guideSet button[data-v="line"]'); await page.click("#setBtn");
+  await page.locator('#guideLine .w[data-word="mus"]').focus(); await page.keyboard.press("Enter");
+  await expect(page.locator("#wordHelp")).toBeVisible({ timeout: 3000 });
+  await expect(page.locator("#chosenWord")).toHaveText("mus");
+});
+
 test("practice stays with its book and reader, is excluded from exports, and is removed with its book", async ({ page }, info) => {
   await saveMouse(page);
   await openWorkshop(page);
