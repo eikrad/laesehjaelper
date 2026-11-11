@@ -50,7 +50,8 @@ for (const [ui, title, practice, points] of [
   // The Danish book language stays independent from the adult's interface language.
   await page.click("#demoBtn");
   await openWorkshop(page);
-  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+  // Installation must finish before disconnecting; the offline reload then uses the active worker.
+  await page.evaluate(() => navigator.serviceWorker.ready.then(() => {}));
   await context.setOffline(true);
   await page.reload();
   const tips = page.locator("#adultTips");
