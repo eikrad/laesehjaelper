@@ -24,6 +24,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Valgfri „Linjehjælp“ under Aa: „Læselineal“ dæmper siden omkring den aktuelle linje; „Én linje“ ombryder teksten med større skrift og viser én linje ad gangen. Begge virker på bogsiden og i tekstvisningen, følger oplæsningen og starter slået fra for hver læser. Brug pilene eller tasterne ↑/↓, stryg lodret over linjetælleren, eller tryk på et ord for at vælge linjen og høre ordet.
 - Flere læsere: hvert barn har sine egne indstillinger for skrift, afstand, stavelser og oplæsning
 - Læs sammen: et par åbne spørgsmål til den voksne for hver side, også egne spørgsmål (kan slås til)
+- „Gode råd til fælles læsning“ i bogværkstedet åbner fem korte råd til den voksne. Afsnittet starter lukket og virker offline.
 - Tryk på et ord for at høre det – først helt, så langsomt stavelse for stavelse, så helt igen
 - Få hele siden læst op med markering af hvert ord, langsomt eller normalt; bagefter er det barnets tur („Hør igen“)
 - Indstilling „Bindestreger i bogen“: til læsebøger, der selv deler ord i stavelser med bindestreg eller prik („sko-le“, „sko·le“); tegn, som tekstgenkendelsen overser, bliver fundet i fotoet
@@ -89,6 +90,8 @@ Læsehjælper er et læseværktøj, ikke en behandling. Indstillingerne bygger p
 
 - **Undervisning:** Systematisk, tidlig undervisning i bogstaver, lyde og lydering er den bedst dokumenterede hjælp ved ordblindhed. Effekterne er moderate og størst i de første skoleår og ved flere timer (Hall m.fl. 2023; McArthur m.fl. 2018; Galuschka m.fl. 2014). I et dansk forsøg faldt andelen af risikobørn, der næsten ikke kunne læse ved slutningen af 1. klasse, fra 37 % til 15 % med undervisning i små grupper (Gellert m.fl. 2024). Læsehjælper erstatter ikke denne undervisning. Dansk er et af de sprog, hvor det tager længst tid at lære at læse sikkert (Seymour m.fl. 2003).
 - **Øvelse sammen med en voksen:** Forældre hjælper mest, når de lytter, mens barnet læser, og hjælper med konkrete færdigheder – mere end når de kun læser højt for barnet (Sénéchal & Young 2008). I et dansk forsøg med 1.587 elever i 2. klasse forbedrede nogle få bøger og enkle råd læsningen: ros indsatsen, tal om historien, og ret ikke hver lille fejl (Andersen & Nielsen 2016). Læseapps virker langt bedre, når en voksen er med (McTigue m.fl. 2020).
+
+De valgfrie råd i værkstedet bygger på Andersen & Nielsen (2016) og Sénéchal & Young (2008), som er citeret nedenfor. Det danske forsøg afprøvede bøger og forældreråd sammen, ikke denne vejledning i appen.
 
 **Indstillingerne hjælper mindre og ikke alle børn:**
 

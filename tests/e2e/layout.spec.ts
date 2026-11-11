@@ -7,6 +7,27 @@ import { fixture, fresh, openRecognisedBook, openWorkshop, seedBooks } from "./h
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
+test("Adult reading tips fit every screen in every interface language", async ({ page }, info) => {
+  await page.click("#demoBtn");
+  await openWorkshop(page);
+  const tips = page.locator("#adultTips");
+  for (const ui of ["da", "de", "en"]) {
+    await page.click(`#uiLang button[data-v="${ui}"]`);
+    const summary = tips.locator("summary");
+    await summary.click();
+    await expect(tips.locator("li")).toHaveCount(5);
+    const bounds = (await tips.boundingBox())!;
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+    expect(await sidewaysScroll(page)).toBe(0);
+    await expect.poll(() => smallControls(page, 44, "#adultTips")).toEqual([]);
+    await tips.screenshot({ path: info.outputPath(`adult-tips-${ui}.png`) });
+    await summary.click();
+  }
+  await page.click("#readBookBtn");
+  await expect(tips).toBeHidden();
+});
+
 test("Reading guides fit every screen with usable controls and a single large row", async ({ page }, info) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   for (const mode of ["ruler", "line"]) {
