@@ -77,6 +77,15 @@ function curvedPhoto(): string {
 }
 
 const pages: Record<string, string> = {
+  "side-comic.jpg": `<body style="margin:0;width:1200px;height:1600px;background:#fffaf0;font-family:'DejaVu Sans',sans-serif;color:#222">
+    <svg width="1200" height="1600" style="position:absolute"><ellipse cx="410" cy="330" rx="320" ry="180" fill="none" stroke="#444" stroke-width="4"/><ellipse cx="790" cy="750" rx="290" ry="130" fill="none" stroke="#444" stroke-width="4"/><path d="M140 850L240 1030L40 1030Z" fill="#5590bc"/></svg>
+    <div style="position:absolute;left:140px;top:70px;font-size:40px">Small adventures</div>
+    <div style="position:absolute;left:240px;top:210px;font-size:78px">Wow!</div>
+    <div style="position:absolute;left:150px;top:350px;font-size:42px">Tara builds a kite.</div>
+    <div style="position:absolute;left:570px;top:725px;font-size:42px">We can fly it.</div>
+    <div style="position:absolute;left:110px;top:1160px;font-size:42px">Now the kite sails above the trees.</div>
+    <div style="position:absolute;left:160px;top:1440px;font-size:22px;line-height:34px">Original test footer. These words belong to the small print.<br>This invented page is made only for automated testing.</div>
+  </body>`,
   "foto-curved-auto.jpg": curvedPhoto(),
   // Lines that start right beside an illustration (issue #3).
   "side-bjorn.jpg": `<body style="margin:0;width:1200px;height:1600px;background:#fbf2dc;font-family:'DejaVu Serif',serif;color:#2a2420">
