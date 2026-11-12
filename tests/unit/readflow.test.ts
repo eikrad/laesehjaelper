@@ -24,15 +24,21 @@ describe("showYourTurn", () => {
 });
 
 describe("wordSteps", () => {
-  it("Keeps Danish words intact in the slow step instead of speaking isolated written syllables", () => {
-    expect(wordSteps("pige", ["pi", "ge"], "da")).toEqual([
+  it("offers actual Danish syllables when explicitly enabled", () => {
+    expect(wordSteps("pige", ["pi", "ge"], "syllables")).toEqual([
       { text: "pige", part: null, slow: false },
-      { text: "pige", part: null, slow: true },
+      { text: "pi", part: 0, slow: true },
+      { text: "ge", part: 1, slow: true },
+      { text: "pige", part: null, slow: false },
+    ]);
+  });
+  it("speaks a tapped Danish word once unless syllables are explicitly chosen", () => {
+    expect(wordSteps("pige", ["pi", "ge"])).toEqual([
       { text: "pige", part: null, slow: false },
     ]);
   });
   for (const language of ["de", "en"]) it(`Keeps whole–syllables–whole playback for ${language}`, () => {
-    expect(wordSteps("Radio", ["Ra", "di", "o"], language)).toEqual([
+    expect(wordSteps("Radio", ["Ra", "di", "o"], "syllables")).toEqual([
       { text: "Radio", part: null, slow: false },
       { text: "Ra", part: 0, slow: true },
       { text: "di", part: 1, slow: true },
@@ -41,10 +47,12 @@ describe("wordSteps", () => {
     ]);
   });
   it("Reads monosyllabic words only once", () => {
-    expect(wordSteps("sol", ["sol"], "da")).toEqual([{ text: "sol", part: null, slow: false }]);
+    expect(wordSteps("sol", ["sol"])).toEqual([{ text: "sol", part: null, slow: false }]);
+    expect(wordSteps("sol", ["sol"], "syllables")).toEqual([{ text: "sol", part: null, slow: false }]);
+    expect(wordSteps("sol", ["-", "…"], "syllables")).toEqual([{ text: "sol", part: null, slow: false }]);
   });
   it("Removes hyphens and punctuation from the syllables", () => {
-    const steps = wordSteps("Bücher-wurm", ["Bü", "cher-", "wurm"], "de");
+    const steps = wordSteps("Bücher-wurm", ["Bü", "cher-", "wurm"], "syllables");
     expect(steps.map(s => s.text)).toEqual(["Bücher-wurm", "Bü", "cher", "wurm", "Bücher-wurm"]);
     expect(steps.map(s => s.part)).toEqual([null, 0, 1, 2, null]);
   });

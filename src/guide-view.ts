@@ -36,6 +36,13 @@ export class ReadingGuide {
       const word = (e.target as HTMLElement).closest<HTMLElement>(".w");
       if (word) { this.follow(Number(word.dataset.i)); this.speakWord(word); }
     };
+    // Cloning a visible line copies word-button semantics, but not its event listeners.
+    this.strip.onkeydown = e => {
+      const word = (e.target as HTMLElement).closest<HTMLElement>('.w[role="button"]');
+      if (word && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault(); e.stopPropagation(); this.follow(Number(word.dataset.i)); this.speakWord(word);
+      }
+    };
     this.window.id = "guideWindow"; this.window.className = "guide-window"; this.window.setAttribute("aria-hidden", "true");
     new ResizeObserver(() => requestAnimationFrame(() => this.refresh())).observe(reader.parentElement!);
     document.fonts.addEventListener("loadingdone", () => this.refresh());

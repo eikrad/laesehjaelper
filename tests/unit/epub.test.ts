@@ -22,6 +22,13 @@ function sample() {
 }
 
 describe("EPUB", () => {
+  it("round-trips adult phrase annotations without inserting marks into stored text", () => {
+    const text = "En lille mus bor her.";
+    const phraseCues = { source: text, after: [2] };
+    const bytes = buildEpub({ id: "phrases", title: "Prøvebog", lang: "da", css: "", fonts: [], pages: [], pageLabel: "Side", data: { title: "Prøvebog", pages: [{ lang: "da", text, phraseCues }] } });
+    expect(readEpub(bytes)!.pages[0].phraseCues).toEqual(phraseCues);
+    expect(readEpub(bytes)!.pages[0].text).toBe(text);
+  });
   it("Has a valid basic structure", () => {
     const bytes = sample();
     // The first file must be an uncompressed mimetype entry.

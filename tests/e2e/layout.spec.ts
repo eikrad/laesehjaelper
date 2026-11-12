@@ -7,6 +7,62 @@ import { expectSyllableBowsInsideBoxes, fixture, fresh, openRecognisedBook, open
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
+test("the word playback choice fits every screen in all interface languages", async ({ page }) => {
+  await page.click("#demoBtn");
+  for (const [lang, label] of [["da", "Ord – stavelser – ord"], ["de", "Wort – Silben – Wort"], ["en", "Word – syllables – word"]]) {
+    await page.click(`#uiLang button[data-v="${lang}"]`); await page.click("#setBtn");
+    const group = page.locator("#wordPlaybackSet");
+    await expect(group.locator('[data-v="syllables"]')).toHaveAccessibleName(label);
+    await group.locator('[data-v="syllables"]').click();
+    expect(await group.evaluate(e => e.scrollWidth - e.clientWidth)).toBeLessThanOrEqual(1);
+    await expect.poll(() => smallControls(page, 44, "#wordPlaybackSet")).toEqual([]);
+    await page.click("#setBtn");
+  }
+});
+
+test("adult phrase editing and large reading cues fit every screen and language", async ({ page }, info) => {
+  await seedBooks(page, [{ id: "phrases", title: "Prøvebog", texts: ["En lille mus bor her. Solen skinner."] }]);
+  await page.locator(".book").click();
+  for (const ui of ["da", "de", "en"]) {
+    await page.click(`#uiLang button[data-v="${ui}"]`); await openWorkshop(page);
+    await page.click("#phraseEdit");
+    const d = page.locator("#phraseEditor");
+    const boundary = d.locator('button[data-after="2"]');
+    await boundary.click(); await expect(boundary).toHaveAttribute("aria-pressed", "true");
+    expect(await d.evaluate(e => e.scrollWidth - e.clientWidth)).toBeLessThanOrEqual(1);
+    await expect.poll(() => smallControls(page, 44, "#phraseEditor")).toEqual([]);
+    await d.screenshot({ path: info.outputPath(`phrases-${ui}.png`) });
+    await page.click("#phraseSave"); await page.click("#readBookBtn");
+    await page.click("#setBtn"); await page.fill("#size", "48"); await page.click("#setBtn");
+    if (await page.locator("#phraseToggle").getAttribute("aria-pressed") === "false") await page.click("#phraseToggle");
+    await expect(page.locator("#reader .phrase-cue")).toHaveCount(1);
+    expect(await sidewaysScroll(page)).toBe(0);
+    // The next pass starts without old boundaries.
+    await openWorkshop(page); await page.click("#phraseEdit"); await page.click("#phraseClear"); await page.click("#phraseSave"); await page.click("#readBookBtn");
+  }
+});
+
+test("word practice fits every screen in each interface language", async ({ page }, info) => {
+  await seedBooks(page, [{ id: "practice", title: "Prøvebog", texts: ["En lille mus bor her."] }]);
+  await page.locator(".book").click();
+  for (const ui of ["da", "de", "en"]) {
+    await page.click(`#uiLang button[data-v="${ui}"]`); await page.click("#setBtn");
+    await page.click('#practiceSet button[data-v="an"]'); await page.click("#setBtn");
+    const word = page.locator('#reader .w[data-word="mus"]');
+    await word.focus(); await page.keyboard.press("Enter");
+    await page.click("#savePracticeWord"); await page.click("#practiceOpen");
+    await page.locator("#practiceReview summary").click();
+    const d = page.locator("#practiceReview"), bounds = (await d.boundingBox())!;
+    expect(bounds.x).toBeGreaterThanOrEqual(0);
+    expect(bounds.x + bounds.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+    expect(await d.evaluate(e => e.scrollWidth - e.clientWidth)).toBeLessThanOrEqual(1);
+    await expect.poll(() => smallControls(page, 44, "#practiceReview")).toEqual([]);
+    await d.screenshot({ path: info.outputPath(`practice-${ui}.png`), timeout: 5000 });
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#practiceOpen")).toBeFocused();
+  }
+});
+
 test("Adult reading tips fit every screen in every interface language", async ({ page }, info) => {
   await page.click("#demoBtn");
   await openWorkshop(page);

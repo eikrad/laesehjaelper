@@ -413,6 +413,23 @@ body.focus .together { display: none !important; }
   .dock button:hover:not(:disabled) { background: rgba(255,255,255,.12); }
   .dock .read:hover:not(:disabled) { background: #e9ebf0; }
 }
+.practice-dialog { font-family: var(--ui); color: var(--ink); width: min(560px, calc(100vw - 32px)); max-height: 88dvh; overflow: auto; border: 1px solid var(--line); border-radius: 18px; padding: 20px; box-sizing: border-box; }
+.practice-dialog::backdrop { background: #0007; }
+.practice-dialog button { min-width: 44px; min-height: 44px; margin: 4px; white-space: normal; }
+.practice-word { font: 2rem var(--font); overflow-wrap: anywhere; }
+.practice-nav { display: flex; align-items: center; justify-content: space-between; }
+.practice-dialog details { margin: 18px 0; }
+.practice-dialog label { display: block; padding: 12px 0; }
+.practice-dialog input[type=checkbox] { width: 44px; height: 44px; vertical-align: middle; }
+.practice-dialog summary { min-height: 44px; padding: 10px 0; box-sizing: border-box; cursor: pointer; }
+.bookbar { flex-wrap: wrap; }
+.phrase-cue::before { content: "/"; color: #555; padding: 0 .18em; }
+#phraseChoices { font: 1.3rem var(--font); white-space: pre-wrap; line-height: 2.8; overflow-wrap: anywhere; }
+#phraseChoices button { min-width: 44px; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; background: white; }
+#phraseChoices button.on { color: white; background: var(--blue); }
+.phrase-preview { font: 1.5rem/1.8 var(--font); overflow-wrap: anywhere; }
+.phrase-preview .w { white-space: normal; cursor: auto; }
+.practice-nav span { white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -489,6 +506,8 @@ body.focus .together { display: none !important; }
   <section id="app" hidden>
     <div class="bookbar">
       <strong id="readingTitle" class="reading-only"></strong>
+      <button id="phraseToggle" class="btn-ghost small reading-only" hidden aria-pressed="false"></button>
+      <button id="practiceOpen" class="btn-ghost small reading-only" data-t="practiceTitle" hidden></button>
       <div class="reading-entry reading-only">
         <button class="btn-ghost small" id="editBookBtn" data-t="editBook" aria-haspopup="menu" aria-expanded="false" aria-controls="editEntry"></button>
         <div class="entry-menu" id="editEntry" role="menu" hidden>
@@ -519,6 +538,7 @@ body.focus .together { display: none !important; }
     <div class="workshop-grid">
     <div class="thumbs" id="thumbs"></div>
     <article class="pagecard">
+      <div class="workshop-only"><button class="btn-ghost" id="phraseEdit" data-t="phraseEdit"></button></div>
       <div class="workshop-only" id="pagePhotoTools" hidden>
         <div class="workshop-tools page-photo-tools">
           <button class="btn-ghost" id="insertBeforeBtn" data-t="insertBefore"></button>
@@ -616,6 +636,8 @@ body.focus .together { display: none !important; }
       </div>
     </div>
     <h3 class="more wide" id="moreSettings" data-t="moreSettings"></h3>
+    <div class="field wide"><span class="flabel" data-t="wordPlaybackLabel"></span><div class="seg" id="wordPlaybackSet"><button data-v="word" data-t="wordPlaybackOnce"></button><button data-v="syllables" data-t="wordPlaybackSyllables"></button></div><p class="fhint" data-t="wordPlaybackHint"></p></div>
+    <div class="field wide"><span class="flabel" data-t="practiceLabel"></span><div class="seg" id="practiceSet"><button data-v="aus" data-t="off"></button><button data-v="an" data-t="togetherOn"></button></div><p class="fhint" data-t="practiceHint"></p></div>
     <div class="field wide">
       <span class="flabel" data-t="guideLabel"></span>
       <div class="seg" id="guideSet"><button data-v="aus" data-t="off"></button><button data-v="ruler" data-t="guideRuler"></button><button data-v="line" data-t="guideLine"></button></div>

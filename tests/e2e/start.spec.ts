@@ -208,6 +208,7 @@ for (const [language, word, expected, markedParts] of [
   await page.reload();
   await page.click(`#langStart button[data-v="${language}"]`);
   await page.click("#demoBtn");
+  await page.click("#setBtn"); await page.click('#wordPlaybackSet button[data-v="syllables"]'); await page.click("#setBtn");
   await page.click(`.w[data-word="${word}"]`);
   await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said.length)).toBe(4);
   const { said, marked } = await page.evaluate(() => { const w = window as unknown as { __said: string[]; __marked: string[] }; return { said: w.__said, marked: w.__marked }; });
@@ -238,16 +239,20 @@ test("Reader settings: create, switch and retain profiles", async ({ page }) => 
   await expect(page.locator("#profileDel")).toBeHidden();
   await size("26");
   await page.click("#mode button[data-v=farbe]");   // Syllable colours start off; reader 1 turns them on.
+  await page.click('#wordPlaybackSet button[data-v="syllables"]');
   await page.fill("#profileName", "Bo");
   await page.click("#profileAdd");
   await expect(page.locator("#profileSel option")).toHaveCount(2);
+  await expect(page.locator('#wordPlaybackSet button[data-v="word"]')).toHaveClass(/on/);
   await size("50");
   await page.click("#mode button[data-v=aus]");
   await page.selectOption("#profileSel", { index: 0 });
   await expect(page.locator("#size")).toHaveValue("26");
   await expect(page.locator("#reader")).toHaveClass(/mode-farbe/);
+  await expect(page.locator('#wordPlaybackSet button[data-v="syllables"]')).toHaveClass(/on/);
   await page.selectOption("#profileSel", { label: "Bo" });
   await expect(page.locator("#size")).toHaveValue("50");
+  await expect(page.locator('#wordPlaybackSet button[data-v="word"]')).toHaveClass(/on/);
   await expect(page.locator("#reader")).not.toHaveClass(/mode-farbe/);
   await page.reload();
   await expect(page.locator("#profileSel option:checked")).toHaveText("Bo");
