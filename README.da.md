@@ -34,7 +34,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 - Hver side genkendes to gange (som den er og med udlignet baggrund), så også tekst på farvede billeder bliver fundet
 - Ret den genkendte tekst; sæt selv stavelsesgrænser med `·` (f.eks. `hun·den`)
 - Kontrollerede rettelser til læseord supplerer orddelingsmønstrene: f.eks. `hun·den`, `O·ma` og `ap·ple`. De små lister dækker almindelige danske, tyske og engelske ord og bevarer den oprindelige stavning samt store og små bogstaver.
-- Flyt tekstfelter på bogens side med fingeren, eller ændr deres størrelse (under „Tjek og ret teksten“), f.eks. hvis den nye tekst går ind i et billede
+- Flyt tekstfelter på bogens side med fingeren, eller ændr deres størrelse (under „Tjek og ret teksten“), f.eks. hvis den nye tekst går ind i et billede. Felter, hvis størrelse ændres manuelt, tilpasses uafhængigt af andre afsnit op til den valgte skriftstørrelse. En trang fodnote holder derfor ikke en forstørret taleboble lille. Flytning uden størrelsesændring bevarer den automatiske tilpasning.
 - Overskrifter forbliver større end brødteksten, og fed skrift bliver fundet og vist med fed (kan rettes med `*ord*`)
 - Læsetilstand: kun teksten. På tablets og computere fylder den hele skærmen uden browserens bjælker (Fullscreen API), og forlader man fuld skærm med systemets bevægelse, slutter læsetilstanden også. På iPhone og i den installerede app er læsetilstanden som før
 - Vis den oprindelige tekst med ét tryk for at finde fejl i genkendelsen

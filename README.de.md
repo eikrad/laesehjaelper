@@ -34,7 +34,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 - Jede Seite wird zweimal erkannt (normal und mit ausgeglichenem Hintergrund), damit auch Text auf getönten Bildern erkannt wird
 - Erkannten Text korrigieren; eigene Silbengrenzen mit `·` setzen (z. B. `O·ma`)
 - Geprüfte Korrekturen für Lesewörter ergänzen die Trennmuster: etwa `hun·den`, `O·ma` und `ap·ple`. Die kleinen Listen umfassen häufige dänische, deutsche und englische Wörter und erhalten Schreibweise sowie Groß- und Kleinschreibung.
-- Textfelder auf der Buchseite mit dem Finger verschieben oder vergrößern (unter „Text prüfen und korrigieren“), z. B. wenn der neue Text in ein Bild ragt
+- Textfelder auf der Buchseite mit dem Finger verschieben oder vergrößern (unter „Text prüfen und korrigieren“), z. B. wenn der neue Text in ein Bild ragt. Manuell vergrößerte Felder passen ihre Schrift unabhängig von anderen Absätzen bis zur gewählten Schriftgröße an. Eine enge Fußzeile hält eine vergrößerte Sprechblase dadurch nicht mehr klein. Beim reinen Verschieben bleibt die automatische Größenangleichung erhalten.
 - Überschriften bleiben größer als der Fließtext, fett Gedrucktes wird erkannt und fett gesetzt (korrigierbar mit `*Wort*`)
 - Mit einem Tipp den Originaltext einblenden, um Erkennungsfehler zu finden
 - Lesemodus: nur der Text. Auf Tablets und Laptops füllt er den ganzen Bildschirm ohne Browserleisten (Fullscreen API), und wer den Vollbildmodus mit der Systemgeste verlässt, beendet auch den Lesemodus. Auf dem iPhone und in der installierten App bleibt der Lesemodus wie bisher

@@ -34,7 +34,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 - Every page is recognized twice (as is and with a flattened background), so text on tinted pictures is found too
 - Correct the recognized text; set your own syllable breaks with `·` (e.g. `hun·den`)
 - Reviewed reading-word corrections supplement print hyphenation: for example `hun·den`, `O·ma` and `ap·ple`. The small lists cover common Danish, German and English words and preserve the original spelling and case.
-- Move or resize text boxes on the book page with your finger (under “Check and correct the text”), e.g. if the new text runs into a picture
+- Move or resize text boxes on the book page with your finger (under “Check and correct the text”), e.g. if the new text runs into a picture. Explicitly resized boxes fit independently of other paragraphs, up to the chosen reading size, so a cramped footer cannot keep an enlarged speech bubble tiny. Moving a box without changing its size preserves automatic sizing.
 - Headings stay larger than body text, and bold words are detected and set in bold (editable with `*word*`)
 - Reading mode: just the text. On tablets and laptops it fills the whole screen without browser bars (Fullscreen API), and leaving fullscreen with the system gesture also ends reading mode. iPhone and the installed app keep the plain reading mode
 - Show the original text with one tap to spot recognition errors
