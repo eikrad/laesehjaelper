@@ -7,6 +7,19 @@ import { expectSyllableBowsInsideBoxes, fixture, fresh, openRecognisedBook, open
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
+test("the word playback choice fits every screen in all interface languages", async ({ page }) => {
+  await page.click("#demoBtn");
+  for (const [lang, label] of [["da", "Ord – stavelser – ord"], ["de", "Wort – Silben – Wort"], ["en", "Word – syllables – word"]]) {
+    await page.click(`#uiLang button[data-v="${lang}"]`); await page.click("#setBtn");
+    const group = page.locator("#wordPlaybackSet");
+    await expect(group.locator('[data-v="syllables"]')).toHaveAccessibleName(label);
+    await group.locator('[data-v="syllables"]').click();
+    expect(await group.evaluate(e => e.scrollWidth - e.clientWidth)).toBeLessThanOrEqual(1);
+    await expect.poll(() => smallControls(page, 44, "#wordPlaybackSet")).toEqual([]);
+    await page.click("#setBtn");
+  }
+});
+
 test("adult phrase editing and large reading cues fit every screen and language", async ({ page }, info) => {
   await seedBooks(page, [{ id: "phrases", title: "Prøvebog", texts: ["En lille mus bor her. Solen skinner."] }]);
   await page.locator(".book").click();

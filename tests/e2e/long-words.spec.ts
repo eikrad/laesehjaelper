@@ -32,9 +32,9 @@ test("With syllable colours only on long words, short words keep the text colour
   await page.click('#mode button[data-v="farbe"]');
   await expect(page.locator('#sylWordsSet button[data-v="lange"]')).toHaveClass(/\bon\b/);
   await page.click("#setBtn");
-  // Hidden syllable colours do not change the intact Danish playback sequence.
+  // Hidden syllable colours do not change the single-word playback.
   await page.click('.w[data-word="pindsvin"]');
-  await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said)).toEqual(["pindsvin", "pindsvin", "pindsvin"]);
+  await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said)).toEqual(["pindsvin"]);
 });
 
 test("Syllable arcs follow the same choice", async ({ page }) => {
