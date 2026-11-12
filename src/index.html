@@ -430,6 +430,15 @@ body.focus .together { display: none !important; }
 .phrase-preview { font: 1.5rem/1.8 var(--font); overflow-wrap: anywhere; }
 .phrase-preview .w { white-space: normal; cursor: auto; }
 .practice-nav span { white-space: nowrap; }
+.regions-dialog { width: min(720px, calc(100vw - 32px)); }
+#regionsSurface { position: relative; margin: 12px auto; touch-action: none; user-select: none; }
+#regionsSurface img { display: block; width: 100%; height: auto; pointer-events: none; }
+#regionsOverlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+#regionsOverlay rect { fill: #3335; stroke: var(--blue); stroke-width: .6; }
+.region-bounds { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.region-bounds label { min-width: 0; }
+.region-bounds input { display: block; width: 100%; min-height: 44px; }
+#regionList button { display: block; max-width: calc(100% - 8px); }
 </style>
 </head>
 <body>
@@ -563,6 +572,7 @@ body.focus .together { display: none !important; }
         <div class="editactions">
           <button class="btn-ghost" id="recropBtn"><svg class="i"><use href="#i-crop"/></svg><span data-t="cropAgain"></span></button>
           <button class="btn-ghost" id="reocrBtn"><svg class="i"><use href="#i-redo"/></svg><span data-t="ocrAgain"></span></button>
+          <button class="btn-ghost" id="ocrRegionsBtn" data-t="regionsTitle"></button>
           <button class="btn-ghost" id="moveBtn"><svg class="i"><use href="#i-crop"/></svg><span data-t="moveBoxes"></span></button>
           <button class="btn-ghost" id="resetPlaceBtn"><svg class="i"><use href="#i-redo"/></svg><span data-t="resetPlace"></span></button>
         </div>

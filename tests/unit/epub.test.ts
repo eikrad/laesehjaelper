@@ -22,6 +22,12 @@ function sample() {
 }
 
 describe("EPUB", () => {
+  it("round-trips normalized OCR exclusions without changing source text", () => {
+    const text = "An original test page.", ocrRegions = [{ x0: 0, y0: 0.85, x1: 1, y1: 1 }];
+    const bytes = buildEpub({ id: "regions", title: "Areas", lang: "en", css: "", fonts: [], pages: [], pageLabel: "Page", data: { title: "Areas", pages: [{ lang: "en", text, ocrRegions }] } });
+    expect(readEpub(bytes)!.pages[0].ocrRegions).toEqual(ocrRegions);
+    expect(readEpub(bytes)!.pages[0].text).toBe(text);
+  });
   it("round-trips adult phrase annotations without inserting marks into stored text", () => {
     const text = "En lille mus bor her.";
     const phraseCues = { source: text, after: [2] };

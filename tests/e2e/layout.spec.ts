@@ -1,11 +1,43 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { expectSyllableBowsInsideBoxes, fixture, fresh, openRecognisedBook, openWorkshop, seedBooks } from "./helpers";
+import { bookTool, expectSyllableBowsInsideBoxes, fixture, fresh, openRecognisedBook, openWorkshop, seedBooks } from "./helpers";
 
 // Layout checks. Unlike the other specs, these run at every screen size the app is
 // designed for: phone, tablet portrait, tablet landscape and laptop (see playwright.config.ts).
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
+
+test("OCR region editing fits every screen and supports drawing and keyboard controls", async ({ page }, info) => {
+  await openRecognisedBook(page, ["side-da.jpg"]);
+  for (const ui of ["da", "de", "en"]) {
+    await page.click(`#uiLang button[data-v="${ui}"]`);
+    await bookTool(page, "checkTextBtn"); await page.click("#ocrRegionsBtn");
+    const d = page.locator("#ocrRegionsEditor");
+    await expect(d).toBeVisible();
+    const surface = page.locator("#regionsSurface"); await surface.scrollIntoViewIfNeeded();
+    const r = (await surface.boundingBox())!;
+    if (info.project.use.hasTouch) {
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: r.x + r.width * 0.1, y: r.y + r.height * 0.75 }] });
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: r.x + r.width * 0.9, y: r.y + r.height * 0.95 }] });
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] }); await cdp.detach();
+    } else {
+      await page.mouse.move(r.x + r.width * 0.1, r.y + r.height * 0.75); await page.mouse.down();
+      await page.mouse.move(r.x + r.width * 0.9, r.y + r.height * 0.95, { steps: 4 }); await page.mouse.up();
+    }
+    await expect(page.locator("#regionList button")).toHaveCount(1);
+    await page.locator("#regionList button").click();
+    await page.fill("#regionTop", "85"); await page.locator("#regionAdd").focus(); await page.keyboard.press("Enter");
+    await expect(page.locator("#regionList button")).toHaveCount(1);
+    expect(await d.evaluate(e => e.scrollWidth - e.clientWidth)).toBeLessThanOrEqual(1);
+    await expect.poll(() => smallControls(page, 44, "#ocrRegionsEditor")).toEqual([]);
+    await d.evaluate(e => { e.scrollTop = 0; });
+    await d.screenshot({ path: info.outputPath(`ocr-regions-${ui}.png`) });
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#ocrRegionsBtn")).toBeFocused();
+    await page.click("#readBookBtn");
+  }
+});
 
 test("the word playback choice fits every screen in all interface languages", async ({ page }) => {
   await page.click("#demoBtn");
