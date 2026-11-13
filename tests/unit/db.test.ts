@@ -28,3 +28,14 @@ it("Saves an imported book completely or not at all", async () => {
   expect(await DB.pagesOf(book.id)).toEqual([{ id: "import-first", bookId: book.id, text: "Første side" }]);
   expect((await DB.all<{ id: string }>("books")).some(b => b.id === book.id)).toBe(true);
 });
+
+it("Replaces recognition results only if the stored page still has the expected revision", async () => {
+  await DB.put("pages", { id: "revision-page", bookId: "revision-book", text: "Earlier result" });
+  expect(await DB.replacePage({ id: "revision-page", text: "New result", revision: "new" }, undefined)).toBe(true);
+  await DB.put("pages", { id: "revision-page", text: "Newer manual edit", revision: "edited" });
+  expect(await DB.replacePage({ id: "revision-page", text: "Stale result", revision: "stale" }, "new")).toBe(false);
+  expect((await DB.all<{ id: string; text: string }>("pages")).find(p => p.id === "revision-page")?.text).toBe("Newer manual edit");
+  await DB.del("pages", "revision-page");
+  expect(await DB.replacePage({ id: "revision-page", text: "Do not restore", revision: "restored" }, "edited")).toBe(false);
+  expect((await DB.all<{ id: string }>("pages")).some(p => p.id === "revision-page")).toBe(false);
+});
