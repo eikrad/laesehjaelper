@@ -79,6 +79,62 @@ export async function fresh(page: Page) {
   await page.reload();
 }
 
+/** Open the adult's reading setup through the same optional gate as the workshop. */
+export async function openReadingSetup(page: Page) {
+  const settings = page.locator("#settings");
+  if (!await settings.evaluate(el => el.classList.contains("open") && el.classList.contains("adult-setup"))) {
+    if (await settings.evaluate(el => el.classList.contains("open"))) await page.click("#setClose");
+    if (await page.locator("body").evaluate(el => el.classList.contains("workshop"))) {
+      await page.click("#setBtn"); await page.click("#readingSetupLink");
+    } else {
+      const entry = page.locator("#editBookBtn");
+      if (await page.locator('#gateSet button.on').getAttribute("data-v") === "an") {
+        await entry.focus(); await page.keyboard.down("Enter");
+        await expect(page.locator("#editEntry")).toBeVisible();
+        await page.keyboard.up("Enter");
+      } else await entry.click();
+      await page.click("#readingSetupBtn");
+    }
+  }
+  // Existing feature regressions exercise choices across several groups. All groups can be
+  // expanded by the adult; the controls-redesign spec separately checks the compact entry.
+  for (const section of await page.locator("#adultSettings > details").all()) {
+    if (!await section.evaluate(el => (el as HTMLDetailsElement).open)) await section.locator(":scope > summary").click();
+  }
+}
+
+/** Toggle detailed setup for existing reading-feature tests that previously used the Aa sheet. */
+export async function toggleReadingSetup(page: Page) {
+  if (await page.locator("#settings").evaluate(el => el.classList.contains("open"))) await page.click("#setClose");
+  else await openReadingSetup(page);
+}
+
+/** Interface language is on the shelf and in adult app settings, outside ordinary reading. */
+export async function setUiLanguage(page: Page, language: string) {
+  const selector = `#uiLang button[data-v="${language}"]`;
+  if (await page.locator(selector).isVisible()) { await page.click(selector); return; }
+  const wasOpen = await page.locator("#settings").evaluate(el => el.classList.contains("open"));
+  const wasAdult = await page.locator("#settings").evaluate(el => el.classList.contains("adult-setup"));
+  await openReadingSetup(page);
+  await page.click(selector);
+  if (!wasOpen || !wasAdult) {
+    await page.click("#setClose");
+    if (wasOpen) await page.click("#setBtn");
+  }
+}
+
+/** Book-language and printed-hyphen choices belong to preparation. */
+export async function openBookOptions(page: Page) {
+  await openWorkshop(page);
+  const options = page.locator("#bookOptions");
+  if (!await options.evaluate(el => (el as HTMLDetailsElement).open)) await options.locator("summary").click();
+}
+
+/** Reading has a compact shelf button; the workshop keeps its app-header home link. */
+export async function goShelf(page: Page) {
+  await page.click(await page.locator("#homeBtn").isVisible() ? "#homeBtn" : "#home");
+}
+
 /** Load photos through the main button and confirm each one in the crop dialog. */
 export async function addPhotos(page: Page, files: string[], input = "#file") {
   await page.setInputFiles(input, files.map(fixture));

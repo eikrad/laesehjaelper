@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { fresh, seedBooks } from "./helpers";
+import { fresh, seedBooks, setUiLanguage } from "./helpers";
 
 for (const [lang, correct, back] of [
   ["da", "Ret denne side", "Tilbage til læsning"],
@@ -9,7 +9,7 @@ for (const [lang, correct, back] of [
   test(`Correct the current page in two taps and return to reading (${lang})`, async ({ page }) => {
     await fresh(page);
     await seedBooks(page, [{ id: "correct", title: "En original prøvebog", texts: ["Første side.", "En forkert original sætning.", "Sidste side."], lastPage: 1 }]);
-    await page.click(`#uiLang button[data-v=${lang}]`);
+    await setUiLanguage(page, lang);
     await page.locator(".book").click();
     await page.click("#editBookBtn");
     await page.getByRole("menuitem", { name: correct, exact: true }).click({ timeout: 1500 });

@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "./fixtures";
-import { fixture, fresh, seedBooks } from "./helpers";
+import { fixture, fresh, goShelf, seedBooks } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
@@ -35,14 +35,14 @@ test("Leaving image preparation cannot open a crop or add a page in another book
     document.dispatchEvent(new ClipboardEvent("paste", { clipboardData: data }));
   }, bytes);
   await page.waitForFunction(() => "releaseTestImage" in window);
-  await page.click("#home");
+  await goShelf(page);
   await expect(page.locator("#start")).toBeVisible();
   await page.locator(".book", { hasText: "Original book B" }).click();
   await expect(page.locator("#reader")).toContainText("Original page B.");
   await page.evaluate(() => (window as unknown as { releaseTestImage: () => Promise<void> }).releaseTestImage());
   await expect(page.locator("#crop")).toBeHidden({ timeout: 1500 });
   await expect(page.locator("#count")).toHaveText("1 / 1");
-  await page.click("#home");
+  await goShelf(page);
   await expect(page.locator("#start")).toBeVisible();
   await page.locator(".book", { hasText: "Original book B" }).click();
   await expect(page.locator("#count")).toHaveText("1 / 1");

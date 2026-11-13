@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, fixture, fresh, openRecognisedBook, openWorkshop, waitForText } from "./helpers";
+import { addPhotos, bookTool, fixture, fresh, goShelf, openBookOptions, openRecognisedBook, openWorkshop, toggleReadingSetup, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -60,17 +60,17 @@ test("Book with multiple pages: navigate, add, reorder and delete pages", async 
 
 test("Font, syllable hyphens in the book and reading mode", async ({ page }) => {
   await page.click("#demoBtn");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.selectOption("#font", { label: "OpenDyslexic" });
   expect(await page.locator("#reader").evaluate(el => getComputedStyle(el).fontFamily)).toContain("OpenDyslexic");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await bookTool(page, "checkTextBtn");
   await page.locator("#text").fill("Vi går i sko-le.");
   await expect(page.locator('#reader .w[data-word="sko-le"]')).toHaveCount(1);
-  await page.click("#setBtn");
+  await openBookOptions(page);
   await page.click("#hyphSet button[data-v=bog]");
   await expect(page.locator('#reader .w[data-word="skole"] .s')).toHaveText(["sko", "le"]);
-  await page.click("#setBtn");
+  await page.locator("#bookOptions > summary").click();
   await page.click("#focusBtn");
   await expect(page.locator("body")).toHaveClass(/focus/);
   await expect(page.locator(".thumbs")).toBeHidden();
@@ -92,7 +92,7 @@ test("Opening another book resets its editing tools", async ({ page }) => {
   await page.click("#demoBtn");
   await bookTool(page, "checkTextBtn");
   await expect(page.locator("#edit")).toBeVisible();
-  await page.click("#home");
+  await goShelf(page);
   await expect(page.locator("#start")).toBeVisible();
   // Keyboard activation also starts a calm book, without relying on an outside pointer tap.
   await page.locator("#demoBtn").press("Enter");
@@ -111,15 +111,16 @@ test("Closing the text editor also ends moving text boxes", async ({ page }) => 
   await expect(page.locator("#reader")).not.toHaveClass(/moving/);
 });
 
-test("Reading mode shows only the text, read aloud and close", async ({ page }) => {
+test("Reading mode keeps page navigation and hides book preparation", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   await openWorkshop(page);
   await page.click("#focusBtn");
   await expect(page.locator("#reader")).toBeVisible();
   await expect(page.locator("#readBtn")).toBeVisible();
   await expect(page.locator("#focusBtn")).toBeVisible();
-  for (const id of ["#bookTitle", "#exportBtn", "#editPagesBtn", "#home", "#edit", "#thumbs", "#prev", "#next", "#setBtn"])
+  for (const id of ["#bookTitle", "#exportBtn", "#editPagesBtn", "#home", "#edit", "#thumbs", "#setBtn"])
     await expect(page.locator(id), id).toBeHidden();
+  for (const id of ["#prev", "#next"]) await expect(page.locator(id)).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator("#bookTitle")).toBeVisible();
   // Page-management controls must also disappear if editing was already active.
@@ -160,7 +161,7 @@ test("Returns to the start page using the button and logo", async ({ page }) => 
   await page.click("#homeBtn");
   await expect(page.locator("#start")).toBeVisible();
   await page.click("#demoBtn");
-  await page.click("#home");
+  await goShelf(page);
   await expect(page.locator("#start")).toBeVisible();
 });
 
@@ -175,7 +176,7 @@ test("Preserves corrections when switching the syllable-hyphen setting", async (
   const t = await page.locator("#text").inputValue();
   await page.locator("#text").fill(t.replace("Pindsvinet", "Pindsvinet Bob-by"));
   await expect(page.locator('#reader .w[data-word="Bob-by"]')).toHaveCount(1);
-  await page.click("#setBtn");
+  await openBookOptions(page);
   await page.click("#hyphSet button[data-v=bog]");
   await expect(page.locator('#reader .w[data-word="Bobby"] .s')).toHaveText(["Bob", "by"]);
   await page.click("#hyphSet button[data-v=normal]");

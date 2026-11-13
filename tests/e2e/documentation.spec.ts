@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { fresh } from "./helpers";
+import { fresh, setUiLanguage, toggleReadingSetup } from "./helpers";
 
 test("Research links use the README for the selected interface language", async ({ page }) => {
   for (const [ui, file, anchor] of [
@@ -8,9 +8,9 @@ test("Research links use the README for the selected interface language", async 
     ["en", "README.md", "what-does-the-research-say"],
   ]) {
     await fresh(page);
-    await page.click(`#uiLang button[data-v=${ui}]`);
+    await setUiLanguage(page, ui);
     await page.click("#demoBtn");
-    await page.click("#setBtn");
+    await toggleReadingSetup(page);
     await page.locator("#evidence summary").click();
     await expect(page.locator("#evidence a")).toHaveAttribute("href", `https://github.com/eikrad/laesehjaelper/blob/main/${file}#${anchor}`, { timeout: 1500 });
   }
@@ -19,7 +19,7 @@ test("Research links use the README for the selected interface language", async 
 test("Font and PDF licences ship with the app and remain readable offline", async ({ page, context }) => {
   for (const [ui, label] of [["da", "Licenser og skrifter"], ["de", "Lizenzen und Schriften"], ["en", "Licences and fonts"]]) {
     await fresh(page);
-    await page.click(`#uiLang button[data-v=${ui}]`);
+    await setUiLanguage(page, ui);
     await page.locator('.foot .disclaimer summary').click();
     await expect(page.locator("#licensesLink")).toHaveText(label, { timeout: 1500 });
     await expect(page.locator("#licensesLink")).toHaveAttribute("href", "licenses.html");

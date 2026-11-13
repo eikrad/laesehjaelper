@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { fresh, openWorkshop, seedBooks } from "./helpers";
+import { fresh, goShelf, openWorkshop, seedBooks } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
@@ -49,7 +49,7 @@ test("While a book is open the screen stays on; on the bookshelf it may sleep", 
   await expect.poll(() => held(page)).toBe(1);
   await openWorkshop(page);
   await expect.poll(() => held(page)).toBe(1);
-  await page.click("#home");
+  await goShelf(page);
   await expect(page.locator("#start")).toBeVisible();
   await expect.poll(() => held(page)).toBe(0);
 });
@@ -115,7 +115,7 @@ test("Without the Screen Wake Lock API a book opens and reads as before", async 
   await fresh(page);
   expect(await page.evaluate(() => "wakeLock" in navigator)).toBe(false);
   await openBook(page);
-  await page.click("#home");
+  await goShelf(page);
   await expect(page.locator("#start")).toBeVisible();
   expect(errors).toEqual([]);
 });

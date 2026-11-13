@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { bookTool, fresh, openRecognisedBook, seedBooks } from "./helpers";
+import { bookTool, fresh, openBookOptions, openRecognisedBook, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -10,7 +10,7 @@ test("Books show where reading stopped and reopen on that page", async ({ page }
     ["de", "Neues Buch", "Auf Seite 2 von 3 weiterlesen"],
     ["en", "New book", "Continue on page 2 of 3"],
   ]) {
-    await page.click(`#uiLang button[data-v=${lang}]`);
+    await setUiLanguage(page, lang);
     await expect(page.locator("#drop")).toContainText(action);
     await expect(page.locator(".book")).toContainText(progress);
   }
@@ -38,9 +38,9 @@ test.describe("Books with recognition in progress", () => {
 
 test("The start page supports all three languages", async ({ page }) => {
   await expect(page.locator(".cta strong")).toHaveText("Tag et billede af en side");
-  await page.click("#uiLang button[data-v=de]");
+  await setUiLanguage(page, "de");
   await expect(page.locator(".cta strong")).toHaveText("Eine Seite fotografieren");
-  await page.click("#uiLang button[data-v=en]");
+  await setUiLanguage(page, "en");
   await expect(page.locator(".cta strong")).toHaveText("Take a photo of a page");
   await page.reload();
   await expect(page.locator(".cta strong")).toHaveText("Take a photo of a page"); // The setting persists.
@@ -59,7 +59,7 @@ test("The sample page shows syllables and Back returns to the start page", async
 
 test("Settings: syllable arcs and a custom color", async ({ page }) => {
   await page.click("#demoBtn");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click("#mode button[data-v=boegen]");
   await expect(page.locator("#reader")).toHaveClass(/mode-boegen/);
   await expect(page.locator("#reader")).not.toHaveClass(/mode-farbe/);
@@ -71,34 +71,23 @@ test("Settings: syllable arcs and a custom color", async ({ page }) => {
 test("Settings close with the close button, Escape or a tap outside", async ({ page }) => {
   await page.click("#demoBtn");
   const settings = page.locator("#settings");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await expect(settings).toHaveClass(/open/);
   await page.click("#setClose");
   await expect(settings).not.toHaveClass(/open/);
   await expect(page.locator("#setBtn")).not.toHaveClass(/on/);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.keyboard.press("Escape");
   await expect(settings).not.toHaveClass(/open/);
   // The first tap outside only closes the panel: the logo does not lead home.
-  await page.click("#setBtn");
-  await page.click("#home");
+  await toggleReadingSetup(page);
+  await page.click("#homeBtn");
   await expect(settings).not.toHaveClass(/open/);
   await expect(page.locator("#app")).toBeVisible();
   // The toolbar stays usable while the panel is open.
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click("#focusBtn");
   await expect(page.locator("body")).toHaveClass(/focus/);
-});
-
-test("The most used settings come first, the rest under More settings", async ({ page }) => {
-  await page.click("#demoBtn");
-  await page.click("#setBtn");
-  const order = await page.evaluate(() => {
-    const ids = ["size", "mode", "font", "viewSet", "rateSet", "moreSettings", "profileSel", "ls"];
-    return ids.sort((a, b) => document.getElementById(a)!.compareDocumentPosition(document.getElementById(b)!) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1);
-  });
-  expect(order).toEqual(["size", "mode", "font", "viewSet", "rateSet", "moreSettings", "profileSel", "ls"]);
-  await expect(page.locator("#moreSettings")).toHaveText("Flere indstillinger");
 });
 
 test("Each hint in the settings sits under its own choice", async ({ page }) => {
@@ -110,7 +99,7 @@ test("Each hint in the settings sits under its own choice", async ({ page }) => 
 test("Escape closes settings while the text editor has focus", async ({ page }) => {
   await page.click("#demoBtn");
   await bookTool(page, "checkTextBtn");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.locator("#text").focus();
   await page.keyboard.press("Escape");
   await expect(page.locator("#settings")).not.toHaveClass(/open/);
@@ -123,7 +112,7 @@ test("Dismissing settings does not drag a text box underneath", async ({ page })
   const box = page.locator("#reader .tbox").first();
   await box.scrollIntoViewIfNeeded();
   const before = await box.evaluate((el: HTMLElement) => [el.style.left, el.style.top, el.style.width, el.style.height]);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   const bounds = (await box.boundingBox())!;
   await page.mouse.move(bounds.x + 10, bounds.y + 10);
   await page.mouse.down();
@@ -143,14 +132,14 @@ test("Increasing letter spacing also increases word spacing", async ({ page }) =
   await page.click("#demoBtn");
   const ws = () => page.locator("#reader").evaluate(el => parseFloat(getComputedStyle(el).wordSpacing));
   const before = await ws();
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.locator("#ls").evaluate((el: HTMLInputElement) => { el.value = "0.2"; el.dispatchEvent(new Event("input", { bubbles: true })); });
   expect(await ws()).toBeGreaterThan(before);
 });
 
 test("Settings explain the research evidence accurately", async ({ page }) => {
   await page.click("#demoBtn");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   const box = page.locator("#evidence");
   await box.locator("summary").click();
   await expect(box).toContainText("OpenDyslexic");
@@ -173,16 +162,16 @@ test("Listen, then read: show a prompt after reading aloud and allow speed selec
   await page.click("#demoBtn");
   await page.click("#readBtn");
   await expect(page.locator("#yourTurn")).toBeVisible();
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click("#rateSet button[data-v=langsom]");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click("#yourTurn button");
   const rates = await page.evaluate(() => (window as unknown as { __rates: number[] }).__rates);
   expect(rates.length).toBe(2);
   expect(rates[1]).toBeLessThan(rates[0]);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click("#turnSet button[data-v=aus]");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click("#readBtn");
   await page.waitForTimeout(200);
   await expect(page.locator("#yourTurn")).toBeHidden();
@@ -208,7 +197,7 @@ for (const [language, word, expected, markedParts] of [
   await page.reload();
   await page.click(`#langStart button[data-v="${language}"]`);
   await page.click("#demoBtn");
-  await page.click("#setBtn"); await page.click('#wordPlaybackSet button[data-v="syllables"]'); await page.click("#setBtn");
+  await toggleReadingSetup(page); await page.click('#wordPlaybackSet button[data-v="syllables"]'); await toggleReadingSetup(page);
   await page.click(`.w[data-word="${word}"]`);
   await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said.length)).toBe(4);
   const { said, marked } = await page.evaluate(() => { const w = window as unknown as { __said: string[]; __marked: string[] }; return { said: w.__said, marked: w.__marked }; });
@@ -220,7 +209,7 @@ for (const [language, word, expected, markedParts] of [
 test("Short lines: at most three words per line, with an option to disable", async ({ page }) => {
   await page.click("#demoBtn");
   const words = await page.locator("#reader .w").count();
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click("#linesSet button[data-v=kort]");
   await expect(page.locator("#reader br")).not.toHaveCount(0);
   expect(await page.locator("#reader .w").count()).toBe(words);
@@ -233,7 +222,7 @@ test("Short lines: at most three words per line, with an option to disable", asy
 
 test("Reader settings: create, switch and retain profiles", async ({ page }) => {
   await page.click("#demoBtn");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   const size = (v: string) => page.locator("#size").evaluate((el: HTMLInputElement, v) => { el.value = v; el.dispatchEvent(new Event("input", { bubbles: true })); }, v);
   await expect(page.locator("#profileSel option")).toHaveCount(1);
   await expect(page.locator("#profileDel")).toBeHidden();
@@ -257,7 +246,7 @@ test("Reader settings: create, switch and retain profiles", async ({ page }) => 
   await page.reload();
   await expect(page.locator("#profileSel option:checked")).toHaveText("Bo");
   await expect(page.locator("#size")).toHaveValue("50");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click("#profileDel");
   await page.click("#profileDel");
   await expect(page.locator("#profileSel option")).toHaveCount(1);
@@ -267,9 +256,9 @@ test("Reader settings: create, switch and retain profiles", async ({ page }) => 
 test("Reading together: two open questions and a custom question per page", async ({ page }) => {
   await page.click("#demoBtn");
   await expect(page.locator("#together")).toBeHidden();
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click("#togetherSet button[data-v=an]");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await expect(page.locator("#together")).toBeVisible();
   await expect(page.locator("#togetherQs li")).toHaveCount(2);
   await expect(page.locator("#togetherQs li").first()).toHaveText(/\?$/);
@@ -291,7 +280,7 @@ test("Text marked with *word* appears bold without asterisks", async ({ page }) 
 
 test("Danish word parts: compounds and suffixes", async ({ page }) => {
   await page.click("#demoBtn");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click("#mode button[data-v=morf]");
   const w = page.locator('#reader .w[data-word="pindsvin"]');
   await expect(w.locator(".s")).toHaveCount(2, { timeout: 30_000 });
@@ -299,6 +288,8 @@ test("Danish word parts: compounds and suffixes", async ({ page }) => {
   await expect(page.locator('#reader .w[data-word="æbletræ"] .s')).toHaveText(["æble", "træ"]);
   await expect(page.locator('#reader .w[data-word="Pindsvinet"] .s.suf')).toHaveText("et");
   // Other book languages: show a notice and keep words intact.
+  await page.locator("#setClose").click();
+  await openBookOptions(page);
   await page.click("#langSet button[data-v=de]");
   await expect(page.locator("#toast")).toContainText(/dansk|Dänisch|Danish/i);
 });

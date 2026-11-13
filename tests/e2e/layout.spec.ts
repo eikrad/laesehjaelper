@@ -1,16 +1,37 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { bookTool, expectSyllableBowsInsideBoxes, fixture, fresh, openRecognisedBook, openWorkshop, seedBooks } from "./helpers";
+import { bookTool, expectSyllableBowsInsideBoxes, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
 
 // Layout checks. Unlike the other specs, these run at every screen size the app is
 // designed for: phone, tablet portrait, tablet landscape and laptop (see playwright.config.ts).
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
+test("The reading page uses the available area above one compact helper bar", async ({ page }) => {
+  await openRecognisedBook(page, ["side-da.jpg"]);
+  await expect(async () => {
+    const bar = (await page.locator(".bookbar").boundingBox())!;
+    const dock = (await page.locator("#dock").boundingBox())!;
+    const reader = (await page.locator("#reader").boundingBox())!;
+    const paper = (await page.locator("#reader .pageview").boundingBox())!;
+    expect(bar.y + bar.height, "only a compact book header above the page").toBeLessThanOrEqual(64);
+    expect(dock.height, "one row of reading helpers").toBeLessThanOrEqual(76);
+    expect(paper.y).toBeGreaterThanOrEqual(bar.y + bar.height);
+    expect(paper.y + paper.height).toBeLessThanOrEqual(dock.y);
+    // The original fixture is 1200 × 1600. Either width or remaining height must constrain it.
+    const largest = Math.min(reader.width, (dock.y - paper.y - 4) * .75);
+    expect(paper.width, "no unused space that could enlarge the complete page").toBeGreaterThanOrEqual(largest - 2);
+    expect(paper.width / paper.height).toBeCloseTo(.75, 2);
+    expect(await page.evaluate(() => document.documentElement.scrollHeight), "reading a fitted page needs no vertical scrolling").toBeLessThanOrEqual(page.viewportSize()!.height + 1);
+  }).toPass({ timeout: 5000 });
+  await expect(page.locator("#readBtn span")).toBeVisible();
+  await expect(page.locator("#guideBtnLabel")).toBeVisible();
+});
+
 test("Book recognition options fit every screen in all interface languages", async ({ page }, info) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   for (const [ui, title] of [["da", "Genkend hele bogen igen"], ["de", "Gesamtes Buch neu erkennen"], ["en", "Recognise the entire book again"]]) {
-    await page.click(`#uiLang button[data-v="${ui}"]`); await openWorkshop(page);
+    await setUiLanguage(page, ui); await openWorkshop(page);
     await page.getByRole("button", { name: title, exact: true }).click();
     const dialog = page.locator("#bookRecognition");
     await expect(dialog).toBeVisible();
@@ -31,7 +52,7 @@ test("Book recognition options fit every screen in all interface languages", asy
 test("OCR region editing fits every screen and supports drawing and keyboard controls", async ({ page }, info) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   for (const ui of ["da", "de", "en"]) {
-    await page.click(`#uiLang button[data-v="${ui}"]`);
+    await setUiLanguage(page, ui);
     await bookTool(page, "checkTextBtn"); await page.click("#ocrRegionsBtn");
     const d = page.locator("#ocrRegionsEditor");
     await expect(d).toBeVisible();
@@ -63,13 +84,13 @@ test("OCR region editing fits every screen and supports drawing and keyboard con
 test("the word playback choice fits every screen in all interface languages", async ({ page }) => {
   await page.click("#demoBtn");
   for (const [lang, label] of [["da", "Ord – stavelser – ord"], ["de", "Wort – Silben – Wort"], ["en", "Word – syllables – word"]]) {
-    await page.click(`#uiLang button[data-v="${lang}"]`); await page.click("#setBtn");
+    await setUiLanguage(page, lang); await toggleReadingSetup(page);
     const group = page.locator("#wordPlaybackSet");
     await expect(group.locator('[data-v="syllables"]')).toHaveAccessibleName(label);
     await group.locator('[data-v="syllables"]').click();
     expect(await group.evaluate(e => e.scrollWidth - e.clientWidth)).toBeLessThanOrEqual(1);
     await expect.poll(() => smallControls(page, 44, "#wordPlaybackSet")).toEqual([]);
-    await page.click("#setBtn");
+    await toggleReadingSetup(page);
   }
 });
 
@@ -77,7 +98,7 @@ test("adult phrase editing and large reading cues fit every screen and language"
   await seedBooks(page, [{ id: "phrases", title: "Prøvebog", texts: ["En lille mus bor her. Solen skinner."] }]);
   await page.locator(".book").click();
   for (const ui of ["da", "de", "en"]) {
-    await page.click(`#uiLang button[data-v="${ui}"]`); await openWorkshop(page);
+    await setUiLanguage(page, ui); await openWorkshop(page);
     await page.click("#phraseEdit");
     const d = page.locator("#phraseEditor");
     const boundary = d.locator('button[data-after="2"]');
@@ -86,7 +107,7 @@ test("adult phrase editing and large reading cues fit every screen and language"
     await expect.poll(() => smallControls(page, 44, "#phraseEditor")).toEqual([]);
     await d.screenshot({ path: info.outputPath(`phrases-${ui}.png`) });
     await page.click("#phraseSave"); await page.click("#readBookBtn");
-    await page.click("#setBtn"); await page.fill("#size", "48"); await page.click("#setBtn");
+    await toggleReadingSetup(page); await page.fill("#size", "48"); await toggleReadingSetup(page);
     if (await page.locator("#phraseToggle").getAttribute("aria-pressed") === "false") await page.click("#phraseToggle");
     await expect(page.locator("#reader .phrase-cue")).toHaveCount(1);
     expect(await sidewaysScroll(page)).toBe(0);
@@ -99,8 +120,8 @@ test("word practice fits every screen in each interface language", async ({ page
   await seedBooks(page, [{ id: "practice", title: "Prøvebog", texts: ["En lille mus bor her."] }]);
   await page.locator(".book").click();
   for (const ui of ["da", "de", "en"]) {
-    await page.click(`#uiLang button[data-v="${ui}"]`); await page.click("#setBtn");
-    await page.click('#practiceSet button[data-v="an"]'); await page.click("#setBtn");
+    await setUiLanguage(page, ui); await toggleReadingSetup(page);
+    await page.click('#practiceSet button[data-v="an"]'); await toggleReadingSetup(page);
     const word = page.locator('#reader .w[data-word="mus"]');
     await word.focus(); await page.keyboard.press("Enter");
     await page.click("#savePracticeWord"); await page.click("#practiceOpen");
@@ -121,7 +142,7 @@ test("Adult reading tips fit every screen in every interface language", async ({
   await openWorkshop(page);
   const tips = page.locator("#adultTips");
   for (const ui of ["da", "de", "en"]) {
-    await page.click(`#uiLang button[data-v="${ui}"]`);
+    await setUiLanguage(page, ui);
     const summary = tips.locator("summary");
     await summary.click();
     await expect(tips.locator("li")).toHaveCount(5);
@@ -140,12 +161,14 @@ test("Adult reading tips fit every screen in every interface language", async ({
 test("Reading guides fit every screen with usable controls and a single large row", async ({ page }, info) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   for (const mode of ["ruler", "line"]) {
-    await page.click("#setBtn"); await page.click(`#guideSet button[data-v="${mode}"]`); await page.click("#setBtn");
+    await toggleReadingSetup(page); await page.click(`#guideSet button[data-v="${mode}"]`); await toggleReadingSetup(page);
     await expect(page.locator("#guideTools")).toBeVisible();
     const tools = (await page.locator("#guideTools").boundingBox())!;
     expect(tools.x).toBeGreaterThanOrEqual(0);
     expect(tools.x + tools.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-    expect(tools.y + tools.height).toBeLessThanOrEqual((await page.locator("#dock").boundingBox())!.y);
+    const dock = (await page.locator("#dock").boundingBox())!;
+    expect(tools.y).toBeGreaterThanOrEqual(dock.y);
+    expect(tools.y + tools.height).toBeLessThanOrEqual(dock.y + dock.height);
     for (const id of ["guidePrev", "guideNext"]) {
       const b = (await page.locator(`#${id}`).boundingBox())!;
       expect(b.width).toBeGreaterThanOrEqual(44); expect(b.height).toBeGreaterThanOrEqual(44);
@@ -179,8 +202,8 @@ test("Stored books come first, with large covers and a secondary new-book action
 
 test("Reading has one quiet editing entry in every language and fits the screen", async ({ page }) => {
   await page.click("#demoBtn");
-  for (const [lang, name] of [["da", "Rediger bog"], ["de", "Buch bearbeiten"], ["en", "Edit book"]]) {
-    await page.click(`#uiLang button[data-v=${lang}]`);
+  for (const [lang, name] of [["da", "Til voksne"], ["de", "Für Erwachsene"], ["en", "For adults"]]) {
+    await setUiLanguage(page, lang);
     await expect(page.locator("#editBookBtn")).toHaveAccessibleName(name);
     await expect(page.locator("#bookTitle")).toBeHidden();
     await expect(page.locator("#thumbs")).toBeHidden();
@@ -239,10 +262,10 @@ test("A book page fits the screen width", async ({ page }) => {
 
 test("Syllable bows fit the book-page boxes at every screen size and after rotation", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click('#mode button[data-v="beides"]');
   await page.locator("#size").fill("64");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await expectSyllableBowsInsideBoxes(page);
   const { width, height } = page.viewportSize()!;
   await page.setViewportSize({ width: height, height: width });
@@ -257,7 +280,7 @@ test("The toolbar fits on one line inside the screen in every language", async (
   for (const width of widths) {
     await page.setViewportSize({ width, height: viewport.height });
     for (const lang of ["da", "de", "en"]) {
-      await page.click(`#uiLang button[data-v=${lang}]`);
+      await setUiLanguage(page, lang);
       for (const button of await page.locator("#dock button:visible").all()) {
         const box = (await button.boundingBox())!;
         expect(box.x, `${width}px, ${lang}: ${await button.getAttribute("id")}`).toBeGreaterThanOrEqual(0);
@@ -316,11 +339,11 @@ test("On touch screens every control is at least 44 px", async ({ page }, info) 
   await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await expect.poll(() => smallControls(page), { message: "reading" }).toEqual([]);
   await expect.poll(() => smallControls(page, 48, "#dock"), { message: "reading toolbar" }).toEqual([]);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   // Measure the open sheet, not the first frame of its fade-in (all controls still invisible).
   await expect(page.locator("#settings")).toHaveCSS("opacity", "1");
   await expect.poll(() => smallControls(page), { message: "settings" }).toEqual([]);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await openWorkshop(page);
   await expect.poll(() => smallControls(page), { message: "workshop" }).toEqual([]);
   await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
@@ -417,30 +440,26 @@ test("Swiping turns the page; taps, scrolling and moving text boxes do not", asy
   await expect(count).toHaveText("1 / 2");
 });
 
-test("On wide screens big buttons at the screen edges turn the page", async ({ page }) => {
+test("Page arrows share the bottom bar and leave the reading page unobstructed", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
-  const width = page.viewportSize()!.width;
-  const prev = page.locator("#edgePrev"), next = page.locator("#edgeNext");
-  if (width < 840) {
-    await expect(next).toBeHidden();
-    return;
-  }
-  await expect(prev).toBeHidden();   // No page before the first one.
-  const box = (await next.boundingBox())!, card = (await page.locator(".pagecard").boundingBox())!;
-  expect(box.x + box.width, "at the right edge of the screen").toBeGreaterThan(width - 40);
-  expect(box.x, "beside the page, not on it").toBeGreaterThanOrEqual(card.x + card.width);
+  await expect(page.locator("#edgePrev")).toBeHidden();
+  await expect(page.locator("#edgeNext")).toBeHidden();
+  const prev = page.locator("#prev"), next = page.locator("#next");
+  await expect(prev).toBeDisabled();
+  const box = (await next.boundingBox())!, paper = (await page.locator(".pageview").boundingBox())!;
+  expect(box.y).toBeGreaterThanOrEqual(paper.y + paper.height);
   await next.click();
   await expect(page.locator("#count")).toHaveText("2 / 2");
-  await expect(next).toBeHidden();
+  await expect(next).toBeDisabled();
   await prev.click();
   await expect(page.locator("#count")).toHaveText("1 / 2");
 });
 
 test("In text view on wide screens the photo sits beside the text, otherwise above it", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click("#viewSet button[data-v=tekst]");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   const photo = page.locator("#orig"), text = page.locator("#reader");
   await expect(photo).toBeVisible();
   const p = (await photo.boundingBox())!, r = (await text.boundingBox())!;
@@ -448,7 +467,7 @@ test("In text view on wide screens the photo sits beside the text, otherwise abo
     expect(p.x + p.width, "photo left of the text").toBeLessThanOrEqual(r.x + 1);
     expect(Math.abs(p.y - r.y), "photo and text start at the same height").toBeLessThan(2);
     const prev = (await page.locator(".pagecard").boundingBox())!;
-    expect(prev.x, "room for the page buttons at the screen edges").toBeGreaterThanOrEqual(60);
+    expect(prev.x, "the text view keeps a small outer gap").toBeGreaterThanOrEqual(0);
   } else {
     expect(p.y + p.height, "photo above the text").toBeLessThanOrEqual(r.y + 1);
   }
@@ -460,9 +479,9 @@ test("In text view on wide screens the photo sits beside the text, otherwise abo
   expect(focusedCard.width, "reading mode uses the screen width").toBeGreaterThan(page.viewportSize()!.width - 4);
   await page.click("#focusBtn");
   // Without the photo, the text uses the whole card.
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click("#origToggle button[data-v=aus]");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await expect(photo).toBeHidden();
   const card = (await page.locator(".pagecard").boundingBox())!, alone = (await text.boundingBox())!;
   expect(alone.width).toBeGreaterThan(card.width - 4);
@@ -470,7 +489,7 @@ test("In text view on wide screens the photo sits beside the text, otherwise abo
 
 test("On wide screens the settings open beside the page, which stays visible; otherwise as a bottom sheet", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   const { width, height } = page.viewportSize()!;
   const panel = page.locator("#settings");
   await expect(panel).toHaveClass(/open/);
@@ -526,7 +545,7 @@ test("The parent gate supports a deliberate touch hold with visible progress", a
   test.skip(!info.project.use.hasTouch, "Touch input needs a touch screen.");
   await seedBooks(page, [{ id: "touch-gate", title: "En original prøvebog", texts: ["En original prøveside."] }]);
   await page.locator(".book").click();
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click('#gateSet button[data-v="an"]');
   await page.click("#setClose");
   const button = page.locator("#editBookBtn"), r = (await button.boundingBox())!;
@@ -550,7 +569,7 @@ test("Page photo actions fit the workshop in every language and stay out of read
     ["de", ["Seite davor einfügen", "Seite danach einfügen", "Foto ersetzen"]],
     ["en", ["Insert page before", "Insert page after", "Replace photo"]],
   ] as const) {
-    await page.click(`#uiLang button[data-v=${ui}]`);
+    await setUiLanguage(page, ui);
     await page.locator(".book").click();
     await expect(page.locator("#pagePhotoTools")).toBeHidden();
     await openWorkshop(page);
@@ -569,7 +588,7 @@ test("Page photo actions fit the workshop in every language and stay out of read
     await page.click("#focusBtn");
     await page.click("#readBookBtn");
     await expect(page.locator("#pagePhotoTools")).toBeHidden();
-    await page.click("#home");
+    await goShelf(page);
     await expect(page.locator("#start")).toBeVisible();
   }
 });

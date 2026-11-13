@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { fresh, openWorkshop } from "./helpers";
+import { fresh, openWorkshop, setUiLanguage } from "./helpers";
 
 test("Adults can open five short reading tips in the workshop and leave them out of reading", async ({ page }) => {
   await fresh(page);
@@ -46,7 +46,7 @@ for (const [ui, title, practice, points] of [
   ]],
 ] as const) test(`Adult tips follow the ${ui} interface language and work offline`, async ({ page, context }) => {
   await fresh(page);
-  await page.click(`#uiLang button[data-v="${ui}"]`);
+  await setUiLanguage(page, ui);
   // The Danish book language stays independent from the adult's interface language.
   await page.click("#demoBtn");
   await openWorkshop(page);

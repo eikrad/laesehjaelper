@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { fresh } from "./helpers";
+import { fresh, toggleReadingSetup } from "./helpers";
 
 // Word-by-word highlighting during read-aloud starts off on new devices and for new readers:
 // no benefit has been shown and it can pull children along with the voice (README,
@@ -38,10 +38,10 @@ test("A new device reads aloud without highlighting each word; the setting turns
   await readAloud(page);
   await expect(page.locator("#reader .w.speaking")).toHaveCount(0);
   await page.click("#readBtn"); // stop
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await expect(page.locator('#highlightSet button[data-v="aus"]')).toHaveClass(/\bon\b/);
   await page.click('#highlightSet button[data-v="an"]');
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await readAloud(page);
   await expect(page.locator("#reader .w.speaking")).toHaveCount(1);
 });
@@ -61,7 +61,7 @@ test("A device that used the app before keeps highlighting each word", async ({ 
 test("A newly added reader starts without word highlighting", async ({ page }) => {
   await fresh(page);
   await page.click("#demoBtn");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click('#highlightSet button[data-v="an"]');
   await page.fill("#profileName", "Bo");
   await page.click("#profileAdd");

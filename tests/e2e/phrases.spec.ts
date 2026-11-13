@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { bookTool, fresh, openWorkshop, seedBooks } from "./helpers";
+import { bookTool, fresh, openWorkshop, seedBooks, toggleReadingSetup } from "./helpers";
 
 test("an adult marks phrases and the child shows or hides them without changing the words", async ({ page }) => {
   await fresh(page);
@@ -49,8 +49,8 @@ test("phrase cues yield to short lines, retain word help, and become unavailable
   await page.click("#phraseSave"); await page.click("#readBookBtn"); await page.click("#phraseToggle");
   await page.click("#readBtn");
   await expect.poll(() => page.evaluate(() => (window as unknown as { said: string[] }).said.at(-1))).toBe("En lille mus bor her.");
-  await page.click("#setBtn"); await page.click('#linesSet button[data-v="kort"]');
-  await page.click('#practiceSet button[data-v="an"]'); await page.click("#setBtn");
+  await toggleReadingSetup(page); await page.click('#linesSet button[data-v="kort"]');
+  await page.click('#practiceSet button[data-v="an"]'); await toggleReadingSetup(page);
   await expect(page.locator("#reader .phrase-cue")).toHaveCount(0);
   await expect(page.locator("#phraseToggle")).toHaveAttribute("aria-pressed", "false");
   await page.click("#phraseToggle");

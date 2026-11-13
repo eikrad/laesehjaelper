@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 import fs from "node:fs";
-import { fixture, fresh, openRecognisedBook, openWorkshop, storedPages } from "./helpers";
+import { fixture, fresh, openRecognisedBook, openWorkshop, setUiLanguage, storedPages } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
@@ -44,7 +44,7 @@ async function seedBatch(page: import("@playwright/test").Page, photoName?: stri
     await new Promise<void>(resolve => { tx.oncomplete = () => resolve(); }); db.close();
   }, photo);
   await page.goto("/"); await page.locator(".book").click();
-  await page.click('#uiLang button[data-v="en"]');
+  await setUiLanguage(page, "en");
   await openWorkshop(page);
 }
 

@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { fixture, fresh, openWorkshop, seedBooks, storedPages, waitForText } from "./helpers";
+import { fixture, fresh, goShelf, openWorkshop, seedBooks, storedPages, waitForText } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 test.beforeEach(async ({ page }) => { await fresh(page); });
@@ -203,7 +203,7 @@ test("A photo chosen after leaving a book cannot change another book", async ({ 
   const chooser = page.waitForEvent("filechooser");
   await page.click("#replacePhotoBtn");
   const dialog = await chooser;
-  await page.click("#home");
+  await goShelf(page);
   await expect(page.locator("#start")).toBeVisible();
   // Book B is still being read from storage when the photo arrives.
   const release = await holdStorage(page);
@@ -218,7 +218,7 @@ test("A photo chosen after leaving a book cannot change another book", async ({ 
   await expect(page.locator("#count")).toHaveText("1 / 1");
   await page.reload();
   await expect(page.locator("#reader")).toContainText("Original page B.");
-  await page.click("#home");
+  await goShelf(page);
   await page.locator(".book", { hasText: "Book A" }).click();
   await expect(page.locator("#reader")).toContainText("Original page A.");
 });
@@ -319,7 +319,7 @@ test("Recognition left over from an earlier visit cannot overwrite a page after 
   // Page 1 is being recognised and page 2 waits when the book is left and opened again.
   await page.waitForFunction(() => (window as unknown as Ocr).ocrCalls === 1);
   await expect.poll(async () => (await storedPages(page)).length).toBe(2);
-  await page.click("#home");
+  await goShelf(page);
   await expect(page.locator("#start")).toBeVisible();
   await page.locator(".book").click();
   await openWorkshop(page);
