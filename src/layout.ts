@@ -170,7 +170,11 @@ function dedupe(units: Unit[]): Unit[] {
 export function parasFromOcr(...runs: OcrData[]): Para[] {
   const units: Unit[] = [];
   for (const data of runs) for (const b of data.blocks || []) for (const p of b.paragraphs || []) for (const l of p.lines || []) units.push(...lineUnits(l).map(finishUnit));
-  return groupUnits(dedupe(units)).map(rescueLeft).map((ls) => {
+  // Short standalone headings/exclamations are real text too. Require stronger support for
+  // these than for longer groups, rather than discarding every group with fewer than four letters.
+  return groupUnits(dedupe(units)).map(rescueLeft).filter(ls =>
+    letters(ls.map(l => l.text).join("")) >= 4 || ls.some(l => l.ws.some(w => strong(w) && w.confidence >= 95)),
+  ).map((ls) => {
     const hs = ls.map((l) => l.h).sort((a, b) => a - b);
     return {
       bbox: union(ls.map((l) => l.bbox)),
@@ -179,5 +183,5 @@ export function parasFromOcr(...runs: OcrData[]): Para[] {
       lh: hs[hs.length >> 1],
       raw: ls.map((l) => l.text).join("\n"),
     };
-  }).filter((g) => letters(g.raw) >= 4); // omit tiny fragments (usually from images)
+  });
 }
