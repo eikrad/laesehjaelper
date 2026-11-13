@@ -32,6 +32,21 @@ async function run<R>(store: StoreName, mode: IDBTransactionMode, fn: (o: IDBObj
 }
 
 export const DB = {
+  /** Compare and replace in one transaction: another tab's edits and deletions always win. */
+  replacePage: async <T extends { id: string; revision?: string }>(page: T, expectedRevision: string | undefined): Promise<boolean> => {
+    const d = await open();
+    return new Promise((resolve, reject) => {
+      const tx = d.transaction("pages", "readwrite"), store = tx.objectStore("pages");
+      let replaced = false;
+      const r = store.get(page.id);
+      r.onsuccess = () => {
+        if (!r.result || r.result.revision !== expectedRevision) return;
+        store.put(page); replaced = true;
+      };
+      tx.oncomplete = () => resolve(replaced);
+      tx.onabort = () => reject(tx.error);
+    });
+  },
   putBook: async (book: object, pages: readonly object[]): Promise<void> => {
     const d = await open();
     return new Promise((resolve, reject) => {

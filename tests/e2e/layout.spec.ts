@@ -7,6 +7,27 @@ import { bookTool, expectSyllableBowsInsideBoxes, fixture, fresh, openRecognised
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
+test("Book recognition options fit every screen in all interface languages", async ({ page }, info) => {
+  await openRecognisedBook(page, ["side-da.jpg"]);
+  for (const [ui, title] of [["da", "Genkend hele bogen igen"], ["de", "Gesamtes Buch neu erkennen"], ["en", "Recognise the entire book again"]]) {
+    await page.click(`#uiLang button[data-v="${ui}"]`); await openWorkshop(page);
+    await page.getByRole("button", { name: title, exact: true }).click();
+    const dialog = page.locator("#bookRecognition");
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toHaveAccessibleName(title);
+    await expect(page.locator("#batchIncludeManual")).not.toBeChecked();
+    await expect(page.locator("#batchStart")).toBeDisabled();
+    await page.locator("#batchIncludeManual").check();
+    await expect(page.locator("#batchStart")).toBeEnabled();
+    expect(await dialog.evaluate(e => e.scrollWidth - e.clientWidth)).toBeLessThanOrEqual(1);
+    await expect.poll(() => smallControls(page, 44, "#bookRecognition")).toEqual([]);
+    await dialog.screenshot({ path: info.outputPath(`book-recognition-${ui}.png`) });
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#reprocessBookBtn")).toBeFocused();
+    await page.click("#readBookBtn");
+  }
+});
+
 test("OCR region editing fits every screen and supports drawing and keyboard controls", async ({ page }, info) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   for (const ui of ["da", "de", "en"]) {

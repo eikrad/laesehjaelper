@@ -28,6 +28,8 @@ import { ReadingGuide } from "./guide-view";
 import { PracticeView } from "./practice-view";
 import { PhraseEditor } from "./phrase-view";
 import { OcrRegionsEditor } from "./ocr-regions-view";
+import { planRecognition, runRecognitionBatch, type RecognitionOutcome } from "./book-recognition";
+import { BookRecognitionView } from "./book-recognition-view";
 import { maskForOcr } from "./ocr-mask";
 import type { OcrRegion } from "./ocr-regions";
 import { phraseBoundaries, renderPhraseCues, type PhraseCues } from "./phrases";
@@ -61,6 +63,12 @@ interface Settings {
 type ChoiceKey = "wordPlayback" | "practice" | "guide" | "gate" | "mode" | "colors" | "bg" | "orig" | "lang" | "ui" | "view" | "hyph" | "rate" | "turn" | "lines" | "together" | "sylWords" | "highlight";
 
 interface Page {
+  /** False only when recognition provenance is known; missing in older books. */
+  manualEdits?: boolean;
+  /** Last saved revision, also used to reject edits or deletion from another tab. */
+  revision?: string;
+  changeVersion?: number;
+  batchDraft?: boolean;
   id?: string;
   bookId?: string | null;
   lang: string;
@@ -128,6 +136,9 @@ const Lib = { detectFrame, warpPage, orderCorners };
   // ---------- UI strings ----------
   const T: Record<string, Record<string, string>> = {
     da: {
+      batchCancelled: "Stoppet", batchFinished: "Færdig",
+      batchCancel: "Stop efter denne side", batchProgress: "{completed} afprøvet · {done} lykkedes · {failed} mislykkedes · {changed} ændret eller slettet · {remaining} tilbage", batchPage: "Side {n}", batchdone: "Genkendt", batchfailed: "Mislykkedes; tidligere indhold er bevaret", batchchanged: "Sprunget over: ændret eller slettet", batchFallback: "Ingen side fundet; tidligere beskæring bevaret",
+      batchTitle: "Genkend hele bogen igen", batchInclude: "Genkend også manuelt redigerede sider igen", batchWarning: "Dette erstatter manuelle tekstrettelser, tekstplaceringer og sætningsmarkeringer. Ældre sider uden sikker historik beskyttes også.", batchDetect: "Find og ret automatisk bogsiden op igen", batchDetectHint: "Bruger det gemte originalfoto. Hvis ingen side findes, beholdes beskæringen. En ny beskæring fjerner markerede undtagelsesområder.", batchPlan: "{n} behandles · {manual} beskyttede · {missing} uden originalfoto · {busy} i gang", batchStart: "Start genkendelse",
       regionsTitle: "Udelad områder fra tekstgenkendelsen", regionsHint: "Tegn en firkant over hvert område, der ikke skal læses, eller indtast grænserne nedenfor. Fotoet bevares.", regionsBounds: "Grænser i procent af siden", regionLeft: "Venstre (%)", regionTop: "Øverst (%)", regionRight: "Højre (%)", regionBottom: "Nederst (%)", regionAdd: "Tilføj området", regionRemove: "Fjern område {n}", regionsClear: "Fjern alle områder", regionsSave: "Gem og genkend igen", regionsReread: "Siden genkendes igen. Manuelle tekstrettelser på siden erstattes. De markerede områder bliver stående i fotoet, men kommer ikke med i læseteksten.", regionsError: "Indtast grænser fra 0 til 100 med et område, der har både bredde og højde.", regionsPreview: "Foto med områder, der udelades fra tekstgenkendelsen",
       wordPlaybackLabel: "Når du trykker på et ord", wordPlaybackOnce: "Ordet én gang", wordPlaybackSyllables: "Ord – stavelser – ord", wordPlaybackHint: "Vælg selv, om stavelserne skal læses enkeltvis. Stemmen kan udtale en stavelse anderledes end i hele ordet, især på dansk.",
       phraseEdit: "Markér læsegrupper", phraseHint: "Vælg naturlige grupper af ord. Tryk på en streg mellem ordene for at tilføje eller fjerne et skel. Tegnsætning og et fast antal ord kan ikke alene afgøre grupperne. Gem for at læse i tekstvisning.", phraseModel: "Læs med indlevelse for barnet, og lad barnet prøve med og uden mærker. Browserens stemme følger ikke nødvendigvis dine læsegrupper. Mærker erstatter korte linjer.", phrasePreview: "Forhåndsvisning", phraseAfter: "Skel efter {word}", phraseClear: "Fjern alle skel", phraseShow: "Vis læsegrupper", phraseHide: "Skjul læsegrupper",
@@ -174,6 +185,9 @@ const Lib = { detectFrame, warpPage, orderCorners };
       example: "Eksempel", addPages: "Tilføj sider", toStart: "Til forsiden", shelfTitle: "Dine bøger", pagesN: "{n} sider", page1: "1 side", untitled: "Bog uden titel", titlePh: "Bogens titel", editPages: "Rediger sider", done: "Færdig", deleteBook: "Slet bogen", confirmDelete: "Tryk igen for at slette bogen", moveLeft: "Flyt til venstre", moveRight: "Flyt til højre", deletePage: "Slet side", evTitle: "Hvad siger forskningen?", evText: "Det, der hjælper mest, er tidlig, systematisk undervisning i bogstaver og lyde – og en voksen, der lytter, mens barnet læser, hjælper med svære ord og roser indsatsen. Indstillingerne her hjælper mindre.<br><br>Mere afstand mellem bogstaverne giver færre fejl hos nogle børn, men sjældent hurtigere læsning. Korte linjer hjælper nogle børn, men ikke alle. Oplæsning hjælper forståelsen, og at høre en side og så læse den selv gør læsningen mere flydende.<br><br>Farvede stavelser kan hjælpe nogle begyndere lidt, mest ved lange ord. Slå dem fra, når barnet læser flydende.<br><br>Særlige ordblindeskrifter som OpenDyslexic og farvet baggrund har ikke vist nogen effekt i undersøgelser. Brug dem gerne, hvis barnet synes, de er rare, men ikke som behandling. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.da.md#hvad-siger-forskningen\">Kilder</a>", rateLabel: "Oplæsning", rateSlow: "Langsom", rateNormal: "Normal", highlightLabel: "Fremhæv ordene ved oplæsning", highlightOn: "Til", highlightOff: "Fra", highlightHint: "Ordene lyser op, mens de bliver læst. Det har ikke vist sig at hjælpe, men nogle børn kan lide det.", turnLabel: "Efter oplæsning", turnOn: "Din tur", turnOff: "Kun lyt", yourTurn: "Nu er det din tur. Læs siden selv.", again: "Hør igen", linesLabel: "Linjer", linesNormal: "Normale", linesShort: "Korte", linesHint: "Korte linjer med få ord hjælper nogle børn. Gælder kun, når teksten vises alene.", reader: "Læser", reader1: "Læser 1", addReader: "Tilføj", newReaderPh: "Navn på ny læser", removeReader: "Slet læser", confirmReader: "Tryk igen for at slette", readerHint: "Hver læser har sine egne indstillinger for skrift, afstand, stavelser og oplæsning.", sylWordsAll: "Alle ord", sylWordsLong: "Kun lange ord", sylHint: "Farvede stavelser starter slået fra. Slå dem til, hvis de hjælper barnet, og fra igen, når det læser flydende.", togetherLabel: "Læs sammen", togetherOn: "Til", togetherOff: "Fra", togetherHint: "Viser et par åbne spørgsmål til den voksne, der læser med. Ikke en quiz – lad barnet fortælle.", togetherTitle: "Snak om siden", ownQ: "Eget spørgsmål", ownQPh: "Skriv et spørgsmål til denne side", save: "Gem", moveBoxes: "Flyt tekstfelter", moveDone: "Færdig med at flytte", resetPlace: "Nulstil placering", moveHint: "Træk i et felt for at flytte det, eller i hjørnet for at ændre størrelsen.", morf: "Orddele", morfOnlyDa: "Orddele findes indtil videre kun for dansk.", morfFail: "Ordlisten kunne ikke hentes.", aboutTitle: "Om Læsehjælper og ansvarsfraskrivelse", aboutText: "Læsehjælper er et gratis hobbyprojekt og ikke et færdigt produkt. Tekstgenkendelse og stavelsesdeling laver fejl – tjek derfor altid teksten, før et barn læser den. Appen erstatter ikke undervisning, læsevejledning eller en udredning for ordblindhed.<br><br>Billeder og bøger bliver kun behandlet og gemt på din egen enhed og bliver ikke sendt til nogen server. Bøger er beskyttet af ophavsret: brug kun Læsehjælper til bøger, du selv har adgang til, og kun til privat brug. Del ikke omdannede bøger med andre, medmindre du har rettighederne.<br><br>Brug sker på eget ansvar og uden garanti. Kildekoden er åben: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Bøgerne kan ikke gemmes i denne browser.", cropTitle: "Tilpas siden", cropFound: "Siden er fundet. Træk i hjørnerne, hvis det ikke passer.", cropNone: "Træk hjørnerne hen til sidens kanter.", cropLoading: "Finder siden …", cropStraightening: "Retter siden op …", cropUse: "Brug", cropWhole: "Hele billedet", cropAgain: "Beskær siden igen", ocrAgain: "Genkend teksten igen", cropOf: "Billede {a} af {b}", exportBook: "Gem som e-bog", importBook: "Hent en e-bog (EPUB) fra Læsehjælper", exporting: "Laver e-bogen …", exported: "E-bogen er gemt: {name}", importFail: "Filen er ikke en e-bog fra Læsehjælper.", importing: "Henter e-bogen …", notReady: "Vent, til alle sider er genkendt.", install: "Installér som app på denne enhed", compare: "Vis den oprindelige tekst", compareOff: "Vis den nye tekst",
     },
     en: {
+      batchCancelled: "Cancelled", batchFinished: "Finished",
+      batchCancel: "Cancel after this page", batchProgress: "{completed} attempted · {done} succeeded · {failed} failed · {changed} changed or deleted · {remaining} remaining", batchPage: "Page {n}", batchdone: "Recognised", batchfailed: "Failed; previous content kept", batchchanged: "Skipped: changed or deleted", batchFallback: "No page found; existing crop kept",
+      batchTitle: "Recognise the entire book again", batchInclude: "Also recognise manually edited pages again", batchWarning: "This replaces manual text corrections, text positions and phrase boundaries. Older pages without reliable history are protected too.", batchDetect: "Automatically find and straighten the book page again", batchDetectHint: "Uses the stored original photo. If no page is found, the existing crop is kept. A new crop clears excluded areas.", batchPlan: "{n} to process · {manual} protected · {missing} without source photos · {busy} busy", batchStart: "Start recognition",
       regionsTitle: "Exclude areas from text recognition", regionsHint: "Draw a rectangle over each area to skip, or enter its bounds below. The photo is preserved.", regionsBounds: "Bounds as a percentage of the page", regionLeft: "Left (%)", regionTop: "Top (%)", regionRight: "Right (%)", regionBottom: "Bottom (%)", regionAdd: "Add area", regionRemove: "Remove area {n}", regionsClear: "Clear all areas", regionsSave: "Save and recognize again", regionsReread: "The page will be recognized again, replacing manual text corrections on this page. Marked areas remain visible in the photo and are excluded from the reading text.", regionsError: "Enter bounds from 0 to 100 for an area with both width and height.", regionsPreview: "Photo with areas excluded from recognition",
       wordPlaybackLabel: "When you tap a word", wordPlaybackOnce: "Word once", wordPlaybackSyllables: "Word – syllables – word", wordPlaybackHint: "Choose whether to hear individual syllables. The voice may pronounce them differently from the whole word, especially in Danish.",
       phraseEdit: "Mark phrase boundaries", phraseHint: "Choose natural groups of words. Select a line between words to add or remove a boundary. Punctuation and a fixed word count cannot determine every phrase. Save to read in text view.", phraseModel: "Model expressive reading for your child, then try with and without the marks. Browser speech may not follow your phrases. Phrase cues replace short-line wrapping.", phrasePreview: "Preview", phraseAfter: "Boundary after {word}", phraseClear: "Clear all boundaries", phraseShow: "Show phrase cues", phraseHide: "Hide phrase cues",
@@ -218,6 +232,9 @@ const Lib = { detectFrame, warpPage, orderCorners };
       example: "Sample", addPages: "Add pages", toStart: "Back to start", shelfTitle: "Your books", pagesN: "{n} pages", page1: "1 page", untitled: "Untitled book", titlePh: "Book title", editPages: "Edit pages", done: "Done", deleteBook: "Delete book", confirmDelete: "Tap again to delete the book", moveLeft: "Move left", moveRight: "Move right", deletePage: "Delete page", evTitle: "What does the research say?", evText: "What helps most is early, systematic teaching of letters and sounds – and an adult who listens while your child reads, helps with hard words and praises effort. The settings here help less.<br><br>More space between letters reduces errors for some children, but rarely makes reading faster. Short lines help some children, but not all. Reading aloud helps comprehension, and listening to a page and then reading it yourself makes reading more fluent.<br><br>Coloured syllables may help some beginners a little, mainly with long words. Switch them off once reading is fluent.<br><br>Special dyslexia fonts such as OpenDyslexic and coloured backgrounds have shown no effect in studies. Use them if your child finds them pleasant, but not as a treatment. <a href=\"https://github.com/eikrad/laesehjaelper/blob/main/README.md#what-does-the-research-say\">Sources</a>", rateLabel: "Reading aloud", rateSlow: "Slow", rateNormal: "Normal", highlightLabel: "Highlight words when reading aloud", highlightOn: "On", highlightOff: "Off", highlightHint: "Words light up as they are read. This has not been shown to help, but some children like it.", turnLabel: "After reading aloud", turnOn: "Your turn", turnOff: "Just listen", yourTurn: "Now it's your turn. Read the page yourself.", again: "Listen again", linesLabel: "Lines", linesNormal: "Normal", linesShort: "Short", linesHint: "Short lines with a few words help some children. Only applies when the text is shown on its own.", reader: "Reader", reader1: "Reader 1", addReader: "Add", newReaderPh: "Name of new reader", removeReader: "Delete reader", confirmReader: "Tap again to delete", readerHint: "Each reader has their own settings for font, spacing, syllables and reading aloud.", sylWordsAll: "All words", sylWordsLong: "Long words only", sylHint: "Syllable colours start switched off. Turn them on if they help your child, and off again once reading is fluent.", togetherLabel: "Read together", togetherOn: "On", togetherOff: "Off", togetherHint: "Shows a few open questions for the adult reading along. Not a quiz – let the child do the talking.", togetherTitle: "Talk about the page", ownQ: "Own question", ownQPh: "Write a question for this page", save: "Save", moveBoxes: "Move text boxes", moveDone: "Done moving", resetPlace: "Reset position", moveHint: "Drag a box to move it, or drag its corner to resize it.", morf: "Word parts", morfOnlyDa: "Word parts are only available for Danish so far.", morfFail: "The word list could not be loaded.", aboutTitle: "About Læsehjælper and disclaimer", aboutText: "Læsehjælper is a free hobby project, not a finished product. Text recognition and syllable splitting make mistakes, so always check the text before a child reads it. The app does not replace teaching, reading support or a dyslexia assessment.<br><br>Photos and books are processed and stored only on your own device and are never sent to a server. Books are protected by copyright: only use Læsehjælper for books you have access to, and only for private use. Do not share converted books unless you hold the rights.<br><br>Use at your own risk and without warranty. The source code is open: <a href=\"https://github.com/eikrad/laesehjaelper\">github.com/eikrad/laesehjaelper</a>", noStorage: "Books cannot be saved in this browser.", cropTitle: "Adjust the page", cropFound: "Page found. Drag the corners if it doesn't fit.", cropNone: "Drag the corners to the edges of the page.", cropLoading: "Looking for the page …", cropStraightening: "Straightening the page …", cropUse: "Use", cropWhole: "Whole photo", cropAgain: "Crop the page again", ocrAgain: "Recognise the text again", cropOf: "Photo {a} of {b}", exportBook: "Save as e-book", importBook: "Open a Læsehjælper e-book (EPUB)", exporting: "Creating the e-book …", exported: "E-book saved: {name}", importFail: "This file is not a Læsehjælper e-book.", importing: "Loading the e-book …", notReady: "Wait until all pages have been recognised.", install: "Install as an app on this device", compare: "Show the original text", compareOff: "Show the new text",
     },
     de: {
+      batchCancelled: "Abgebrochen", batchFinished: "Abgeschlossen",
+      batchCancel: "Nach dieser Seite abbrechen", batchProgress: "{completed} versucht · {done} erfolgreich · {failed} fehlgeschlagen · {changed} geändert oder gelöscht · {remaining} verbleibend", batchPage: "Seite {n}", batchdone: "Erkannt", batchfailed: "Fehlgeschlagen; bisheriger Inhalt erhalten", batchchanged: "Übersprungen: geändert oder gelöscht", batchFallback: "Keine Seite gefunden; bisheriger Zuschnitt erhalten",
+      batchTitle: "Gesamtes Buch neu erkennen", batchInclude: "Auch manuell bearbeitete Seiten neu erkennen", batchWarning: "Dies ersetzt manuelle Textkorrekturen, Textpositionen und Satzmarkierungen. Ältere Seiten ohne verlässlichen Verlauf werden ebenfalls geschützt.", batchDetect: "Buchseite automatisch neu finden und gerade richten", batchDetectHint: "Verwendet das gespeicherte Originalfoto. Wird keine Seite gefunden, bleibt der bisherige Zuschnitt erhalten. Ein neuer Zuschnitt entfernt ausgeschlossene Bereiche.", batchPlan: "{n} zu bearbeiten · {manual} geschützt · {missing} ohne Originalfoto · {busy} in Bearbeitung", batchStart: "Erkennung starten",
       regionsTitle: "Bereiche von der Erkennung ausschließen", regionsHint: "Ziehe ein Rechteck über jeden Bereich, der nicht gelesen werden soll, oder gib unten die Grenzen ein. Das Foto bleibt erhalten.", regionsBounds: "Grenzen in Prozent der Seite", regionLeft: "Links (%)", regionTop: "Oben (%)", regionRight: "Rechts (%)", regionBottom: "Unten (%)", regionAdd: "Bereich hinzufügen", regionRemove: "Bereich {n} entfernen", regionsClear: "Alle Bereiche entfernen", regionsSave: "Speichern und neu erkennen", regionsReread: "Die Seite wird neu erkannt. Manuelle Textkorrekturen auf dieser Seite werden ersetzt. Markierte Bereiche bleiben im Foto sichtbar und werden nicht in den Lesetext übernommen.", regionsError: "Gib Grenzen von 0 bis 100 für einen Bereich mit Breite und Höhe ein.", regionsPreview: "Foto mit von der Erkennung ausgeschlossenen Bereichen",
       wordPlaybackLabel: "Beim Antippen eines Wortes", wordPlaybackOnce: "Wort einmal", wordPlaybackSyllables: "Wort – Silben – Wort", wordPlaybackHint: "Wähle, ob Silben einzeln vorgelesen werden. Die Stimme kann sie anders aussprechen als im ganzen Wort, besonders auf Dänisch.",
       phraseEdit: "Sinngruppen markieren", phraseHint: "Wähle natürliche Wortgruppen. Tippe einen Strich zwischen Wörtern an, um eine Grenze zu setzen oder zu entfernen. Satzzeichen und eine feste Wortzahl bestimmen nicht alle Gruppen. Speichern öffnet die Textansicht.", phraseModel: "Lies deinem Kind ausdrucksvoll vor und übt dann mit und ohne Markierungen. Die Browserstimme folgt deinen Sinngruppen möglicherweise nicht. Markierungen ersetzen den kurzen Zeilenumbruch.", phrasePreview: "Vorschau", phraseAfter: "Grenze nach {word}", phraseClear: "Alle Grenzen entfernen", phraseShow: "Sinngruppen zeigen", phraseHide: "Sinngruppen ausblenden",
@@ -426,6 +443,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   let cur = 0;
   const removedPages = new Set<string>();
   const isRemoved = (pg: Page) => !!pg.id && removedPages.has(pg.id);
+  const touchPage = (pg: Page) => { pg.changeVersion = (pg.changeVersion || 0) + 1; };
 
   // ---------- Book storage (IndexedDB, on this device only) ----------
   let storageWarned = false;
@@ -447,7 +465,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   }
   function releasePageImages(pg: Page) { releaseImage(pg.img); releaseImage(pg.clean); }
   /** Pages waiting for or in recognition. They outlive leaving their book, and reopening it reuses them. */
-  function recognitionPages(): Page[] { return active ? [active, ...queue] : [...queue]; }
+  function recognitionPages(): Page[] { return [active, pendingPage, ...queue].filter((pg): pg is Page => !!pg && !pg.batchDraft); }
   function newBook(demo = false) {
     navigationId++;
     showEditEntry(false); showCheck(false);
@@ -477,7 +495,16 @@ const Lib = { detectFrame, warpPage, orderCorners };
   }
 
   /** Stored page record, without canvases or display URLs. */
-  type PageRecord = Pick<Page, "id" | "bookId" | "lang" | "status" | "text" | "rawText" | "paras" | "workW" | "workH" | "corners" | "question" | "phraseCues" | "ocrRegions" | "inputBlob" | "photoBlob" | "cleanBlob">;
+  type PageRecord = Pick<Page, "revision" | "manualEdits" | "id" | "bookId" | "lang" | "status" | "text" | "rawText" | "paras" | "workW" | "workH" | "corners" | "question" | "phraseCues" | "ocrRegions" | "inputBlob" | "photoBlob" | "cleanBlob">;
+
+  function pageRecord(pg: Page, bookId: string): PageRecord {
+    return {
+      revision: pg.revision, manualEdits: pg.manualEdits, id: pg.id, bookId, lang: pg.lang, status: pg.status === "done" ? "done" : "wait",
+      text: pg.text, rawText: pg.rawText, paras: pg.paras || null, workW: pg.workW, workH: pg.workH,
+      corners: pg.corners || null, question: pg.question || "", phraseCues: pg.phraseCues, ocrRegions: pg.ocrRegions,
+      inputBlob: pg.inputBlob || null, photoBlob: pg.photoBlob || null, cleanBlob: pg.cleanBlob || null,
+    };
+  }
 
   async function savePage(pg: Page | undefined) {
     if (!pg || isRemoved(pg)) return;
@@ -492,11 +519,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
       // that its own save stores.
       if (isRemoved(pg) || pg.canvas !== canvas || pg.photo !== photo) return;
       pg.inputBlob = inputBlob; pg.photoBlob = photoBlob;
-      await DB.put<PageRecord>("pages", {
-        id: pg.id, bookId, lang: pg.lang, status: pg.status === "done" ? "done" : "wait",
-        text: pg.text, rawText: pg.rawText, paras: pg.paras || null, workW: pg.workW, workH: pg.workH,
-        corners: pg.corners || null, question: pg.question || "", phraseCues: pg.phraseCues, ocrRegions: pg.ocrRegions, inputBlob: pg.inputBlob || null, photoBlob: pg.photoBlob || null, cleanBlob: pg.cleanBlob || null,
-      });
+      pg.revision = uid();
+      await DB.put<PageRecord>("pages", pageRecord(pg, bookId));
     } catch (e) { storageFail(e); }
   }
 
@@ -726,14 +750,17 @@ const Lib = { detectFrame, warpPage, orderCorners };
   $("practiceOpen").onclick = () => practice.open();
   const phraseEditor = new PhraseEditor(t, stopSpeech);
   const ocrRegionEditor = new OcrRegionsEditor(t, stopSpeech);
+  const batchCandidates = () => pages.map(pg => ({ pg, source: !!(pg.photo || pg.photoBlob), manualEdits: pg.manualEdits !== false || !!pg.paras?.some(pa => pa.place) || !!pg.ocrRegions?.length || !!pg.phraseCues, busy: pg.status === "wait" || pg.status === "ocr" }));
+  const bookRecognition = new BookRecognitionView(t, include => planRecognition(batchCandidates(), include), reprocessBook);
+  $("reprocessBookBtn").onclick = () => { stopSpeech(); bookRecognition.open(); };
   $("ocrRegionsBtn").onclick = async () => {
     const pg = pages[cur]; if (!pg || (pg.status !== "done" && pg.status !== "error")) return;
     const source = pg.canvas || pg.inputBlob; if (!source) return;
     const image = source instanceof HTMLCanvasElement ? source : await blobToCanvas(source);
     if (pg !== pages[cur] || (pg.canvas || pg.inputBlob) !== source || isRemoved(pg)) return;
-    ocrRegionEditor.open(image, pg.ocrRegions, regions => { pg.ocrRegions = regions; restartOcr(pg); });
+    ocrRegionEditor.open(image, pg.ocrRegions, regions => { touchPage(pg); pg.ocrRegions = regions; restartOcr(pg); });
   };
-  $("phraseEdit").onclick = () => { const pg = pages[cur]; if (pg?.status === "done") phraseEditor.open(pg.text, pg.lang, pg.phraseCues, cues => { pg.phraseCues = cues; S.view = "tekst"; savePage(pg); applySettings(); render(); }); };
+  $("phraseEdit").onclick = () => { const pg = pages[cur]; if (pg?.status === "done") phraseEditor.open(pg.text, pg.lang, pg.phraseCues, cues => { pg.manualEdits = true; touchPage(pg); pg.phraseCues = cues; S.view = "tekst"; savePage(pg); applySettings(); render(); }); };
   $("phraseToggle").onclick = () => { S.phrases = S.phrases === "an" ? "aus" : "an"; if (S.phrases === "an") S.lines = "normal"; applySettings(); render(); };
   function renderContent(pg: Page) {
     const rd = $("reader");
@@ -805,6 +832,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   };
   $<HTMLButtonElement>("resetPlaceBtn").onclick = () => {
     const pg = pages[cur]; if (!pg?.paras) return;
+    pg.manualEdits = true; touchPage(pg);
     pg.paras.forEach(pa => { delete pa.place; });
     savePage(pg); render();
   };
@@ -835,7 +863,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       el.removeEventListener("pointermove", onMove); el.removeEventListener("pointerup", onUp); el.removeEventListener("pointercancel", onUp);
       el.classList.remove("dragging");
       if (pa && (cur0.x0 !== start.x0 || cur0.y0 !== start.y0 || cur0.x1 !== start.x1 || cur0.y1 !== start.y1)) {
-        pa.place = cur0; el.dataset.manual = String(hasCustomSize(pa, W, H)); savePage(pg);
+        pg.manualEdits = true; touchPage(pg); pa.place = cur0; el.dataset.manual = String(hasCustomSize(pa, W, H)); savePage(pg);
         $<HTMLButtonElement>("resetPlaceBtn").hidden = false;
         fitPage();
       }
@@ -1149,6 +1177,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   $<HTMLTextAreaElement>("text").oninput = e => {
     const pg = pages[cur]; if (!pg) return;
     // Capture the page and value immediately: render() replaces the textarea when turning pages.
+    pg.manualEdits = true; touchPage(pg);
     pg.text = val(e); syncParas(pg);
     pg.rawText = pg.text;
     pg.paras?.forEach(pa => { pa.raw = pa.text || ""; });
@@ -1610,6 +1639,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
 
   /** A page has a new picture (cropped again or replaced): show it and recognise its text again. */
   function restartPage(pg: Page, { canvas, corners }: CropResult, change: Partial<Page> = {}) {
+    touchPage(pg);
     releasePageImages(pg);
     Object.assign(pg, { canvas, corners, ocrRegions: undefined, img: canvas.toDataURL("image/jpeg", 0.88), status: "wait", progress: 0, paras: null, clean: null, inputBlob: null, cleanBlob: null }, change);
     if (pg === pages[0] && book) book.cover = null;
@@ -1632,10 +1662,83 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     restartOcr(pg);
   };
   function restartOcr(pg: Page) {
+    touchPage(pg);
     releaseImage(pg.clean);
     Object.assign(pg, { status: "wait", progress: 0, paras: null, clean: null, cleanBlob: null });
     savePage(pg);
     queue.push(pg); render(); runQueue();
+  }
+
+  // Both single-page and book jobs share one worker at a time, including their two OCR passes.
+  let recognitionPipeline: Promise<unknown> = Promise.resolve();
+  function inRecognitionPipeline<T>(process: () => Promise<T>): Promise<T> {
+    const job = recognitionPipeline.then(process);
+    recognitionPipeline = job.catch(() => {});
+    return job;
+  }
+  const recognitionStamp = (pg: Page) => JSON.stringify([pg.changeVersion, pg.lang, pg.status, pg.text, pg.rawText, pg.paras, pg.corners, pg.ocrRegions, pg.phraseCues]);
+
+  async function reprocessBook(include: boolean, detect: boolean) {
+    const owner = book;
+    const selected = planRecognition(batchCandidates(), include).pages.map(({ pg }) => ({ pg, revision: pg.revision, number: pages.indexOf(pg) + 1, stamp: recognitionStamp(pg), canvas: pg.canvas, input: pg.inputBlob, photo: pg.photoBlob }));
+    await runRecognitionBatch(selected, {
+      cancelled: () => { if (book !== owner) bookRecognition.cancelled = true; return bookRecognition.cancelled; },
+      progress: state => bookRecognition.progress(state),
+      process: async job => {
+        let fallback = false;
+        const outcome = await inRecognitionPipeline(async (): Promise<RecognitionOutcome> => {
+          const pg = job.pg;
+          const valid = () => book === owner && pages.includes(pg) && !isRemoved(pg) && recognitionStamp(pg) === job.stamp && pg.revision === job.revision && pg.canvas === job.canvas && pg.inputBlob === job.input && pg.photoBlob === job.photo;
+          if (!valid()) return "changed";
+          // The draft owns no display URLs. The usable page remains untouched until replacement succeeds.
+          const draft: Page = { ...pg, batchDraft: true, paras: null, clean: null, cleanBlob: null, img: null, phraseCues: undefined };
+          let replaceInput = false;
+          if (detect) {
+            fallback = true;
+            try {
+              const photo = draft.photo || await blobToCanvas(draft.photoBlob!);
+              const cv = await getCv();
+              const frame = Lib.detectFrame(cv, photo);
+              if (frame) {
+                const canvas = Lib.warpPage(cv, photo, frame);
+                Object.assign(draft, { canvas, corners: frame, inputBlob: null, ocrRegions: undefined });
+                replaceInput = true; fallback = false;
+              }
+            } catch { /* Keep the existing crop when detection or straightening is unavailable. */ }
+          }
+          if (!draft.canvas && !draft.inputBlob) {
+            const photo = draft.photo || await blobToCanvas(draft.photoBlob!);
+            draft.canvas = draft.corners ? Lib.warpPage(await getCv(), photo, toFrame(draft.corners)!) : photo;
+            replaceInput = true;
+          }
+          if (replaceInput) {
+            draft.inputBlob = await canvasBlob(draft.canvas!);
+            if (!draft.inputBlob) return "failed";
+            draft.img = draft.canvas!.toDataURL("image/jpeg", 0.88);
+          }
+          if (!valid()) return "changed";
+          await recognise(draft, valid);
+          if (!valid()) return "changed";
+          if (draft.status !== "done") return "failed";
+          const replacement: Page = { ...pg, text: draft.text, rawText: draft.rawText, paras: draft.paras, workW: draft.workW, workH: draft.workH, clean: draft.clean, cleanBlob: draft.cleanBlob, manualEdits: draft.manualEdits, phraseCues: undefined, status: "done", error: undefined, revision: uid() };
+          if (replaceInput) Object.assign(replacement, { canvas: draft.canvas, corners: draft.corners, inputBlob: draft.inputBlob, img: draft.img, ocrRegions: draft.ocrRegions });
+          if (!replacement.inputBlob && replacement.canvas) replacement.inputBlob = await canvasBlob(replacement.canvas);
+          if (!replacement.photoBlob && replacement.photo) replacement.photoBlob = await canvasBlob(replacement.photo, 0.8);
+          if (!valid()) return "changed";
+          if (pg.id && pg.bookId) {
+            const record = pageRecord(replacement, pg.bookId);
+            if (!await DB.replacePage({ ...record, id: pg.id }, job.revision) || !valid()) return "changed";
+          }
+          releaseImage(pg.clean);
+          if (replaceInput) releaseImage(pg.img);
+          Object.assign(pg, replacement); touchPage(pg);
+          if (pages[cur] === pg) render(); else renderThumbStatus(pg);
+          return "done";
+        }).catch((): RecognitionOutcome => "failed");
+        bookRecognition.result(job.number, outcome, fallback);
+        return outcome;
+      },
+    });
   }
 
   // ---------- Text recognition ----------
@@ -1678,8 +1781,8 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   // A recognition job owns its page while the page's status is "ocr". Anything that gives the page a new
   // picture or language sets it back to "wait" and queues it again; the old job then drops its result.
   // Results are committed in one step after the last await, so a page never mixes two pictures.
-  async function recognise(pg: Page) {
-    const stale = () => isRemoved(pg) || pg.status !== "ocr";
+  async function recognise(pg: Page, valid = () => true) {
+    const stale = () => isRemoved(pg) || pg.status !== "ocr" || !valid();
     active = pg; pg.status = "ocr"; pg.stage = "loadingCore";
     if (pages[cur] === pg) render(); else renderThumbStatus(pg);
     try {
@@ -1716,8 +1819,8 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
       releaseImage(pg.clean);
       pg.clean = cleanCanvas ? cleanCanvas.toDataURL("image/jpeg", 0.9) : null;
       pg.cleanBlob = cleanBlob;
-      pg.status = "done";
-      savePage(pg);
+      pg.status = "done"; pg.manualEdits = !!pg.paras?.some(pa => pa.place) || !!pg.ocrRegions?.length;
+      if (!pg.batchDraft) savePage(pg);
     } catch (e) {
       console.error(e);
       if (stale()) return;
@@ -1729,12 +1832,17 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   }
 
   let running = false;
+  let pendingPage: Page | null = null;
   async function runQueue() {
     if (running) return; running = true;
     while (queue.length) {
       const pg = queue.shift()!;
       // Skip deleted pages, and pages already recognised from an earlier entry in the queue.
-      if (!isRemoved(pg) && pg.status === "wait") await recognise(pg);
+      if (!isRemoved(pg) && pg.status === "wait") {
+        pendingPage = pg;
+        await inRecognitionPipeline(() => recognise(pg));
+        pendingPage = null;
+      }
       // A page of a book that is no longer open, with no work left: nothing shows it any more.
       if (!pages.includes(pg) && !queue.includes(pg)) releasePageImages(pg);
     }
@@ -1827,6 +1935,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
 
   // Change a page language: recognize photo pages again or replace the sample page.
   function relang(pg: Page) {
+    touchPage(pg);
     pg.lang = S.lang;
     if (pg.canvas || pg.inputBlob) { pg.status = "wait"; pg.progress = 0; pg.cleanBlob = null; queue.push(pg); render(); runQueue(); }
     else { if (Object.values(DEMO).includes(pg.text)) pg.text = DEMO[pg.lang]; savePage(pg); render(); }
