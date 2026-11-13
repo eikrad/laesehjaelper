@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import type { Para } from "../../src/types";
 import { expect, test } from "./fixtures";
-import { expectSyllableBowsInsideBoxes, fresh } from "./helpers";
+import { bookTool, expectSyllableBowsInsideBoxes, fresh } from "./helpers";
 
 // Text size and spacing settings in the book-page view (text set on the photo).
 
@@ -45,6 +45,28 @@ const slide = (page: Page, id: string, value: number) =>
   page.locator(`#${id}`).evaluate((el: HTMLInputElement, v) => { el.value = String(v); el.dispatchEvent(new Event("input", { bubbles: true })); }, value);
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
+
+test("resizing a small speech box releases its font from unrelated fine print", async ({ page }) => {
+  await openBookPage(page, [
+    para("Tara bygger et fly.", box(100, 200, 350, 250), 14),
+    para("Vi ser det flyve.", box(100, 500, 600, 580), 20),
+    para("Solen skinner i dag.", box(100, 800, 650, 880), 19),
+    para("Original test note. These invented words form a long small-print paragraph used only to test independent text-box sizing.", box(100, 1200, 500, 1270), 9, 2),
+  ]);
+  const before = (await style(page, 0)).size;
+  await bookTool(page, "checkTextBtn"); await page.click("#moveBtn");
+  const resized = page.locator("#reader .tbox").first(); await resized.scrollIntoViewIfNeeded();
+  const bounds = (await resized.boundingBox())!;
+  const grip = (await resized.locator(".grip").boundingBox())!;
+  await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2); await page.mouse.down();
+  await page.mouse.move(grip.x + grip.width / 2 + 160, grip.y + grip.height / 2 + 160, { steps: 8 }); await page.mouse.up();
+  expect((await resized.boundingBox())!.height).toBeGreaterThan(bounds.height + 100);
+  await expect.poll(async () => (await style(page, 0)).size).toBeGreaterThan(before * 1.5);
+  await page.click("#setBtn"); await slide(page, "size", 44);
+  await expect.poll(async () => Math.round((await style(page, 0)).size)).toBe(44);
+  await page.reload();
+  await expect.poll(async () => Math.round((await style(page, 0)).size)).toBe(44);
+});
 
 test("Syllable bows remain fully inside tightly fitted text boxes", async ({ page }) => {
   const manual = para("Sommerfuglene flyver over blomsterne i haven.", box(80, 400, 700, 510), 40, 2);

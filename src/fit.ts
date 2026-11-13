@@ -9,15 +9,27 @@
  *   body text's count as headings. They stay visibly larger, by at least the ratio
  *   √(heading line height / body line height); if a heading lacks space, the body text shrinks.
  *   Headings of similar line height get the same size. Never enlarge a box beyond its fit.
+ * - An explicitly resized box keeps its own fit: the adult chose its area.
  * - Everything else is body text. A measured line height says little on its own: on a tilted
  *   photo long lines measure taller, and a heading that lost its capital measures smaller.
  */
-export interface FitItem { lh: number; fit: number; lines?: number }
+import type { Para } from "./types";
+
+/** Explicitly resized boxes fit independently; moving the same automatic area does not opt in. */
+export function hasCustomSize(p: Pick<Para, "bbox" | "grow" | "place" | "lh">, W: number, H: number): boolean {
+  if (!p.place) return false;
+  const g = p.grow || p.bbox, pad = p.lh * 0.3;
+  const width = Math.min(W, g.x1 + pad) - Math.max(0, g.x0 - pad);
+  const height = Math.min(H, g.y1 + pad) - Math.max(0, g.y0 - pad);
+  return Math.abs(p.place.x1 - p.place.x0 - width) > 1 || Math.abs(p.place.y1 - p.place.y0 - height) > 1;
+}
+
+export interface FitItem { lh: number; fit: number; lines?: number; manual?: boolean }
 
 const SAME = 0.2;      // original font sizes count as equal when line heights are this close
 export function harmonizeSizes(items: FitItem[]): number[] {
   const s = items.map((it) => it.fit);
-  const valid = items.map((_, i) => i).filter(i => items[i].fit > 0 && items[i].lh > 0);
+  const valid = items.map((_, i) => i).filter(i => items[i].fit > 0 && items[i].lh > 0 && !items[i].manual);
   if (!valid.length) return s;
   const lines = (i: number) => items[i].lines ?? 1;
   // The body line height: the median over all lines of text.
@@ -51,15 +63,18 @@ export function harmonizeSizes(items: FitItem[]): number[] {
 /**
  * Respect the reader's text size on a book page. Boxes never get larger than what fits, but they
  * are scaled down together until the body text has the wished size (`target`), so relative sizes
- * (headings larger) stay. The body size is the size of most of the text (`weights`: amount of text
+ * (headings larger) stay. Explicitly resized boxes use their own fit, capped at the target.
+ * The body size is the size of most of the automatic text (`weights`: amount of text
  * per box). `limited`: the page has no room for the wished size.
  */
-export function scaleToTarget(sizes: number[], weights: number[], target: number): { sizes: number[]; limited: boolean } {
-  const order = sizes.map((_, i) => i).filter(i => sizes[i] > 0 && weights[i] > 0).sort((a, b) => sizes[a] - sizes[b]);
+export function scaleToTarget(sizes: number[], weights: number[], target: number, independent: boolean[] = []): { sizes: number[]; limited: boolean } {
+  const own = sizes.map((s, i) => independent[i] ? Math.min(s, target) : s);
+  const limited = sizes.some((s, i) => independent[i] && s > 0 && weights[i] > 0 && s < target - 0.5);
+  const order = sizes.map((_, i) => i).filter(i => sizes[i] > 0 && weights[i] > 0 && !independent[i]).sort((a, b) => sizes[a] - sizes[b]);
   const total = order.reduce((sum, i) => sum + weights[i], 0);
-  if (!total) return { sizes, limited: false };
+  if (!total) return { sizes: own, limited };
   let seen = 0, body = 0;
   for (const i of order) { seen += weights[i]; if (seen >= total / 2) { body = sizes[i]; break; } }
-  if (body <= target) return { sizes, limited: body < target - 0.5 };
-  return { sizes: sizes.map(s => s * target / body), limited: false };
+  if (body <= target) return { sizes: own, limited: limited || body < target - 0.5 };
+  return { sizes: sizes.map((s, i) => independent[i] ? own[i] : s * target / body), limited };
 }

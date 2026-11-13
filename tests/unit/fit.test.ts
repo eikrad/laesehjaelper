@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { harmonizeSizes, scaleToTarget } from "../../src/fit";
+import { harmonizeSizes, scaleToTarget, hasCustomSize } from "../../src/fit";
+
+it("distinguishes resizing a text box from moving its unchanged automatic area", () => {
+  const p = { bbox: { x0: 100, y0: 100, x1: 300, y1: 150 }, lh: 20 };
+  expect(hasCustomSize(p, 1000, 1400)).toBe(false);
+  expect(hasCustomSize({ ...p, place: { x0: 200, y0: 300, x1: 412, y1: 362 } }, 1000, 1400)).toBe(false);
+  expect(hasCustomSize({ ...p, place: { x0: 200, y0: 300, x1: 600, y1: 500 } }, 1000, 1400)).toBe(true);
+});
 
 // lh = original line height; fit = largest font size that fits the box
 describe("harmonizeSizes", () => {
+  it("fits an explicitly resized box independently of a cramped small-print paragraph", () => {
+    const sizes = harmonizeSizes([{ lh: 14, fit: 40, lines: 1, manual: true }, { lh: 20, fit: 36, lines: 1 }, { lh: 19, fit: 36, lines: 1 }, { lh: 9, fit: 8, lines: 2 }]);
+    expect(sizes[0]).toBe(40);
+    expect(sizes[3]).toBe(8);
+  });
   it("Uses the same smallest fitting size for equal original font sizes", () => {
     expect(harmonizeSizes([{ lh: 20, fit: 30 }, { lh: 21, fit: 26 }])).toEqual([26, 26]);
   });
@@ -49,6 +61,11 @@ it("Harmonizes varying OCR line heights without repeated shrinking", () => {
 });
 
 describe("The reader's text size on a book page", () => {
+  it("caps an independent manual box at the requested size without letting footer text scale it down", () => {
+    expect(scaleToTarget([40, 8], [20, 120], 32, [true, false]).sizes).toEqual([32, 8]);
+    expect(scaleToTarget([40, 60], [20, 120], 32, [true, false]).sizes).toEqual([32, 32]);
+    expect(scaleToTarget([20], [20], 32, [true])).toEqual({ sizes: [20], limited: true });
+  });
   it("Scales all boxes down together until the body text has the wished size", () => {
     // A heading (60) and two body boxes (40, 40) with room; the reader wants 32 px.
     const r = scaleToTarget([60, 40, 40], [5, 120, 90], 32);

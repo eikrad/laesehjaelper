@@ -1,7 +1,7 @@
 // Læsehjælper – application logic (UI, text recognition, bookshelf).
 import { addProfile, fromEarlier, initProfiles, removeProfile, switchProfile, syncActive, type ProfileStore } from "./profiles";
 import { pageQuestions } from "./together";
-import { harmonizeSizes, scaleToTarget } from "./fit";
+import { harmonizeSizes, scaleToTarget, hasCustomSize } from "./fit";
 import { boldFlags, strokeWidth } from "./bold";
 import { dragBox, transferPlaces } from "./place";
 import { morphParts } from "./morpheme";
@@ -756,6 +756,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       const x1 = Math.min(W, g.x1 + pad), y1 = Math.min(H, g.y1 + pad);
       box.dataset.lh = String(pa.lh / H);
       box.dataset.lines = String(pa.lines?.length || 1);
+      box.dataset.manual = String(hasCustomSize(pa, W, H));
       Object.assign(box.style, { left: x0 / W * 100 + "%", top: y0 / H * 100 + "%", width: (x1 - x0) / W * 100 + "%", height: (y1 - y0) / H * 100 + "%" });
       // Text on a picture: a soft halo where the picture was inpainted, otherwise its own panel.
       if (pa.inpainted && pa.rgb) box.style.textShadow = halo(pa.rgb);
@@ -819,7 +820,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       el.removeEventListener("pointermove", onMove); el.removeEventListener("pointerup", onUp); el.removeEventListener("pointercancel", onUp);
       el.classList.remove("dragging");
       if (pa && (cur0.x0 !== start.x0 || cur0.y0 !== start.y0 || cur0.x1 !== start.x1 || cur0.y1 !== start.y1)) {
-        pa.place = cur0; savePage(pg);
+        pa.place = cur0; el.dataset.manual = String(hasCustomSize(pa, W, H)); savePage(pg);
         $<HTMLButtonElement>("resetPlaceBtn").hidden = false;
         fitPage();
       }
@@ -868,7 +869,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       if (!h || !w) return;
       space(box, 0);
       // Limit the size to a little over twice the original text size.
-      const maxFs = parseFloat(box.dataset.lh || "1") * (box.parentElement?.clientHeight || h) * 2.4;
+      const maxFs = box.dataset.manual === "true" ? h : parseFloat(box.dataset.lh || "1") * (box.parentElement?.clientHeight || h) * 2.4;
       // A short landscape viewport can scale a box below 4 px; it must still fit completely.
       let lo = 0, hi = Math.max(8, Math.min(h, maxFs));
       for (let k = 0; k < 12; k++) {
@@ -880,8 +881,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
       sizes.set(box, lo);
     });
     // 2. Equal text equal, headings larger, and the body text no larger than the wished size.
-    const fitted = harmonizeSizes(boxes.map(b => ({ lh: parseFloat(b.dataset.lh || "0"), fit: sizes.get(b) || 0, lines: Number(b.dataset.lines) || 1 })));
-    const scaled = target ? scaleToTarget(fitted, boxes.map(b => (b.textContent || "").length), target) : { sizes: fitted, limited: false };
+    const fitted = harmonizeSizes(boxes.map(b => ({ lh: parseFloat(b.dataset.lh || "0"), fit: sizes.get(b) || 0, lines: Number(b.dataset.lines) || 1, manual: b.dataset.manual === "true" })));
+    const scaled = target ? scaleToTarget(fitted, boxes.map(b => (b.textContent || "").length), target, boxes.map(b => b.dataset.manual === "true")) : { sizes: fitted, limited: false };
     // 3. The reader's spacing, as far as it fits at that size: a full box keeps its text size.
     let reduced = false;
     boxes.forEach((box, i) => {
