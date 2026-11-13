@@ -88,6 +88,15 @@ describe("Syllable marks dropped by recognition", () => {
     expect(after(img, w)).toBe("ee");
   });
 
+  it("Does not turn a small stroke inside overlapping character boxes into a syllable mark", () => {
+    const { img, w } = word("rose", { 1: "dash" });
+    // An oversized character box contains the detached stroke and overlaps the next character.
+    // It is not a separate printed separator between two character boxes.
+    const s = w.symbols!;
+    s[1].bbox.x1 = s[2].bbox.x0 + 4;
+    expect(after(img, w)).toBe("rose");
+  });
+
   it("Leaves words alone whose characters do not match their text", () => {
     const { img, w } = word("boede", { 1: "dash" });
     w.text = "bo ede";
