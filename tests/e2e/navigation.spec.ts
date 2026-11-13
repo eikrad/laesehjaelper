@@ -11,7 +11,7 @@ test("Reading has one quiet workshop entry and Back stays inside the book and sh
   for (const id of ["bookTitle", "bookMenuBtn", "checkTextBtn", "editPagesBtn", "exportBtn", "pdfBtn", "edit", "thumbs", "delBookBtn", "compareBtn"]) {
     await expect(page.locator(`#${id}`)).toBeHidden();
   }
-  await expect(page.locator("#editBookBtn")).toHaveText("Rediger bog");
+  await expect(page.locator("#editBookBtn")).toHaveText("Til voksne");
   await openWorkshop(page);
   await expect(page).toHaveURL(/#edit\/route\/route-1$/);
   await expect(page.locator("#bookTitle")).toBeVisible();

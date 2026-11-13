@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import type { Para } from "../../src/types";
 import { expect, test } from "./fixtures";
-import { bookTool, expectSyllableBowsInsideBoxes, fresh } from "./helpers";
+import { bookTool, expectSyllableBowsInsideBoxes, fresh, toggleReadingSetup } from "./helpers";
 
 // Text size and spacing settings in the book-page view (text set on the photo).
 
@@ -62,7 +62,7 @@ test("resizing a small speech box releases its font from unrelated fine print", 
   await page.mouse.move(grip.x + grip.width / 2 + 160, grip.y + grip.height / 2 + 160, { steps: 8 }); await page.mouse.up();
   expect((await resized.boundingBox())!.height).toBeGreaterThan(bounds.height + 100);
   await expect.poll(async () => (await style(page, 0)).size).toBeGreaterThan(before * 1.5);
-  await page.click("#setBtn"); await slide(page, "size", 44);
+  await toggleReadingSetup(page); await slide(page, "size", 44);
   await expect.poll(async () => Math.round((await style(page, 0)).size)).toBe(44);
   await page.reload();
   await expect.poll(async () => Math.round((await style(page, 0)).size)).toBe(44);
@@ -72,7 +72,7 @@ test("Syllable bows remain fully inside tightly fitted text boxes", async ({ pag
   const manual = para("Sommerfuglene flyver over blomsterne i haven.", box(80, 400, 700, 510), 40, 2);
   manual.place = manual.bbox;
   await openBookPage(page, [para("Sommerfuglen", box(80, 200, 920, 260), 40), manual]);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   for (const font of ['Verdana, "DejaVu Sans", sans-serif', '"OpenDyslexic", sans-serif']) {
     await page.selectOption("#font", font);
     for (const mode of ["boegen", "beides"]) {
@@ -86,7 +86,7 @@ test("Syllable bows remain fully inside tightly fitted text boxes", async ({ pag
       await expectSyllableBowsInsideBoxes(page);
     }
   }
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await expectSyllableBowsInsideBoxes(page);
 });
 
@@ -95,7 +95,7 @@ test("The text size setting sets the size of the text on the book page, and head
   await expect.poll(async () => Math.round((await style(page, 1)).size)).toBe(32);   // the default size
   const ratio = (await style(page, 0)).size / (await style(page, 1)).size;
   expect(ratio).toBeGreaterThan(1.2);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   for (const size of [20, 44]) {
     await slide(page, "size", size);
     await expect.poll(async () => Math.round((await style(page, 1)).size)).toBe(size);
@@ -108,7 +108,7 @@ test("Letter spacing on the book page adds space and keeps the size while the te
   await openBookPage(page, roomy);
   await expect.poll(async () => Math.round((await style(page, 1)).size)).toBe(32);
   const before = await style(page, 1);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await slide(page, "ls", 0.2);
   await expect.poll(async () => (await style(page, 1)).letters).toBeGreaterThan(before.letters + 4);
   expect(Math.round((await style(page, 1)).size)).toBe(32);
@@ -116,14 +116,14 @@ test("Letter spacing on the book page adds space and keeps the size while the te
 
 test("Line spacing above 1.6 works on the book page", async ({ page }) => {
   await openBookPage(page, roomy);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await slide(page, "lh", 2.8);
   await expect.poll(async () => { const s = await style(page, 1); return s.line / s.size; }).toBeGreaterThan(2.2);
 });
 
 test("When the book page has no room for the wished size, the settings point to the text view", async ({ page }) => {
   await openBookPage(page, [para("Der var engang en lille bjørn.", box(80, 200, 920, 330), 40)]);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   const hint = page.locator("#sizeHint");
   await expect(hint).toBeHidden();
   await slide(page, "size", 64);
@@ -138,10 +138,10 @@ test("When the book page has no room for the wished size, the settings point to 
 });
 
 test("On a book page with little room, larger spacing keeps the text size and adds as much space as fits", async ({ page }) => {
-  await openBookPage(page, [para("Der var engang en lille bjørn, som hed Bamse.", box(80, 200, 920, 400), 40)]);
+  await openBookPage(page, [para("Der var engang en lille bjørn, som hed Bamse.", box(80, 200, 840, 360), 40)]);
   await expect.poll(async () => Math.round((await style(page, 0)).size)).toBe(32);
   const before = await style(page, 0);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await slide(page, "ls", 0.25);
   await slide(page, "lh", 3);
   await expect.poll(async () => (await style(page, 0)).letters).toBeGreaterThan(before.letters);

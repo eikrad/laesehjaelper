@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { fresh, seedBooks } from "./helpers";
+import { fresh, seedBooks, toggleReadingSetup } from "./helpers";
 import { bookTool, openWorkshop } from "./helpers";
 import { unzipSync, strFromU8 } from "fflate";
 import fs from "node:fs";
@@ -21,13 +21,13 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function saveMouse(page: import("@playwright/test").Page) {
-  await page.click("#setBtn"); await page.click('#practiceSet button[data-v="an"]'); await page.click("#setBtn");
+  await toggleReadingSetup(page); await page.click('#practiceSet button[data-v="an"]'); await toggleReadingSetup(page);
   await page.click('#reader .w[data-word="mus"]'); await page.click("#savePracticeWord");
 }
 
 test("word practice works from the one-line guide with a keyboard", async ({ page }) => {
   await saveMouse(page);
-  await page.click("#setBtn"); await page.click('#guideSet button[data-v="line"]'); await page.click("#setBtn");
+  await toggleReadingSetup(page); await page.click('#guideSet button[data-v="line"]'); await toggleReadingSetup(page);
   await page.locator('#guideLine .w[data-word="mus"]').focus(); await page.keyboard.press("Enter");
   await expect(page.locator("#wordHelp")).toBeVisible({ timeout: 3000 });
   await expect(page.locator("#chosenWord")).toHaveText("mus");
@@ -78,13 +78,13 @@ test("adult choices persist, text edits invalidate context, and retiring a word 
 
 test("new readers start without practice and never see another reader's saved words", async ({ page }) => {
   await saveMouse(page);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   const first = await page.locator("#profileSel").inputValue();
   await page.fill("#profileName", "Bo"); await page.click("#profileAdd");
   await expect(page.locator('#practiceSet button[data-v="aus"]')).toHaveClass(/on/);
-  await page.click('#practiceSet button[data-v="an"]'); await page.click("#setBtn");
+  await page.click('#practiceSet button[data-v="an"]'); await toggleReadingSetup(page);
   await page.click("#practiceOpen"); await expect(page.locator("#practiceEmpty")).toBeVisible(); await page.click("#practiceClose");
-  await page.click("#setBtn"); await page.selectOption("#profileSel", first); await page.click("#setBtn");
+  await toggleReadingSetup(page); await page.selectOption("#profileSel", first); await toggleReadingSetup(page);
   await page.click("#practiceOpen"); await expect(page.locator("#practiceWord")).toHaveText("mus");
 });
 
@@ -92,9 +92,9 @@ test("a child explicitly saves a book word, tries it again and returns to its se
   await expect(page.locator("#practiceOpen")).toBeHidden();
   await page.click('#reader .w[data-word="mus"]');
   await expect(page.locator("#wordHelp")).toBeHidden();
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click('#practiceSet button[data-v="an"]');
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click("#practiceOpen");
   await expect(page.locator("#practiceEmpty")).toBeVisible();
   await page.click("#practiceClose");

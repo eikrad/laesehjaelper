@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { fresh, openRecognisedBook, openWorkshop, seedBooks } from "./helpers";
+import { fresh, openRecognisedBook, openWorkshop, seedBooks, toggleReadingSetup } from "./helpers";
 import { decodePDFRawStream, PDFArray, PDFDocument, PDFRawStream } from "pdf-lib";
 import fs from "node:fs";
 
@@ -15,10 +15,10 @@ function content(pdf: PDFDocument): string {
 test("A book downloads as a printable PDF with embedded fonts and one page per book page", async ({ page }, info) => {
   await fresh(page);
   await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.selectOption("#font", '"OpenDyslexic", sans-serif');
   await page.click('#mode button[data-v="beides"]');
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await openWorkshop(page);
   await expect(page.locator("#pdfBtn")).toBeVisible();
   const [download] = await Promise.all([page.waitForEvent("download", { timeout: 20000 }), page.click("#pdfBtn")]);

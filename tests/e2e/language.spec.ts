@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { fresh, seedBooks } from "./helpers";
+import { fresh, openBookOptions, readBook, seedBooks } from "./helpers";
 
 for (const [language, original, text, word, syllables, speechLanguage] of [
   ["da", "en", "Hunden sover.", "Hunden", ["Hun", "den"], "da-DK"],
@@ -17,15 +17,15 @@ for (const [language, original, text, word, syllables, speechLanguage] of [
     await fresh(page);
     await seedBooks(page, [{ id: "language", title: "Languages", texts: [text], lang: original }]);
     await page.locator(".book").click();
-    await page.click("#setBtn"); await page.click(`#langSet button[data-v="${language}"]`); await page.click("#setBtn");
+    await openBookOptions(page); await page.click(`#langSet button[data-v="${language}"]`); await readBook(page);
     await expect(page.locator(`#reader .w[data-word="${word}"] .s`)).toHaveText([...syllables]);
 
     await page.reload();
     await expect(page.locator(`#reader .w[data-word="${word}"] .s`)).toHaveText([...syllables], { timeout: 1500 });
     await expect(page.locator("#reader")).toHaveText(text);
-    await page.click("#setBtn");
+    await openBookOptions(page);
     await expect(page.locator(`#langSet button[data-v="${language}"]`)).toHaveClass(/\bon\b/, { timeout: 1500 });
-    await page.click("#setBtn"); await page.click("#readBtn");
+    await readBook(page); await page.click("#readBtn");
     await expect.poll(() => page.evaluate(() => (window as unknown as { __speechLanguage?: string }).__speechLanguage), { timeout: 1500 }).toBe(speechLanguage);
   });
 }

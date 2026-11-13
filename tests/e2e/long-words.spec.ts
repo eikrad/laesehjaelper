@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { fresh } from "./helpers";
+import { fresh, toggleReadingSetup } from "./helpers";
 
 /** Colour of a word's first syllable compared with the word's own text colour. */
 const marked = (page: Page, word: string) => page.locator(`.w[data-word="${word}"]`).first().evaluate(w =>
@@ -18,7 +18,7 @@ test("With syllable colours only on long words, short words keep the text colour
   });
   await fresh(page);
   await page.click("#demoBtn");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click('#mode button[data-v="farbe"]');
   // All words is the default.
   await expect(page.locator('#sylWordsSet button[data-v="alle"]')).toHaveClass(/\bon\b/);
@@ -31,7 +31,7 @@ test("With syllable colours only on long words, short words keep the text colour
   await expect(page.locator("#sylWordsSet")).toBeHidden();
   await page.click('#mode button[data-v="farbe"]');
   await expect(page.locator('#sylWordsSet button[data-v="lange"]')).toHaveClass(/\bon\b/);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   // Hidden syllable colours do not change the single-word playback.
   await page.click('.w[data-word="pindsvin"]');
   await expect.poll(() => page.evaluate(() => (window as unknown as { __said: string[] }).__said)).toEqual(["pindsvin"]);
@@ -40,7 +40,7 @@ test("With syllable colours only on long words, short words keep the text colour
 test("Syllable arcs follow the same choice", async ({ page }) => {
   await fresh(page);
   await page.click("#demoBtn");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click('#mode button[data-v="boegen"]');
   await page.click('#sylWordsSet button[data-v="lange"]');
   const arc = (word: string) => page.locator(`.w[data-word="${word}"] .s`).first().evaluate(s => getComputedStyle(s, "::after").display !== "none" && getComputedStyle(s, "::after").content !== "none");
@@ -59,14 +59,14 @@ test("Existing readers keep independent syllable-word choices after an update an
   });
   await page.reload();
   await page.click("#demoBtn");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click('#sylWordsSet button[data-v="lange"]');
   expect(await marked(page, "pindsvin")).toBe(false);
   await page.selectOption("#profileSel", "bo");
   await expect(page.locator('#sylWordsSet button[data-v="alle"]')).toHaveClass(/\bon\b/);
   expect(await marked(page, "pindsvin")).toBe(true);
   await page.reload();
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await expect(page.locator("#profileSel")).toHaveValue("bo");
   await expect(page.locator('#sylWordsSet button[data-v="alle"]')).toHaveClass(/\bon\b/);
   await page.selectOption("#profileSel", "ida");

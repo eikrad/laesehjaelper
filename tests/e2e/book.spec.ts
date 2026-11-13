@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, fixture, fresh, openRecognisedBook, openWorkshop, waitForText } from "./helpers";
+import { addPhotos, bookTool, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, toggleReadingSetup, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -18,7 +18,7 @@ test("Photo → crop → text recognition → book page", async ({ page }) => {
   await page.click("#compareBtn");
   await expect(page.locator("#reader")).toHaveClass(/pagemode/);
   // The original-photo toggle is available and effective only in text-only view.
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await expect(page.locator("#origToggle")).toBeHidden();
   await page.click("#viewSet button[data-v=tekst]");
   await expect(page.locator("#reader")).not.toHaveClass(/pagemode/);
@@ -84,7 +84,7 @@ test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
   await waitForText(page);
   await page.click("#next");
   await waitForText(page);
-  await page.click("#home");
+  await goShelf(page);
   await expect(page.locator(".book b")).toHaveText("Min testbog");
   await expect(page.locator(".book")).toContainText("2 sider");
 

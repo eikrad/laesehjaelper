@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { fresh, seedBooks } from "./helpers";
+import { fresh, openBookOptions, readBook, seedBooks, toggleReadingSetup } from "./helpers";
 
 test("Danish word speech defaults to once and offers optional manual syllables", async ({ page }) => {
   await page.addInitScript(() => {
@@ -26,7 +26,7 @@ test("Danish word speech defaults to once and offers optional manual syllables",
       { text: "Hunden", lang: "da-DK", rate: 0.85, word: "Hunden", parts: 0 },
     ]);
   await expect(page.locator(".speaking")).toHaveCount(0);
-  await page.click("#setBtn"); await page.click('#wordPlaybackSet button[data-v="syllables"]'); await page.click("#setBtn");
+  await toggleReadingSetup(page); await page.click('#wordPlaybackSet button[data-v="syllables"]'); await toggleReadingSetup(page);
   await page.locator('#reader .w[data-word="hunden"]').click();
   await expect.poll(() => page.evaluate(() => (window as unknown as { __said: unknown[] }).__said)).toEqual([
     { text: "Hunden", lang: "da-DK", rate: 0.85, word: "Hunden", parts: 0 },
@@ -36,7 +36,7 @@ test("Danish word speech defaults to once and offers optional manual syllables",
     { text: "hunden", lang: "da-DK", rate: 0.85, word: "hunden", parts: 0 },
   ]);
   await expect(page.locator(".speaking")).toHaveCount(0);
-  await page.reload(); await page.click("#setBtn");
+  await page.reload(); await toggleReadingSetup(page);
   await expect(page.locator('#wordPlaybackSet button[data-v="syllables"]')).toHaveClass(/on/);
 });
 
@@ -48,10 +48,12 @@ for (const [language, text, words] of [
     await fresh(page);
     await seedBooks(page, [{ id: "reading-words", title: "Reading words", texts: [text], lang: language }]);
     await page.locator(".book").click();
-    await page.click("#setBtn");
+    await openBookOptions(page);
     await page.click(`#langSet button[data-v="${language}"]`);
+    await readBook(page);
+    await toggleReadingSetup(page);
     await page.click('#mode button[data-v="beides"]');
-    await page.click("#setBtn");
+    await toggleReadingSetup(page);
     for (const [word, syllables] of words) await expect(page.locator(`#reader .w[data-word="${word}"] .s`)).toHaveText([...syllables]);
     await page.reload();
     for (const [word, syllables] of words) await expect(page.locator(`#reader .w[data-word="${word}"] .s`)).toHaveText([...syllables]);

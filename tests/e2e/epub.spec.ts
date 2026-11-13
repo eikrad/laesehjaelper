@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 import { strFromU8, unzipSync } from "fflate";
 import fs from "node:fs";
-import { addPhotos, bookTool, fresh, openRecognisedBook, openWorkshop, seedBooks, waitForText } from "./helpers";
+import { addPhotos, bookTool, fresh, openRecognisedBook, openWorkshop, seedBooks, toggleReadingSetup, waitForText } from "./helpers";
 
 test("Exported page layout is independent of the screen orientation", async ({ page }, info) => {
   await fresh(page);
@@ -59,10 +59,10 @@ test("An exported book keeps syllable colours only on long words when chosen", a
   await seedBooks(page, [{ id: "long", title: "Lange ord", texts: ["Det lille pindsvin snuser til blomsterne."] }]);
   await page.locator(".book").click();
   await expect(page.locator("#reader")).toContainText("blomsterne");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click('#mode button[data-v="farbe"]');
   await page.click('#sylWordsSet button[data-v="lange"]');
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   const [download] = await Promise.all([page.waitForEvent("download"), bookTool(page, "exportBtn")]);
   const file = info.outputPath("long.epub");
   await download.saveAs(file);

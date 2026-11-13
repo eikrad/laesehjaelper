@@ -1,18 +1,17 @@
 import { expect, test } from "./fixtures";
-import { fresh } from "./helpers";
+import { fresh, toggleReadingSetup } from "./helpers";
 
 // Coloured syllables start off: on the current evidence they help only some beginners a little
-// (README, "What does the research say?"). They stay one tap away.
+// (README, "What does the research say?"). An adult can enable them in reading setup.
 
-test("A new device starts without syllable colours, one tap away in the first settings group", async ({ page }) => {
+test("A new device starts without syllable colours and the adult can enable them", async ({ page }) => {
   await fresh(page);
   await page.click("#demoBtn");
   await expect(page.locator("#reader .w").first()).toBeVisible();
   await expect(page.locator("#reader")).not.toHaveClass(/mode-farbe/);
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await expect(page.locator('#mode button[data-v="aus"]')).toHaveClass(/\bon\b/);
-  // Second field, right after the text size.
-  await expect(page.locator("#settings .grid > .field").nth(1).locator("#mode")).toHaveCount(1);
+  await expect(page.locator("#setup-aids #mode")).toBeVisible();
   await page.click('#mode button[data-v="farbe"]');
   await expect(page.locator("#reader")).toHaveClass(/mode-farbe/);
 });
@@ -30,7 +29,7 @@ test("A device that used the app before keeps its syllable colours", async ({ pa
 test("A newly added reader starts without syllable colours and keeps the other settings", async ({ page }) => {
   await fresh(page);
   await page.click("#demoBtn");
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click('#mode button[data-v="farbe"]');
   await page.locator("#size").fill("44");
   await page.fill("#profileName", "Bo");

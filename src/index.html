@@ -293,23 +293,30 @@ body.workshop .workshop-grid > * { min-width: 0; }
 /* Bottom toolbar */
 /* Centred with auto margins: "left: 50%" would limit its width to half the screen. */
 .dock {
-  position: fixed; left: 0; right: 0; margin: 0 auto; width: fit-content; bottom: max(14px, env(safe-area-inset-bottom)); z-index: 20;
-  display: flex; align-items: center; gap: 4px; padding: 6px; border-radius: 999px;
-  background: var(--ink); color: #fff; box-shadow: 0 14px 34px -10px rgba(23,25,59,.6);
-  max-width: calc(100vw - 20px);
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  display: flex; align-items: center; gap: 4px; padding: 4px max(4px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
+  min-height: 64px; background: var(--sky); color: var(--ink); border-top: 1px solid var(--line);
 }
-.dock button { border: 0; background: none; color: inherit; height: 48px; min-width: 48px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 0 12px; font-weight: 700; }
+.dock button { border: 0; background: none; color: inherit; min-height: 48px; min-width: 48px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 4px 10px; font-size: 14px; font-weight: 700; }
 .dock button:disabled { opacity: .35; cursor: default; }
-.dock button.on { background: rgba(255,255,255,.18); }
-.dock .read { background: #fff; color: var(--ink); padding: 0 18px; }
-.dock .count { font-weight: 700; font-size: 15px; min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; }
-.dock .sep { width: 1px; height: 24px; background: rgba(255,255,255,.2); margin: 0 2px; }
-/* Narrow screens: icons only, tighter spacing, and no home button (the logo above leads home too). */
-@media (max-width: 600px) {
-  .dock .read span, .dock .hide-sm { display: none; }
-  .dock { gap: 0; padding: 4px; }
-  .dock button, .dock .read { padding: 0 10px; }
-  .dock .count { min-width: 40px; }
+.dock button.on { background: #dfe6ff; box-shadow: inset 0 0 0 2px var(--blue); }
+.reading-tools { display: flex; align-items: center; justify-content: center; gap: 12px; flex: 1; min-width: 0; }
+.reading-helpers { display: flex; align-items: center; gap: 8px; }
+.dock .reading-helpers button { background: white; min-height: 56px; min-width: 132px; box-shadow: inset 0 0 0 1px var(--line); }
+.dock .reading-helpers button.on { background: #dfe6ff; box-shadow: inset 0 0 0 2px var(--blue); }
+.dock .reading-helpers svg.i { width: 28px; height: 28px; }
+.guide-picture { display: flex; flex-direction: column; justify-content: space-between; width: 32px; height: 32px; padding: 5px 4px; border: 1px solid var(--line); border-radius: 3px; background: #fff; flex: none; }
+.guide-picture > span { height: 2px; border-radius: 1px; background: #7b8297; }
+.guide-picture > span:nth-child(2) { height: 4px; background: var(--blue); }
+#guideBtn.on .guide-picture > span { height: 2px; background: #7b8297; }
+#guideControls:empty { display: none; }
+.dock .guide-tools { position: static; transform: none; padding: 0; gap: 4px; border: 0; border-radius: 0; background: transparent; box-shadow: none; max-width: none; }
+.dock .guide-tools span { font-size: 13px; }
+@media (max-width: 700px) {
+  .reading-tools { flex-wrap: wrap; gap: 4px; }
+  .reading-helpers { gap: 6px; }
+  .dock .reading-helpers button { min-width: 94px; min-height: 58px; flex-direction: column; gap: 2px; padding: 3px 5px; font-size: 11px; }
+  #guideControls:has(.guide-tools:not([hidden])) { flex-basis: 100%; display: flex; justify-content: center; }
 }
 
 /* Settings sheet above the toolbar */
@@ -325,14 +332,24 @@ body.workshop .workshop-grid > * { min-width: 0; }
 .sethead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 8px 4px 20px; }
 .sethead strong { font-size: 18px; }
 .sethead button { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--sky); display: grid; place-items: center; padding: 0; }
-.settings > .grid { overflow-y: auto; min-height: 0; padding: 8px 20px 22px; }
+.settings-content { overflow-y: auto; min-height: 0; padding: 8px 20px 20px; }
+.setup-section { border-top: 1px solid var(--line); margin-top: 12px; }
+.setup-section > summary, .book-options > summary { min-height: 48px; padding: 12px 0; font-weight: 700; cursor: pointer; }
+.setup-section > .grid { padding: 10px 0; }
+#adultAppearanceQuick { margin: 6px 0 18px; }
+#adultUiLanguage { margin: 8px 0 16px; }
+#adultUiLanguage .flabel { display: block; margin-bottom: 8px; }
+#readingSetupLink { margin-top: 18px; width: 100%; justify-content: center; }
+.book-options { margin-bottom: 12px; }
+.book-options > .grid { background: white; padding: 16px; border-radius: 12px; }
 .settings .more { grid-column: 1 / -1; margin: 4px 0 -6px; padding-top: 18px; border-top: 1.5px solid var(--line); font-size: 17px; }
 /* Wide screens: the settings sit in a panel on the right, above the toolbar, and the page moves
    left, so it stays visible while the settings change it (supporting pane, Material 3). */
 @media (min-width: 840px) {
   .settings { left: auto; right: max(12px, env(safe-area-inset-right)); top: 12px; width: 360px; max-height: none; transform: translateX(16px); }
   .settings.open { transform: none; }
-  .settings > .grid { grid-template-columns: 1fr; }
+  .settings .grid { grid-template-columns: 1fr; }
+  .settings:not(.adult-setup) { top: auto; max-height: 60dvh; }
   body.settings-open .wrap { margin-left: max(16px, calc((100vw - 384px - 760px) / 2)); margin-right: 384px; }
   body.settings-open .edgenav { display: none; }   /* The toolbar still turns pages; the page needs the room. */
 }
@@ -383,7 +400,7 @@ input[type=range] { width: 100%; height: 44px; margin: 0; accent-color: var(--bl
 .pick input::-moz-color-swatch { border: 0; border-radius: 50%; }
 @media (max-width: 480px) { .own { margin-left: 0; padding-left: 0; border-left: 0; } }
 
-/* Focus mode: text only */
+/* Reading mode keeps the page and reading controls, with preparation and settings hidden. */
 body.focus .workshop-tools, body.focus header.top, body.focus .bookbar, body.focus .orig, body.focus .edit, body.focus .thumbs, body.focus .settings, body.focus .foot, body.focus .dock > :not(.keep) { display: none !important; }
 body.focus .wrap { max-width: none; padding: 0; }
 body.focus .pagecard { border-radius: 0; box-shadow: none; min-height: 100vh; }
@@ -431,6 +448,29 @@ body.focus .together { display: none !important; }
 .phrase-preview .w { white-space: normal; cursor: auto; }
 .practice-nav span { white-space: nowrap; }
 .regions-dialog { width: min(720px, calc(100vw - 32px)); }
+/* The book page gets all space left by the actual header and reading controls. */
+body.reading header.top { display: none; }
+body.reading .wrap { max-width: none; padding: 4px 4px calc(var(--reading-controls-height, 64px) + 4px); }
+body.reading:not(.settings-open) .wrap { margin: 0; }
+body.reading .bookbar { min-height: 48px; margin: 0 0 4px; gap: 4px; flex-wrap: nowrap; }
+.reading-activities { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px; }
+.reading-activities:not(:has(button:not([hidden]))) { display: none; }
+.bookbar > button { display: inline-flex; align-items: center; justify-content: center; min-width: 48px; min-height: 48px; padding: 0; border: 0; background: none; border-radius: 10px; }
+.bookbar .count { white-space: nowrap; min-width: 40px; font-size: 12px; font-variant-numeric: tabular-nums; }
+body.reading #readingTitle { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; }
+body.reading #editBookBtn { min-height: 48px; white-space: nowrap; padding: 4px 8px; font-size: 12px; border: 0; background: transparent; }
+body.reading #editBookBtn.holding { background: linear-gradient(to right, #dfe6ff var(--hold-progress, 0%), transparent var(--hold-progress, 0%)); }
+body.reading .pagecard { border-radius: 2px; }
+body.reading #reader.pagemode .pageview { width: min(100%, calc(var(--available-page-height, calc(100dvh - 128px)) * var(--ar, 1))); margin: 0 auto; }
+body.reading .edgenav { display: none; }
+body.focus .bookbar { display: flex !important; min-height: 48px; margin: 0 0 4px; }
+body.focus .bookbar > :not(.keep) { display: none !important; }
+body.focus .bookbar .count { margin-left: auto; }
+body.focus .reader.pagemode { padding: 0; min-height: 0; }
+body.reading.focus .wrap { padding: 0 0 calc(var(--reading-controls-height, 64px) + 4px); }
+body.focus .reading-activities { display: none; }
+body.focus .pagecard:has(.pagemode) { min-height: 0; }
+@media (max-width: 400px) { body.reading #readingTitle { font-size: 11px; } }
 #regionsSurface { position: relative; margin: 12px auto; touch-action: none; user-select: none; }
 #regionsSurface img { display: block; width: 100%; height: auto; pointer-events: none; }
 #regionsOverlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -514,12 +554,15 @@ body.focus .together { display: none !important; }
   <!-- Reader view -->
   <section id="app" hidden>
     <div class="bookbar">
+      <button class="keep" id="homeBtn" data-ta="toStart"><svg class="i"><use href="#i-home"/></svg></button>
       <strong id="readingTitle" class="reading-only"></strong>
-      <button id="phraseToggle" class="btn-ghost small reading-only" hidden aria-pressed="false"></button>
-      <button id="practiceOpen" class="btn-ghost small reading-only" data-t="practiceTitle" hidden></button>
+      <span class="count keep" id="count"></span>
+      <button id="setBtn" data-ta="adjust"><svg class="i"><use href="#i-aa"/></svg></button>
+      <button class="keep" id="focusBtn"></button>
       <div class="reading-entry reading-only">
-        <button class="btn-ghost small" id="editBookBtn" data-t="editBook" aria-haspopup="menu" aria-expanded="false" aria-controls="editEntry"></button>
+        <button class="btn-ghost small" id="editBookBtn" data-t="forAdults" aria-haspopup="menu" aria-expanded="false" aria-controls="editEntry"></button>
         <div class="entry-menu" id="editEntry" role="menu" hidden>
+          <button role="menuitem" id="readingSetupBtn" data-t="readingSetup"></button>
           <button role="menuitem" id="correctPageBtn" data-t="correctPage"></button>
           <button role="menuitem" id="openWorkshopBtn" data-t="editBook"></button>
         </div>
@@ -527,6 +570,28 @@ body.focus .together { display: none !important; }
       <button class="btn-ghost small workshop-only" id="readBookBtn" data-t="readBook"></button>
       <input id="bookTitle" autocomplete="off" data-tp="titlePh">
     </div>
+    <div class="reading-activities reading-only">
+      <button id="phraseToggle" class="btn-ghost small" hidden aria-pressed="false"></button>
+      <button id="practiceOpen" class="btn-ghost small" data-t="practiceTitle" hidden></button>
+    </div>
+    <details class="workshop-only book-options" id="bookOptions"><summary data-t="setupBook"></summary><div class="grid">
+        <div class="field">
+          <span class="flabel" data-t="bookLang"></span>
+          <div class="seg" id="langSet">
+            <button data-v="da" data-t="langDa"></button>
+            <button data-v="de" data-t="langDe"></button>
+            <button data-v="en" data-t="langEn"></button>
+          </div>
+        </div>
+        <div class="field wide">
+          <span class="flabel" data-t="hyph"></span>
+          <div class="seg" id="hyphSet">
+            <button data-v="normal" data-t="hyphNormal"></button>
+            <button data-v="bog" data-t="hyphBook"></button>
+          </div>
+          <p class="fhint" data-t="hyphHint"></p>
+        </div>
+    </div></details>
     <div class="workshop-tools workshop-only">
       <button class="btn-ghost" id="checkTextBtn"><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></button>
       <button class="btn-ghost" id="exportBtn"><svg class="i"><use href="#i-download"/></svg><span data-t="exportBook"></span></button>
@@ -588,171 +653,179 @@ body.focus .together { display: none !important; }
 </div>
 
 <nav class="dock" id="dock" hidden>
-  <button class="hide-sm" id="homeBtn" data-ta="toStart"><svg class="i"><use href="#i-home"/></svg></button>
-  <span class="sep hide-sm"></span>
-  <button id="prev" data-ta="prevPage"><svg class="i"><use href="#i-prev"/></svg></button>
-  <span class="count" id="count"></span>
-  <button id="next" data-ta="nextPage"><svg class="i"><use href="#i-next"/></svg></button>
-  <button class="read keep" id="readBtn"></button>
+  <button class="keep" id="prev" data-ta="prevPage"><svg class="i"><use href="#i-prev"/></svg></button>
+  <div class="reading-tools keep">
+    <div class="reading-helpers">
+      <button class="read" id="readBtn"></button>
+      <button class="reading-only" id="guideBtn" aria-pressed="false" aria-controls="reader"><span class="guide-picture" aria-hidden="true"><span></span><span></span><span></span><span></span></span><span id="guideBtnLabel"></span></button>
+    </div>
+    <div id="guideControls"></div>
+  </div>
   <button id="compareBtn"><svg class="i"><use href="#i-eye"/></svg></button>
-  <button id="setBtn" data-ta="adjust"><svg class="i"><use href="#i-aa"/></svg></button>
-  <button class="keep" id="focusBtn"></button>
+  <button class="keep" id="next" data-ta="nextPage"><svg class="i"><use href="#i-next"/></svg></button>
 </nav>
 
-<div class="settings" id="settings" role="dialog" aria-labelledby="setTitle">
+<div class="settings" id="settings" role="dialog" aria-labelledby="setTitle" inert>
   <div class="sethead"><strong id="setTitle" data-t="adjust"></strong><button id="setClose" data-ta="closeSettings"><svg class="i"><use href="#i-close"/></svg></button></div>
-  <div class="grid">
-    <!-- Most used first: size, syllables, font, view, reading aloud. -->
-    <div class="field wide">
-      <label for="size" data-t="size"></label>
-      <input type="range" id="size" min="18" max="64" step="1">
-      <p class="fhint" id="sizeHint" data-t="sizeHint" hidden></p>
-    </div>
-    <div class="field wide">
-      <span class="flabel" data-t="syllables"></span>
-      <div class="seg" id="mode">
-        <button data-v="aus" data-t="off"></button>
-        <button data-v="farbe" data-t="color"></button>
-        <button data-v="boegen" data-t="arcs"></button>
-        <button data-v="beides" data-t="both"></button>
-        <button data-v="morf" data-t="morf"></button>
-      </div>
-      <div class="seg" id="sylWordsSet">
-        <button data-v="alle" data-t="sylWordsAll"></button>
-        <button data-v="lange" data-t="sylWordsLong"></button>
-      </div>
-      <p class="fhint" data-t="sylHint"></p>
-    </div>
-    <div class="field wide">
-      <label for="font" data-t="font"></label>
-      <select id="font">
-        <option value='"Andika", sans-serif' data-t="andika"></option>
-        <option value='"OpenDyslexic", sans-serif'>OpenDyslexic</option>
-        <option value='"Atkinson Hyperlegible", sans-serif'>Atkinson Hyperlegible</option>
-        <option value='"Lexend", sans-serif'>Lexend</option>
-        <option value='Verdana, "DejaVu Sans", sans-serif'>Verdana</option>
-      </select>
-    </div>
-    <div class="field">
-      <span class="flabel" data-t="view"></span>
-      <div class="seg" id="viewSet">
-        <button data-v="side" data-t="viewPage"></button>
-        <button data-v="tekst" data-t="viewText"></button>
-      </div>
-    </div>
-    <div class="field">
-      <span class="flabel" data-t="rateLabel"></span>
-      <div class="seg" id="rateSet">
-        <button data-v="langsom" data-t="rateSlow"></button>
-        <button data-v="normal" data-t="rateNormal"></button>
-      </div>
-    </div>
-    <h3 class="more wide" id="moreSettings" data-t="moreSettings"></h3>
-    <div class="field wide"><span class="flabel" data-t="wordPlaybackLabel"></span><div class="seg" id="wordPlaybackSet"><button data-v="word" data-t="wordPlaybackOnce"></button><button data-v="syllables" data-t="wordPlaybackSyllables"></button></div><p class="fhint" data-t="wordPlaybackHint"></p></div>
-    <div class="field wide"><span class="flabel" data-t="practiceLabel"></span><div class="seg" id="practiceSet"><button data-v="aus" data-t="off"></button><button data-v="an" data-t="togetherOn"></button></div><p class="fhint" data-t="practiceHint"></p></div>
-    <div class="field wide">
-      <span class="flabel" data-t="guideLabel"></span>
-      <div class="seg" id="guideSet"><button data-v="aus" data-t="off"></button><button data-v="ruler" data-t="guideRuler"></button><button data-v="line" data-t="guideLine"></button></div>
-      <p class="fhint" data-t="guideHint"></p>
-    </div>
-    <div class="field wide">
-      <span class="flabel" data-t="parentGate"></span>
-      <div class="seg" id="gateSet"><button data-v="aus" data-t="gateOff"></button><button data-v="an" data-t="gateOn"></button></div>
-      <p class="fhint" data-t="holdToEdit"></p><p class="fhint" data-t="gateHint"></p>
-    </div>
-    <div class="field wide">
-      <label for="profileSel" data-t="reader"></label>
-      <div class="profrow"><select id="profileSel"></select><button class="btn-danger small" id="profileDel"></button></div>
-      <div class="profrow"><input id="profileName" autocomplete="off" data-tp="newReaderPh"><button class="btn-ghost small" id="profileAdd" data-t="addReader"></button></div>
-      <p class="fhint" data-t="readerHint"></p>
-    </div>
-    <div class="field">
-      <label for="ls" data-t="letterSp"></label>
-      <input type="range" id="ls" min="0" max="0.25" step="0.01">
-    </div>
-    <div class="field">
-      <label for="lh" data-t="lineSp"></label>
-      <input type="range" id="lh" min="1.3" max="3" step="0.1">
-    </div>
-    <div class="field wide">
-      <span class="flabel" data-t="linesLabel"></span>
-      <div class="seg" id="linesSet">
-        <button data-v="normal" data-t="linesNormal"></button>
-        <button data-v="kort" data-t="linesShort"></button>
-      </div>
-      <p class="fhint" data-t="linesHint"></p>
-    </div>
-    <div class="field wide">
-      <span class="flabel" data-t="togetherLabel"></span>
-      <div class="seg" id="togetherSet">
-        <button data-v="an" data-t="togetherOn"></button>
-        <button data-v="aus" data-t="togetherOff"></button>
-      </div>
-      <p class="fhint" data-t="togetherHint"></p>
-    </div>
-    <div class="field wide">
-      <span class="flabel" data-t="sylColors"></span>
-      <div class="swatches" id="colors">
-        <button data-v="#2f3fe0,#e5412d" style="background:linear-gradient(90deg,#2f3fe0 50%,#e5412d 50%)" data-ta="cBlueRed"></button>
-        <button data-v="#2f3fe0,#17193b" style="background:linear-gradient(90deg,#2f3fe0 50%,#17193b 50%)" data-ta="cBlueBlack"></button>
-        <button data-v="#e5412d,#17193b" style="background:linear-gradient(90deg,#e5412d 50%,#17193b 50%)" data-ta="cRedBlack"></button>
-        <button data-v="#7a3fc2,#16804a" style="background:linear-gradient(90deg,#7a3fc2 50%,#16804a 50%)" data-ta="cPurpleGreen"></button>
-        <span class="own">
-          <label class="pick"><input type="color" id="c0"><span data-t="syl1"></span></label>
-          <label class="pick"><input type="color" id="c1"><span data-t="syl2"></span></label>
-        </span>
-      </div>
-    </div>
-    <div class="field">
-      <span class="flabel" data-t="background"></span>
-      <div class="swatches" id="bg">
-        <button data-v="#ffffff" style="background:#fff" data-ta="bWhite"></button>
-        <button data-v="#fff8e6" style="background:#fff8e6" data-ta="bCream"></button>
-        <button data-v="#fdf0b8" style="background:#fdf0b8" data-ta="bYellow"></button>
-        <button data-v="#e6ecff" style="background:#e6ecff" data-ta="bBlue"></button>
-        <button data-v="#e4f5e3" style="background:#e4f5e3" data-ta="bGreen"></button>
-      </div>
-    </div>
-    <div class="field">
-      <span class="flabel" data-t="bookLang"></span>
-      <div class="seg" id="langSet">
-        <button data-v="da" data-t="langDa"></button>
-        <button data-v="de" data-t="langDe"></button>
-        <button data-v="en" data-t="langEn"></button>
-      </div>
-    </div>
-    <div class="field wide">
-      <span class="flabel" data-t="hyph"></span>
-      <div class="seg" id="hyphSet">
-        <button data-v="normal" data-t="hyphNormal"></button>
-        <button data-v="bog" data-t="hyphBook"></button>
-      </div>
-      <p class="fhint" data-t="hyphHint"></p>
-    </div>
-    <div class="field">
-      <span class="flabel" data-t="original"></span>
-      <div class="seg" id="origToggle">
-        <button data-v="an" data-t="show"></button>
-        <button data-v="aus" data-t="hide"></button>
-      </div>
-    </div>
-    <div class="field">
-      <span class="flabel" data-t="turnLabel"></span>
-      <div class="seg" id="turnSet">
-        <button data-v="an" data-t="turnOn"></button>
-        <button data-v="aus" data-t="turnOff"></button>
-      </div>
-    </div>
-    <div class="field wide">
-      <span class="flabel" data-t="highlightLabel"></span>
-      <div class="seg" id="highlightSet">
-        <button data-v="an" data-t="highlightOn"></button>
-        <button data-v="aus" data-t="highlightOff"></button>
-      </div>
-      <p class="fhint" data-t="highlightHint"></p>
-    </div>
-    <div class="field wide">
-      <details class="disclaimer" id="evidence"><summary data-t="evTitle"></summary><p data-th="evText"></p></details>
+  <div class="settings-content">
+    <div id="quickSettingsHome"><div class="grid" id="quickSettings">
+        <div class="field wide">
+          <label for="size" data-t="size"></label>
+          <input type="range" id="size" min="18" max="64" step="1">
+          <p class="fhint" id="sizeHint" data-t="sizeHint" hidden></p>
+        </div>
+        <div class="field">
+          <span class="flabel" data-t="view"></span>
+          <div class="seg" id="viewSet">
+            <button data-v="side" data-t="viewPage"></button>
+            <button data-v="tekst" data-t="viewText"></button>
+          </div>
+        </div>
+        <div class="field">
+          <span class="flabel" data-t="original"></span>
+          <div class="seg" id="origToggle">
+            <button data-v="an" data-t="show"></button>
+            <button data-v="aus" data-t="hide"></button>
+          </div>
+        </div>
+        <div class="field wide">
+          <span class="flabel" data-t="linesLabel"></span>
+          <div class="seg" id="linesSet">
+            <button data-v="normal" data-t="linesNormal"></button>
+            <button data-v="kort" data-t="linesShort"></button>
+          </div>
+          <p class="fhint" data-t="linesHint"></p>
+        </div>
+    </div></div>
+    <button class="btn-ghost" id="readingSetupLink" data-t="forAdults"></button>
+    <div id="adultSettings" hidden>
+      <details class="setup-section" id="setup-appearance" open><summary data-t="setupAppearance"></summary>
+        <div id="adultAppearanceQuick"></div>
+        <div class="grid">
+          <div class="field wide">
+            <label for="font" data-t="font"></label>
+            <select id="font">
+              <option value='"Andika", sans-serif' data-t="andika"></option>
+              <option value='"OpenDyslexic", sans-serif'>OpenDyslexic</option>
+              <option value='"Atkinson Hyperlegible", sans-serif'>Atkinson Hyperlegible</option>
+              <option value='"Lexend", sans-serif'>Lexend</option>
+              <option value='Verdana, "DejaVu Sans", sans-serif'>Verdana</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ls" data-t="letterSp"></label>
+            <input type="range" id="ls" min="0" max="0.25" step="0.01">
+          </div>
+          <div class="field">
+            <label for="lh" data-t="lineSp"></label>
+            <input type="range" id="lh" min="1.3" max="3" step="0.1">
+          </div>
+          <div class="field">
+            <span class="flabel" data-t="background"></span>
+            <div class="swatches" id="bg">
+              <button data-v="#ffffff" style="background:#fff" data-ta="bWhite"></button>
+              <button data-v="#fff8e6" style="background:#fff8e6" data-ta="bCream"></button>
+              <button data-v="#fdf0b8" style="background:#fdf0b8" data-ta="bYellow"></button>
+              <button data-v="#e6ecff" style="background:#e6ecff" data-ta="bBlue"></button>
+              <button data-v="#e4f5e3" style="background:#e4f5e3" data-ta="bGreen"></button>
+            </div>
+          </div>
+      </div></details>
+      <details class="setup-section" id="setup-aids"><summary data-t="setupAids"></summary>
+        <div class="grid">
+          <div class="field wide">
+            <span class="flabel" data-t="syllables"></span>
+            <div class="seg" id="mode">
+              <button data-v="aus" data-t="off"></button>
+              <button data-v="farbe" data-t="color"></button>
+              <button data-v="boegen" data-t="arcs"></button>
+              <button data-v="beides" data-t="both"></button>
+              <button data-v="morf" data-t="morf"></button>
+            </div>
+            <div class="seg" id="sylWordsSet">
+              <button data-v="alle" data-t="sylWordsAll"></button>
+              <button data-v="lange" data-t="sylWordsLong"></button>
+            </div>
+            <p class="fhint" data-t="sylHint"></p>
+          </div>
+          <div class="field wide">
+            <span class="flabel" data-t="guideLabel"></span>
+            <div class="seg" id="guideSet"><button data-v="aus" data-t="off"></button><button data-v="ruler" data-t="guideRuler"></button><button data-v="line" data-t="guideLine"></button></div>
+            <p class="fhint" data-t="guideHint"></p>
+          </div>
+          <div class="field wide">
+            <span class="flabel" data-t="sylColors"></span>
+            <div class="swatches" id="colors">
+              <button data-v="#2f3fe0,#e5412d" style="background:linear-gradient(90deg,#2f3fe0 50%,#e5412d 50%)" data-ta="cBlueRed"></button>
+              <button data-v="#2f3fe0,#17193b" style="background:linear-gradient(90deg,#2f3fe0 50%,#17193b 50%)" data-ta="cBlueBlack"></button>
+              <button data-v="#e5412d,#17193b" style="background:linear-gradient(90deg,#e5412d 50%,#17193b 50%)" data-ta="cRedBlack"></button>
+              <button data-v="#7a3fc2,#16804a" style="background:linear-gradient(90deg,#7a3fc2 50%,#16804a 50%)" data-ta="cPurpleGreen"></button>
+              <span class="own">
+                <label class="pick"><input type="color" id="c0"><span data-t="syl1"></span></label>
+                <label class="pick"><input type="color" id="c1"><span data-t="syl2"></span></label>
+              </span>
+            </div>
+          </div>
+      </div></details>
+      <details class="setup-section" id="setup-audio"><summary data-t="setupAudio"></summary>
+        <div class="grid">
+          <div class="field">
+            <span class="flabel" data-t="rateLabel"></span>
+            <div class="seg" id="rateSet">
+              <button data-v="langsom" data-t="rateSlow"></button>
+              <button data-v="normal" data-t="rateNormal"></button>
+            </div>
+          </div>
+          <div class="field wide"><span class="flabel" data-t="wordPlaybackLabel"></span><div class="seg" id="wordPlaybackSet"><button data-v="word" data-t="wordPlaybackOnce"></button><button data-v="syllables" data-t="wordPlaybackSyllables"></button></div><p class="fhint" data-t="wordPlaybackHint"></p></div>
+          <div class="field wide">
+            <span class="flabel" data-t="highlightLabel"></span>
+            <div class="seg" id="highlightSet">
+              <button data-v="an" data-t="highlightOn"></button>
+              <button data-v="aus" data-t="highlightOff"></button>
+            </div>
+            <p class="fhint" data-t="highlightHint"></p>
+          </div>
+          <div class="field">
+            <span class="flabel" data-t="turnLabel"></span>
+            <div class="seg" id="turnSet">
+              <button data-v="an" data-t="turnOn"></button>
+              <button data-v="aus" data-t="turnOff"></button>
+            </div>
+          </div>
+      </div></details>
+      <details class="setup-section" id="setup-practice"><summary data-t="setupPractice"></summary>
+        <div class="grid">
+          <div class="field wide"><span class="flabel" data-t="practiceLabel"></span><div class="seg" id="practiceSet"><button data-v="aus" data-t="off"></button><button data-v="an" data-t="togetherOn"></button></div><p class="fhint" data-t="practiceHint"></p></div>
+          <div class="field wide">
+            <span class="flabel" data-t="togetherLabel"></span>
+            <div class="seg" id="togetherSet">
+              <button data-v="an" data-t="togetherOn"></button>
+              <button data-v="aus" data-t="togetherOff"></button>
+            </div>
+            <p class="fhint" data-t="togetherHint"></p>
+          </div>
+      </div></details>
+      <details class="setup-section" id="setup-readers"><summary data-t="reader"></summary>
+        <div class="grid">
+          <div class="field wide">
+            <label for="profileSel" data-t="reader"></label>
+            <div class="profrow"><select id="profileSel"></select><button class="btn-danger small" id="profileDel"></button></div>
+            <div class="profrow"><input id="profileName" autocomplete="off" data-tp="newReaderPh"><button class="btn-ghost small" id="profileAdd" data-t="addReader"></button></div>
+            <p class="fhint" data-t="readerHint"></p>
+          </div>
+      </div></details>
+      <details class="setup-section" id="setup-app"><summary data-t="setupApp"></summary>
+        <div class="field" id="adultUiLanguage"><span class="flabel" data-t="setupLanguage"></span></div>
+        <div class="grid">
+          <div class="field wide">
+            <span class="flabel" data-t="parentGate"></span>
+            <div class="seg" id="gateSet"><button data-v="aus" data-t="gateOff"></button><button data-v="an" data-t="gateOn"></button></div>
+            <p class="fhint" data-t="holdToEdit"></p><p class="fhint" data-t="gateHint"></p>
+          </div>
+          <div class="field wide">
+            <details class="disclaimer" id="evidence"><summary data-t="evTitle"></summary><p data-th="evText"></p></details>
+          </div>
+      </div></details>
     </div>
   </div>
 </div>

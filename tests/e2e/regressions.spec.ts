@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
 import type { Para } from "../../src/types";
-import { bookTool, fresh } from "./helpers";
+import { bookTool, fresh, goShelf, openBookOptions, toggleReadingSetup } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
@@ -49,7 +49,7 @@ test("Additional paragraphs survive hyphen-setting changes and reopening", async
   await openStoredBook(page, [{ text: "Første side", paras: [para("Første side")] }]);
   await page.fill("#text", "Første side\n\nNy ekstra tekst");
   await expect(page.locator('#reader .w[data-word="ekstra"]')).toHaveCount(1);
-  await page.click("#setBtn"); await page.click('#hyphSet button[data-v="bog"]');
+  await openBookOptions(page); await page.click('#hyphSet button[data-v="bog"]');
   await expect(page.locator("#text")).toHaveValue("Første side\n\nNy ekstra tekst", { timeout: 1500 });
   await page.reload();
   await expect(page.locator("#text")).toHaveValue("Første side\n\nNy ekstra tekst");
@@ -57,7 +57,7 @@ test("Additional paragraphs survive hyphen-setting changes and reopening", async
 
 test("The hyphen setting remains effective after reopening", async ({ page }) => {
   await openStoredBook(page, [{ text: "Vi går i sko-le" }]);
-  await page.click("#setBtn"); await page.click('#hyphSet button[data-v="bog"]');
+  await openBookOptions(page); await page.click('#hyphSet button[data-v="bog"]');
   await expect(page.locator("#text")).toHaveValue("Vi går i sko·le");
   await page.reload();
   await expect(page.locator('#hyphSet button[data-v="bog"]')).toHaveClass(/on/);
@@ -78,7 +78,7 @@ test("Preserves manually entered numeric paragraphs after reopening", async ({ p
 });
 
 test("Switching between syllables and word parts rebuilds the segments", async ({ page }) => {
-  await page.click("#demoBtn"); await page.click("#setBtn");
+  await page.click("#demoBtn"); await toggleReadingSetup(page);
   const parts = page.locator('#reader .w[data-word="pindsvin"] .s');
   await expect(parts).toHaveText(["pinds", "vin"]);
   await page.click('#mode button[data-v="morf"]');
@@ -138,14 +138,14 @@ test("A page deleted during OCR stays deleted after reopening", async ({ page })
   await expect(page.locator(".thumb")).toHaveCount(1);
   await page.evaluate(() => (window as unknown as { finishRecognition: () => void }).finishRecognition());
   await waitForText(page);
-  await page.click("#home"); await page.locator(".book").click();
+  await goShelf(page); await page.locator(".book").click();
   await expect(page.locator("#count")).toHaveText("1 / 1", { timeout: 1500 });
 });
 
 test("Releases images from previous book views when reopening", async ({ page }) => {
   await openStoredBook(page, [{ text: "En side med billede", image: true }]);
   const previousUrl = await page.locator("#origImg").getAttribute("src");
-  await page.click("#home"); await page.locator(".book").click();
+  await goShelf(page); await page.locator(".book").click();
   await expect(page.locator("#text")).toHaveValue("En side med billede");
   await expect(page.locator("#origImg")).not.toHaveAttribute("src", previousUrl!);
   const isReadable = (url: string) => page.evaluate(async url => {

@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { fresh, seedBooks } from "./helpers";
+import { fresh, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
 
 test.beforeEach(async ({ page }) => {
   await fresh(page);
@@ -8,7 +8,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("The optional parent gate requires a deliberate mouse hold and cancels a short hold", async ({ page }) => {
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await expect(page.locator("#gateSet button.on")).toHaveAttribute("data-v", "aus", { timeout: 1500 });
   await page.click('#gateSet button[data-v="an"]');
   await page.click("#setClose");
@@ -34,7 +34,7 @@ test("The optional parent gate requires a deliberate mouse hold and cancels a sh
 
 for (const key of ["Enter", "Space"]) {
   test(`The parent gate accepts a deliberate ${key} hold and cancels a short key press`, async ({ page }) => {
-    await page.click("#setBtn");
+    await toggleReadingSetup(page);
     await page.click('#gateSet button[data-v="an"]');
     await page.click("#setClose");
     const button = page.locator("#editBookBtn");
@@ -58,8 +58,8 @@ test("The parent-gate setting and short-press explanation are translated and per
     ["de", "Elternschutz", "zwei Sekunden gedrückt halten"],
     ["en", "Parent gate", "Hold for two seconds"],
   ]) {
-    await page.click(`#uiLang button[data-v=${ui}]`);
-    await page.click("#setBtn");
+    await setUiLanguage(page, ui);
+    await toggleReadingSetup(page);
     await expect(page.locator("#gateSet").locator("..")).toContainText(label);
     await page.click('#gateSet button[data-v="an"]');
     await page.click("#setClose");
@@ -71,12 +71,12 @@ test("The parent-gate setting and short-press explanation are translated and per
   await expect(page.locator("#editBookBtn")).toBeVisible();
   await page.click("#editBookBtn");
   await expect(page.locator("#editEntry")).toBeHidden();
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await expect(page.locator("#gateSet button.on")).toHaveAttribute("data-v", "an");
 });
 
 test("Holding the gated entry opens no browser menu or text selection", async ({ page }) => {
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click('#gateSet button[data-v="an"]');
   await page.click("#setClose");
   // Tablets turn a long press into a context menu, a callout or a text selection, which can cancel the hold.
@@ -89,7 +89,7 @@ test("Holding the gated entry opens no browser menu or text selection", async ({
 });
 
 test("With the parent gate on, tapping the open entry closes it again", async ({ page }) => {
-  await page.click("#setBtn");
+  await toggleReadingSetup(page);
   await page.click('#gateSet button[data-v="an"]');
   await page.click("#setClose");
   const button = page.locator("#editBookBtn");
