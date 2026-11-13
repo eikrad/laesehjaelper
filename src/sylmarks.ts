@@ -79,6 +79,9 @@ export function marksIn(img: Gray, w: OcrWord): { after: number; mark: string }[
     const after = syms.filter((s) => (s.bbox.x0 + s.bbox.x1) / 2 < cx).length - 1;
     const a = syms[after], b = syms[after + 1];
     if (!a || !b || !LETTER.test(a.text) || !LETTER.test(b.text) || MARK.test(a.text) || MARK.test(b.text)) continue;
+    // Overlapping character boxes do not establish a gap for a separator: a detached letter
+    // stroke can sit between their centers and otherwise be mistaken for a printed dash.
+    if (a.bbox.x1 > b.bbox.x0) continue;
     if (!found.some((f) => f.after === after)) found.push({ after, mark: "-" });
   }
   return found;
