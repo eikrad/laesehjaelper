@@ -11,6 +11,7 @@ import { boxLineHeight, boxSpacing, DEFAULT_LH, DEFAULT_LS, wordSpacing, WORD_BA
 import { marksSyllables, silben } from "./silben";
 import { swipeDirection } from "./swipe";
 import { resumePage } from "./bookshelf";
+import { createLibrary } from "./library";
 import { insertIndex, selectedIndex, type Placement } from "./pagelist";
 import { holdProgress } from "./hold";
 import { screenWakeLock } from "./wakelock";
@@ -470,8 +471,6 @@ const Lib = { detectFrame, warpPage, orderCorners };
   // ---------- Pages ----------
   const pages: Page[] = [];
   let cur = 0;
-  const removedPages = new Set<string>();
-  const isRemoved = (pg: Page) => !!pg.id && removedPages.has(pg.id);
   const touchPage = (pg: Page) => { pg.changeVersion = (pg.changeVersion || 0) + 1; };
 
   // ---------- Book storage (IndexedDB, on this device only) ----------
@@ -486,6 +485,30 @@ const Lib = { detectFrame, warpPage, orderCorners };
     img.onload = () => { const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight; ctx2d(c).drawImage(img, 0, 0); URL.revokeObjectURL(url); res(c); };
     img.onerror = rej; img.src = url;
   });
+
+  // The library saves pages with their book record and keeps unsaved pages (src/library.ts).
+  const library = createLibrary<Page, Book, PageRecord>({
+    store: {
+      write: (b, records) => DB.putBook(b, records),
+      async remove(pageIds, bookId) {
+        for (const id of pageIds) await DB.del("pages", id);
+        if (bookId) await DB.del("books", bookId);
+      },
+    },
+    async encode(pg, bookId) {
+      const { canvas, photo } = pg;
+      const inputBlob = pg.inputBlob || (canvas ? await canvasBlob(canvas) : null);
+      const photoBlob = pg.photoBlob || (photo ? await canvasBlob(photo, 0.8) : null);
+      // While toBlob() was pending, the page may have been given a new picture that its own save stores.
+      if (pg.canvas !== canvas || pg.photo !== photo) return null;
+      pg.inputBlob = inputBlob; pg.photoBlob = photoBlob;
+      pg.revision = uid();
+      return pageRecord(pg, bookId);
+    },
+    failed: e => storageFail(e),
+    changed: () => {},
+  });
+  const isRemoved = (pg: Page) => library.isRemoved(pg);
 
   let book: Book | null = null;
   let navigationId = 0;
@@ -506,7 +529,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
   }
 
   let persistAsked = false;
-  async function saveBook() {
+  /** Save the book record, together with pages that must be stored with it (a newly accepted photo). */
+  async function saveBook(withPages: Page[] = []) {
     if (!book || book.demo || !pages.length) return;
     book.pageIds = pages.map(p => p.id).filter((id): id is string => !!id);
     book.lastPage = cur;
@@ -518,7 +542,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       c.getContext("2d")!.drawImage(first.canvas, 0, 0, c.width, c.height);
       book.cover = c.toDataURL("image/jpeg", 0.8);
     }
-    try { await DB.put("books", { ...book }); } catch (e) { storageFail(e); }
+    await library.saveBook(book, withPages);
     // Ask the browser to keep books when storage is low.
     if (!persistAsked && navigator.storage?.persist) { persistAsked = true; navigator.storage.persist().catch(() => {}); }
   }
@@ -537,20 +561,12 @@ const Lib = { detectFrame, warpPage, orderCorners };
 
   async function savePage(pg: Page | undefined) {
     if (!pg || isRemoved(pg)) return;
-    const bookId = pg.bookId || (book && !book.demo ? (pg.bookId = book.id) : null);
-    if (!bookId) return;
+    if (!pg.bookId) {
+      if (!book || book.demo) return;
+      pg.bookId = book.id;
+    }
     pg.id = pg.id || uid();
-    const { canvas, photo } = pg;
-    try {
-      const inputBlob = pg.inputBlob || (canvas ? await canvasBlob(canvas) : null);
-      const photoBlob = pg.photoBlob || (photo ? await canvasBlob(photo, 0.8) : null);
-      // While toBlob() was pending, the page may have been deleted, or given a new picture
-      // that its own save stores.
-      if (isRemoved(pg) || pg.canvas !== canvas || pg.photo !== photo) return;
-      pg.inputBlob = inputBlob; pg.photoBlob = photoBlob;
-      pg.revision = uid();
-      await DB.put<PageRecord>("pages", pageRecord(pg, bookId));
-    } catch (e) { storageFail(e); }
+    await library.save(pg);
   }
 
   function pageFromRecord(r: PageRecord): Page {
@@ -608,9 +624,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
 
   async function deletePage(i: number) {
     const [pg] = pages.splice(i, 1);
-    if (pg?.id) removedPages.add(pg.id);
-    if (pg) releasePageImages(pg);
-    if (pg && pg.id && book && !book.demo) { try { await DB.del("pages", pg.id); } catch (e) { storageFail(e); } }
+    if (pg) { releasePageImages(pg); await library.remove(pg); }
     if (i === 0 && book) book.cover = null;
     if (!pages.length) { await deleteBook(); return; }
     cur = Math.min(cur, pages.length - 1);
@@ -627,11 +641,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
   }
   async function deleteBook() {
     if (book) practice.forget("book", book.id);
-    pages.forEach(pg => { if (pg.id) removedPages.add(pg.id); });
     pages.forEach(releasePageImages);
-    if (book && !book.demo) {
-      try { for (const pg of pages) if (pg.id) await DB.del("pages", pg.id); await DB.del("books", book.id); } catch (e) { storageFail(e); }
-    }
+    if (book && !book.demo) await library.removeBook(book, pages);
     pages.length = 0; book = null; showStart();
   }
 
@@ -1351,9 +1362,9 @@ const Lib = { detectFrame, warpPage, orderCorners };
         pages.splice(at, 0, pg); added.push(pg); queue.push(pg);
         if (at === 0) owner.cover = null;
         cur = selectedIndex(pages, added[0], cur); render();
-        await savePage(pg);
-        // Navigation may cancel the remaining batch, but an accepted page still needs its book record.
-        if (book === owner) await saveBook();
+        // Photo acceptance: the page is saved with its book record in one step, so navigation that
+        // cancels the rest of the batch cannot leave it out of its book.
+        await saveBook([pg]);
         runQueue();
         if (!ownsPreparation()) return;
       } catch (e) { toast(e instanceof Error ? e.message : String(e)); }
