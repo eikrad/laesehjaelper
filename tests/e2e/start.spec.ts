@@ -30,7 +30,9 @@ test.describe("Books with recognition in progress", () => {
     await page.waitForFunction(() => "ocrWaiting" in window);
     await expect(page.locator("#reader")).toContainText("Den første side er klar.");
     await page.click("#next");
-    await expect(page.locator("#reader .bar")).toBeVisible();
+    // Reading shows a calm sign, also without a photo; recognition progress is for the workshop (#216).
+    await expect(page.locator("#reader .page-wait")).toBeVisible();
+    await expect(page.locator("#reader .bar")).toHaveCount(0);
     await page.click("#prev");
     await expect(page.locator("#reader")).toContainText("Den første side er klar.");
   });

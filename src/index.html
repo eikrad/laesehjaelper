@@ -260,6 +260,15 @@ body.workshop .workshop-grid > * { min-width: 0; }
 .tbox p:last-child { margin-bottom: 0; }
 .tbox.busy { border-radius: 12px; padding: 0 .3em; }
 .status { padding: 48px 20px; text-align: center; color: var(--muted); font-family: var(--ui); font-size: 17px; }
+/* Reading a page that is still being prepared: its photo with the logo's syllable arcs drawing themselves. */
+.page-wait { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: grid; place-items: center; width: 76px; height: 48px; border-radius: 999px; background: rgba(255,255,255,.92); box-shadow: 0 4px 14px -6px rgba(23,25,59,.4); }
+.page-wait svg { width: 44px; height: 26px; overflow: visible; }
+.page-wait-alone { display: grid; place-items: center; min-height: 240px; }
+.page-wait-alone .page-wait { position: static; transform: none; }
+.page-wait path { fill: none; stroke: var(--blue); stroke-width: 3.2; stroke-linecap: round; stroke-dasharray: 23; animation: arc-draw 1.6s ease-in-out infinite; }
+.page-wait path + path { stroke: var(--red); animation-delay: .25s; }
+@keyframes arc-draw { 0% { stroke-dashoffset: 23; } 45%, 70% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -23; } }
+@media (prefers-reduced-motion: reduce) { .page-wait path { animation: none; } }
 .bar { height: 10px; background: var(--sky); border-radius: 99px; overflow: hidden; max-width: 280px; margin: 14px auto 0; }
 .bar i { display: block; height: 100%; width: 0; background: var(--blue); border-radius: 99px; transition: width .2s; }
 
