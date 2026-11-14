@@ -44,6 +44,9 @@ async function seedBatch(page: import("@playwright/test").Page, photoName?: stri
     await new Promise<void>(resolve => { tx.oncomplete = () => resolve(); }); db.close();
   }, photo);
   await page.goto("/"); await page.locator(".book").click();
+  // The book opens asynchronously. Until it does, the language switch is still on the shelf header
+  // and disappears into the closed settings while being clicked.
+  await expect(page.locator("#app")).toBeVisible();
   await setUiLanguage(page, "en");
   await openWorkshop(page);
 }
@@ -94,7 +97,8 @@ test("Explicit inclusion continues after a failed page and keeps its existing re
   await seedBatch(page);
   const before = await storedPages(page);
   await page.click("#reprocessBookBtn"); await page.locator("#batchIncludeManual").check(); await page.click("#batchStart");
-  await expect(page.locator("#batchProgress")).toContainText("2 succeeded · 1 failed", { timeout: 3000 });
+  // Two recognised pages and a failure: on a slow shared CI runner with coverage this exceeds 3 s.
+  await expect(page.locator("#batchProgress")).toContainText("2 succeeded · 1 failed", { timeout: 10000 });
   await expect(page.locator("#batchIncludeManual")).not.toBeChecked({ timeout: 1500 });
   await expect(page.locator("#batchResults")).toContainText("Page 2: Failed; previous content kept");
   const after = await storedPages(page);
