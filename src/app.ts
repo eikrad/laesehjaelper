@@ -1901,9 +1901,11 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
       const cleanBlob = cleanCanvas ? await canvasBlob(cleanCanvas) : null;
       if (stale()) return;
       // Commit: nothing from here on waits, so the page cannot change half-way.
-      // Only text the layout trusts is kept. Without a reliable paragraph the page has no text: the raw
-      // result is then noise read from a picture, such as symbols from a meadow (#216).
-      Object.assign(pg, { workW: work.width, workH: work.height, paras, rawText: paras.length ? data.text || "" : "" });
+      // Only text the layout trusts is kept. When the layout finds no reliable paragraph, the page has no
+      // text: the raw result is then noise read from a picture, such as symbols from a meadow (#216).
+      // Without any layout information the raw text is all there is.
+      const trusted = paras.length > 0 || !data.blocks;
+      Object.assign(pg, { workW: work.width, workH: work.height, paras, rawText: trusted ? data.text || "" : "" });
       retext(pg);
       releaseImage(pg.clean);
       pg.clean = cleanCanvas ? cleanCanvas.toDataURL("image/jpeg", 0.9) : null;
