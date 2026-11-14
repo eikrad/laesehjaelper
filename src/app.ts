@@ -373,7 +373,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     $<HTMLSelectElement>("font").value = S.font; $in("size").value = String(S.size); $in("ls").value = String(S.ls); $in("lh").value = String(S.lh);
     for (const [id, key] of CHOICES)
       $(id).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === S[key]));
-    $("orig").classList.toggle("hidden", S.orig === "aus" || !pages[cur]?.img || isPageMode(pages[cur]));
+    $("orig").classList.toggle("hidden", S.orig === "aus" || !pages[cur]?.img || isPageMode(pages[cur]) || readsPicture(pages[cur]));
     // Photo beside the text on wide screens (CSS); not while comparing, which shows the photo instead of the text.
     $("app").classList.toggle("split", !$("orig").classList.contains("hidden") && !comparing);
     // Showing or hiding the original page only applies to text view. In book-page view,
@@ -1086,6 +1086,39 @@ const Lib = { detectFrame, warpPage, orderCorners };
     pg.paras.forEach((pa, i) => { pa.text = i === pg.paras!.length - 1 ? parts.slice(i).join("\n\n") : parts[i] || ""; });
   }
 
+  function hasText(pg: Page) { return pg.status === "done" && !!pg.text?.trim(); }
+  /** Reading a page without text to read (only a picture, failed or not recognised yet): its photo is the page. */
+  function readsPicture(pg: Page | undefined) { return document.body.classList.contains("reading") && !!pg && !hasText(pg); }
+
+  /** The page photo as the page, with a calm sign while the page is still being prepared. */
+  function renderPicture(pg: Page) {
+    const rd = $("reader");
+    rd.classList.remove("comparing", "pagemode");
+    rd.innerHTML = ""; speech = null;
+    const pending = pg.status === "wait" || pg.status === "ocr";
+    if (!pg.img) {
+      // No photo to show: only the sign while the page is prepared, otherwise an empty page.
+      if (pending) { const box = document.createElement("div"); box.className = "page-wait-alone"; box.append(waitSign()); rd.append(box); }
+      return;
+    }
+    rd.classList.add("pagemode");
+    const pv = document.createElement("div"); pv.className = "pageview";
+    const img = new Image(); img.alt = t("origAlt");
+    const fit = () => { pv.style.setProperty("--ar", String(img.naturalWidth / img.naturalHeight || 0.75)); fitPage(); };
+    img.onload = fit; img.src = pg.img;
+    pv.append(img);
+    if (pending) pv.append(waitSign());
+    rd.append(pv);
+    if (img.complete) requestAnimationFrame(fit);
+  }
+  /** The logo's syllable arcs drawing themselves (still with reduced motion); no words for the child to read. */
+  function waitSign() {
+    const sign = document.createElement("div");
+    sign.className = "page-wait"; sign.setAttribute("role", "status"); sign.setAttribute("aria-label", t("preparing"));
+    sign.innerHTML = `<svg viewBox="0 0 34 20" aria-hidden="true"><path d="M3 5a7 7 0 0 0 14 0"/><path d="M17 5a7 7 0 0 0 14 0"/></svg>`;
+    return sign;
+  }
+
   function showStatus(html: string) {
     $("reader").classList.remove("pagemode", "comparing");
     $("reader").innerHTML = `<div class="status">${html}</div>`;
@@ -1137,6 +1170,11 @@ const Lib = { detectFrame, warpPage, orderCorners };
       rd.innerHTML = ""; speech = null;
       const im = new Image(); im.className = "origfull"; im.src = pg.img; im.alt = t("origAlt"); rd.append(im);
       $<HTMLTextAreaElement>("text").value = pg.text;
+      $<HTMLButtonElement>("readBtn").disabled = true;
+    } else if (view === "read" && !hasText(pg)) {
+      // Reading shows no hints for adults and no errors: the child sees the page photo (#216).
+      renderPicture(pg);
+      $<HTMLTextAreaElement>("text").value = pg.status === "done" ? pg.text : "";
       $<HTMLButtonElement>("readBtn").disabled = true;
     } else if (pg.status === "done") {
       $("reader").classList.remove("comparing");
@@ -1860,7 +1898,11 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
       const cleanBlob = cleanCanvas ? await canvasBlob(cleanCanvas) : null;
       if (stale()) return;
       // Commit: nothing from here on waits, so the page cannot change half-way.
-      Object.assign(pg, { workW: work.width, workH: work.height, paras, rawText: data.text || "" });
+      // Only text the layout trusts is kept. When recognition reports text blocks but the layout keeps
+      // none of them, the page has no text: the raw result is noise read from a picture, such as symbols
+      // from a meadow (#216). Without any blocks to judge, the raw text is all there is.
+      const trusted = paras.length > 0 || !data.blocks?.length;
+      Object.assign(pg, { workW: work.width, workH: work.height, paras, rawText: trusted ? data.text || "" : "" });
       retext(pg);
       releaseImage(pg.clean);
       pg.clean = cleanCanvas ? cleanCanvas.toDataURL("image/jpeg", 0.9) : null;
