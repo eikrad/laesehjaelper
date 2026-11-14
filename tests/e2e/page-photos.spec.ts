@@ -295,14 +295,12 @@ test("A replaced photo stays replaced when the previous photo was still being sa
   await page.evaluate(() => { (window as unknown as Gate).blobGate.held = true; });
   await acceptCrop(page);
   await choosePhoto(page, "#replacePhotoBtn", ["side-overskrift.jpg"]);
-  // Two saves wait: the first photo's, then the replacement's. Let the replacement's finish first.
-  expect(await page.evaluate(() => (window as unknown as Gate).blobGate.waiting.length)).toBe(2);
+  // The first photo's save is still encoding. The replacement's save waits behind it (src/library.ts).
   await page.evaluate(() => {
     const gate = (window as unknown as Gate).blobGate;
-    gate.held = false; gate.waiting[1]();
+    gate.held = false; gate.waiting.splice(0).forEach(go => go());
   });
   await expect.poll(async () => (await storedPages(page)).map(p => p.photo)).toEqual([true]);
-  await page.evaluate(() => (window as unknown as Gate).blobGate.waiting[0]());
   await page.waitForTimeout(500);
   await page.reload();
   // side-overskrift.jpg is 1000 px wide, side-da.jpg 1200 px.
