@@ -730,16 +730,24 @@ const Lib = { detectFrame, warpPage, orderCorners };
     p.classList.add("short");
   }
   // ---------- Reading together: open questions for the adult ----------
+  // The questions open from a button in the reading bar, above its controls: the adult asks for them,
+  // and the page is fitted above them, so they never take the child's page (#215).
+  let togetherOpen = false;
   function renderTogether() {
     const pg = pages[cur];
-    const box = $("together");
-    box.hidden = S.together !== "an" || !pg || pg.status !== "done";
+    const button = $<HTMLButtonElement>("togetherBtn"), box = $("together");
+    button.hidden = S.together !== "an" || !pg || pg.status !== "done";
+    if (button.hidden) togetherOpen = false;
+    button.setAttribute("aria-expanded", String(togetherOpen));
+    box.hidden = !togetherOpen;
     if (box.hidden) return;
     const ul = $("togetherQs"); ul.innerHTML = "";
     for (const q of pageQuestions(pg.lang, cur, pg.question)) { const li = document.createElement("li"); li.textContent = q; ul.append(li); }
     $<HTMLInputElement>("ownQ").value = pg.question || "";
     $("ownQRow").hidden = true;
   }
+  $<HTMLButtonElement>("togetherBtn").onclick = () => { togetherOpen = !togetherOpen; renderTogether(); };
+  function closeTogether() { togetherOpen = false; renderTogether(); $<HTMLButtonElement>("togetherBtn").focus(); }
   $<HTMLButtonElement>("ownQBtn").onclick = () => {
     const row = $("ownQRow"); row.hidden = !row.hidden;
     if (!row.hidden) $<HTMLInputElement>("ownQ").focus();
@@ -913,9 +921,10 @@ const Lib = { detectFrame, warpPage, orderCorners };
    */
   function fitPage() {
     const reader = $("reader");
+    // The bar's height also places the settings sheet above it, in the workshop too.
+    if (!$("dock").hidden) document.documentElement.style.setProperty("--reading-controls-height", $("dock").getBoundingClientRect().height + "px");
     if (view === "read" && !$("app").hidden) {
       const dock = $("dock").getBoundingClientRect();
-      document.documentElement.style.setProperty("--reading-controls-height", dock.height + "px");
       if (reader.classList.contains("pagemode")) {
         const top = reader.getBoundingClientRect().top + window.scrollY;
         reader.style.setProperty("--available-page-height", Math.max(1, dock.top - top - 4) + "px");
@@ -1251,6 +1260,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   $("reader").addEventListener("pointercancel", () => { swipe = null; });
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && settingsOpen()) { showSettings(false); return; }
+    if (e.key === "Escape" && !$("together").hidden) { closeTogether(); return; }
     if (document.querySelector("dialog[open]") || (e.target as HTMLElement).matches("textarea, input, select, [contenteditable]")) return;
     if (e.key === "ArrowLeft") $<HTMLButtonElement>("prev").click();
     if (e.key === "ArrowRight") $<HTMLButtonElement>("next").click();
