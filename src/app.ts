@@ -1086,7 +1086,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     pg.paras.forEach((pa, i) => { pa.text = i === pg.paras!.length - 1 ? parts.slice(i).join("\n\n") : parts[i] || ""; });
   }
 
-  function hasText(pg: Page) { return pg.status === "done" && !!pg.text.trim(); }
+  function hasText(pg: Page) { return pg.status === "done" && !!pg.text?.trim(); }
   /** Reading a page without text to read (only a picture, failed or not recognised yet): its photo is the page. */
   function readsPicture(pg: Page | undefined) { return document.body.classList.contains("reading") && !!pg && !hasText(pg); }
 
@@ -1898,10 +1898,10 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
       const cleanBlob = cleanCanvas ? await canvasBlob(cleanCanvas) : null;
       if (stale()) return;
       // Commit: nothing from here on waits, so the page cannot change half-way.
-      // Only text the layout trusts is kept. When the layout finds no reliable paragraph, the page has no
-      // text: the raw result is then noise read from a picture, such as symbols from a meadow (#216).
-      // Without any layout information the raw text is all there is.
-      const trusted = paras.length > 0 || !data.blocks;
+      // Only text the layout trusts is kept. When recognition reports text blocks but the layout keeps
+      // none of them, the page has no text: the raw result is noise read from a picture, such as symbols
+      // from a meadow (#216). Without any blocks to judge, the raw text is all there is.
+      const trusted = paras.length > 0 || !data.blocks?.length;
       Object.assign(pg, { workW: work.width, workH: work.height, paras, rawText: trusted ? data.text || "" : "" });
       retext(pg);
       releaseImage(pg.clean);
