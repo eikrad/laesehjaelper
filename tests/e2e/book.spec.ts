@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, toggleReadingSetup, waitForText } from "./helpers";
+import { addPhotos, bookTool, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, readBook, storedPages, toggleReadingSetup, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -27,6 +27,18 @@ test("Photo → crop → text recognition → book page", async ({ page }) => {
   await expect(page.locator("#orig")).toBeHidden();
   await page.click("#origToggle button[data-v=an]");
   await expect(page.locator("#orig")).toBeVisible();
+});
+
+test("A picture-only page gets no text, so reading shows the picture instead of symbols from it", async ({ page }) => {
+  await page.click('#langStart button[data-v="en"]');
+  await addPhotos(page, ["side-eng-uden-tekst.jpg"]);
+  // Recognition finds only shapes in the meadow; none of it is kept as text.
+  await expect.poll(async () => (await storedPages(page))[0]?.status, { timeout: 200_000 }).toBe("done");
+  expect((await storedPages(page))[0].text).toBe("");
+  await readBook(page);
+  await expect(page.locator("#reader .pageview > img")).toBeVisible();
+  await expect(page.locator("#reader")).toHaveText("");
+  await expect(page.locator("#readBtn")).toBeDisabled();
 });
 
 test("Recognizes text over an illustration while excluding the page number", async ({ page }) => {

@@ -26,10 +26,12 @@ export async function seedBooks(page: Page, books: { id: string; title: string; 
 /**
  * A book of self-made pages recognised beforehand (tests/fixtures/make-recognised.ts), opened for
  * reading. For tests that need recognised pages but do not test recognition: much faster than
- * recognising the photos again. `names` are fixture photos, e.g. "side-da.jpg".
+ * recognising the photos again. `names` are fixture photos, e.g. "side-da.jpg". `changes` replace
+ * stored fields per page, for example `{ status: "wait" }` for a page still to be recognised; the
+ * first page must keep its text, because opening waits for it.
  */
-export async function openRecognisedBook(page: Page, names: string[]) {
-  const records = names.map(n => JSON.parse(fs.readFileSync(fixture(n.replace(/\.jpg$/, ".recognised.json")), "utf8")));
+export async function openRecognisedBook(page: Page, names: string[], changes: Record<string, unknown>[] = []) {
+  const records = names.map((n, i) => ({ ...JSON.parse(fs.readFileSync(fixture(n.replace(/\.jpg$/, ".recognised.json")), "utf8")), ...changes[i] }));
   await page.evaluate(async records => {
     const blob = (b64: string | null) => (b64 ? new Blob([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], { type: "image/jpeg" }) : null);
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -40,7 +42,7 @@ export async function openRecognisedBook(page: Page, names: string[]) {
     const ids = records.map((_, i) => `recognised-${i}`);
     tx.objectStore("books").put({ id: "recognised", title: "Prøvebog", pageIds: ids, lastPage: 0, created: 1, cover: null });
     records.forEach(({ input, photo, clean, ...r }, i) => tx.objectStore("pages").put({
-      ...r, id: ids[i], bookId: "recognised", status: "done", question: "", inputBlob: blob(input), photoBlob: blob(photo), cleanBlob: blob(clean),
+      status: "done", ...r, id: ids[i], bookId: "recognised", question: "", inputBlob: blob(input), photoBlob: blob(photo), cleanBlob: blob(clean),
     }));
     await new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); });
     db.close();
