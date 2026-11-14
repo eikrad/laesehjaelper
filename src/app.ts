@@ -13,7 +13,7 @@ import { swipeDirection } from "./swipe";
 import { resumePage } from "./bookshelf";
 import { createLibrary } from "./library";
 import { insertIndex, selectedIndex, type Placement } from "./pagelist";
-import { holdProgress } from "./hold";
+import { createParentGate } from "./hold";
 import { screenWakeLock } from "./wakelock";
 import { readingFullscreen } from "./fullscreen";
 import { type BookLocation, createNavigation } from "./navigation";
@@ -414,7 +414,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     $<HTMLButtonElement>("setBtn").classList.toggle("on", $("settings").classList.toggle("open", on));
     $("setBtn").setAttribute("aria-expanded", String(on));
     document.body.classList.toggle("settings-open", on);   // Wide screens move the page beside the panel.
-    if (on) { showEditEntry(false); $("setClose").focus(); }
+    if (on) { closeEditEntry(); $("setClose").focus(); }
     else if (wasOpen) $(returnAdult && view === "read" ? "editBookBtn" : "setBtn").focus();
   }
   // From 840 px the settings are a panel beside the page (CSS), not a sheet over it.
@@ -533,7 +533,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   function recognitionPages(): Page[] { return [active, pendingPage, ...queue].filter((pg): pg is Page => !!pg && !pg.batchDraft); }
   function newBook(demo = false) {
     nav.begin();
-    showEditEntry(false); showCheck(false);
+    closeEditEntry(); showCheck(false);
     // Pages still to be recognised keep their images; runQueue() lets them go when they are done.
     // Unsaved pages keep theirs too: reopening the book shows them again.
     const recognising = new Set(recognitionPages());
@@ -2096,7 +2096,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     view = mode;
     document.body.classList.toggle("reading", view === "read");
     $("adultUiLanguage").append($("uiLang"));
-    showEditEntry(false); showCheck(false); showSettings(false);
+    closeEditEntry(); showCheck(false); showSettings(false);
     setReadingMode(false);
     document.body.classList.toggle("workshop", view === "workshop");
     comparing = false; setCompareBtn();
@@ -2133,15 +2133,16 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     // from the shelf never leads into a book that is no longer there.
     if (!fromHistory && !$("app").hidden) { history.go(nav.stepsToShelf(view)); return; }
     wake.keepOn(false);
-    stopSpeech(); showEditEntry(false); showCheck(false);
+    stopSpeech(); closeEditEntry(); showCheck(false);
     document.body.classList.remove("workshop", "reading"); setReadingMode(false);
     document.querySelector("header.top")!.append($("uiLang"));
     $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; showSettings(false);
     writeLocation({ view: "shelf" }, false);
     saveBook(); renderShelf(); window.scrollTo(0, 0);
   }
-  function showEditEntry(on: boolean) {
-    if (!on) { cancelEditHold(); holdCompleted = false; }
+  /** Close the book-tools entry, ending any hold on it. */
+  function closeEditEntry() { gate.close(); renderEditEntry(false); }
+  function renderEditEntry(on: boolean) {
     $("editEntry").hidden = !on;
     $("editBookBtn").setAttribute("aria-expanded", String(on));
     $<HTMLButtonElement>("correctPageBtn").disabled = pages[cur]?.status !== "done";
@@ -2151,63 +2152,52 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     if (correct && pages[cur]?.status === "done") { showCheck(true); $<HTMLTextAreaElement>("text").focus(); }
   }
   const editEntryButton = $<HTMLButtonElement>("editBookBtn");
-  let holdStarted: number | null = null, holdFrame = 0, holdCompleted = false;
-  function cancelEditHold() {
-    cancelAnimationFrame(holdFrame); holdStarted = null;
-    editEntryButton.classList.remove("holding"); editEntryButton.style.removeProperty("--hold-progress");
-  }
-  function advanceEditHold() {
-    if (holdStarted === null) return;
-    const progress = holdProgress(performance.now() - holdStarted);
-    editEntryButton.style.setProperty("--hold-progress", `${progress * 100}%`);
-    if (progress === 1) { holdCompleted = true; cancelEditHold(); showEditEntry(true); }
-    else holdFrame = requestAnimationFrame(advanceEditHold);
-  }
-  function startEditHold() {
-    // An open entry closes with a plain press; holding is only needed to open it.
-    if (S.gate !== "an" || holdStarted !== null || $("editEntry").hidden === false) return;
-    holdCompleted = false; holdStarted = performance.now(); editEntryButton.classList.add("holding"); advanceEditHold();
-  }
-  /** A finished click or key press on "Edit book". */
-  function pressEditEntry() {
-    if (holdCompleted) { holdCompleted = false; return; }   // The hold has just opened the entry.
-    const open = $("editEntry").hidden === false;
-    if (S.gate === "an" && !open) toast(t("holdToEdit"));
-    else showEditEntry(!open);
-  }
-  editEntryButton.onclick = pressEditEntry;
+  // The optional parent gate: a deliberate hold opens the book tools (src/hold.ts).
+  const gate = createParentGate({
+    enabled: () => S.gate === "an",
+    clock: { now: () => performance.now(), frame: cb => requestAnimationFrame(cb), cancel: id => cancelAnimationFrame(id) },
+    progress: value => {
+      editEntryButton.classList.toggle("holding", value !== null);
+      if (value === null) editEntryButton.style.removeProperty("--hold-progress");
+      else editEntryButton.style.setProperty("--hold-progress", `${value * 100}%`);
+    },
+    openChanged: renderEditEntry,
+    hint: () => toast(t("holdToEdit")),
+  });
+  editEntryButton.onclick = () => gate.press();
   // A long press must not turn into a context menu, callout or text selection, which can cancel the hold.
   editEntryButton.oncontextmenu = e => { if (S.gate === "an") e.preventDefault(); };
   editEntryButton.onpointerdown = e => {
     if (e.button !== 0 || S.gate !== "an") return;
-    editEntryButton.setPointerCapture(e.pointerId); startEditHold();
+    editEntryButton.setPointerCapture(e.pointerId); gate.start();
   };
   editEntryButton.onpointermove = e => {
-    if (holdStarted === null) return;
+    if (!gate.holding) return;
     const r = editEntryButton.getBoundingClientRect();
-    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) cancelEditHold();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) gate.cancel();
   };
-  editEntryButton.onpointerup = editEntryButton.onpointercancel = editEntryButton.onlostpointercapture = cancelEditHold;
+  editEntryButton.onpointerup = editEntryButton.onpointercancel = editEntryButton.onlostpointercapture = () => gate.cancel();
   editEntryButton.onkeydown = e => {
-    if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); if (!e.repeat) startEditHold(); }
+    if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); if (!e.repeat) gate.start(); }
   };
   editEntryButton.onkeyup = e => {
-    if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); cancelEditHold(); pressEditEntry(); }
+    if (S.gate === "an" && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); gate.cancel(); gate.press(); }
   };
-  editEntryButton.onblur = cancelEditHold;
-  window.addEventListener("blur", cancelEditHold);
-  document.addEventListener("visibilitychange", () => { if (document.hidden) cancelEditHold(); });
+  editEntryButton.onblur = () => gate.cancel();
+  window.addEventListener("blur", () => gate.cancel());
+  document.addEventListener("visibilitychange", () => { if (document.hidden) gate.cancel(); });
   $("openWorkshopBtn").onclick = () => enterWorkshop();
   $("readingSetupBtn").onclick = () => showSettings(true, true);
   $("readingSetupLink").onclick = () => {
     if (view === "workshop") { showSettings(true, true); return; }
     showSettings(false);
-    if (S.gate === "an") { toast(t("holdToEdit")); editEntryButton.focus(); }
-    else showEditEntry(true);
+    // Gated, this explains the hold; without the gate, it opens the entry.
+    if (!gate.open) gate.press();
+    if (S.gate === "an") editEntryButton.focus();
   };
   $("correctPageBtn").onclick = () => enterWorkshop(true);
-  document.addEventListener("pointerdown", e => { if (!(e.target as Element).closest(".reading-entry")) showEditEntry(false); });
-  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("editEntry").hidden) { showEditEntry(false); $<HTMLButtonElement>("editBookBtn").focus(); } });
+  document.addEventListener("pointerdown", e => { if (!(e.target as Element).closest(".reading-entry")) closeEditEntry(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("editEntry").hidden) { closeEditEntry(); $<HTMLButtonElement>("editBookBtn").focus(); } });
   $("readBookBtn").onclick = () => { saveBook(); history.back(); };
   $<HTMLButtonElement>("homeBtn").onclick = () => showStart();
   $("home").onclick = () => showStart();
