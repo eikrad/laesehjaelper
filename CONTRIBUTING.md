@@ -10,7 +10,7 @@ Læsehjælper is maintained by [@eikrad](https://github.com/eikrad). Anyone can 
 
 ## Roadmap: epics, stories and bugs
 
-All planning happens in GitHub issues – there is no separate list anywhere else. The [roadmap](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap) is simply every open issue labelled `roadmap`.
+All planning happens in GitHub issues. [`ROADMAP.md`](ROADMAP.md) is the ordered overview: every open issue appears there exactly once, under Now, Next, Later or Ideas. Issues under Now and Next carry the `roadmap` label ([list on GitHub](https://github.com/eikrad/laesehjaelper/issues?q=is%3Aissue%20is%3Aopen%20label%3Aroadmap)).
 
 | Type | Label | What it is | Who creates it |
 |---|---|---|---|
@@ -21,7 +21,8 @@ All planning happens in GitHub issues – there is no separate list anywhere els
 Rules:
 
 - Every story and every planned bug belongs to exactly one epic (as a sub-issue).
-- Only the maintainer adds or removes the `roadmap` label – that is what puts something on the roadmap.
+- Only the maintainer adds or removes the `roadmap` label and moves issues into Now or Next in `ROADMAP.md`.
+- `ROADMAP.md` stays in step with the issues: a pull request that closes an issue removes its line, and a new issue gets a line under Later or Ideas. The order of the sub-issues in each epic matches the file.
 - A pull request closes one story or bug (`Closes #…` in the description). Bigger stories are split into several stories rather than one huge pull request.
 - Use the issue templates (Epic, Story, Bug).
 
