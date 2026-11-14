@@ -253,12 +253,21 @@ test("Reader settings: create, switch and retain profiles", async ({ page }) => 
   await expect(page.locator("#size")).toHaveValue("26");
 });
 
-test("Reading together: two open questions and a custom question per page", async ({ page }) => {
+test("Reading together: two open questions and a custom question per page, behind a button in the reading bar", async ({ page }) => {
   await page.click("#demoBtn");
+  const button = page.locator("#togetherBtn");
+  await expect(button).toBeHidden();
   await expect(page.locator("#together")).toBeHidden();
   await toggleReadingSetup(page);
   await page.click("#togetherSet button[data-v=an]");
   await toggleReadingSetup(page);
+  // The questions are for the adult: closed until asked for, so they never take the child's page.
+  await expect(button).toBeVisible();
+  await expect(button).toHaveAccessibleName("Snak om siden");
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator("#together")).toBeHidden();
+  await button.click();
+  await expect(button).toHaveAttribute("aria-expanded", "true");
   await expect(page.locator("#together")).toBeVisible();
   await expect(page.locator("#togetherQs li")).toHaveCount(2);
   await expect(page.locator("#togetherQs li").first()).toHaveText(/\?$/);
@@ -267,6 +276,14 @@ test("Reading together: two open questions and a custom question per page", asyn
   await page.press("#ownQ", "Enter");
   await expect(page.locator("#togetherQs li").first()).toHaveText("Hvorfor sover pindsvinet?");
   await expect(page.locator("#togetherQs li")).toHaveCount(2);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#together")).toBeHidden();
+  await expect(button).toBeFocused();
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await button.click();
+  await expect(page.locator("#together")).toBeVisible();
+  await button.click();
+  await expect(page.locator("#together")).toBeHidden();
 });
 
 test("Text marked with *word* appears bold without asterisks", async ({ page }) => {

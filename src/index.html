@@ -296,10 +296,17 @@ body.workshop .workshop-grid > * { min-width: 0; }
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
   display: flex; align-items: center; gap: 4px; padding: 4px max(4px, env(safe-area-inset-right)) max(4px, env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
   min-height: 64px; background: var(--sky); color: var(--ink); border-top: 1px solid var(--line);
+  flex-wrap: wrap;
 }
-.dock button { border: 0; background: none; color: inherit; min-height: 48px; min-width: 48px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 4px 10px; font-size: 14px; font-weight: 700; }
-.dock button:disabled { opacity: .35; cursor: default; }
-.dock button.on { background: #dfe6ff; box-shadow: inset 0 0 0 2px var(--blue); }
+/* "Your turn" and the questions for reading together sit in a row above the bar's controls. The page is
+   fitted above the whole bar (fitPage), so they never cover page text or need scrolling (#215). */
+.dock-extra { flex: 0 0 100%; display: grid; gap: 6px; padding: 2px 0; }
+.dock-extra:not(:has(> :not([hidden]))) { display: none; }
+.dock-extra > * { width: min(100%, 760px); justify-self: center; border-radius: 14px; }
+.dock-extra .btn-ghost, .dock-extra .linkbtn { min-height: 48px; }
+.dock > button, .reading-tools button { border: 0; background: none; color: inherit; min-height: 48px; min-width: 48px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 4px 10px; font-size: 14px; font-weight: 700; }
+.dock > button:disabled, .reading-tools button:disabled { opacity: .35; cursor: default; }
+.dock > button.on, .reading-tools button.on, #togetherBtn[aria-expanded="true"] { background: #dfe6ff; box-shadow: inset 0 0 0 2px var(--blue); }
 .reading-tools { display: flex; align-items: center; justify-content: center; gap: 12px; flex: 1; min-width: 0; }
 .reading-helpers { display: flex; align-items: center; gap: 8px; }
 .dock .reading-helpers button { background: white; min-height: 56px; min-width: 132px; box-shadow: inset 0 0 0 1px var(--line); }
@@ -321,7 +328,8 @@ body.workshop .workshop-grid > * { min-width: 0; }
 
 /* Settings sheet above the toolbar */
 .settings {
-  position: fixed; left: 50%; transform: translate(-50%, 16px); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 70px); z-index: 19;
+  /* Above the reading bar at its measured height, which grows while "your turn" or the questions show. */
+  position: fixed; left: 50%; transform: translate(-50%, 16px); bottom: calc(max(14px, env(safe-area-inset-bottom)) + 70px); bottom: calc(var(--reading-controls-height, 70px) + 8px); z-index: 19;
   width: min(560px, calc(100vw - 20px)); max-height: 60vh; max-height: 60dvh; display: flex; flex-direction: column; overflow: hidden;
   background: #fff; border-radius: 18px;
   box-shadow: 0 24px 60px -18px rgba(23,25,59,.45);
@@ -406,9 +414,9 @@ body.focus .wrap { max-width: none; padding: 0; }
 body.focus .pagecard { border-radius: 0; box-shadow: none; min-height: 100vh; }
 body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
 
-.yourturn { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 20px; background: var(--mark); color: var(--ink); font-weight: 700; font-size: 17px; }
+.yourturn { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; padding: 6px 6px 6px 16px; background: var(--mark); color: var(--ink); font-weight: 700; font-size: 17px; }
 .yourturn[hidden] { display: none; }
-.together { padding: 14px 20px 18px; border-top: 1px solid var(--line); background: #f7f8fa; font-family: var(--ui); }
+.together { padding: 10px 16px 14px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); font-family: var(--ui); max-height: 40vh; max-height: 40dvh; overflow-y: auto; }
 .together[hidden], .profrow[hidden] { display: none; }
 .togetherhead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
 .together ul { margin: 8px 0 0; padding-left: 1.2em; line-height: 1.5; font-size: 17px; }
@@ -427,7 +435,7 @@ body.focus .together { display: none !important; }
   .cta:hover { background: #2b3045; }
   .bookbar input:hover { border-bottom-color: var(--line); }
   .w:hover { background: rgba(47,63,224,.08); }
-  .dock button:hover:not(:disabled) { background: rgba(255,255,255,.12); }
+  .dock > button:hover:not(:disabled), .reading-tools button:hover:not(:disabled) { background: rgba(255,255,255,.12); }
   .dock .read:hover:not(:disabled) { background: #e9ebf0; }
 }
 .practice-dialog { font-family: var(--ui); color: var(--ink); width: min(560px, calc(100vw - 32px)); max-height: 88dvh; overflow: auto; border: 1px solid var(--line); border-radius: 18px; padding: 20px; box-sizing: border-box; }
@@ -498,6 +506,7 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
   <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
   <symbol id="i-redo" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></symbol>
   <symbol id="i-crop" viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14"/></symbol>
+  <symbol id="i-talk" viewBox="0 0 24 24"><path d="M5 4.5h14a2 2 0 0 1 2 2V15a2 2 0 0 1-2 2h-6.5L8 20.5V17H5a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2z"/><path d="M8 10.5h.01M12 10.5h.01M16 10.5h.01"/></symbol>
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6c-2-1.5-5-2-8-1.5V19c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5C17 4 14 4.5 12 6zM12 6v14.5"/></symbol>
 </svg>
 <div class="wrap">
@@ -626,12 +635,6 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
       </div>
       <div class="orig" id="orig"><img id="origImg" alt=""></div>
       <div class="reader" id="reader"></div>
-      <div class="yourturn" id="yourTurn" hidden><span data-t="yourTurn"></span><button class="btn-ghost small" id="againBtn"><svg class="i"><use href="#i-speak"/></svg><span data-t="again"></span></button></div>
-      <div class="together" id="together" hidden>
-        <div class="togetherhead"><strong data-t="togetherTitle"></strong><button class="linkbtn" id="ownQBtn" data-t="ownQ"></button></div>
-        <ul id="togetherQs"></ul>
-        <div class="profrow" id="ownQRow" hidden><input id="ownQ" autocomplete="off" data-tp="ownQPh"><button class="btn-ghost small" id="ownQSave" data-t="save"></button></div>
-      </div>
       <details class="edit" id="edit" hidden>
         <summary><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></summary>
         <textarea id="text" spellcheck="true"></textarea>
@@ -653,6 +656,14 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
 </div>
 
 <nav class="dock" id="dock" hidden>
+  <div class="dock-extra keep">
+    <div class="yourturn" id="yourTurn" role="status" hidden><span data-t="yourTurn"></span><button class="btn-ghost small" id="againBtn"><svg class="i"><use href="#i-speak"/></svg><span data-t="again"></span></button></div>
+    <div class="together" id="together" hidden>
+      <div class="togetherhead"><strong data-t="togetherTitle"></strong><button class="linkbtn" id="ownQBtn" data-t="ownQ"></button></div>
+      <ul id="togetherQs"></ul>
+      <div class="profrow" id="ownQRow" hidden><input id="ownQ" autocomplete="off" data-tp="ownQPh"><button class="btn-ghost small" id="ownQSave" data-t="save"></button></div>
+    </div>
+  </div>
   <button class="keep" id="prev" data-ta="prevPage"><svg class="i"><use href="#i-prev"/></svg></button>
   <div class="reading-tools keep">
     <div class="reading-helpers">
@@ -661,6 +672,7 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
     </div>
     <div id="guideControls"></div>
   </div>
+  <button id="togetherBtn" data-ta="togetherTitle" aria-expanded="false" aria-controls="together" hidden><svg class="i"><use href="#i-talk"/></svg></button>
   <button id="compareBtn"><svg class="i"><use href="#i-eye"/></svg></button>
   <button class="keep" id="next" data-ta="nextPage"><svg class="i"><use href="#i-next"/></svg></button>
 </nav>

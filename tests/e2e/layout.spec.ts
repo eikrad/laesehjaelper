@@ -28,6 +28,42 @@ test("The reading page uses the available area above one compact helper bar", as
   await expect(page.locator("#guideBtnLabel")).toBeVisible();
 });
 
+test("After reading aloud, \"your turn\" and the questions for reading together stay on screen above the reading bar", async ({ page }, info) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "speechSynthesis", { configurable: true, value: {
+      speaking: false, getVoices: () => [], cancel: () => {},
+      speak: (u: SpeechSynthesisUtterance) => { setTimeout(() => u.onend?.(new Event("end") as SpeechSynthesisEvent), 30); },
+    } });
+  });
+  await setUiLanguage(page, "de");   // The longest prompt.
+  await openRecognisedBook(page, ["side-da.jpg"]);
+  await toggleReadingSetup(page); await page.click("#togetherSet button[data-v=an]"); await toggleReadingSetup(page);
+  await page.click("#readBtn");
+  await expect(page.locator("#yourTurn")).toBeVisible();
+  await page.click("#togetherBtn");
+  await expect(page.locator("#together")).toBeVisible();
+  const viewport = page.viewportSize()!;
+  await expect(async () => {
+    const controls = (await page.locator("#readBtn").boundingBox())!;
+    const paper = (await page.locator("#reader .pageview").boundingBox())!;
+    for (const id of ["yourTurn", "againBtn", "together", "togetherBtn"]) {
+      const b = (await page.locator(`#${id}`).boundingBox())!;
+      expect(b.x, id).toBeGreaterThanOrEqual(0);
+      expect(b.y, id).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width, id).toBeLessThanOrEqual(viewport.width);
+      expect(b.y + b.height, `${id} on screen without scrolling`).toBeLessThanOrEqual(viewport.height);
+    }
+    for (const id of ["yourTurn", "together"]) {
+      const b = (await page.locator(`#${id}`).boundingBox())!;
+      expect(b.y + b.height, `${id} above the reading controls`).toBeLessThanOrEqual(controls.y);
+      expect(b.y, `${id} below the page, so it covers no page text`).toBeGreaterThanOrEqual(paper.y + paper.height);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollHeight), "no scrolling needed").toBeLessThanOrEqual(viewport.height + 1);
+  }).toPass({ timeout: 5000 });
+  await expect.poll(() => smallControls(page, 48, "#dock")).toEqual([]);
+  await page.screenshot({ path: info.outputPath("your-turn-and-questions.png") });
+});
+
 test("Book recognition options fit every screen in all interface languages", async ({ page }, info) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   for (const [ui, title] of [["da", "Genkend hele bogen igen"], ["de", "Gesamtes Buch neu erkennen"], ["en", "Recognise the entire book again"]]) {

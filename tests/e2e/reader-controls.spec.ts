@@ -86,6 +86,28 @@ test("The picture helpers keep Stop available and word taps still read words", a
   await expect(page.locator("#readBtn")).toHaveAccessibleName("Læs op");
 });
 
+test("\"Your turn\" goes away when the child taps a word or turns the page", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "speechSynthesis", { configurable: true, value: {
+      speaking: false, getVoices: () => [], cancel: () => {},
+      speak: (utterance: SpeechSynthesisUtterance) => { setTimeout(() => utterance.onend?.(new Event("end") as SpeechSynthesisEvent), 30); },
+    } });
+  });
+  await fresh(page);
+  await seedBooks(page, [{ id: "your-turn", title: "En prøvebog", texts: ["Solen skinner.", "Vi går ud."] }]);
+  await page.locator(".book").click();
+  const prompt = page.locator("#yourTurn");
+  await page.locator("#readBtn").click();
+  await expect(prompt).toBeVisible();
+  await expect(prompt).toContainText("Nu er det din tur");
+  await page.locator('#reader .w[data-word="Solen"]').click();
+  await expect(prompt).toBeHidden();
+  await page.locator("#readBtn").click();
+  await expect(prompt).toBeVisible();
+  await page.locator("#next").click();
+  await expect(prompt).toBeHidden();
+});
+
 test("Aa stays compact and detailed reading setup belongs to the adult entry", async ({ page }) => {
   await fresh(page);
   await page.locator("#demoBtn").click();
