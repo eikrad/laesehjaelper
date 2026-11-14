@@ -47,7 +47,8 @@ export const DB = {
       tx.onabort = () => reject(tx.error);
     });
   },
-  putBook: async (book: object, pages: readonly object[]): Promise<void> => {
+  /** Store pages and, if given, their book record in one transaction: all of them or none. */
+  putBook: async (book: object | null, pages: readonly object[]): Promise<void> => {
     const d = await open();
     return new Promise((resolve, reject) => {
       const tx = d.transaction(["books", "pages"], "readwrite");
@@ -56,7 +57,7 @@ export const DB = {
       tx.onabort = () => reject(failure || tx.error);
       try {
         for (const page of pages) tx.objectStore("pages").put(page);
-        tx.objectStore("books").put(book);
+        if (book) tx.objectStore("books").put(book);
       } catch (e) {
         failure = e; tx.abort();
       }
