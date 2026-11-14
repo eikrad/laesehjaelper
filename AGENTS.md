@@ -67,5 +67,6 @@ src/prep.ts        image preparation (background flattening, rotation)
 src/fit.ts, bold.ts, sylmarks.ts, place.ts, lines.ts, spacing.ts, readflow.ts, profiles.ts, together.ts   small pure helpers
 src/epub.ts, db.ts EPUB export/import, IndexedDB
 src/library.ts     saving pages with their book record, unsaved pages, deletion (see GLOSSARY.md)
+src/navigation.ts  links, Back steps and which navigation is the latest (browser history behind a port)
 build.ts           bundles everything into dist/ (esbuild)
 ```
