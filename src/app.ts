@@ -16,7 +16,7 @@ import { insertIndex, selectedIndex, type Placement } from "./pagelist";
 import { holdProgress } from "./hold";
 import { screenWakeLock } from "./wakelock";
 import { readingFullscreen } from "./fullscreen";
-import { locationHash, parseLocation, type BookLocation } from "./navigation";
+import { type BookLocation, createNavigation } from "./navigation";
 import { cleanOcr, parasFromOcr } from "./layout";
 import { detectFrame, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
 import type { CV } from "./pagedetect";
@@ -517,7 +517,14 @@ const Lib = { detectFrame, warpPage, orderCorners };
   const isRemoved = (pg: Page) => library.isRemoved(pg);
 
   let book: Book | null = null;
-  let navigationId = 0;
+  // Links and Back steps, and which navigation is the latest (src/navigation.ts).
+  const nav = createNavigation({
+    get hash() { return location.hash; },
+    get state() { return history.state; },
+    pushState: (state, unused, url) => history.pushState(state, unused, url),
+    replaceState: (state, unused, url) => history.replaceState(state, unused, url),
+    go: delta => history.go(delta),
+  });
   function releaseImage(src: string | null | undefined) {
     if (src?.startsWith("blob:")) URL.revokeObjectURL(src);
   }
@@ -525,7 +532,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   /** Pages waiting for or in recognition. They outlive leaving their book, and reopening it reuses them. */
   function recognitionPages(): Page[] { return [active, pendingPage, ...queue].filter((pg): pg is Page => !!pg && !pg.batchDraft); }
   function newBook(demo = false) {
-    navigationId++;
+    nav.begin();
     showEditEntry(false); showCheck(false);
     // Pages still to be recognised keep their images; runQueue() lets them go when they are done.
     // Unsaved pages keep theirs too: reopening the book shows them again.
@@ -587,10 +594,10 @@ const Lib = { detectFrame, warpPage, orderCorners };
   }
 
   async function openBook(b: Book, target?: Exclude<BookLocation, { view: "shelf" }>, fromHistory = false) {
-    const requestId = ++navigationId;
+    const ticket = nav.begin();
     let recs: PageRecord[] = [];
     try { recs = await DB.pagesOf<PageRecord>(b.id); } catch (e) { storageFail(e); }
-    if (requestId !== navigationId) return;
+    if (!nav.isCurrent(ticket)) return;
     newBook();
     // What of this book is unsaved is newer than what device storage holds.
     const held = library.unsaved(b.id);
@@ -1349,7 +1356,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     $(id).onclick = () => {
       const pageId = pages[cur]?.id;
       if (!book || book.demo || !pageId) return;
-      photoRequest = { bookId: book.id, pageId, action, navigation: navigationId };
+      photoRequest = { bookId: book.id, pageId, action, navigation: nav.current() };
       pagePhotoFile.value = "";
       pagePhotoFile.multiple = action !== "replace";
       pagePhotoFile.click();
@@ -1359,7 +1366,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   pagePhotoFile.onchange = () => {
     const request = photoRequest; photoRequest = null;
     const files = [...(pagePhotoFile.files || [])]; pagePhotoFile.value = "";
-    const current = request && request.navigation === navigationId && book?.id === request.bookId;
+    const current = request && nav.isCurrent(request.navigation) && book?.id === request.bookId;
     const target = current ? pages.find(pg => pg.id === request.pageId) : undefined;
     if (!request || !target) return;
     if (request.action !== "replace") addFiles(files, target, request.action);
@@ -1372,8 +1379,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
     if (!list.length || !book) return;
     const owner = book;
     showApp("workshop");
-    const generation = navigationId;
-    const ownsPreparation = () => book === owner && navigationId === generation;
+    const generation = nav.current();
+    const ownsPreparation = () => book === owner && nav.isCurrent(generation);
     const added: Page[] = [];
     for (const [n, f] of list.entries()) {
       try {
@@ -1402,8 +1409,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
 
   /** Give a page a new photo: same page, position and link; its text is recognised again. */
   async function replacePhoto(pg: Page, file: File) {
-    const owner = book, generation = navigationId;
-    const owns = () => book === owner && navigationId === generation && pages.includes(pg);
+    const owner = book, generation = nav.current();
+    const owns = () => book === owner && nav.isCurrent(generation) && pages.includes(pg);
     try {
       const { canvas: photo } = await loadImage(file);
       if (!owns()) return;
@@ -2081,19 +2088,10 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   function currentLocation(mode = view): BookLocation {
     return book ? { view: mode, bookId: book.id, pageId: pages[cur]?.id } : { view: "shelf" };
   }
-  function writeLocation(target: BookLocation, push: boolean) {
-    const hash = locationHash(target);
-    if (location.hash === hash && history.state?.laese === target.view) return;   // Already recorded.
-    // Browsers cap how often a page may change its history (Safari and Firefox then throw),
-    // and some embedded views block it. Reading goes on; only the link is not updated.
-    try {
-      if (push && location.hash !== hash) history.pushState({ laese: target.view }, "", hash);
-      else history.replaceState({ laese: target.view }, "", hash);
-    } catch { /* Keep the previous link. */ }
-  }
+  const writeLocation = (target: BookLocation, push: boolean) => nav.record(target, push);
   function syncLocation() { writeLocation(currentLocation(), false); }
   function showApp(mode: "read" | "workshop" = "read", push = true) {
-    navigationId++;
+    nav.begin();
     if (push && mode === "workshop" && !$("start").hidden) writeLocation(currentLocation("read"), true);
     view = mode;
     document.body.classList.toggle("reading", view === "read");
@@ -2109,35 +2107,31 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     wake.keepOn(true);
   }
   async function restoreLocation(fromAppHistory = false) {
-    // A crop has not been accepted or saved yet. Keep its history entry until it finishes.
-    if (!$("crop").hidden) { writeLocation(currentLocation(), true); return; }
-    const requestId = ++navigationId;
-    const target = parseLocation(location.hash);
-    seedHistory(target);
-    if (target.view === "shelf") { showStart(true); return; }
-    if (book?.id === target.bookId && pages.length) {
-      if (!(fromAppHistory && view === "workshop" && target.view === "read")) {
-        const i = pages.findIndex(pg => pg.id === target.pageId); if (i >= 0) cur = i;
-      }
-      showApp(target.view, false); render(); return;
+    const open = book && { bookId: book.id, view, pageIds: pages.map(pg => pg.id) };
+    const route = nav.restore({ open, fromAppHistory, cropOpen: !$("crop").hidden, current: currentLocation() });
+    if (route.to === "stay") return;
+    if (route.to === "shelf") { showStart(true); return; }
+    if (route.to === "open") {
+      if (route.pageId) cur = pages.findIndex(pg => pg.id === route.pageId);
+      showApp(route.view, false); render(); return;
     }
-    if (target.bookId === "sample") { openDemo(false, target.view); return; }
+    if (route.to === "sample") { openDemo(false, route.view); return; }
     let saved: Book | undefined;
-    try { saved = (await DB.all<Book>("books")).find(b => b.id === target.bookId); } catch (e) { storageFail(e); }
-    if (requestId !== navigationId) return;
-    saved ??= library.unsaved(target.bookId)?.book ?? undefined;
+    try { saved = (await DB.all<Book>("books")).find(b => b.id === route.bookId); } catch (e) { storageFail(e); }
+    if (!nav.isCurrent(route.ticket)) return;
+    saved ??= library.unsaved(route.bookId)?.book ?? undefined;
     if (!saved) { showStart(true); return; }
-    await openBook(saved, target, true);
+    await openBook(saved, { view: route.view, bookId: route.bookId, ...(route.pageId ? { pageId: route.pageId } : {}) }, true);
   }
   window.addEventListener("popstate", e => { restoreLocation(e.state?.laese === "read"); });
   function showStart(fromHistory = false) {
     ocrRegionEditor.close();
     phraseEditor.close();
     practice.close();
-    navigationId++;
+    nav.begin();
     // Return through the app's own history entries, also after deleting the book, so Back
     // from the shelf never leads into a book that is no longer there.
-    if (!fromHistory && !$("app").hidden) { history.go(view === "workshop" ? -2 : -1); return; }
+    if (!fromHistory && !$("app").hidden) { history.go(nav.stepsToShelf(view)); return; }
     wake.keepOn(false);
     stopSpeech(); showEditEntry(false); showCheck(false);
     document.body.classList.remove("workshop", "reading"); setReadingMode(false);
@@ -2249,13 +2243,4 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   applySettings();
   applyTexts();
 
-  // Seed the internal Back path for direct links; reload keeps the existing history.
-  function seedHistory(initialLocation: BookLocation) {
-    if (history.state?.laese) return;
-    writeLocation({ view: "shelf" }, false);
-    if (initialLocation.view !== "shelf") {
-      writeLocation({ ...initialLocation, view: "read" }, true);
-      if (initialLocation.view === "workshop") writeLocation(initialLocation, true);
-    }
-  }
   restoreLocation();
