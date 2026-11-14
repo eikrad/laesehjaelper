@@ -16,7 +16,7 @@ import { insertIndex, selectedIndex, type Placement } from "./pagelist";
 import { createParentGate } from "./hold";
 import { screenWakeLock } from "./wakelock";
 import { readingFullscreen } from "./fullscreen";
-import { type BookLocation, createNavigation } from "./navigation";
+import { type BookLocation, createNavigation, type Route } from "./navigation";
 import { cleanOcr, parasFromOcr } from "./layout";
 import { detectFrame, warpPage, orderCorners, frameFromCorners, toFrame } from "./pagedetect";
 import type { CV } from "./pagedetect";
@@ -532,7 +532,6 @@ const Lib = { detectFrame, warpPage, orderCorners };
   /** Pages waiting for or in recognition. They outlive leaving their book, and reopening it reuses them. */
   function recognitionPages(): Page[] { return [active, pendingPage, ...queue].filter((pg): pg is Page => !!pg && !pg.batchDraft); }
   function newBook(demo = false) {
-    nav.begin();
     closeEditEntry(); showCheck(false);
     // Pages still to be recognised keep their images; runQueue() lets them go when they are done.
     // Unsaved pages keep theirs too: reopening the book shows them again.
@@ -593,11 +592,11 @@ const Lib = { detectFrame, warpPage, orderCorners };
     };
   }
 
-  async function openBook(b: Book, target?: Exclude<BookLocation, { view: "shelf" }>, fromHistory = false) {
-    const ticket = nav.begin();
+  /** Load a book and show it, unless a newer navigation came first (`route.ticket`). */
+  async function openBook(b: Book, route: Extract<Route, { to: "load" }>) {
     let recs: PageRecord[] = [];
     try { recs = await DB.pagesOf<PageRecord>(b.id); } catch (e) { storageFail(e); }
-    if (!nav.isCurrent(ticket)) return;
+    if (!nav.isCurrent(route.ticket)) return;
     newBook();
     // What of this book is unsaved is newer than what device storage holds.
     const held = library.unsaved(b.id);
@@ -611,9 +610,9 @@ const Lib = { detectFrame, warpPage, orderCorners };
     const kept = new Map([...recognitionPages(), ...(held?.pages ?? [])].filter(pg => pg.id).map(pg => [pg.id, pg]));
     pages.push(...ids.map(id => kept.get(id) ?? pageFromRecord(byId.get(id)!)));
     cur = resumePage(b.lastPage, pages.length);
-    if (target?.pageId) { const i = pages.findIndex(pg => pg.id === target.pageId); if (i >= 0) cur = i; }
+    if (route.pageId) { const i = pages.findIndex(pg => pg.id === route.pageId); if (i >= 0) cur = i; }
     pages.filter(p => p.status === "wait" && !queue.includes(p)).forEach(p => queue.push(p));
-    showApp(target?.view ?? "read", !fromHistory); render(); runQueue();
+    showView(route.view); render(); runQueue();
   }
 
   async function renderShelf() {
@@ -641,7 +640,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       if (unsavedIds.includes(b.id)) el.insertAdjacentHTML("beforeend", `<span class="unsaved">${t("notSaved")}</span>`);
       if (b.cover) el.querySelector<HTMLElement>(".cover")!.style.backgroundImage = `url(${b.cover})`;
       el.querySelector("b")!.textContent = title;
-      el.onclick = () => openBook(b);
+      el.onclick = () => show(nav.go({ to: "book", bookId: b.id }), b);
       box.append(el);
     }
   }
@@ -667,7 +666,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     if (book) practice.forget("book", book.id);
     pages.forEach(releasePageImages);
     if (book && !book.demo) await library.removeBook(book, pages);
-    pages.length = 0; book = null; showStart();
+    pages.length = 0; book = null; goHome();
   }
 
   let titleTimer = 0;
@@ -1378,7 +1377,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     const list = [...(files || [])].filter(f => f.type.startsWith("image/"));
     if (!list.length || !book) return;
     const owner = book;
-    showApp("workshop");
+    show(nav.go({ to: "workshop", bookId: owner.id, pageId: pages[cur]?.id }));
     const generation = nav.current();
     const ownsPreparation = () => book === owner && nav.isCurrent(generation);
     const added: Page[] = [];
@@ -1621,7 +1620,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
       await DB.putBook(b, records);
       toast(d.title || t("untitled"), 2000);
       await renderShelf();
-      openBook(b);
+      show(nav.go({ to: "book", bookId: b.id }), b);
     } catch (e) {
       console.error(e); toast(t("importFail"));
     }
@@ -2090,9 +2089,8 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   }
   const writeLocation = (target: BookLocation, push: boolean) => nav.record(target, push);
   function syncLocation() { writeLocation(currentLocation(), false); }
-  function showApp(mode: "read" | "workshop" = "read", push = true) {
-    nav.begin();
-    if (push && mode === "workshop" && !$("start").hidden) writeLocation(currentLocation("read"), true);
+  /** Show the open book in a view. History is already where it should be; only the page is updated. */
+  function showView(mode: "read" | "workshop") {
     view = mode;
     document.body.classList.toggle("reading", view === "read");
     $("adultUiLanguage").append($("uiLang"));
@@ -2101,37 +2099,40 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     document.body.classList.toggle("workshop", view === "workshop");
     comparing = false; setCompareBtn();
     $("start").hidden = true; $("app").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0);
-    writeLocation(currentLocation(), push);
+    syncLocation();
     $("delBookBtn").classList.remove("armed"); $("delBookBtn").textContent = t("deleteBook");
     showCheck(mode === "workshop"); window.scrollTo(0, 0);
     wake.keepOn(true);
   }
-  async function restoreLocation(fromAppHistory = false) {
-    const open = book && { bookId: book.id, view, pageIds: pages.map(pg => pg.id) };
-    const route = nav.restore({ open, fromAppHistory, cropOpen: !$("crop").hidden, current: currentLocation() });
+  /** Show where a move, a link or a Back step leads (src/navigation.ts). A book already at hand saves a lookup. */
+  async function show(route: Route, known?: Book) {
     if (route.to === "stay") return;
-    if (route.to === "shelf") { showStart(true); return; }
+    if (route.to === "shelf") { showShelf(); return; }
     if (route.to === "open") {
       if (route.pageId) cur = pages.findIndex(pg => pg.id === route.pageId);
-      showApp(route.view, false); render(); return;
+      showView(route.view); render(); return;
     }
-    if (route.to === "sample") { openDemo(false, route.view); return; }
-    let saved: Book | undefined;
-    try { saved = (await DB.all<Book>("books")).find(b => b.id === route.bookId); } catch (e) { storageFail(e); }
-    if (!nav.isCurrent(route.ticket)) return;
-    saved ??= library.unsaved(route.bookId)?.book ?? undefined;
-    if (!saved) { showStart(true); return; }
-    await openBook(saved, { view: route.view, bookId: route.bookId, ...(route.pageId ? { pageId: route.pageId } : {}) }, true);
+    if (route.to === "sample") { openDemo(route.view); return; }
+    let saved = known;
+    if (!saved) {
+      try { saved = (await DB.all<Book>("books")).find(b => b.id === route.bookId); } catch (e) { storageFail(e); }
+      if (!nav.isCurrent(route.ticket)) return;
+      saved ??= library.unsaved(route.bookId)?.book ?? undefined;
+    }
+    if (!saved) { showShelf(); return; }
+    await openBook(saved, route);
   }
-  window.addEventListener("popstate", e => { restoreLocation(e.state?.laese === "read"); });
-  function showStart(fromHistory = false) {
-    ocrRegionEditor.close();
-    phraseEditor.close();
-    practice.close();
-    nav.begin();
-    // Return through the app's own history entries, also after deleting the book, so Back
-    // from the shelf never leads into a book that is no longer there.
-    if (!fromHistory && !$("app").hidden) { history.go(nav.stepsToShelf(view)); return; }
+  function restoreLocation() {
+    const open = book && { bookId: book.id, view, pageIds: pages.map(pg => pg.id) };
+    return show(nav.restore({ open, cropOpen: !$("crop").hidden, current: currentLocation() }));
+  }
+  window.addEventListener("popstate", () => { restoreLocation(); });
+  function closeEditors() { ocrRegionEditor.close(); phraseEditor.close(); practice.close(); }
+  /** Home: back through the app's own history entries, also after deleting the book, so Back
+   *  from the shelf never leads into a book that is no longer there. */
+  function goHome() { closeEditors(); show(nav.go({ to: "shelf" })); }
+  function showShelf() {
+    closeEditors();
     wake.keepOn(false);
     stopSpeech(); closeEditEntry(); showCheck(false);
     document.body.classList.remove("workshop", "reading"); setReadingMode(false);
@@ -2148,7 +2149,8 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     $<HTMLButtonElement>("correctPageBtn").disabled = pages[cur]?.status !== "done";
   }
   function enterWorkshop(correct = false) {
-    showApp("workshop"); render();
+    if (!book) return;
+    show(nav.go({ to: "workshop", bookId: book.id, pageId: pages[cur]?.id }));
     if (correct && pages[cur]?.status === "done") { showCheck(true); $<HTMLTextAreaElement>("text").focus(); }
   }
   const editEntryButton = $<HTMLButtonElement>("editBookBtn");
@@ -2198,10 +2200,13 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   $("correctPageBtn").onclick = () => enterWorkshop(true);
   document.addEventListener("pointerdown", e => { if (!(e.target as Element).closest(".reading-entry")) closeEditEntry(); });
   document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("editEntry").hidden) { closeEditEntry(); $<HTMLButtonElement>("editBookBtn").focus(); } });
-  $("readBookBtn").onclick = () => { saveBook(); history.back(); };
-  $<HTMLButtonElement>("homeBtn").onclick = () => showStart();
-  $("home").onclick = () => showStart();
-  $("home").onkeydown = e => { if (e.key === "Enter") showStart(); };
+  $("readBookBtn").onclick = () => {
+    if (!book) return;
+    saveBook(); show(nav.go({ to: "reading", bookId: book.id, pageId: pages[cur]?.id }));
+  };
+  $<HTMLButtonElement>("homeBtn").onclick = () => goHome();
+  $("home").onclick = () => goHome();
+  $("home").onkeydown = e => { if (e.key === "Enter") goHome(); };
 
   const drop = $("drop");
   $<HTMLInputElement>("file").onchange = e => { const inp = e.target as HTMLInputElement; newBook(); addFiles(inp.files ? [...inp.files] : null); inp.value = ""; };
@@ -2210,13 +2215,13 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   drop.addEventListener("drop", e => { newBook(); addFiles(e.dataTransfer?.files ?? null); });
   document.addEventListener("paste", e => { const f = [...(e.clipboardData?.files || [])]; if (f.length) { if ($("app").hidden) newBook(); addFiles(f); } });
 
-  function openDemo(push = true, mode: "read" | "workshop" = "read") {
+  function openDemo(mode: "read" | "workshop") {
     newBook(true);
     pages.push({ id: "sample-page", img: null, status: "done", progress: 1, lang: S.lang, text: DEMO[S.lang] });
-    cur = 0; showApp(mode, push); render();
+    cur = 0; showView(mode); render();
     getWorker(S.lang); // Preload recognition in the background.
   }
-  $<HTMLButtonElement>("demoBtn").onclick = () => openDemo();
+  $<HTMLButtonElement>("demoBtn").onclick = () => show(nav.go({ to: "book", bookId: "sample" }));
 
   // Show the install button when the browser offers installation (Chrome, Edge, Samsung Internet).
   interface InstallPrompt extends Event { prompt(): Promise<void> }

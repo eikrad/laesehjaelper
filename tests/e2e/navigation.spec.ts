@@ -162,3 +162,21 @@ test("Books still open and turn pages when the browser refuses history updates",
   await page.click("#next");
   await expect(page.locator("#reader")).toContainText("Anden originale side.");
 });
+
+test("Back to reading and Home keep the reader in the app when the browser refuses history updates", async ({ page }) => {
+  await seedBooks(page, [{ id: "refused", title: "En original bog", texts: ["Første originale side."] }]);
+  await page.addInitScript(() => {
+    History.prototype.pushState = History.prototype.replaceState = () => { throw new DOMException("Too many history updates", "SecurityError"); };
+  });
+  await page.reload();
+  await page.locator(".book").click();
+  await openWorkshop(page);
+  await expect(page.locator("#bookTitle")).toBeVisible();
+  await page.click("#readBookBtn");
+  await expect(page.locator("#reader")).toContainText("Første originale side.");
+  await expect(page.locator("#bookTitle")).toBeHidden();
+  await expect(page.locator("#editBookBtn")).toBeVisible();
+  await page.click("#homeBtn");
+  await expect(page.locator("#start")).toBeVisible();
+  await expect(page.locator(".book")).toHaveCount(1);
+});
