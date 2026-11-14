@@ -46,6 +46,7 @@ npm run coverage       # unit + e2e coverage, merged, with minimum thresholds
 
 ## Conventions
 
+- **Roadmap:** `ROADMAP.md` lists every open issue once, in planned order. A pull request that closes an issue removes its line there.
 - **Repository language: English.** Write documentation, code comments, test descriptions, development messages, commits, and GitHub issue/PR titles and bodies in English.
 - **Localization:** every UI string exists in Danish, German and English (`T` in `src/app.ts`). `README.md` is the English default and links to `README.da.md` (Danish) and `README.de.md` (German); update these three together. Localized UI text, README translations, and language-specific test data/examples use their intended language.
 - **Reading-support features are evidence-based.** Cite the study (author, year, DOI) in a code comment and in the README section “What does the research say?”. Features without clear evidence are optional and switched off by default.
