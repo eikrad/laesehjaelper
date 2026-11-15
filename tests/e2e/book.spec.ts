@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, readBook, storedPages, toggleReadingSetup, waitForText } from "./helpers";
+import { addPhotos, bookAction, bookTool, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, readBook, storedPages, toggleReadingSetup, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -112,8 +112,8 @@ test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
   await expect(page.locator("#text")).toHaveValue(/Søren går en tur/);
   await page.locator(".thumb").nth(0).locator(".ctl .x").click();               // Delete the page.
   await expect(page.locator("#count")).toHaveText("1 / 1");
-  await page.click("#delBookBtn");
-  await page.click("#delBookBtn");                                              // Click twice to confirm.
+  await bookAction(page, "delBookBtn");
+  await bookAction(page, "delBookBtn");                                              // Click twice to confirm.
   await expect(page.locator("#start")).toBeVisible();
   await expect(page.locator("#shelf")).toBeHidden();
   await expect(page.locator("#drop")).toContainText("Tag et billede af en side");

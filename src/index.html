@@ -152,6 +152,14 @@ body.workshop .thumbs { gap: 16px; }
 .entry-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 25; display: grid; width: min(300px, calc(100vw - 36px)); padding: 6px; background: white; border-radius: 14px; box-shadow: 0 0 0 1px var(--line), 0 16px 40px -16px rgba(23,25,59,.45); }
 .entry-menu button { min-height: 48px; padding: 8px 14px; border: 0; background: none; border-radius: 10px; font-weight: 700; text-align: left; }
 .entry-menu button:hover { background: var(--sky); }
+/* The workshop's "Book ⋯" menu (#206): the book's actions in one place, Delete book last and apart. */
+.book-menu { position: relative; flex: none; }
+#bookMenuBtn { gap: 6px; }
+.entry-menu [role="separator"] { height: 1px; margin: 6px 8px; background: var(--line); }
+.entry-menu .danger { color: #c9372c; }
+.entry-menu .danger.armed { background: #c9372c; color: #fff; }
+.batch-notice { margin: 0 0 12px; font-size: 15px; color: var(--muted); }
+.batch-notice:empty { display: none; }
 #readingTitle { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 body:not(.workshop) .bookbar input,
 body:not(.workshop) #edit, body:not(.workshop) #thumbs,
@@ -558,6 +566,7 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
   <symbol id="i-redo" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5"/></symbol>
   <symbol id="i-crop" viewBox="0 0 24 24"><path d="M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14"/></symbol>
   <symbol id="i-talk" viewBox="0 0 24 24"><path d="M5 4.5h14a2 2 0 0 1 2 2V15a2 2 0 0 1-2 2h-6.5L8 20.5V17H5a2 2 0 0 1-2-2V6.5a2 2 0 0 1 2-2z"/><path d="M8 10.5h.01M12 10.5h.01M16 10.5h.01"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
   <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 6c-2-1.5-5-2-8-1.5V19c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V4.5C17 4 14 4.5 12 6zM12 6v14.5"/></symbol>
 </svg>
 <div class="wrap">
@@ -629,7 +638,19 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
       </div>
       <button class="btn-ghost small workshop-only" id="readBookBtn" data-t="readBook"></button>
       <input id="bookTitle" autocomplete="off" data-tp="titlePh">
+      <div class="book-menu workshop-only">
+        <button class="btn-ghost small" id="bookMenuBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="bookMenu"><span data-t="bookMenu"></span><svg class="i" aria-hidden="true"><use href="#i-more"/></svg></button>
+        <div class="entry-menu" id="bookMenu" role="menu" aria-labelledby="bookMenuBtn" hidden>
+          <button role="menuitem" tabindex="-1" id="exportBtn" data-t="exportBook"></button>
+          <button role="menuitem" tabindex="-1" id="pdfBtn" data-t="pdfBook"></button>
+          <button role="menuitem" tabindex="-1" id="reprocessBookBtn" data-t="batchTitle"></button>
+          <button role="menuitem" tabindex="-1" id="bookReadingSetupBtn" data-t="readingSetup"></button>
+          <div role="separator" id="bookMenuSeparator"></div>
+          <button role="menuitem" tabindex="-1" id="delBookBtn" class="danger" data-t="deleteBook"></button>
+        </div>
+      </div>
     </div>
+    <p class="workshop-only batch-notice" id="batchNotice" role="status"></p>
     <div class="reading-activities reading-only">
       <button id="phraseToggle" class="btn-ghost small" hidden aria-pressed="false"></button>
       <button id="practiceOpen" class="btn-ghost small" data-t="practiceTitle" hidden></button>
@@ -654,11 +675,6 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
     </div></details>
     <div class="workshop-tools workshop-only">
       <button class="btn-ghost" id="checkTextBtn"><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></button>
-      <button class="btn-ghost" id="exportBtn"><svg class="i"><use href="#i-download"/></svg><span data-t="exportBook"></span></button>
-      <button class="btn-ghost" id="reprocessBookBtn" data-t="batchTitle"></button>
-      <span id="batchNotice" role="status"></span>
-      <button class="btn-ghost" id="pdfBtn"><svg class="i"><use href="#i-download"/></svg><span data-t="pdfBook"></span></button>
-      <button class="btn-danger" id="delBookBtn" data-t="deleteBook"></button>
     </div>
     <details class="disclaimer workshop-only" id="adultTips">
       <summary data-t="tipsTitle"></summary>

@@ -32,6 +32,7 @@ import { PhraseEditor } from "./phrase-view";
 import { OcrRegionsEditor } from "./ocr-regions-view";
 import { planRecognition, runRecognitionBatch, type RecognitionOutcome } from "./book-recognition";
 import { BookRecognitionView } from "./book-recognition-view";
+import { MenuButton } from "./menu-view";
 import { maskForOcr } from "./ocr-mask";
 import type { OcrRegion } from "./ocr-regions";
 import { phraseBoundaries, renderPhraseCues, type PhraseCues } from "./phrases";
@@ -188,7 +189,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse", view: "Visning", viewPage: "Bogens side", viewText: "Kun teksten", hyph: "Bindestreger i bogen", hyphNormal: "Almindelige", hyphBook: "Stavelsesdeling", hyphHint: "Vælg „Stavelsesdeling“, hvis bogen selv deler ord med bindestreg eller prik, f.eks. „sko-le“ eller „sko·le“.",
       background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
       original: "Originalside", show: "Vis", hide: "Skjul", origAlt: "Originalside",
-      editSummary: "Tjek og ret teksten", bookTools: "Bogværktøjer", editBook: "Rediger bog", readBook: "Tilbage til læsning", correctPage: "Ret denne side", parentGate: "Forældresikring", gateOn: "Til", gateOff: "Fra", holdToEdit: "Hold knappen nede i to sekunder for at åbne voksenområdet.", gateHint: "Forebygger utilsigtede tryk. Det er ikke en sikkerhedslås.",
+      editSummary: "Tjek og ret teksten", bookTools: "Bogværktøjer", editBook: "Rediger bog", bookMenu: "Bog", readBook: "Tilbage til læsning", correctPage: "Ret denne side", parentGate: "Forældresikring", gateOn: "Til", gateOff: "Fra", holdToEdit: "Hold knappen nede i to sekunder for at åbne voksenområdet.", gateHint: "Forebygger utilsigtede tryk. Det er ikke en sikkerhedslås.",
       editHint: "Tom linje = nyt afsnit. Du kan selv sætte stavelsesgrænser med ·, f.eks. <b>hun·den</b>. Fed skrift: *ord*.",
       foot: "Alt foregår på din egen telefon eller computer. Billederne bliver ikke sendt nogen steder hen.",
       noText: "Der blev ikke fundet nogen tekst på denne side.<br>Åbn „Tjek og ret teksten“ og skriv den selv.",
@@ -237,7 +238,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       sylColors: "Syllable colours", cBlueRed: "Blue and red", cBlueBlack: "Blue and black", cRedBlack: "Red and black", cPurpleGreen: "Purple and green", syl1: "1st syllable", syl2: "2nd syllable", view: "View", viewPage: "Book page", viewText: "Text only", hyph: "Hyphens in the book", hyphNormal: "Normal", hyphBook: "Syllable breaks", hyphHint: "Choose “Syllable breaks” if the book itself splits words with hyphens or dots, e.g. “gar-den” or “gar·den”.",
       background: "Background", bWhite: "White", bCream: "Cream", bYellow: "Yellow", bBlue: "Light blue", bGreen: "Light green",
       original: "Original page", show: "Show", hide: "Hide", origAlt: "Original page",
-      editSummary: "Check and correct the text", bookTools: "Book tools", editBook: "Edit book", readBook: "Back to reading", correctPage: "Correct this page", parentGate: "Parent gate", gateOn: "On", gateOff: "Off", holdToEdit: "Hold for two seconds to open the adult area.", gateHint: "Prevents accidental taps. This is not a security lock.",
+      editSummary: "Check and correct the text", bookTools: "Book tools", editBook: "Edit book", bookMenu: "Book", readBook: "Back to reading", correctPage: "Correct this page", parentGate: "Parent gate", gateOn: "On", gateOff: "Off", holdToEdit: "Hold for two seconds to open the adult area.", gateHint: "Prevents accidental taps. This is not a security lock.",
       editHint: "Empty line = new paragraph. Set your own syllable breaks with ·, e.g. <b>gar·den</b>. Bold: *word*.",
       foot: "Everything happens on your own phone or computer. Your photos are not sent anywhere.",
       noText: "No text was found on this page.<br>Open “Check and correct the text” and type it in yourself.",
@@ -286,7 +287,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe", view: "Ansicht", viewPage: "Buchseite", viewText: "Nur Text", hyph: "Bindestriche im Buch", hyphNormal: "Normal", hyphBook: "Silbentrennung", hyphHint: "„Silbentrennung“ wählen, wenn das Buch Wörter selbst mit Bindestrich oder Punkt trennt, z. B. „Scho-ko-la-de“ oder „Scho·ko·la·de“.",
       background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
       original: "Originalseite", show: "Zeigen", hide: "Verbergen", origAlt: "Originalseite",
-      editSummary: "Text prüfen und korrigieren", bookTools: "Buchwerkzeuge", editBook: "Buch bearbeiten", readBook: "Zurück zum Lesen", correctPage: "Diese Seite korrigieren", parentGate: "Elternschutz", gateOn: "An", gateOff: "Aus", holdToEdit: "Zum Öffnen des Erwachsenenbereichs die Taste zwei Sekunden gedrückt halten.", gateHint: "Verhindert versehentliches Tippen. Dies ist keine Sicherheitssperre.",
+      editSummary: "Text prüfen und korrigieren", bookTools: "Buchwerkzeuge", editBook: "Buch bearbeiten", bookMenu: "Buch", readBook: "Zurück zum Lesen", correctPage: "Diese Seite korrigieren", parentGate: "Elternschutz", gateOn: "An", gateOff: "Aus", holdToEdit: "Zum Öffnen des Erwachsenenbereichs die Taste zwei Sekunden gedrückt halten.", gateHint: "Verhindert versehentliches Tippen. Dies ist keine Sicherheitssperre.",
       editHint: "Leere Zeile = neuer Absatz. Eigene Silbengrenzen mit · setzen, z.&nbsp;B. <b>O·ma</b>. Fett: *Wort*.",
       foot: "Alles passiert auf deinem eigenen Handy oder Computer. Die Fotos werden nirgendwohin geschickt.",
       noText: "Auf dieser Seite wurde kein Text gefunden.<br>Öffne „Text prüfen“ und tippe ihn selbst ein.",
@@ -423,7 +424,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     $("setBtn").setAttribute("aria-expanded", String(on));
     document.body.classList.toggle("settings-open", on);   // Wide screens move the page beside the panel.
     if (on) { closeEditEntry(); $("setClose").focus(); }
-    else if (wasOpen) $(returnAdult && view === "read" ? "editBookBtn" : "setBtn").focus();
+    else if (wasOpen) $(returnAdult ? (view === "read" ? "editBookBtn" : "bookMenuBtn") : "setBtn").focus();
   }
   // From 840 px the settings are a panel beside the page (CSS), not a sheet over it.
   const sidePanel = () => matchMedia("(min-width: 840px)").matches;
@@ -759,11 +760,19 @@ const Lib = { detectFrame, warpPage, orderCorners };
   }
   $<HTMLButtonElement>("checkTextBtn").onclick = () => showCheck(true);
   $("edit").addEventListener("toggle", () => { if (!$<HTMLDetailsElement>("edit").open) showCheck(false); });
+  // The workshop's book actions sit in one "Book ⋯" menu (#206). Deleting asks to be tapped again
+  // in the open menu; closing the menu takes the question back.
+  const disarmDelete = () => { $("delBookBtn").classList.remove("armed"); $("delBookBtn").textContent = t("deleteBook"); };
+  const bookMenu = new MenuButton($<HTMLButtonElement>("bookMenuBtn"), $("bookMenu"), {
+    keepOpen: item => item.id === "delBookBtn",
+    closed: disarmDelete,
+  });
   $<HTMLButtonElement>("delBookBtn").onclick = () => {
     const b = $<HTMLButtonElement>("delBookBtn");
     if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = t("confirmDelete"); return; }
-    deleteBook();
+    bookMenu.close(); deleteBook();
   };
+  $("bookReadingSetupBtn").onclick = () => showSettings(true, true);
 
   // Text -> HTML with word and syllable spans. Also record character offsets for reading aloud.
   const WORD = /[\p{L}\p{M}·]+(?:-[\p{L}\p{M}·]+)*/gu;
@@ -1285,6 +1294,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     if (document.activeElement !== $<HTMLInputElement>("bookTitle")) $<HTMLInputElement>("bookTitle").value = (book && book.title) || "";
     $<HTMLButtonElement>("delBookBtn").hidden = !book || !!book.demo;
     $<HTMLButtonElement>("exportBtn").hidden = !book || !!book.demo;
+    $("bookMenuSeparator").hidden = $("delBookBtn").hidden;
     $<HTMLButtonElement>("prev").disabled = $<HTMLButtonElement>("edgePrev").disabled = !turnTo("prev");
     $<HTMLButtonElement>("next").disabled = $<HTMLButtonElement>("edgeNext").disabled = !turnTo("next");
     if (pg.img) $<HTMLImageElement>("origImg").src = pg.img;
@@ -1412,7 +1422,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && settingsOpen()) { showSettings(false); return; }
     if (e.key === "Escape" && !$("together").hidden) { closeTogether(); return; }
-    if (document.querySelector("dialog[open]") || (e.target as HTMLElement).matches("textarea, input, select, [contenteditable]")) return;
+    // Keys in a dialog, a text field or a menu do not turn the page.
+    if (document.querySelector("dialog[open]") || (e.target as HTMLElement).closest("textarea, input, select, [contenteditable], [role=menu]")) return;
     if (e.key === "ArrowLeft") $<HTMLButtonElement>("prev").click();
     if (e.key === "ArrowRight") $<HTMLButtonElement>("next").click();
     if (e.key === "Escape" && document.body.classList.contains("focus")) $<HTMLButtonElement>("focusBtn").click();
@@ -2232,7 +2243,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     comparing = false; setCompareBtn();
     $("start").hidden = true; $("app").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0);
     syncLocation();
-    $("delBookBtn").classList.remove("armed"); $("delBookBtn").textContent = t("deleteBook");
+    bookMenu.close();
     showCheck(mode === "workshop"); window.scrollTo(0, 0);
     wake.keepOn(true);
   }
@@ -2266,7 +2277,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   function showShelf() {
     closeEditors();
     wake.keepOn(false);
-    stopSpeech(); closeEditEntry(); showCheck(false); hideUndo();
+    stopSpeech(); closeEditEntry(); bookMenu.close(); showCheck(false); hideUndo();
     document.body.classList.remove("workshop", "reading"); setReadingMode(false);
     document.querySelector("header.top")!.append($("uiLang"));
     $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; showSettings(false);

@@ -80,7 +80,8 @@ test("Book recognition options fit every screen in all interface languages", asy
   await openRecognisedBook(page, ["side-da.jpg"]);
   for (const [ui, title] of [["da", "Genkend hele bogen igen"], ["de", "Gesamtes Buch neu erkennen"], ["en", "Recognise the entire book again"]]) {
     await setUiLanguage(page, ui); await openWorkshop(page);
-    await page.getByRole("button", { name: title, exact: true }).click();
+    await page.click("#bookMenuBtn");
+    await page.getByRole("menuitem", { name: title, exact: true }).click();
     const dialog = page.locator("#bookRecognition");
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveAccessibleName(title);
@@ -92,7 +93,7 @@ test("Book recognition options fit every screen in all interface languages", asy
     await expect.poll(() => smallControls(page, 44, "#bookRecognition")).toEqual([]);
     await dialog.screenshot({ path: info.outputPath(`book-recognition-${ui}.png`) });
     await page.keyboard.press("Escape");
-    await expect(page.locator("#reprocessBookBtn")).toBeFocused();
+    await expect(page.locator("#bookMenuBtn"), "back on the menu that opened it").toBeFocused();
     await page.click("#readBookBtn");
   }
 });
@@ -709,10 +710,13 @@ test("The workshop puts the page list beside its editor on wide screens and abov
   await seedBooks(page, [{ id: "workshop", title: "En bog til værkstedet", texts: ["Første prøveside.", "Anden prøveside."] }]);
   await page.locator(".book").click();
   await openWorkshop(page);
-  await expect(page.locator("#pdfBtn")).toBeVisible();
-  const pdf = (await page.locator("#pdfBtn").boundingBox())!;
-  expect(pdf.x).toBeGreaterThanOrEqual(0);
-  expect(pdf.x + pdf.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await page.click("#bookMenuBtn");
+  const menu = (await page.locator("#bookMenu").boundingBox())!;
+  expect(menu.x, "the book menu fits the screen").toBeGreaterThanOrEqual(0);
+  expect(menu.x + menu.width, "the book menu fits the screen").toBeLessThanOrEqual(page.viewportSize()!.width);
+  expect(menu.y + menu.height, "the book menu fits the screen").toBeLessThanOrEqual(page.viewportSize()!.height);
+  await expect.poll(() => smallControls(page, 48, "#bookMenu"), { message: "book menu items" }).toEqual([]);
+  await page.keyboard.press("Escape");
   const list = (await page.locator("#thumbs").boundingBox())!, editor = (await page.locator(".pagecard").boundingBox())!;
   if (page.viewportSize()!.width >= 840) {
     expect(list.x + list.width, "list left of editor").toBeLessThanOrEqual(editor.x);
@@ -724,7 +728,7 @@ test("The workshop puts the page list beside its editor on wide screens and abov
   await page.locator(".thumb > button").nth(1).click();
   await page.click("#readBookBtn");
   await expect(page.locator("#reader")).toContainText("Anden prøveside.");
-  await expect(page.locator("#pdfBtn")).toBeHidden();
+  await expect(page.locator("#bookMenuBtn")).toBeHidden();
   await expect(page).toHaveURL(/#read\/workshop\/workshop-1$/);
 });
 

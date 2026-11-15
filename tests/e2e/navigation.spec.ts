@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { bookTool, fresh, openWorkshop, seedBooks } from "./helpers";
+import { bookAction, bookTool, fresh, openWorkshop, seedBooks } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -120,8 +120,8 @@ test("Deleting a book leaves no Back step into the deleted book", async ({ page 
   await seedBooks(page, [{ id: "gone", title: "En original bog", texts: ["En original side."] }]);
   await page.locator(".book").click();
   await openWorkshop(page);
-  await page.click("#delBookBtn");
-  await page.click("#delBookBtn");
+  await bookAction(page, "delBookBtn");
+  await bookAction(page, "delBookBtn");
   await expect(page.locator("#start")).toBeVisible();
   await expect(page).toHaveURL(/#shelf$/);
   // Back from the shelf leaves the app, as it does after the Home button.

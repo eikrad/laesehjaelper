@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 import fs from "node:fs";
-import { fixture, fresh, openRecognisedBook, openWorkshop, setUiLanguage, storedPages } from "./helpers";
+import { bookAction, fixture, fresh, openRecognisedBook, openWorkshop, setUiLanguage, storedPages } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
@@ -53,7 +53,7 @@ async function seedBatch(page: import("@playwright/test").Page, photoName?: stri
 
 test("Book recognition previews protected and missing pages and resets explicit inclusion", async ({ page }) => {
   await seedBatch(page);
-  await page.locator("#reprocessBookBtn").click({ timeout: 1500 });
+  await bookAction(page, "reprocessBookBtn");
   const dialog = page.locator("#bookRecognition");
   await expect(dialog).toBeVisible();
   await expect(page.locator("#batchIncludeManual")).not.toBeChecked();
@@ -62,7 +62,7 @@ test("Book recognition previews protected and missing pages and resets explicit 
   await expect(page.locator("#batchPlan")).toContainText("3 to process · 0 protected · 1 without source photos");
   await expect(dialog).toContainText("replaces manual text corrections");
   await page.keyboard.press("Escape");
-  await page.click("#reprocessBookBtn");
+  await bookAction(page, "reprocessBookBtn");
   await expect(page.locator("#batchIncludeManual")).not.toBeChecked();
 });
 
@@ -70,7 +70,7 @@ test("Book recognition replaces only eligible pages and saves their identity and
   await fakeRecognition(page);
   await seedBatch(page);
   const before = await storedPages(page);
-  await page.click("#reprocessBookBtn"); await page.click("#batchStart");
+  await bookAction(page, "reprocessBookBtn"); await page.click("#batchStart");
   await expect(page.locator("#batchProgress")).toContainText("1 succeeded · 0 failed", { timeout: 3000 });
   await page.click("#batchClose");
   await page.goto("/"); await page.locator(".book").click();
@@ -88,7 +88,7 @@ test("Book recognition replaces only eligible pages and saves their identity and
   await openWorkshop(page); await page.click("#checkTextBtn");
   await page.fill("#text", "En manuel original rettelse.");
   await page.goto("/"); await page.locator(".book").click(); await openWorkshop(page);
-  await page.click("#reprocessBookBtn");
+  await bookAction(page, "reprocessBookBtn");
   await expect(page.locator("#batchPlan")).toContainText("0 to process · 3 protected");
 });
 
@@ -96,7 +96,7 @@ test("Explicit inclusion continues after a failed page and keeps its existing re
   await fakeRecognition(page, 3);
   await seedBatch(page);
   const before = await storedPages(page);
-  await page.click("#reprocessBookBtn"); await page.locator("#batchIncludeManual").check(); await page.click("#batchStart");
+  await bookAction(page, "reprocessBookBtn"); await page.locator("#batchIncludeManual").check(); await page.click("#batchStart");
   // Two recognised pages and a failure: on a slow shared CI runner with coverage this exceeds 3 s.
   await expect(page.locator("#batchProgress")).toContainText("2 succeeded · 1 failed", { timeout: 10000 });
   await expect(page.locator("#batchIncludeManual")).not.toBeChecked({ timeout: 1500 });
@@ -105,14 +105,14 @@ test("Explicit inclusion continues after a failed page and keeps its existing re
   expect(after.map(p => p.text)).toEqual(["Ny original tekst.", before[1].text, "Ny original tekst.", before[3].text]);
   expect(after.map(p => p.status)).toEqual(["done", "done", "done", "done"]);
   expect(after.map(p => p.id)).toEqual(before.map(p => p.id));
-  await page.click("#batchClose"); await page.click("#reprocessBookBtn");
+  await page.click("#batchClose"); await bookAction(page, "reprocessBookBtn");
   await expect(page.locator("#batchResults")).toContainText("Page 2: Failed; previous content kept", { timeout: 1500 });
 });
 
 test("Cancellation finishes the current page and leaves remaining pages untouched", async ({ page }) => {
   await fakeRecognition(page, 0, true); await seedBatch(page);
   const before = await storedPages(page);
-  await page.click("#reprocessBookBtn"); await page.locator("#batchIncludeManual").check(); await page.click("#batchStart");
+  await bookAction(page, "reprocessBookBtn"); await page.locator("#batchIncludeManual").check(); await page.click("#batchStart");
   await page.waitForFunction(() => "batchRelease" in window);
   await page.click("#batchCancel");
   await expect(page.locator("#batchCancel")).toBeDisabled();
@@ -129,13 +129,13 @@ test("Single-page recognition establishes a protected-edit history that survives
   await page.click("#checkTextBtn"); await page.click("#reocrBtn");
   await expect(page.locator("#reader")).toContainText("Ny original tekst.");
   await page.reload();
-  await page.click("#reprocessBookBtn");
+  await bookAction(page, "reprocessBookBtn");
   await expect(page.locator("#batchPlan")).toContainText("2 to process · 1 protected");
 });
 
 test("Automatic page detection straightens the stored original without visiting the crop dialog", async ({ page }) => {
   await fakeRecognition(page); await seedBatch(page, "foto-curved-auto.jpg");
-  await page.click("#reprocessBookBtn"); await page.locator("#batchDetect").check(); await page.click("#batchStart");
+  await bookAction(page, "reprocessBookBtn"); await page.locator("#batchDetect").check(); await page.click("#batchStart");
   await expect(page.locator("#batchProgress")).toContainText("1 succeeded · 0 failed", { timeout: 10000 });
   expect((await storedPages(page))[0].corners).toBe(true);
   await expect(page.locator("#crop")).toBeHidden();
@@ -148,7 +148,7 @@ test("Automatic page detection straightens the stored original without visiting 
 test("Automatic detection keeps the existing crop when no page is found", async ({ page }) => {
   await fakeRecognition(page); await seedBatch(page, "blank");
   const before = await storedPages(page);
-  await page.click("#reprocessBookBtn"); await page.locator("#batchDetect").check(); await page.click("#batchStart");
+  await bookAction(page, "reprocessBookBtn"); await page.locator("#batchDetect").check(); await page.click("#batchStart");
   await expect(page.locator("#batchProgress")).toContainText("1 succeeded · 0 failed", { timeout: 10000 });
   await expect(page.locator("#batchResults")).toContainText("No page found; existing crop kept", { timeout: 1500 });
   expect((await storedPages(page))[0].corners).toBe(before[0].corners);
@@ -157,7 +157,7 @@ test("Automatic detection keeps the existing crop when no page is found", async 
 for (const action of ["edit", "delete"] as const) {
   test(`A running book job cannot overwrite a newer ${action}`, async ({ page }) => {
     await fakeRecognition(page, 0, true); await seedBatch(page);
-    await page.click("#reprocessBookBtn"); await page.click("#batchStart");
+    await bookAction(page, "reprocessBookBtn"); await page.click("#batchStart");
     await page.waitForFunction(() => "batchRelease" in window);
     await page.click("#batchClose");
     await expect(page.locator("#reader")).toContainText("Søren");
@@ -178,7 +178,7 @@ for (const action of ["edit", "delete"] as const) {
 for (const action of ["edit", "delete"] as const) {
   test(`A book job cannot overwrite a newer ${action} from another tab`, async ({ page }) => {
     await fakeRecognition(page, 0, true); await seedBatch(page);
-    await page.click("#reprocessBookBtn"); await page.click("#batchStart");
+    await bookAction(page, "reprocessBookBtn"); await page.click("#batchStart");
     await page.waitForFunction(() => "batchRelease" in window);
     const other = await page.context().newPage();
     await other.goto(page.url()); await openWorkshop(other);
@@ -199,7 +199,7 @@ for (const action of ["edit", "delete"] as const) {
 
 test("A page edited before its turn is skipped while other eligible pages continue", async ({ page }) => {
   await fakeRecognition(page, 0, true); await seedBatch(page);
-  await page.click("#reprocessBookBtn"); await page.locator("#batchIncludeManual").check(); await page.click("#batchStart");
+  await bookAction(page, "reprocessBookBtn"); await page.locator("#batchIncludeManual").check(); await page.click("#batchStart");
   await page.waitForFunction(() => "batchRelease" in window); await page.click("#batchClose");
   await page.locator("#thumbs .thumb > button").nth(1).click();
   await page.click("#checkTextBtn"); await page.fill("#text", "Meine neuere eigene Korrektur.");

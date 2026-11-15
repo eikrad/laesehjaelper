@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 import { strFromU8, unzipSync } from "fflate";
 import fs from "node:fs";
-import { addPhotos, bookTool, fresh, openRecognisedBook, openWorkshop, seedBooks, toggleReadingSetup, waitForText } from "./helpers";
+import { addPhotos, bookAction, bookTool, fresh, openRecognisedBook, openWorkshop, seedBooks, toggleReadingSetup, waitForText } from "./helpers";
 
 test("Exported page layout is independent of the screen orientation", async ({ page }, info) => {
   await fresh(page);
@@ -11,7 +11,7 @@ test("Exported page layout is independent of the screen orientation", async ({ p
   const pages: string[] = [];
   for (const viewport of [{ width: 820, height: 1180 }, { width: 1180, height: 820 }]) {
     await page.setViewportSize(viewport);
-    const [download] = await Promise.all([page.waitForEvent("download"), page.click("#exportBtn")]);
+    const [download] = await Promise.all([page.waitForEvent("download"), bookAction(page, "exportBtn")]);
     const file = info.outputPath(`export-${viewport.width}.epub`);
     await download.saveAs(file);
     const files = unzipSync(new Uint8Array(fs.readFileSync(file)));
@@ -26,7 +26,7 @@ test("Exports and reimports an e-book", async ({ page }, info) => {
   await addPhotos(page, ["side-da.jpg"]);
   await page.fill("#bookTitle", "Eksport");
   await waitForText(page);
-  const [download] = await Promise.all([page.waitForEvent("download"), page.click("#exportBtn")]);
+  const [download] = await Promise.all([page.waitForEvent("download"), bookAction(page, "exportBtn")]);
   expect(download.suggestedFilename()).toBe("Eksport.epub");
   const file = info.outputPath("Eksport.epub");
   await download.saveAs(file);
@@ -63,7 +63,7 @@ test("An exported book keeps syllable colours only on long words when chosen", a
   await page.click('#mode button[data-v="farbe"]');
   await page.click('#sylWordsSet button[data-v="lange"]');
   await toggleReadingSetup(page);
-  const [download] = await Promise.all([page.waitForEvent("download"), bookTool(page, "exportBtn")]);
+  const [download] = await Promise.all([page.waitForEvent("download"), bookAction(page, "exportBtn")]);
   const file = info.outputPath("long.epub");
   await download.saveAs(file);
   const files = unzipSync(new Uint8Array(fs.readFileSync(file)));

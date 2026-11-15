@@ -83,9 +83,9 @@ test("Workshop tools remain available behind the quiet reading entry", async ({ 
   await expect(page.locator("#bookMenuBtn")).toBeHidden();
   await expect(page.locator("#thumbs")).toBeHidden();
   await openWorkshop(page);
-  for (const id of ["#reader", "#dock", "#thumbs", "#checkTextBtn", "#exportBtn", "#delBookBtn", "#text"]) await expect(page.locator(id), id).toBeVisible();
+  for (const id of ["#reader", "#dock", "#thumbs", "#checkTextBtn", "#bookMenuBtn", "#text"]) await expect(page.locator(id), id).toBeVisible();
   await page.click("#readBookBtn");
-  for (const id of ["#bookTitle", "#thumbs", "#checkTextBtn", "#exportBtn", "#delBookBtn", "#edit"]) await expect(page.locator(id), id).toBeHidden();
+  for (const id of ["#bookTitle", "#thumbs", "#checkTextBtn", "#bookMenuBtn", "#edit"]) await expect(page.locator(id), id).toBeHidden();
 });
 
 test("Opening another book resets its editing tools", async ({ page }) => {
@@ -118,18 +118,18 @@ test("Reading mode keeps page navigation and hides book preparation", async ({ p
   await expect(page.locator("#reader")).toBeVisible();
   await expect(page.locator("#readBtn")).toBeVisible();
   await expect(page.locator("#focusBtn")).toBeVisible();
-  for (const id of ["#bookTitle", "#exportBtn", "#editPagesBtn", "#home", "#edit", "#thumbs", "#setBtn"])
+  for (const id of ["#bookTitle", "#bookMenuBtn", "#editPagesBtn", "#home", "#edit", "#thumbs", "#setBtn"])
     await expect(page.locator(id), id).toBeHidden();
   for (const id of ["#prev", "#next"]) await expect(page.locator(id)).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(page.locator("#bookTitle")).toBeVisible();
   // Page-management controls must also disappear if editing was already active.
   await openWorkshop(page);
-  await expect(page.locator("#delBookBtn")).toBeVisible();
+  await expect(page.locator("#bookMenuBtn")).toBeVisible();
   await page.click("#focusBtn");
-  await expect(page.locator("#delBookBtn")).toBeHidden();
+  await expect(page.locator("#bookMenuBtn")).toBeHidden();
   await page.keyboard.press("Escape");
-  await expect(page.locator("#delBookBtn")).toBeVisible();
+  await expect(page.locator("#bookMenuBtn")).toBeVisible();
 });
 
 test("Reading aloud highlights the current word", async ({ page }) => {

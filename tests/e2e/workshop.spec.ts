@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { addPhotos, fresh, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, storedPages } from "./helpers";
+import { addPhotos, bookAction, fresh, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, storedPages } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -9,8 +9,7 @@ test("The workshop exposes book and selected-page tools, with recognition status
   await page.locator(".book").click();
   await openWorkshop(page);
   await expect(page.locator("#text")).toBeVisible({ timeout: 1500 });
-  await expect(page.locator("#exportBtn")).toBeVisible();
-  await expect(page.locator("#delBookBtn")).toBeVisible();
+  await expect(page.locator("#bookMenuBtn")).toBeVisible();
   await expect(page.locator(".thumb .recognition")).toHaveText(["Klar", "Klar"]);
   await page.locator(".thumb > button").nth(1).click();
   await expect(page.locator("#text")).toHaveValue("Anden originale side.");
@@ -19,7 +18,81 @@ test("The workshop exposes book and selected-page tools, with recognition status
   await page.fill("#text", "En rettet original side.");
   await page.click("#readBookBtn");
   await expect(page.locator("#reader")).toContainText("En rettet original side.");
-  await expect(page.locator("#delBookBtn")).toBeHidden();
+  await expect(page.locator("#bookMenuBtn")).toBeHidden();
+});
+
+// One "Book ⋯" menu instead of a wall of equally loud buttons (#206).
+test("The book menu holds the book's actions, with Delete book last, apart and asking to tap again", async ({ page }) => {
+  await seedBooks(page, [{ id: "menu", title: "En bog med menu", texts: ["Første side.", "Anden side."] }]);
+  await page.locator(".book").click();
+  await openWorkshop(page);
+  const button = page.locator("#bookMenuBtn"), menu = page.locator("#bookMenu"), del = page.locator("#delBookBtn");
+  await expect(button).toHaveAccessibleName("Bog");
+  await expect(button).toHaveAttribute("aria-haspopup", "menu");
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await expect(menu).toBeHidden();
+  await button.click();
+  await expect(menu).toBeVisible();
+  await expect(button).toHaveAttribute("aria-expanded", "true");
+  await expect(menu.getByRole("menuitem")).toHaveText(["Gem som e-bog", "Gem som PDF", "Genkend hele bogen igen", "Læseindstillinger", "Slet bogen"]);
+  await expect(menu.locator('[role="separator"] + [role="menuitem"]'), "Delete book sits apart, after a separator").toHaveText("Slet bogen");
+  for (const item of await menu.getByRole("menuitem").all()) expect((await item.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+  // The first tap only asks; the menu stays open for the second tap. Closing the menu takes the question back.
+  await del.click();
+  await expect(del).toHaveText("Tryk igen for at slette bogen");
+  await expect(menu).toBeVisible();
+  await page.mouse.click(5, 600);   // Outside the menu.
+  await expect(menu).toBeHidden();
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await button.click();
+  await expect(del).toHaveText("Slet bogen");
+  // An action closes the menu; leaving what it opened returns to the menu button.
+  await menu.getByRole("menuitem", { name: "Læseindstillinger" }).click();
+  await expect(menu).toBeHidden();
+  await expect(page.locator("#settings")).toHaveClass(/adult-setup/);
+  await page.click("#setClose");
+  await expect(button).toBeFocused();
+  await button.click();
+  await del.click(); await del.click();
+  await expect(page.locator("#start")).toBeVisible();
+  await expect(page.locator(".book")).toHaveCount(0);
+});
+
+test("The book menu works with the keyboard: arrows move round, Escape returns to the menu button", async ({ page }) => {
+  await seedBooks(page, [{ id: "keys", title: "En bog til tasterne", texts: ["Første side."] }]);
+  await page.locator(".book").click();
+  await openWorkshop(page);
+  const button = page.locator("#bookMenuBtn"), menu = page.locator("#bookMenu");
+  const first = page.locator("#exportBtn"), last = page.locator("#delBookBtn");
+  await button.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(menu).toBeVisible();
+  await expect(first).toBeFocused();
+  await page.keyboard.press("ArrowUp");
+  await expect(last).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(first).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.locator("#pdfBtn")).toBeFocused();
+  await page.keyboard.press("ArrowRight");   // Moves nothing in the menu and turns no page.
+  await expect(page.locator("#pdfBtn")).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(last).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(first).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(button).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(first).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(menu).toBeHidden();
+  await button.focus();
+  await page.keyboard.press("ArrowUp");
+  await expect(last).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(last).toHaveText("Tryk igen for at slette bogen");
+  await expect(last).toBeFocused();
 });
 
 test.describe("Workshop recognition status", () => {
@@ -222,10 +295,10 @@ test("The only page cannot be deleted; deleting the book still asks to tap again
   const x = page.locator(".thumb .x");
   await expect(x).toBeDisabled();
   await expect(x).toHaveAttribute("title", /Slet bogen i stedet/);
-  await page.click("#delBookBtn");
+  await bookAction(page, "delBookBtn");
   await expect(page.locator("#delBookBtn")).toHaveText("Tryk igen for at slette bogen");
   await expect(page.locator("#thumbs .thumb")).toHaveCount(1);
-  await page.click("#delBookBtn");
+  await bookAction(page, "delBookBtn");
   await expect(page.locator("#start")).toBeVisible();
 });
 

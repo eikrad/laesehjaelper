@@ -184,8 +184,15 @@ async function bookOpen(page: Page) {
   await expect(page.locator("#app")).toBeVisible();
 }
 
-/** Choose a page or book tool in the workshop. */
-export async function bookTool(page: Page, id: "checkTextBtn" | "exportBtn") {
+/** Choose a page tool in the workshop. */
+export async function bookTool(page: Page, id: "checkTextBtn") {
   await openWorkshop(page);
+  await page.click(`#${id}`);
+}
+
+/** Choose an action from the workshop's "Book ⋯" menu (#206). Delete book asks to be chosen twice. */
+export async function bookAction(page: Page, id: "exportBtn" | "pdfBtn" | "reprocessBookBtn" | "bookReadingSetupBtn" | "delBookBtn") {
+  await openWorkshop(page);
+  if (await page.locator("#bookMenu").isHidden()) await page.click("#bookMenuBtn");
   await page.click(`#${id}`);
 }

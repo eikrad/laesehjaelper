@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { fresh, openRecognisedBook, openWorkshop, seedBooks, toggleReadingSetup } from "./helpers";
+import { bookAction, fresh, openRecognisedBook, openWorkshop, seedBooks, toggleReadingSetup } from "./helpers";
 import { decodePDFRawStream, PDFArray, PDFDocument, PDFRawStream } from "pdf-lib";
 import fs from "node:fs";
 
@@ -20,8 +20,7 @@ test("A book downloads as a printable PDF with embedded fonts and one page per b
   await page.click('#mode button[data-v="beides"]');
   await toggleReadingSetup(page);
   await openWorkshop(page);
-  await expect(page.locator("#pdfBtn")).toBeVisible();
-  const [download] = await Promise.all([page.waitForEvent("download", { timeout: 20000 }), page.click("#pdfBtn")]);
+  const [download] = await Promise.all([page.waitForEvent("download", { timeout: 20000 }), bookAction(page, "pdfBtn")]);
   expect(download.suggestedFilename()).toBe("Prøvebog.pdf");
   const path = info.outputPath("book.pdf"); await download.saveAs(path);
   const pdf = await PDFDocument.load(fs.readFileSync(path));
@@ -43,7 +42,7 @@ test("Text-only books export offline with an embedded fallback font", async ({ p
   await openWorkshop(page);
   await page.evaluate(() => navigator.serviceWorker.ready.then(() => {}));
   await context.setOffline(true);
-  const [download] = await Promise.all([page.waitForEvent("download", { timeout: 20000 }), page.click("#pdfBtn")]);
+  const [download] = await Promise.all([page.waitForEvent("download", { timeout: 20000 }), bookAction(page, "pdfBtn")]);
   expect(download.suggestedFilename()).toBe("Søren  æbler.pdf");
   const path = info.outputPath("offline.pdf"); await download.saveAs(path);
   const pdf = await PDFDocument.load(fs.readFileSync(path));
@@ -61,7 +60,7 @@ test("PDF export waits for every page to be recognised", async ({ page }) => {
   await seedBooks(page, [{ id: "waiting-pdf", title: "Venter", texts: ["Færdig side.", "Ikke færdig endnu."], readyPages: 1 }]);
   await page.locator(".book").click();
   await openWorkshop(page);
-  await page.click("#pdfBtn");
+  await bookAction(page, "pdfBtn");
   await expect(page.locator("#toast")).toContainText("Vent, til alle sider er genkendt.");
   await expect(page.locator("#pdfBtn")).toBeEnabled();
 });
@@ -78,7 +77,7 @@ test.describe("Available reading fonts", () => {
     await fresh(page);
     await seedBooks(page, [{ id: "font-pdf", title: "Læs med", texts: ["Søren går ud i haven."] }]);
     await page.locator(".book").click(); await openWorkshop(page);
-    const [download] = await Promise.all([page.waitForEvent("download", { timeout: 20000 }), page.click("#pdfBtn")]);
+    const [download] = await Promise.all([page.waitForEvent("download", { timeout: 20000 }), bookAction(page, "pdfBtn")]);
     const path = info.outputPath("selected-font.pdf"); await download.saveAs(path);
     expect((await PDFDocument.load(fs.readFileSync(path))).getPageCount()).toBe(1);
     await expect(page.locator("#toast")).toHaveText("PDF-filen er gemt: Læs med.pdf");

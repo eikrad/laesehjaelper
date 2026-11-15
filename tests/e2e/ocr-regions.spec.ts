@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { bookTool, fixture, fresh, openRecognisedBook } from "./helpers";
+import { bookAction, bookTool, fixture, fresh, openRecognisedBook } from "./helpers";
 import type { Page } from "@playwright/test";
 import { strFromU8, unzipSync } from "fflate";
 import fs from "node:fs";
@@ -51,7 +51,7 @@ test("an adult excludes a footer, keeps the photo and can restore recognition", 
   });
   expect(darkPixels).toBeGreaterThan(100); // The original footer is still visible, not painted white.
   await page.reload();
-  const [download] = await Promise.all([page.waitForEvent("download"), bookTool(page, "exportBtn")]);
+  const [download] = await Promise.all([page.waitForEvent("download"), bookAction(page, "exportBtn")]);
   const file = info.outputPath("exclusions.epub"); await download.saveAs(file);
   const data = JSON.parse(strFromU8(unzipSync(new Uint8Array(fs.readFileSync(file)))["OEBPS/laesehjaelper/book.json"]));
   expect(data.pages[0].ocrRegions).toEqual([{ x0: 0, y0: 0.85, x1: 1, y1: 1 }]);

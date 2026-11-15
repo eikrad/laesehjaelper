@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { bookTool, fresh, openWorkshop, seedBooks, toggleReadingSetup } from "./helpers";
+import { bookAction, fresh, openWorkshop, seedBooks, toggleReadingSetup } from "./helpers";
 
 test("an adult marks phrases and the child shows or hides them without changing the words", async ({ page }) => {
   await fresh(page);
@@ -27,7 +27,7 @@ test("phrase annotations survive an app EPUB round trip while remaining off for 
   await fresh(page); await seedBooks(page, [{ id: "roundtrip", title: "Læsegrupper", texts: ["En lille mus bor her."] }]);
   await page.locator(".book").click(); await openWorkshop(page); await page.click("#phraseEdit");
   await page.locator('#phraseChoices button[data-after="2"]').click(); await page.click("#phraseSave");
-  const [download] = await Promise.all([page.waitForEvent("download"), bookTool(page, "exportBtn")]);
+  const [download] = await Promise.all([page.waitForEvent("download"), bookAction(page, "exportBtn")]);
   const file = info.outputPath("phrases.epub"); await download.saveAs(file);
   await fresh(page); await page.setInputFiles("#importFile", file);
   await expect(page.locator("#readingTitle")).toHaveText("Læsegrupper");
