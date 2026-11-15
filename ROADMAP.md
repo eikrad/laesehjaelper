@@ -17,14 +17,13 @@ Last reviewed: 15 November 2026.
 
 | Issue | What | Epic | Note |
 |---|---|---|---|
-| [#205](https://github.com/eikrad/laesehjaelper/issues/205) | Safety nets while making a book: skip a photo, undo deleting a page | Reading and making books | |
 | [#212](https://github.com/eikrad/laesehjaelper/issues/212) | Take the app language from the device; the book language follows it | Photo to book page | |
 
 ## Next
 
 | Issue | What | Epic | Note |
 |---|---|---|---|
-| [#206](https://github.com/eikrad/laesehjaelper/issues/206) | Workshop: one header row and all book actions in one menu | Reading and making books | After #205 |
+| [#206](https://github.com/eikrad/laesehjaelper/issues/206) | Workshop: one header row and all book actions in one menu | Reading and making books | |
 | [#207](https://github.com/eikrad/laesehjaelper/issues/207) | Workshop: page actions in one menu and a compact page list | Reading and making books | After #206 |
 | [#208](https://github.com/eikrad/laesehjaelper/issues/208) | Check view: photo and recognised text together, page by page | Reading and making books | |
 | [#209](https://github.com/eikrad/laesehjaelper/issues/209) | Guided finish for a new book: check each page, then add a title | Reading and making books | After #208 |

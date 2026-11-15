@@ -409,7 +409,12 @@ input[type=range] { width: 100%; height: 44px; margin: 0; accent-color: var(--bl
 .crop-stage .h { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; touch-action: none; cursor: grab; }
 .crop-stage .h::after { content: ""; position: absolute; inset: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px var(--blue); }
 .crop-stage .h.mid::after { inset: 15px; background: var(--blue); box-shadow: 0 0 0 3px #fff; }
-.crop-foot { display: flex; justify-content: space-between; gap: 12px; padding: 12px 18px max(16px, env(safe-area-inset-bottom)); }
+/* Cancel (or skip, in a batch) on the left, apart from the two ways to use the photo (#205). On a narrow
+   phone the actions take their own row. */
+.crop-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 12px 18px max(16px, env(safe-area-inset-bottom)); }
+.crop-actions { display: flex; gap: 12px; margin-left: auto; }
+.crop-cancel { min-height: 44px; padding: 0 4px; border: 0; background: none; color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
+.crop-foot .cta-sm, .crop-foot .btn-ghost { min-height: 44px; }
 .crop-foot button:disabled { opacity: .35; cursor: default; }
 .crop-foot .btn-ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.5); }
 .cta-sm { border: 0; background: #fff; color: var(--ink); border-radius: 12px; padding: 11px 22px; font-weight: 700; }
@@ -453,6 +458,11 @@ body.focus .together { display: none !important; }
 #moveBtn.on { background: var(--ink); color: #fff; }
 .toast { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 12px 18px; border-radius: 16px; font-size: 15px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw; z-index: 30; }
 .toast.show { opacity: 1; }
+/* A message with an action (Undo after deleting a page, #205): a large, clearly tappable button. */
+/* Positioned from the middle, a toast could only be half the screen wide: size it to its message instead. */
+.toast { display: flex; align-items: center; gap: 8px; width: max-content; }
+.toast:has(#toastAction:not([hidden])) { padding: 4px 4px 4px 18px; }
+#toastAction { pointer-events: auto; min-height: 44px; min-width: 44px; padding: 0 14px; border: 0; border-radius: 12px; background: #fff; color: var(--ink); font: inherit; font-weight: 700; white-space: nowrap; flex: none; }
 [hidden] { display: none !important; }
 @media (hover: hover) {
   .cta:hover { background: #2b3045; }
@@ -891,11 +901,14 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
     <svg id="cropSvg"><path id="cropPoly"/></svg>
   </div>
   <div class="crop-foot">
-    <button class="btn-ghost" id="cropWhole" data-t="cropWhole"></button>
-    <button class="cta-sm" id="cropOk" data-t="cropUse"></button>
+    <button class="crop-cancel" id="cropCancel"></button>
+    <div class="crop-actions">
+      <button class="btn-ghost" id="cropWhole" data-t="cropWhole"></button>
+      <button class="cta-sm" id="cropOk" data-t="cropUse"></button>
+    </div>
   </div>
 </div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status"><span id="toastMsg"></span><button id="toastAction" type="button" hidden></button></div>
 
 <script src="tesseract.min.js"></script>
 <script>%%APP_JS%%</script>
