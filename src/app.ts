@@ -773,6 +773,13 @@ const Lib = { detectFrame, warpPage, orderCorners };
     bookMenu.close(); deleteBook();
   };
   $("bookReadingSetupBtn").onclick = () => showSettings(true, true);
+  // Book settings and reading tips are small dialogs from the menu. The menu has already put focus
+  // on its button, so closing a dialog (Close or Escape) returns there.
+  const bookDialogs = [...document.querySelectorAll<HTMLDialogElement>(".book-dialog")];
+  for (const d of bookDialogs) d.querySelector<HTMLButtonElement>(".close")!.onclick = () => d.close();
+  const closeBookDialogs = () => { for (const d of bookDialogs) if (d.open) d.close(); };
+  $("bookSettingsBtn").onclick = () => $<HTMLDialogElement>("bookSettings").showModal();
+  $("tipsBtn").onclick = () => $<HTMLDialogElement>("adultTips").showModal();
 
   // Text -> HTML with word and syllable spans. Also record character offsets for reading aloud.
   const WORD = /[\p{L}\p{M}·]+(?:-[\p{L}\p{M}·]+)*/gu;
@@ -2237,7 +2244,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     view = mode; atEnd = false;
     document.body.classList.toggle("reading", view === "read");
     $("adultUiLanguage").append($("uiLang"));
-    closeEditEntry(); showCheck(false); showSettings(false);
+    closeEditEntry(); closeBookDialogs(); showCheck(false); showSettings(false);
     setReadingMode(false);
     document.body.classList.toggle("workshop", view === "workshop");
     comparing = false; setCompareBtn();
@@ -2270,7 +2277,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     return show(nav.restore({ open, cropOpen: !$("crop").hidden, current: currentLocation() }));
   }
   window.addEventListener("popstate", () => { restoreLocation(); });
-  function closeEditors() { ocrRegionEditor.close(); phraseEditor.close(); practice.close(); }
+  function closeEditors() { ocrRegionEditor.close(); phraseEditor.close(); practice.close(); closeBookDialogs(); }
   /** Home: back through the app's own history entries, also after deleting the book, so Back
    *  from the shelf never leads into a book that is no longer there. */
   function goHome() { closeEditors(); show(nav.go({ to: "shelf" })); }

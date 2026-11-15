@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { bookTool, expectSyllableBowsInsideBoxes, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
+import { bookAction, bookTool, expectSyllableBowsInsideBoxes, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
 
 // Layout checks. Unlike the other specs, these run at every screen size the app is
 // designed for: phone, tablet portrait, tablet landscape and laptop (see playwright.config.ts).
@@ -192,25 +192,28 @@ test("word practice fits every screen in each interface language", async ({ page
   }
 });
 
-test("Adult reading tips fit every screen in every interface language", async ({ page }, info) => {
+test("Adult reading tips and book settings fit every screen in every interface language", async ({ page }, info) => {
   await page.click("#demoBtn");
   await openWorkshop(page);
-  const tips = page.locator("#adultTips");
   for (const ui of ["da", "de", "en"]) {
     await setUiLanguage(page, ui);
-    const summary = tips.locator("summary");
-    await summary.click();
-    await expect(tips.locator("li")).toHaveCount(5);
-    const bounds = (await tips.boundingBox())!;
-    expect(bounds.x).toBeGreaterThanOrEqual(0);
-    expect(bounds.x + bounds.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-    expect(await sidewaysScroll(page)).toBe(0);
-    await expect.poll(() => smallControls(page, 44, "#adultTips")).toEqual([]);
-    await tips.screenshot({ path: info.outputPath(`adult-tips-${ui}.png`) });
-    await summary.click();
+    for (const [action, id] of [["tipsBtn", "adultTips"], ["bookSettingsBtn", "bookSettings"]] as const) {
+      await bookAction(page, action);
+      const dialog = page.locator(`#${id}`);
+      await expect(dialog).toBeVisible();
+      const bounds = (await dialog.boundingBox())!;
+      expect(bounds.x, id).toBeGreaterThanOrEqual(0);
+      expect(bounds.x + bounds.width, id).toBeLessThanOrEqual(page.viewportSize()!.width);
+      expect(bounds.y + bounds.height, `${id} needs no scrolling`).toBeLessThanOrEqual(page.viewportSize()!.height);
+      expect(await dialog.evaluate(e => e.scrollWidth - e.clientWidth), id).toBeLessThanOrEqual(1);
+      await expect.poll(() => smallControls(page, 44, `#${id}`), { message: id }).toEqual([]);
+      await dialog.screenshot({ path: info.outputPath(`${id}-${ui}.png`) });
+      await page.keyboard.press("Escape");
+      await expect(dialog).toBeHidden();
+    }
   }
   await page.click("#readBookBtn");
-  await expect(tips).toBeHidden();
+  await expect(page.locator("#adultTips")).toBeHidden();
 });
 
 test("Reading guides fit every screen with usable controls and a single large row", async ({ page }, info) => {

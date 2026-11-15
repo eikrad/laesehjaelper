@@ -34,7 +34,9 @@ test("The book menu holds the book's actions, with Delete book last, apart and a
   await button.click();
   await expect(menu).toBeVisible();
   await expect(button).toHaveAttribute("aria-expanded", "true");
-  await expect(menu.getByRole("menuitem")).toHaveText(["Gem som e-bog", "Gem som PDF", "Genkend hele bogen igen", "Læseindstillinger", "Slet bogen"]);
+  await expect(menu.getByRole("menuitem")).toHaveText([
+    "Gem som e-bog", "Gem som PDF", "Genkend hele bogen igen", "Bogens indstillinger", "Læseindstillinger", "Gode råd til fælles læsning", "Slet bogen",
+  ]);
   await expect(menu.locator('[role="separator"] + [role="menuitem"]'), "Delete book sits apart, after a separator").toHaveText("Slet bogen");
   for (const item of await menu.getByRole("menuitem").all()) expect((await item.boundingBox())!.height).toBeGreaterThanOrEqual(48);
   // The first tap only asks; the menu stays open for the second tap. Closing the menu takes the question back.
@@ -56,6 +58,30 @@ test("The book menu holds the book's actions, with Delete book last, apart and a
   await del.click(); await del.click();
   await expect(page.locator("#start")).toBeVisible();
   await expect(page.locator(".book")).toHaveCount(0);
+});
+
+test("Book settings open from the book menu in a dialog and return to the menu button", async ({ page }) => {
+  await seedBooks(page, [{ id: "settings", title: "En bog med indstillinger", texts: ["Vi går i sko-le."] }]);
+  await page.locator(".book").click();
+  await openWorkshop(page);
+  const dialog = page.locator("#bookSettings"), button = page.locator("#bookMenuBtn");
+  await expect(dialog).toBeHidden();
+  await expect(page.locator("#langSet"), "no book settings section on the workshop page").toBeHidden();
+  await button.click();
+  await page.getByRole("menuitem", { name: "Bogens indstillinger" }).click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAccessibleName("Bogens indstillinger");
+  await expect(dialog.locator("#langSet button.on")).toHaveAttribute("data-v", "da");
+  await dialog.locator('#hyphSet button[data-v="bog"]').click();
+  await expect(dialog.locator('#hyphSet button[data-v="bog"]')).toHaveClass(/\bon\b/);
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(button).toBeFocused();
+  await button.click();
+  await page.getByRole("menuitem", { name: "Bogens indstillinger" }).click();
+  await dialog.getByRole("button", { name: "Luk" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(button).toBeFocused();
 });
 
 test("The book menu works with the keyboard: arrows move round, Escape returns to the menu button", async ({ page }) => {

@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, fixture, fresh, goShelf, openBookOptions, openRecognisedBook, openWorkshop, toggleReadingSetup, waitForText } from "./helpers";
+import { addPhotos, bookTool, closeBookOptions, fixture, fresh, goShelf, openBookOptions, openRecognisedBook, openWorkshop, toggleReadingSetup, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -70,7 +70,7 @@ test("Font, syllable hyphens in the book and reading mode", async ({ page }) => 
   await openBookOptions(page);
   await page.click("#hyphSet button[data-v=bog]");
   await expect(page.locator('#reader .w[data-word="skole"] .s')).toHaveText(["sko", "le"]);
-  await page.locator("#bookOptions > summary").click();
+  await closeBookOptions(page);
   await page.click("#focusBtn");
   await expect(page.locator("body")).toHaveClass(/focus/);
   await expect(page.locator(".thumbs")).toBeHidden();

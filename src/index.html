@@ -373,14 +373,12 @@ body.workshop .workshop-grid > * { min-width: 0; }
 .sethead button { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--sky); display: grid; place-items: center; padding: 0; }
 .settings-content { overflow-y: auto; min-height: 0; padding: 8px 20px 20px; }
 .setup-section { border-top: 1px solid var(--line); margin-top: 12px; }
-.setup-section > summary, .book-options > summary { min-height: 48px; padding: 12px 0; font-weight: 700; cursor: pointer; }
+.setup-section > summary { min-height: 48px; padding: 12px 0; font-weight: 700; cursor: pointer; }
 .setup-section > .grid { padding: 10px 0; }
 #adultAppearanceQuick { margin: 6px 0 18px; }
 #adultUiLanguage { margin: 8px 0 16px; }
 #adultUiLanguage .flabel { display: block; margin-bottom: 8px; }
 #readingSetupLink { margin-top: 18px; width: 100%; justify-content: center; }
-.book-options { margin-bottom: 12px; }
-.book-options > .grid { background: white; padding: 16px; border-radius: 12px; }
 .settings .more { grid-column: 1 / -1; margin: 4px 0 -6px; padding-top: 18px; border-top: 1.5px solid var(--line); font-size: 17px; }
 /* Wide screens: the settings sit in a panel on the right, above the toolbar, and the page moves
    left, so it stays visible while the settings change it (supporting pane, Material 3). */
@@ -481,8 +479,11 @@ body.focus .together { display: none !important; }
   #next:hover:not(:disabled), #edgeNext:hover:not(:disabled) { background: #2b3045; }
   #prev:hover:not(:disabled), #edgePrev:hover:not(:disabled) { background: var(--sky); }
 }
-.practice-dialog { font-family: var(--ui); color: var(--ink); width: min(560px, calc(100vw - 32px)); max-height: 88dvh; overflow: auto; border: 1px solid var(--line); border-radius: 18px; padding: 20px; box-sizing: border-box; }
-.practice-dialog::backdrop { background: #0007; }
+.practice-dialog, .book-dialog { font-family: var(--ui); color: var(--ink); width: min(560px, calc(100vw - 32px)); max-height: 88dvh; overflow: auto; border: 1px solid var(--line); border-radius: 18px; padding: 20px; box-sizing: border-box; }
+.practice-dialog::backdrop, .book-dialog::backdrop { background: #0007; }
+.book-dialog h2 { margin: 0 0 16px; font-size: 20px; }
+.book-dialog ul { margin: 8px 0 0; padding-left: 1.2em; line-height: 1.55; }
+.book-dialog .close { margin-top: 20px; min-height: 48px; }
 .practice-dialog button { min-width: 44px; min-height: 44px; margin: 4px; white-space: normal; }
 .practice-word { font: 2rem var(--font); overflow-wrap: anywhere; }
 .practice-nav { display: flex; align-items: center; justify-content: space-between; }
@@ -644,7 +645,9 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
           <button role="menuitem" tabindex="-1" id="exportBtn" data-t="exportBook"></button>
           <button role="menuitem" tabindex="-1" id="pdfBtn" data-t="pdfBook"></button>
           <button role="menuitem" tabindex="-1" id="reprocessBookBtn" data-t="batchTitle"></button>
+          <button role="menuitem" tabindex="-1" id="bookSettingsBtn" data-t="setupBook"></button>
           <button role="menuitem" tabindex="-1" id="bookReadingSetupBtn" data-t="readingSetup"></button>
+          <button role="menuitem" tabindex="-1" id="tipsBtn" data-t="tipsTitle"></button>
           <div role="separator" id="bookMenuSeparator"></div>
           <button role="menuitem" tabindex="-1" id="delBookBtn" class="danger" data-t="deleteBook"></button>
         </div>
@@ -655,38 +658,9 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
       <button id="phraseToggle" class="btn-ghost small" hidden aria-pressed="false"></button>
       <button id="practiceOpen" class="btn-ghost small" data-t="practiceTitle" hidden></button>
     </div>
-    <details class="workshop-only book-options" id="bookOptions"><summary data-t="setupBook"></summary><div class="grid">
-        <div class="field">
-          <span class="flabel" data-t="bookLang"></span>
-          <div class="seg" id="langSet">
-            <button data-v="da" data-t="langDa"></button>
-            <button data-v="de" data-t="langDe"></button>
-            <button data-v="en" data-t="langEn"></button>
-          </div>
-        </div>
-        <div class="field wide">
-          <span class="flabel" data-t="hyph"></span>
-          <div class="seg" id="hyphSet">
-            <button data-v="normal" data-t="hyphNormal"></button>
-            <button data-v="bog" data-t="hyphBook"></button>
-          </div>
-          <p class="fhint" data-t="hyphHint"></p>
-        </div>
-    </div></details>
     <div class="workshop-tools workshop-only">
       <button class="btn-ghost" id="checkTextBtn"><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></button>
     </div>
-    <details class="disclaimer workshop-only" id="adultTips">
-      <summary data-t="tipsTitle"></summary>
-      <p data-t="tipsPractice"></p>
-      <ul>
-        <li data-t="tipsListen"></li>
-        <li data-t="tipsHelp"></li>
-        <li data-t="tipsCorrect"></li>
-        <li data-t="tipsPraise"></li>
-        <li data-t="tipsTalk"></li>
-      </ul>
-    </details>
     <div class="workshop-grid">
     <div class="thumbs" id="thumbs"></div>
     <article class="pagecard">
@@ -721,6 +695,42 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
     <button class="edgenav next" id="edgeNext" data-ta="nextPage"><svg class="i"><use href="#i-next"/></svg></button>
   </section>
 </div>
+
+<!-- Opened from the workshop's "Book ⋯" menu (#206). -->
+<dialog class="book-dialog" id="bookSettings" aria-labelledby="bookSettingsTitle">
+  <h2 id="bookSettingsTitle" data-t="setupBook"></h2>
+  <div class="grid">
+    <div class="field">
+      <span class="flabel" data-t="bookLang"></span>
+      <div class="seg" id="langSet">
+        <button data-v="da" data-t="langDa"></button>
+        <button data-v="de" data-t="langDe"></button>
+        <button data-v="en" data-t="langEn"></button>
+      </div>
+    </div>
+    <div class="field wide">
+      <span class="flabel" data-t="hyph"></span>
+      <div class="seg" id="hyphSet">
+        <button data-v="normal" data-t="hyphNormal"></button>
+        <button data-v="bog" data-t="hyphBook"></button>
+      </div>
+      <p class="fhint" data-t="hyphHint"></p>
+    </div>
+  </div>
+  <button class="btn-ghost close" data-t="practiceClose"></button>
+</dialog>
+<dialog class="book-dialog" id="adultTips" aria-labelledby="tipsDialogTitle">
+  <h2 id="tipsDialogTitle" data-t="tipsTitle"></h2>
+  <p data-t="tipsPractice"></p>
+  <ul>
+    <li data-t="tipsListen"></li>
+    <li data-t="tipsHelp"></li>
+    <li data-t="tipsCorrect"></li>
+    <li data-t="tipsPraise"></li>
+    <li data-t="tipsTalk"></li>
+  </ul>
+  <button class="btn-ghost close" data-t="practiceClose"></button>
+</dialog>
 
 <nav class="dock" id="dock" hidden>
   <div class="dock-extra keep">
