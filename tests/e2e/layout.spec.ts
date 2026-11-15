@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { bookTool, expectSyllableBowsInsideBoxes, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
 
@@ -476,19 +476,64 @@ test("Swiping turns the page; taps, scrolling and moving text boxes do not", asy
   await expect(count).toHaveText("1 / 2");
 });
 
-test("Page arrows share the bottom bar and leave the reading page unobstructed", async ({ page }) => {
-  await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
-  await expect(page.locator("#edgePrev")).toBeHidden();
-  await expect(page.locator("#edgeNext")).toBeHidden();
-  const prev = page.locator("#prev"), next = page.locator("#next");
+test("Large page-turn buttons sit below the page on narrow screens and at the screen edges on wide ones, never over the page", async ({ page }) => {
+  await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg", "side-da.jpg"]);
+  // Only the buttons in use are shown; the others are not in the accessibility tree.
+  const prev = page.getByRole("button", { name: "Forrige side", exact: true });
+  const next = page.getByRole("button", { name: "Næste side", exact: true });
+  const viewport = page.viewportSize()!, wide = viewport.width >= 840;
   await expect(prev).toBeDisabled();
-  const box = (await next.boundingBox())!, paper = (await page.locator(".pageview").boundingBox())!;
-  expect(box.y).toBeGreaterThanOrEqual(paper.y + paper.height);
+  expect(Number(await prev.evaluate(b => getComputedStyle(b).opacity)), "a disabled button is clearly inactive").toBeLessThan(.6);
   await next.click();
-  await expect(page.locator("#count")).toHaveText("2 / 2");
-  await expect(next).toBeDisabled();
+  await expect(page.locator("#count")).toHaveText("2 / 3");
+  await expect(prev).toBeEnabled();
+  /** The buttons are large, on screen and beside or below the page area `free`, never over it. */
+  const expectBesidePage = async (free: Locator) => {
+    const area = (await free.boundingBox())!;
+    for (const [name, button] of [["previous", prev], ["next", next]] as const) {
+      const b = (await button.boundingBox())!;
+      expect(Math.min(b.width, b.height), `${name}: at least 56 px`).toBeGreaterThanOrEqual(56);
+      expect(b.x, name).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width, name).toBeLessThanOrEqual(viewport.width);
+      expect(b.y + b.height, `${name} on screen`).toBeLessThanOrEqual(viewport.height);
+      const covers = b.x < area.x + area.width && area.x < b.x + b.width && b.y < area.y + area.height && area.y < b.y + b.height;
+      expect(covers, `${name} covers no part of the page`).toBe(false);
+    }
+  };
+  await expect(async () => {
+    await expectBesidePage(page.locator("#reader .pageview"));
+    const paper = (await page.locator("#reader .pageview").boundingBox())!;
+    const p = (await prev.boundingBox())!, n = (await next.boundingBox())!;
+    if (wide) {
+      // Where the thumbs rest when holding a tablet by its sides (Hoober & Shank).
+      expect(p.x, "previous at the left screen edge").toBeLessThanOrEqual(24);
+      expect(n.x + n.width, "next at the right screen edge").toBeGreaterThanOrEqual(viewport.width - 24);
+      for (const b of [p, n]) expect(Math.abs(b.y + b.height / 2 - (paper.y + paper.height / 2)), "vertically centred beside the page").toBeLessThan(paper.height / 6);
+    } else {
+      for (const b of [p, n]) expect(b.y, "below the page").toBeGreaterThanOrEqual(paper.y + paper.height);
+    }
+  }).toPass({ timeout: 5000 });
+  // "Next" is filled with ink, "previous" is light with an outline.
+  const style = (l: Locator) => l.evaluate(b => { const c = getComputedStyle(b); return { bg: c.backgroundColor, outline: c.boxShadow !== "none" || parseFloat(c.borderTopWidth) > 0 }; });
+  const brightness = (c: string) => { const [r, g, b, a = 1] = c.match(/[\d.]+/g)!.map(Number); return a === 0 ? 765 : r + g + b; };
+  const [p, n] = [await style(prev), await style(next)];
+  expect(brightness(n.bg), "next is filled").toBeLessThan(200);
+  expect(brightness(p.bg), "previous is not filled").toBeGreaterThan(600);
+  expect(p.outline, "previous has an outline").toBe(true);
+  // The reading bar keeps read aloud and line help.
+  await expect(page.locator("#readBtn")).toBeVisible();
+  await expect(page.locator("#guideBtn")).toBeVisible();
+  // With Aa open, pages can still be turned.
+  await page.click("#setBtn");
+  await expect(prev).toBeInViewport();
+  await expect(next).toBeInViewport();
+  await page.click('#viewSet button[data-v="tekst"]');
+  await page.click("#setClose");
+  // On wide screens the text view leaves room for the buttons at the edges too.
+  // (Narrow screens scroll a long text behind the fixed bar, as before.)
+  if (wide) await expect(async () => { await expectBesidePage(page.locator("#reader")); }).toPass({ timeout: 5000 });
   await prev.click();
-  await expect(page.locator("#count")).toHaveText("1 / 2");
+  await expect(page.locator("#count")).toHaveText("1 / 3");
 });
 
 test("In text view on wide screens the photo sits beside the text, otherwise above it", async ({ page }) => {
@@ -512,7 +557,14 @@ test("In text view on wide screens the photo sits beside the text, otherwise abo
   await expect(photo).toBeHidden();
   const focusedCard = (await page.locator(".pagecard").boundingBox())!, focusedText = (await text.boundingBox())!;
   expect(focusedText.width, "reading-mode text uses the whole card").toBeGreaterThan(focusedCard.width - 4);
-  expect(focusedCard.width, "reading mode uses the screen width").toBeGreaterThan(page.viewportSize()!.width - 4);
+  if (page.viewportSize()!.width >= 840) {
+    // Wide screens keep the page-turn buttons at the edges (#202); the text uses all the width between them.
+    const left = (await page.locator("#edgePrev").boundingBox())!, right = (await page.locator("#edgeNext").boundingBox())!;
+    expect(focusedCard.x, "reading mode text starts right after the previous-page button").toBeLessThanOrEqual(left.x + left.width + 16);
+    expect(focusedCard.x + focusedCard.width, "and ends right before the next-page button").toBeGreaterThanOrEqual(right.x - 16);
+  } else {
+    expect(focusedCard.width, "reading mode uses the screen width").toBeGreaterThan(page.viewportSize()!.width - 4);
+  }
   await page.click("#focusBtn");
   // Without the photo, the text uses the whole card.
   await toggleReadingSetup(page);
