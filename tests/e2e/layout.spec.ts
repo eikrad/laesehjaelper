@@ -145,6 +145,9 @@ test("the word playback choice fits every screen in all interface languages", as
 test("adult phrase editing and large reading cues fit every screen and language", async ({ page }, info) => {
   await seedBooks(page, [{ id: "phrases", title: "Prøvebog", texts: ["En lille mus bor her. Solen skinner."] }]);
   await page.locator(".book").click();
+  // The book opens asynchronously. Until it does, the language switch is still on the shelf header
+  // and moves into the closed adult settings while being clicked.
+  await expect(page.locator("#app")).toBeVisible();
   for (const ui of ["da", "de", "en"]) {
     await setUiLanguage(page, ui); await openWorkshop(page);
     await page.click("#phraseEdit");
