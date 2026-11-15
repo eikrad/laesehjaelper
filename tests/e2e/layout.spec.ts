@@ -376,6 +376,31 @@ test("The crop dialog fills the screen and keeps its buttons after turning the d
   }).toPass({ timeout: 5_000 });
 });
 
+test("The crop footer fits Skip, Whole photo and Use in every language, also on a phone", async ({ page }) => {
+  for (const lang of ["da", "de", "en"]) {
+    await setUiLanguage(page, lang);
+    await page.setInputFiles("#file", [fixture("foto-bord.jpg"), fixture("side-illustration.jpg")]);   // Several: the longer "skip" label.
+    await expect(page.locator("#cropCancel")).toBeVisible();
+    const { width, height } = page.viewportSize()!;
+    const boxes = await Promise.all(["#cropCancel", "#cropWhole", "#cropOk"].map(async id => ({ id, ...(await page.locator(id).boundingBox())! })));
+    for (const b of boxes) {
+      expect(b.x, `${b.id} (${lang})`).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width, `${b.id} (${lang})`).toBeLessThanOrEqual(width);
+      expect(b.y + b.height, `${b.id} (${lang})`).toBeLessThanOrEqual(height);
+      expect(b.height, `${b.id} (${lang})`).toBeGreaterThanOrEqual(44);
+    }
+    for (const [i, a] of boxes.entries()) for (const b of boxes.slice(i + 1)) {
+      const apart = a.x + a.width <= b.x || b.x + b.width <= a.x || a.y + a.height <= b.y || b.y + b.height <= a.y;
+      expect(apart, `${a.id} and ${b.id} do not overlap (${lang})`).toBe(true);
+    }
+    expect(await sidewaysScroll(page)).toBe(0);
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#cropMsg")).toContainText(/2\D+2/);   // The next photo opens.
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#crop")).toBeHidden();
+  }
+});
+
 test("The automatic curved frame and its controls fit the crop photo", async ({ page }) => {
   await page.setInputFiles("#file", fixture("foto-curved-auto.jpg"));
   await expect(page.locator("#cropMsg")).toContainText("Siden er fundet", { timeout: 120_000 });

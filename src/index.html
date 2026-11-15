@@ -409,7 +409,12 @@ input[type=range] { width: 100%; height: 44px; margin: 0; accent-color: var(--bl
 .crop-stage .h { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; touch-action: none; cursor: grab; }
 .crop-stage .h::after { content: ""; position: absolute; inset: 12px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px var(--blue); }
 .crop-stage .h.mid::after { inset: 15px; background: var(--blue); box-shadow: 0 0 0 3px #fff; }
-.crop-foot { display: flex; justify-content: space-between; gap: 12px; padding: 12px 18px max(16px, env(safe-area-inset-bottom)); }
+/* Cancel (or skip, in a batch) on the left, apart from the two ways to use the photo (#205). On a narrow
+   phone the actions take their own row. */
+.crop-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 12px 18px max(16px, env(safe-area-inset-bottom)); }
+.crop-actions { display: flex; gap: 12px; margin-left: auto; }
+.crop-cancel { min-height: 44px; padding: 0 4px; border: 0; background: none; color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
+.crop-foot .cta-sm, .crop-foot .btn-ghost { min-height: 44px; }
 .crop-foot button:disabled { opacity: .35; cursor: default; }
 .crop-foot .btn-ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.5); }
 .cta-sm { border: 0; background: #fff; color: var(--ink); border-radius: 12px; padding: 11px 22px; font-weight: 700; }
@@ -891,8 +896,11 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
     <svg id="cropSvg"><path id="cropPoly"/></svg>
   </div>
   <div class="crop-foot">
-    <button class="btn-ghost" id="cropWhole" data-t="cropWhole"></button>
-    <button class="cta-sm" id="cropOk" data-t="cropUse"></button>
+    <button class="crop-cancel" id="cropCancel"></button>
+    <div class="crop-actions">
+      <button class="btn-ghost" id="cropWhole" data-t="cropWhole"></button>
+      <button class="cta-sm" id="cropOk" data-t="cropUse"></button>
+    </div>
   </div>
 </div>
 <div class="toast" id="toast"></div>

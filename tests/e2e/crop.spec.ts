@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { bookTool, fixture, fresh, storedPages, waitForText } from "./helpers";
+import { bookTool, fixture, fresh, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, storedPages, waitForText } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
@@ -142,4 +142,98 @@ test("Use on the untouched frame while the page search loads waits for it and st
     await expect(page.locator("#crop")).toBeHidden({ timeout: 120_000 });
     await expect.poll(async () => (await storedPages(page)).map(p => `photo ${p.photo}, frame ${p.corners}`)).toEqual(["photo true, frame true"]);
   } finally { release(); }
+});
+
+/** Book IDs stored on the device. */
+const storedBooks = (page: Page) => page.evaluate(async () => {
+  const db = await new Promise<IDBDatabase>((resolve, reject) => {
+    const r = indexedDB.open("laesehjaelper", 1); r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
+  });
+  const tx = db.transaction("books"), all = tx.objectStore("books").getAll();
+  await new Promise<void>((resolve, reject) => { tx.oncomplete = () => resolve(); tx.onerror = () => reject(tx.error); });
+  db.close();
+  return (all.result as { id: string }[]).map(b => b.id);
+});
+
+// A wrong photo costs one tap (#205): cancel it, or skip it in a batch, without creating a page.
+for (const how of ["Cancel", "Escape"] as const) {
+  test(`${how} on the only photo of a new book returns to the shelf and leaves no empty book`, async ({ page }) => {
+    await fresh(page);
+    await seedBooks(page, [{ id: "kept", title: "Min bog", texts: ["En side."] }]);
+    await page.reload();
+    await expect(page.locator(".book")).toHaveCount(1);
+    await page.setInputFiles("#file", fixture("foto-bord.jpg"));
+    await expect(page.locator("#crop")).toBeVisible();
+    await expect(page.locator("#cropCancel")).toHaveText("Annuller");
+    if (how === "Cancel") await page.click("#cropCancel"); else await page.keyboard.press("Escape");
+    await expect(page.locator("#crop")).toBeHidden();
+    await expect(page.locator("#start")).toBeVisible();
+    await expect(page.locator(".book")).toHaveCount(1);
+    expect(await storedBooks(page)).toEqual(["kept"]);
+    await page.reload();
+    await expect(page.locator(".book")).toHaveCount(1);
+  });
+}
+
+test("Skipping a photo of several opens the next one and adds only the photos used", async ({ page }) => {
+  await fresh(page);
+  await page.setInputFiles("#file", [fixture("foto-bord.jpg"), fixture("side-eng-uden-tekst.jpg"), fixture("side-illustration.jpg")]);
+  await expect(page.locator("#cropMsg")).toContainText("Billede 1 af 3");
+  await expect(page.locator("#cropCancel")).toHaveText("Spring billedet over");
+  await page.click("#cropCancel");
+  await expect(page.locator("#cropMsg")).toContainText("Billede 2 af 3");
+  await page.click("#cropWhole");
+  await expect(page.locator("#cropMsg")).toContainText("Billede 3 af 3");
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#crop")).toBeHidden();
+  await expect(page.locator("#thumbs .thumb")).toHaveCount(1);
+  await expect.poll(async () => (await storedPages(page)).length).toBe(1);
+});
+
+test("Skipping every photo of a new book returns to the shelf", async ({ page }) => {
+  await fresh(page);
+  await page.setInputFiles("#file", [fixture("foto-bord.jpg"), fixture("side-illustration.jpg")]);
+  await expect(page.locator("#cropMsg")).toContainText("Billede 1 af 2");
+  await page.click("#cropCancel");
+  await expect(page.locator("#cropMsg")).toContainText("Billede 2 af 2");
+  await page.click("#cropCancel");
+  await expect(page.locator("#start")).toBeVisible();
+  expect(await storedBooks(page)).toEqual([]);
+});
+
+test("Cancelling a new crop or new photos keeps the book as it was, in the workshop", async ({ page }) => {
+  await fresh(page);
+  await openRecognisedBook(page, ["side-da.jpg"]);
+  await openWorkshop(page);
+  const before = await storedPages(page);
+  await page.click("#recropBtn");
+  await expect(page.locator("#crop")).toBeVisible();
+  await expect(page.locator("#cropCancel")).toHaveText("Annuller");
+  await page.click("#cropCancel");
+  await expect(page.locator("#crop")).toBeHidden();
+  await page.setInputFiles("#thumbs .add input", fixture("foto-bord.jpg"));
+  await expect(page.locator("#crop")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#crop")).toBeHidden();
+  await expect(page.locator("body")).toHaveClass(/\bworkshop\b/);
+  await expect(page.locator("#thumbs .thumb")).toHaveCount(1);
+  await expect(page.locator("#reader .w").first()).toBeVisible();
+  expect(await storedPages(page)).toEqual(before);
+});
+
+test("Cancel and skip are labelled in every interface language", async ({ page }) => {
+  await fresh(page);
+  for (const [lang, cancel, skip] of [["da", "Annuller", "Spring billedet over"], ["de", "Abbrechen", "Bild überspringen"], ["en", "Cancel", "Skip this photo"]]) {
+    await setUiLanguage(page, lang);
+    await page.setInputFiles("#file", fixture("foto-bord.jpg"));
+    await expect(page.locator("#cropCancel")).toHaveText(cancel);
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#start")).toBeVisible();
+    await page.setInputFiles("#file", [fixture("foto-bord.jpg"), fixture("side-illustration.jpg")]);
+    await expect(page.locator("#cropCancel")).toHaveText(skip);
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#cropMsg")).toContainText(/2\D+2/);   // The next photo opens.
+    await page.keyboard.press("Escape");
+    await expect(page.locator("#start")).toBeVisible();
+  }
 });
