@@ -25,8 +25,11 @@ export class ReadingGuide {
     this.tools.id = "guideTools"; this.tools.className = "guide-tools"; this.tools.hidden = true;
     this.tools.setAttribute("role", "group");
     this.prev.id = "guidePrev"; this.next.id = "guideNext"; this.count.id = "guideCount";
-    this.prev.textContent = "↑"; this.next.textContent = "↓";
-    for (const b of [this.prev, this.next]) { b.type = "button"; b.className = "btn-ghost"; b.setAttribute("aria-controls", reader.id); }
+    // Square tiles with up/down arrows, so they never look like the round page-turn buttons (#204).
+    for (const [b, icon] of [[this.prev, "up"], [this.next, "down"]] as const) {
+      b.type = "button"; b.className = "guide-step"; b.setAttribute("aria-controls", reader.id);
+      b.innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${icon}"/></svg>`;
+    }
     this.prev.onclick = () => this.move(-1); this.next.onclick = () => this.move(1);
     this.tools.append(this.prev, this.count, this.next);
     this.strip.id = "guideLine"; this.strip.hidden = true; this.lineText.id = "guideLineText"; this.strip.append(this.lineText);

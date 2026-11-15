@@ -228,13 +228,19 @@ body.workshop .workshop-grid > * { min-width: 0; }
 #sylWordsSet { margin-top: 8px; }
 
 .guide-tools { position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 8; display: flex; align-items: center; gap: 10px; padding: 5px 8px; max-width: calc(100vw - 24px); background: #fff; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 2px 12px #0002; color: var(--ink); font: 15px var(--ui); }
-.guide-tools button { min-width: 44px; min-height: 44px; font-size: 22px; }
+/* Line buttons: large square tiles with up/down arrows, unlike the round page-turn buttons with sideways arrows (#204). */
+#guideTools .guide-step { width: 52px; height: 52px; min-width: 52px; min-height: 52px; padding: 0; border-radius: 12px; background: var(--surface); color: var(--blue); box-shadow: inset 0 0 0 1px var(--line); }
+#guideTools .guide-step svg.i { width: 30px; height: 30px; stroke-width: 2.6; }
+#guideTools .guide-step:disabled { color: var(--muted); }
 .guide-tools span { white-space: nowrap; }
 .guide-tools, .guide-line { touch-action: pan-x pinch-zoom; }
 #reader.guide-ruler { position: relative; overflow: clip; }
 #reader.guide-ruler:not(.pagemode) { padding-bottom: 100px; }
 #reader.guide-ruler .w { scroll-margin-top: 100px; scroll-margin-bottom: 180px; }
-.guide-window { position: absolute; pointer-events: none; z-index: 5; border: 2px solid var(--blue); border-radius: 4px; box-shadow: 0 0 0 10000px #0008; }
+/* A light veil in the page colour (#204): the other lines and the picture fade, the page does not turn grey,
+   and the active line inside the window stays exactly as it is. White where color-mix is missing. */
+.guide-window { position: absolute; pointer-events: none; z-index: 5; border: 2px solid var(--blue); border-radius: 4px;
+  box-shadow: 0 0 0 10000px rgba(255,255,255,.65); box-shadow: 0 0 0 10000px color-mix(in srgb, var(--page-bg) 65%, transparent); }
 #reader.guide-single, .pagecard.guide-single .orig { display: none !important; }
 #app.split .pagecard.guide-single { display: block; }
 .reader.guide-line { display: flex; align-items: center; min-height: 50dvh; font-size: max(40px, calc(var(--size) * 1.25)); padding-bottom: 100px; }
@@ -333,7 +339,6 @@ body.workshop .workshop-grid > * { min-width: 0; }
 .guide-picture { display: flex; flex-direction: column; justify-content: space-between; width: 32px; height: 32px; padding: 5px 4px; border: 1px solid var(--line); border-radius: 3px; background: #fff; flex: none; }
 .guide-picture > span { height: 2px; border-radius: 1px; background: #7b8297; }
 .guide-picture > span:nth-child(2) { height: 4px; background: var(--blue); }
-#guideBtn.on .guide-picture > span { height: 2px; background: #7b8297; }
 #guideControls:empty { display: none; }
 .dock .guide-tools { position: static; transform: none; padding: 0; gap: 4px; border: 0; border-radius: 0; background: transparent; box-shadow: none; max-width: none; }
 .dock .guide-tools span { font-size: 13px; }
@@ -528,6 +533,8 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"/></symbol>
   <symbol id="i-prev" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></symbol>
   <symbol id="i-next" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></symbol>
   <symbol id="i-speak" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M17 9a4 4 0 0 1 0 6M19.5 6.5a7.5 7.5 0 0 1 0 11"/></symbol>
   <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2.5"/></symbol>
   <symbol id="i-aa" viewBox="0 0 24 24"><path d="M3 18 8 6l5 12M4.8 14h6.4M15 18v-4.5a2.5 2.5 0 0 1 5 0V18M15 15.5h5"/></symbol>
@@ -702,7 +709,7 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
   <div class="reading-tools keep">
     <div class="reading-helpers">
       <button class="read" id="readBtn"></button>
-      <button class="reading-only" id="guideBtn" aria-pressed="false" aria-controls="reader"><span class="guide-picture" aria-hidden="true"><span></span><span></span><span></span><span></span></span><span id="guideBtnLabel"></span></button>
+      <button class="reading-only" id="guideBtn" aria-pressed="false" aria-controls="reader"><span class="guide-picture" aria-hidden="true"><span></span><span></span><span></span><span></span></span><span id="guideBtnLabel" data-t="guideQuick"></span></button>
     </div>
     <div id="guideControls"></div>
   </div>

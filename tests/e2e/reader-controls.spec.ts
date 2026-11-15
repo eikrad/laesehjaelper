@@ -10,9 +10,17 @@ test("A child can switch line help directly without losing the current line", as
   await help.click();
   await expect(page.locator("#settings")).not.toHaveClass(/open/);
   await expect(page.locator("#guideWindow")).toBeVisible();
+  // One label in both states: the pressed style and aria-pressed show that help is on (#204).
+  await expect(help).toHaveAttribute("aria-pressed", "true");
+  await expect(help).toHaveClass(/\bon\b/);
+  // The picture keeps its highlighted line too, instead of switching to a "whole page" picture.
+  const marked = help.locator(".guide-picture > span").nth(1);
+  expect(await marked.evaluate(line => parseFloat(getComputedStyle(line).height))).toBeGreaterThan(await help.locator(".guide-picture > span").first().evaluate(line => parseFloat(getComputedStyle(line).height)));
   await page.getByRole("button", { name: "Næste linje", exact: true }).click();
   await expect(page.locator("#guideCount")).toHaveText("Linje 2 af 3");
-  await page.getByRole("button", { name: "Hele siden", exact: true }).click();
+  await help.click();
+  await expect(help).toHaveAttribute("aria-pressed", "false");
+  await expect(help).not.toHaveClass(/\bon\b/);
   await expect(page.locator("#guideTools")).toBeHidden();
   await expect(page.locator("#guideWindow")).toHaveCount(0);
   await help.click();
@@ -29,7 +37,7 @@ test("The quick switch restores the reader's chosen one-line help after reloadin
   await openReadingSetup(page);
   await page.locator('#guideSet button[data-v="line"]').click();
   await page.locator("#setClose").click();
-  await page.getByRole("button", { name: "Hele siden", exact: true }).click();
+  await page.getByRole("button", { name: "Følg en linje", exact: true }).click();
   await page.reload();
   await expect(page.locator("#guideLine")).toBeHidden();
   await page.getByRole("button", { name: "Følg en linje", exact: true }).click();

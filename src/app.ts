@@ -155,7 +155,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       tipsListen: "Lad barnet læse for dig, og lyt.", tipsHelp: "Giv tid til et svært ord. Hjælp, og læs videre.",
       tipsCorrect: "Ret kun en læsefejl, hvis den ændrer meningen.", tipsPraise: "Ros indsatsen frem for hurtig eller fejlfri læsning.",
       tipsTalk: "Tal om historien. Spørg fx: Hvad tror du, der sker nu?",
-      guideQuick: "Følg en linje", guideWhole: "Hele siden",
+      guideQuick: "Følg en linje",
       guideLabel: "Linjehjælp", guideRuler: "Læselineal", guideLine: "Én linje", guideHint: "Brug pilene, eller stryg op eller ned over linjetælleren.", guidePrev: "Forrige linje", guideNext: "Næste linje", guideCount: "Linje {a} af {b}",
       licenses: "Licenser og skrifter",
       pdfBook: "Gem som PDF", pdfExporting: "Laver PDF-filen …", pdfSaved: "PDF-filen er gemt: {name}", pdfFallback: "PDF-filen er gemt med OpenDyslexic, fordi den valgte skrift ikke var tilgængelig: {name}", pdfFailed: "PDF-filen kunne ikke laves. Prøv igen.",
@@ -204,7 +204,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       tipsListen: "Let your child read to you, and listen.", tipsHelp: "Give a hard word time. Help, then read on.",
       tipsCorrect: "Only correct a slip if it changes the meaning.", tipsPraise: "Praise effort rather than fast or perfect reading.",
       tipsTalk: "Talk about the story. Ask: What might happen next?",
-      guideQuick: "Follow a line", guideWhole: "Whole page",
+      guideQuick: "Follow a line",
       guideLabel: "Line guide", guideRuler: "Reading ruler", guideLine: "One line", guideHint: "Use the arrows or swipe up or down over the line counter.", guidePrev: "Previous line", guideNext: "Next line", guideCount: "Line {a} of {b}",
       licenses: "Licences and fonts",
       pdfBook: "Save as PDF", pdfExporting: "Creating the PDF …", pdfSaved: "PDF saved: {name}", pdfFallback: "PDF saved with OpenDyslexic because the selected font was unavailable: {name}", pdfFailed: "The PDF could not be created. Try again.",
@@ -253,7 +253,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       tipsListen: "Lass dein Kind dir vorlesen, und höre zu.", tipsHelp: "Gib bei einem schweren Wort Zeit. Hilf und lest weiter.",
       tipsCorrect: "Verbessere einen Lesefehler nur, wenn er den Sinn verändert.", tipsPraise: "Lobe die Mühe statt schnelles oder fehlerfreies Lesen.",
       tipsTalk: "Sprecht über die Geschichte. Frage etwa: Was könnte als Nächstes passieren?",
-      guideQuick: "Zeile folgen", guideWhole: "Ganze Seite",
+      guideQuick: "Zeile folgen",
       guideLabel: "Zeilenhilfe", guideRuler: "Leselineal", guideLine: "Eine Zeile", guideHint: "Nutze die Pfeile oder wische über die Zeilenanzeige nach oben oder unten.", guidePrev: "Vorherige Zeile", guideNext: "Nächste Zeile", guideCount: "Zeile {a} von {b}",
       licenses: "Lizenzen und Schriften",
       pdfBook: "Als PDF speichern", pdfExporting: "PDF wird erstellt …", pdfSaved: "PDF gespeichert: {name}", pdfFallback: "PDF mit OpenDyslexic gespeichert, da die gewählte Schrift nicht verfügbar war: {name}", pdfFailed: "Das PDF konnte nicht erstellt werden. Versuche es erneut.",
@@ -354,7 +354,6 @@ const Lib = { detectFrame, warpPage, orderCorners };
     guideButton.disabled = view !== "read" || pages[cur]?.status !== "done" || !$("reader").querySelector(".w") || comparing;
     guideButton.setAttribute("aria-pressed", String(S.guide !== "aus"));
     guideButton.classList.toggle("on", S.guide !== "aus");
-    $("guideBtnLabel").textContent = t(S.guide === "aus" ? "guideQuick" : "guideWhole");
     const r = document.documentElement.style;
     r.setProperty("--font", S.font);
     r.setProperty("--size", S.size + "px");

@@ -220,9 +220,20 @@ test("Reading guides fit every screen with usable controls and a single large ro
     const dock = (await page.locator("#dock").boundingBox())!;
     expect(tools.y).toBeGreaterThanOrEqual(dock.y);
     expect(tools.y + tools.height).toBeLessThanOrEqual(dock.y + dock.height);
+    // Line buttons are large square tiles with up/down arrows, unlike the round page-turn buttons (#204).
+    const turn = page.locator("#next:visible, #edgeNext:visible").first();
+    const round = await turn.evaluate(b => parseFloat(getComputedStyle(b).borderTopLeftRadius) >= b.getBoundingClientRect().width / 2);
+    expect(round, "page-turn buttons stay round").toBe(true);
     for (const id of ["guidePrev", "guideNext"]) {
-      const b = (await page.locator(`#${id}`).boundingBox())!;
-      expect(b.width).toBeGreaterThanOrEqual(44); expect(b.height).toBeGreaterThanOrEqual(44);
+      const button = page.locator(`#${id}`), b = (await button.boundingBox())!;
+      expect(b.width, `${id} is large enough for small fingers`).toBeGreaterThanOrEqual(48);
+      expect(b.height, `${id} is large enough for small fingers`).toBeGreaterThanOrEqual(48);
+      expect(b.x).toBeGreaterThanOrEqual(0); expect(b.x + b.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+      const radius = await button.evaluate(el => parseFloat(getComputedStyle(el).borderTopLeftRadius));
+      expect(radius, `${id} is square, not round like a page-turn button`).toBeLessThan(b.width / 4);
+      await expect(button.locator("svg"), `${id} shows an arrow icon`).toBeVisible({ timeout: 1500 });
+      const arrow = (await button.locator("svg").boundingBox())!;
+      expect(arrow.width, `${id} shows a large arrow`).toBeGreaterThanOrEqual(24);
     }
     if (mode === "line") {
       const tops = await page.locator("#guideLine .w").evaluateAll(ws => ws.map(w => w.getBoundingClientRect().top));
