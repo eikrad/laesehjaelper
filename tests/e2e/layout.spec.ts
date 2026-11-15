@@ -418,6 +418,11 @@ test("The undo message for a deleted page fits the screen with a large Undo butt
       expect(b.height, `Undo (${lang})`).toBeGreaterThanOrEqual(44);
       expect(b.width, `Undo (${lang})`).toBeGreaterThanOrEqual(44);
       expect(b.x + b.width, `Undo inside the toast (${lang})`).toBeLessThanOrEqual(toast.x + toast.width);
+      const lines = await page.locator("#toastMsg").evaluate(el => {
+        const range = document.createRange(); range.selectNodeContents(el);
+        return new Set([...range.getClientRects()].map(r => Math.round(r.top))).size;
+      });
+      expect(lines, `the message stays on one line (${lang})`).toBe(1);
     }).toPass({ timeout: 2000 });
     expect(await sidewaysScroll(page)).toBe(0);
     await button.click();   // Bring the page back for the next language.
