@@ -11,14 +11,12 @@ The ordered overview of what is planned for Læsehjælper. Every open issue appe
 
 Within each section, the order is the planned order. "After #…" names a story that has to be merged first. The order of the sub-issues in each epic matches this file. How to keep it up to date: see the end of this file and [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Last reviewed: 14 November 2026.
+Last reviewed: 15 November 2026.
 
 ## Now
 
 | Issue | What | Epic | Note |
 |---|---|---|---|
-| [#215](https://github.com/eikrad/laesehjaelper/issues/215) | Bug: "Your turn" and the reading-together questions are hidden behind the reading bar on tablets | Tablet-first reading | Fix ready |
-| [#216](https://github.com/eikrad/laesehjaelper/issues/216) | Bug: Reading shows adult hints instead of the page photo on pages without text | Reading and making books | Fix ready |
 | [#202](https://github.com/eikrad/laesehjaelper/issues/202) | Large, clear page-turn buttons and a calm end of the book | Tablet-first reading | |
 | [#204](https://github.com/eikrad/laesehjaelper/issues/204) | Calmer line help: light veil, fixed label, larger line buttons | Reading aids | |
 | [#205](https://github.com/eikrad/laesehjaelper/issues/205) | Safety nets while making a book: skip a photo, undo deleting a page | Reading and making books | |
@@ -44,12 +42,12 @@ Last reviewed: 14 November 2026.
 | Issue | What | Epic | Note |
 |---|---|---|---|
 | [#210](https://github.com/eikrad/laesehjaelper/issues/210) | Mark words the recognition was unsure about while checking a page | Photo to book page | After #208 |
-| [#220](https://github.com/eikrad/laesehjaelper/issues/220) | Help by ear for children who cannot read yet | Reading and making books | After #215 |
+| [#220](https://github.com/eikrad/laesehjaelper/issues/220) | Help by ear for children who cannot read yet | Reading and making books | |
 | [#221](https://github.com/eikrad/laesehjaelper/issues/221) | "Who is reading?" on the bookshelf | Reading and making books | Open question: reading position per child |
 | [#218](https://github.com/eikrad/laesehjaelper/issues/218) | Colour zones for shelf, reading and workshop; yellow as the child's colour | Clear, recognisable look | After #214 |
 | [#219](https://github.com/eikrad/laesehjaelper/issues/219) | Gentle page turn and a bookmark for finished books | Clear, recognisable look | After #202 and #211 |
 | [#177](https://github.com/eikrad/laesehjaelper/issues/177) | Practical next steps for parents when reading remains difficult | Practice and reading together | |
-| [#114](https://github.com/eikrad/laesehjaelper/issues/114) | After "your turn": invite the child to read the next page alone | Practice and reading together | After #215 |
+| [#114](https://github.com/eikrad/laesehjaelper/issues/114) | After "your turn": invite the child to read the next page alone | Practice and reading together | |
 | [#174](https://github.com/eikrad/laesehjaelper/issues/174) | Practise a selected short passage with listen-then-read turns | Practice and reading together | |
 | [#176](https://github.com/eikrad/laesehjaelper/issues/176) | Remember a passage within the page when taking a reading break | Practice and reading together | Reuses the passage choice from #174 |
 | [#175](https://github.com/eikrad/laesehjaelper/issues/175) | Optional adult-written word meanings and examples | Practice and reading together | |
