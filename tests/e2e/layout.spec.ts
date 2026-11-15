@@ -7,6 +7,18 @@ import { bookTool, expectSyllableBowsInsideBoxes, fixture, fresh, goShelf, openR
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
+/**
+ * On wide screens, reading leaves room for the page-turn buttons at the screen edges (#202): `box` uses
+ * all the width between them and nothing more.
+ */
+async function expectBetweenEdgeButtons(page: Page, box: { x: number; width: number }, name: string) {
+  const left = (await page.locator("#edgePrev").boundingBox())!, right = (await page.locator("#edgeNext").boundingBox())!;
+  expect(box.x, `${name} starts right after the previous-page button`).toBeGreaterThanOrEqual(left.x + left.width);
+  expect(box.x, `${name} starts right after the previous-page button`).toBeLessThanOrEqual(left.x + left.width + 16);
+  expect(box.x + box.width, `${name} ends right before the next-page button`).toBeLessThanOrEqual(right.x);
+  expect(box.x + box.width, `${name} ends right before the next-page button`).toBeGreaterThanOrEqual(right.x - 16);
+}
+
 test("The reading page uses the available area above one compact helper bar", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   await expect(async () => {
@@ -579,14 +591,8 @@ test("In text view on wide screens the photo sits beside the text, otherwise abo
   await expect(photo).toBeHidden();
   const focusedCard = (await page.locator(".pagecard").boundingBox())!, focusedText = (await text.boundingBox())!;
   expect(focusedText.width, "reading-mode text uses the whole card").toBeGreaterThan(focusedCard.width - 4);
-  if (page.viewportSize()!.width >= 840) {
-    // Wide screens keep the page-turn buttons at the edges (#202); the text uses all the width between them.
-    const left = (await page.locator("#edgePrev").boundingBox())!, right = (await page.locator("#edgeNext").boundingBox())!;
-    expect(focusedCard.x, "reading mode text starts right after the previous-page button").toBeLessThanOrEqual(left.x + left.width + 16);
-    expect(focusedCard.x + focusedCard.width, "and ends right before the next-page button").toBeGreaterThanOrEqual(right.x - 16);
-  } else {
-    expect(focusedCard.width, "reading mode uses the screen width").toBeGreaterThan(page.viewportSize()!.width - 4);
-  }
+  if (page.viewportSize()!.width >= 840) await expectBetweenEdgeButtons(page, focusedCard, "reading mode");
+  else expect(focusedCard.width, "reading mode uses the screen width").toBeGreaterThan(page.viewportSize()!.width - 4);
   await page.click("#focusBtn");
   // Without the photo, the text uses the whole card.
   await toggleReadingSetup(page);
@@ -622,8 +628,8 @@ test("On wide screens the settings open beside the page, which stays visible; ot
   await page.click("#focusBtn");
   await expect(panel).not.toHaveClass(/open/);
   await expect(page.locator("body")).not.toHaveClass(/settings-open/);
-  const focusedCard = (await page.locator(".pagecard").boundingBox())!;
-  expect(focusedCard.width, "reading mode does not reserve an invisible settings panel").toBeGreaterThan(width - 4);
+  // Reading mode reserves no invisible settings panel: the page uses all the room between the page-turn buttons.
+  await expectBetweenEdgeButtons(page, (await page.locator(".pagecard").boundingBox())!, "reading mode");
   await page.keyboard.press("Escape");
   await expect(page.locator("body")).not.toHaveClass(/focus/);
 });
