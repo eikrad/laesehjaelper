@@ -150,10 +150,13 @@ test("Line guides use the UI language and keep every line when exporting a book"
   await seedBooks(page, [{ id: "guide-export", title: "Linjer", texts: ["Solen skinner.\n\nEn fugl synger."] }]);
   await page.locator(".book").click();
   await toggleReadingSetup(page); await page.click('#guideSet button[data-v="line"]'); await toggleReadingSetup(page);
-  for (const [lang, count, next] of [["da", "Linje 1 af 2", "Næste linje"], ["de", "Zeile 1 von 2", "Nächste Zeile"], ["en", "Line 1 of 2", "Next line"]]) {
+  for (const [lang, count, next, help] of [["da", "Linje 1 af 2", "Næste linje", "Følg en linje"], ["de", "Zeile 1 von 2", "Nächste Zeile", "Zeile folgen"], ["en", "Line 1 of 2", "Next line", "Follow a line"]]) {
     await setUiLanguage(page, lang);
     await expect(page.locator("#guideCount")).toHaveText(count);
     await expect(page.locator("#guideNext")).toHaveAccessibleName(next);
+    // While the help is on, the button still names the help, not its opposite (#204).
+    await expect(page.locator("#guideBtn")).toHaveAccessibleName(help);
+    await expect(page.locator("#guideBtn")).toHaveAttribute("aria-pressed", "true");
   }
   const [download] = await Promise.all([page.waitForEvent("download"), bookTool(page, "exportBtn")]);
   const file = info.outputPath("guide.epub"); await download.saveAs(file);

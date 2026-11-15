@@ -333,7 +333,6 @@ body.workshop .workshop-grid > * { min-width: 0; }
 .guide-picture { display: flex; flex-direction: column; justify-content: space-between; width: 32px; height: 32px; padding: 5px 4px; border: 1px solid var(--line); border-radius: 3px; background: #fff; flex: none; }
 .guide-picture > span { height: 2px; border-radius: 1px; background: #7b8297; }
 .guide-picture > span:nth-child(2) { height: 4px; background: var(--blue); }
-#guideBtn.on .guide-picture > span { height: 2px; background: #7b8297; }
 #guideControls:empty { display: none; }
 .dock .guide-tools { position: static; transform: none; padding: 0; gap: 4px; border: 0; border-radius: 0; background: transparent; box-shadow: none; max-width: none; }
 .dock .guide-tools span { font-size: 13px; }
@@ -702,7 +701,7 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
   <div class="reading-tools keep">
     <div class="reading-helpers">
       <button class="read" id="readBtn"></button>
-      <button class="reading-only" id="guideBtn" aria-pressed="false" aria-controls="reader"><span class="guide-picture" aria-hidden="true"><span></span><span></span><span></span><span></span></span><span id="guideBtnLabel"></span></button>
+      <button class="reading-only" id="guideBtn" aria-pressed="false" aria-controls="reader"><span class="guide-picture" aria-hidden="true"><span></span><span></span><span></span><span></span></span><span id="guideBtnLabel" data-t="guideQuick"></span></button>
     </div>
     <div id="guideControls"></div>
   </div>
