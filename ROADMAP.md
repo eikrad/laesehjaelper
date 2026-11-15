@@ -17,7 +17,6 @@ Last reviewed: 15 November 2026.
 
 | Issue | What | Epic | Note |
 |---|---|---|---|
-| [#202](https://github.com/eikrad/laesehjaelper/issues/202) | Large, clear page-turn buttons and a calm end of the book | Tablet-first reading | |
 | [#204](https://github.com/eikrad/laesehjaelper/issues/204) | Calmer line help: light veil, fixed label, larger line buttons | Reading aids | |
 | [#205](https://github.com/eikrad/laesehjaelper/issues/205) | Safety nets while making a book: skip a photo, undo deleting a page | Reading and making books | |
 | [#212](https://github.com/eikrad/laesehjaelper/issues/212) | Take the app language from the device; the book language follows it | Photo to book page | |
@@ -45,7 +44,7 @@ Last reviewed: 15 November 2026.
 | [#220](https://github.com/eikrad/laesehjaelper/issues/220) | Help by ear for children who cannot read yet | Reading and making books | |
 | [#221](https://github.com/eikrad/laesehjaelper/issues/221) | "Who is reading?" on the bookshelf | Reading and making books | Open question: reading position per child |
 | [#218](https://github.com/eikrad/laesehjaelper/issues/218) | Colour zones for shelf, reading and workshop; yellow as the child's colour | Clear, recognisable look | After #214 |
-| [#219](https://github.com/eikrad/laesehjaelper/issues/219) | Gentle page turn and a bookmark for finished books | Clear, recognisable look | After #202 and #211 |
+| [#219](https://github.com/eikrad/laesehjaelper/issues/219) | Gentle page turn and a bookmark for finished books | Clear, recognisable look | After #211 |
 | [#177](https://github.com/eikrad/laesehjaelper/issues/177) | Practical next steps for parents when reading remains difficult | Practice and reading together | |
 | [#114](https://github.com/eikrad/laesehjaelper/issues/114) | After "your turn": invite the child to read the next page alone | Practice and reading together | |
 | [#174](https://github.com/eikrad/laesehjaelper/issues/174) | Practise a selected short passage with listen-then-read turns | Practice and reading together | |

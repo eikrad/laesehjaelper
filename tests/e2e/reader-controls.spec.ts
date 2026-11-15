@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { fresh, openReadingSetup, seedBooks } from "./helpers";
+import { fresh, openReadingSetup, openWorkshop, seedBooks } from "./helpers";
 
 test("A child can switch line help directly without losing the current line", async ({ page }) => {
   await fresh(page);
@@ -135,4 +135,44 @@ test("Line help is unavailable on empty pages and pages still awaiting recogniti
   await expect(page.locator("#guideBtn")).toBeDisabled({ timeout: 1500 });
   await page.locator("#next").click();
   await expect(page.locator("#guideBtn")).toBeDisabled({ timeout: 1500 });
+});
+
+test("Next on the last page leads to a calm end of the book: back to the books or read it again", async ({ page }) => {
+  await fresh(page);
+  await seedBooks(page, [{ id: "book-end", title: "En prøvebog", texts: ["Den første side.", "Den anden side."] }]);
+  await page.locator(".book").click();
+  const next = page.locator("#next"), count = page.locator("#count"), reader = page.locator("#reader");
+  await next.click();
+  await expect(count).toHaveText("2 / 2");
+  await expect(next, "the last page still leads on").toBeEnabled();
+  await next.click();
+  const end = page.getByRole("region", { name: "Slut" });
+  await expect(end).toBeVisible();
+  await expect(end).toContainText("En prøvebog");
+  await expect(reader.locator(".w"), "nothing to read on the end screen").toHaveCount(0);
+  await expect(next).toBeDisabled();
+  await expect(page.locator("#readBtn")).toBeDisabled();
+  await expect(page.locator("#guideBtn")).toBeDisabled();
+  const books = end.getByRole("button", { name: "Tilbage til dine bøger", exact: true });
+  const again = end.getByRole("button", { name: "Læs igen fra starten", exact: true });
+  await expect(books).toBeFocused();
+  // The arrow keys go back to the last page and on to the end again.
+  await page.keyboard.press("ArrowLeft");
+  await expect(end).toHaveCount(0);
+  await expect(reader).toHaveText("Den anden side.");
+  await page.keyboard.press("ArrowRight");
+  await expect(end).toBeVisible();
+  await again.click();
+  await expect(count).toHaveText("1 / 2");
+  await expect(reader).toHaveText("Den første side.");
+  await next.click(); await next.click();
+  await books.click();
+  await expect(page.locator("#start")).toBeVisible();
+  await expect(page.locator("#app")).toBeHidden();
+  // The workshop stops at the last page.
+  await page.locator(".book").click();
+  await openWorkshop(page);
+  await expect(count).toHaveText("2 / 2");
+  await expect(next).toBeDisabled();
+  await expect(page.getByRole("region", { name: "Slut" })).toHaveCount(0);
 });

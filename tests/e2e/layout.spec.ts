@@ -536,6 +536,28 @@ test("Large page-turn buttons sit below the page on narrow screens and at the sc
   await expect(page.locator("#count")).toHaveText("1 / 3");
 });
 
+test("The end of the book fits the screen without scrolling, with both choices on screen", async ({ page }) => {
+  await seedBooks(page, [{ id: "end-fits", title: "En prøvebog med en ret lang titel til slutningen", texts: ["Den sidste side."] }]);
+  await page.locator(".book").click();
+  await page.getByRole("button", { name: "Næste side", exact: true }).click();
+  const end = page.getByRole("region", { name: "Slut" });
+  await expect(end).toBeVisible();
+  const viewport = page.viewportSize()!;
+  await expect(async () => {
+    const bar = (await page.locator("#dock").boundingBox())!;
+    for (const name of ["Tilbage til dine bøger", "Læs igen fra starten"]) {
+      const b = (await end.getByRole("button", { name, exact: true }).boundingBox())!;
+      expect(b.height, name).toBeGreaterThanOrEqual(56);
+      expect(b.x, name).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width, name).toBeLessThanOrEqual(viewport.width);
+      expect(b.y + b.height, `${name} above the reading bar`).toBeLessThanOrEqual(bar.y);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollHeight), "no scrolling").toBeLessThanOrEqual(viewport.height + 1);
+  }).toPass({ timeout: 5000 });
+  // The title is set like the rest of the screen, not with the reader's letter and word spacing.
+  expect(await end.locator(".book-end-book").evaluate(el => getComputedStyle(el).wordSpacing)).toBe("0px");
+});
+
 test("In text view on wide screens the photo sits beside the text, otherwise above it", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   await toggleReadingSetup(page);

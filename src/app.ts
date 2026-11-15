@@ -10,6 +10,7 @@ import { speechRate, showYourTurn, wordSteps } from "./readflow";
 import { boxLineHeight, boxSpacing, DEFAULT_LH, DEFAULT_LS, wordSpacing, WORD_BASE_BOX, WORD_BASE_FLOW } from "./spacing";
 import { marksSyllables, silben } from "./silben";
 import { swipeDirection } from "./swipe";
+import { turn } from "./pageturn";
 import { resumePage } from "./bookshelf";
 import { createLibrary } from "./library";
 import { insertIndex, selectedIndex, type Placement } from "./pagelist";
@@ -172,7 +173,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       how1t: "Tag et billede", how1: "Fotografér siden lige og i godt lys, helst uden skygger.",
       how2t: "Tjek teksten", how2: "Se de genkendte ord igennem og ret eventuelle fejl.",
       how3t: "Læs", how3: "Tryk på et ord for at høre det. Tilpas skrift og farver.",
-      prevPage: "Forrige side", nextPage: "Næste side", page: "Side", pageOf: "{a} / {b}",
+      prevPage: "Forrige side", nextPage: "Næste side", endTitle: "Slut", endBooks: "Tilbage til dine bøger", endAgain: "Læs igen fra starten", page: "Side", pageOf: "{a} / {b}",
       read: "Læs op", stop: "Stop", adjust: "Tilpas", closeSettings: "Luk indstillinger", moreSettings: "Flere indstillinger", focus: "Læsetilstand", close: "Luk læsetilstand",
       font: "Skrift", andika: "Andika (til begyndere)", sizeHint: "Der er ikke plads til større skrift på bogens side. Vælg „Kun teksten“ for større skrift.", size: "Skriftstørrelse", letterSp: "Bogstavafstand", lineSp: "Linjeafstand",
       syllables: "Stavelser", off: "Fra", color: "Farve", arcs: "Buer", both: "Begge",
@@ -221,7 +222,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       how1t: "Take a photo", how1: "Photograph the page straight on in good light, ideally without shadows.",
       how2t: "Check the text", how2: "Look through the recognised words and fix any mistakes.",
       how3t: "Read", how3: "Tap a word to hear it. Adjust the font and colours.",
-      prevPage: "Previous page", nextPage: "Next page", page: "Page", pageOf: "{a} / {b}",
+      prevPage: "Previous page", nextPage: "Next page", endTitle: "The end", endBooks: "Back to your books", endAgain: "Read again from the start", page: "Page", pageOf: "{a} / {b}",
       read: "Read aloud", stop: "Stop", adjust: "Adjust", closeSettings: "Close settings", moreSettings: "More settings", focus: "Reading mode", close: "Close reading mode",
       font: "Font", andika: "Andika (for beginners)", sizeHint: "The book page has no room for larger text. Choose “Text only” for larger text.", size: "Font size", letterSp: "Letter spacing", lineSp: "Line spacing",
       syllables: "Syllables", off: "Off", color: "Colour", arcs: "Arcs", both: "Both",
@@ -270,7 +271,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       how1t: "Foto machen", how1: "Seite gerade und hell fotografieren, möglichst ohne Schatten.",
       how2t: "Text prüfen", how2: "Erkannte Wörter kurz kontrollieren und Fehler korrigieren.",
       how3t: "Lesen", how3: "Wort antippen zum Vorlesen. Schrift und Farben anpassen.",
-      prevPage: "Vorherige Seite", nextPage: "Nächste Seite", page: "Seite", pageOf: "{a} / {b}",
+      prevPage: "Vorherige Seite", nextPage: "Nächste Seite", endTitle: "Ende", endBooks: "Zurück zu deinen Büchern", endAgain: "Noch mal von vorn lesen", page: "Seite", pageOf: "{a} / {b}",
       read: "Vorlesen", stop: "Stopp", adjust: "Anpassen", closeSettings: "Einstellungen schließen", moreSettings: "Weitere Einstellungen", focus: "Lesemodus", close: "Lesemodus schließen",
       font: "Schrift", andika: "Andika (für Leseanfänger)", sizeHint: "Auf der Buchseite ist kein Platz für größere Schrift. Wähle „Nur Text“ für größere Schrift.", size: "Schriftgröße", letterSp: "Buchstabenabstand", lineSp: "Zeilenabstand",
       syllables: "Silben", off: "Aus", color: "Farbe", arcs: "Bögen", both: "Beides",
@@ -374,7 +375,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     $<HTMLSelectElement>("font").value = S.font; $in("size").value = String(S.size); $in("ls").value = String(S.ls); $in("lh").value = String(S.lh);
     for (const [id, key] of CHOICES)
       $(id).querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === S[key]));
-    $("orig").classList.toggle("hidden", S.orig === "aus" || !pages[cur]?.img || isPageMode(pages[cur]) || readsPicture(pages[cur]));
+    $("orig").classList.toggle("hidden", S.orig === "aus" || !pages[cur]?.img || isPageMode(pages[cur]) || readsPicture(pages[cur]) || atEnd);
     // Photo beside the text on wide screens (CSS); not while comparing, which shows the photo instead of the text.
     $("app").classList.toggle("split", !$("orig").classList.contains("hidden") && !comparing);
     // Showing or hiding the original page only applies to text view. In book-page view,
@@ -471,6 +472,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
   // ---------- Pages ----------
   const pages: Page[] = [];
   let cur = 0;
+  /** The calm end of the book after its last page, while reading (src/pageturn.ts). */
+  let atEnd = false;
   const touchPage = (pg: Page) => { pg.changeVersion = (pg.changeVersion || 0) + 1; };
 
   // ---------- Book storage (IndexedDB, on this device only) ----------
@@ -770,7 +773,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
   function renderTogether() {
     const pg = pages[cur];
     const button = $<HTMLButtonElement>("togetherBtn"), box = $("together");
-    button.hidden = S.together !== "an" || !pg || pg.status !== "done";
+    button.hidden = S.together !== "an" || !pg || pg.status !== "done" || atEnd;
     if (button.hidden) togetherOpen = false;
     button.setAttribute("aria-expanded", String(togetherOpen));
     box.hidden = !togetherOpen;
@@ -1162,6 +1165,23 @@ const Lib = { detectFrame, warpPage, orderCorners };
     return sign;
   }
 
+  /** The calm end of the book (#202): the title, "The end" and two choices. No score, no sound, no animation. */
+  function renderEnd() {
+    const rd = $("reader");
+    rd.classList.remove("comparing", "pagemode");
+    rd.innerHTML = ""; speech = null;
+    const end = document.createElement("section");
+    end.className = "book-end"; end.setAttribute("aria-labelledby", "bookEndTitle");
+    if (book?.title) { const title = document.createElement("p"); title.className = "book-end-book"; title.textContent = book.title; end.append(title); }
+    const heading = document.createElement("h2"); heading.id = "bookEndTitle"; heading.textContent = t("endTitle");
+    const books = document.createElement("button"); books.className = "book-end-books"; books.textContent = t("endBooks");
+    books.onclick = () => goHome();
+    const again = document.createElement("button"); again.className = "btn-ghost"; again.textContent = t("endAgain");
+    again.onclick = () => { atEnd = false; cur = 0; render(); saveBook(); };
+    end.append(heading, books, again);
+    rd.append(end);
+  }
+
   function showStatus(html: string) {
     $("reader").classList.remove("pagemode", "comparing");
     $("reader").innerHTML = `<div class="status">${html}</div>`;
@@ -1175,10 +1195,10 @@ const Lib = { detectFrame, warpPage, orderCorners };
     const phrasePage = pages[cur];
     $<HTMLButtonElement>("phraseEdit").disabled = phrasePage?.status !== "done";
     const phraseToggle = $<HTMLButtonElement>("phraseToggle");
-    phraseToggle.hidden = view !== "read" || !phrasePage || phrasePage.status !== "done" || isPageMode(phrasePage) || !phraseBoundaries(phrasePage.text, phrasePage.phraseCues).length;
+    phraseToggle.hidden = view !== "read" || atEnd || !phrasePage || phrasePage.status !== "done" || isPageMode(phrasePage) || !phraseBoundaries(phrasePage.text, phrasePage.phraseCues).length;
     phraseToggle.textContent = t(S.phrases === "an" ? "phraseHide" : "phraseShow");
     phraseToggle.setAttribute("aria-pressed", String(S.phrases === "an"));
-    $("practiceOpen").hidden = S.practice !== "an" || view !== "read" || pages[cur]?.status !== "done";
+    $("practiceOpen").hidden = S.practice !== "an" || view !== "read" || pages[cur]?.status !== "done" || atEnd;
     const pg = pages[cur];
     $<HTMLButtonElement>("correctPageBtn").disabled = pg?.status !== "done";
     $("readingTitle").textContent = book?.title || t("untitled");
@@ -1193,8 +1213,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
     if (document.activeElement !== $<HTMLInputElement>("bookTitle")) $<HTMLInputElement>("bookTitle").value = (book && book.title) || "";
     $<HTMLButtonElement>("delBookBtn").hidden = !book || !!book.demo;
     $<HTMLButtonElement>("exportBtn").hidden = !book || !!book.demo;
-    $<HTMLButtonElement>("prev").disabled = $<HTMLButtonElement>("edgePrev").disabled = cur === 0;
-    $<HTMLButtonElement>("next").disabled = $<HTMLButtonElement>("edgeNext").disabled = cur >= pages.length - 1;
+    $<HTMLButtonElement>("prev").disabled = $<HTMLButtonElement>("edgePrev").disabled = !turnTo("prev");
+    $<HTMLButtonElement>("next").disabled = $<HTMLButtonElement>("edgeNext").disabled = !turnTo("next");
     if (pg.img) $<HTMLImageElement>("origImg").src = pg.img;
     $<HTMLButtonElement>("recropBtn").hidden = !(pg.photo || pg.photoBlob);
     const pageView = pg.status === "done" && isPageMode(pg) && !comparing;
@@ -1207,7 +1227,10 @@ const Lib = { detectFrame, warpPage, orderCorners };
     renderTogether();
     morphCheck(false);
     $<HTMLButtonElement>("compareBtn").hidden = !pg.img;
-    if (pg.status === "done" && comparing && pg.img) {
+    if (atEnd) {
+      renderEnd();
+      $<HTMLButtonElement>("readBtn").disabled = true;
+    } else if (pg.status === "done" && comparing && pg.img) {
       const rd = $("reader");
       rd.classList.remove("pagemode"); rd.classList.add("comparing");
       rd.innerHTML = ""; speech = null;
@@ -1236,7 +1259,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     }
     applySettings();
     renderThumbs();
-    guide.configure(view === "read" && pg.status === "done" && !comparing ? S.guide : "aus", `${book?.id}/${pg.id || cur}`);
+    guide.configure(view === "read" && pg.status === "done" && !comparing && !atEnd ? S.guide : "aus", `${book?.id}/${pg.id || cur}`);
   }
 
   /** Recognition status of a page, as the workshop's page list shows it. */
@@ -1285,8 +1308,20 @@ const Lib = { detectFrame, warpPage, orderCorners };
     if (b) setThumbStatus(b, pg);
   }
 
-  $<HTMLButtonElement>("prev").onclick = () => { if (cur > 0) { cur--; render(); saveBook(); } };
-  $<HTMLButtonElement>("next").onclick = () => { if (cur < pages.length - 1) { cur++; render(); saveBook(); } };
+  /** Where a page-turn button leads from here: another page, the end of the book, or nowhere. */
+  function turnTo(to: "prev" | "next") { return turn({ page: cur, end: atEnd }, to, pages.length, view === "read"); }
+  function turnPage(to: "prev" | "next") {
+    const there = turnTo(to);
+    if (!there) return;
+    const turned = there.page !== cur;
+    cur = there.page; atEnd = there.end;
+    render();
+    if (turned) saveBook();
+    // The button that led here is now disabled; the end's first choice takes the focus.
+    if (atEnd) $("reader").querySelector<HTMLButtonElement>(".book-end button")?.focus();
+  }
+  $<HTMLButtonElement>("prev").onclick = () => turnPage("prev");
+  $<HTMLButtonElement>("next").onclick = () => turnPage("next");
   $<HTMLButtonElement>("edgePrev").onclick = () => $<HTMLButtonElement>("prev").click();
   $<HTMLButtonElement>("edgeNext").onclick = () => $<HTMLButtonElement>("next").click();
   // Swipe left or right on the page to turn it; not while moving text boxes.
@@ -2091,7 +2126,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   function syncLocation() { writeLocation(currentLocation(), false); }
   /** Show the open book in a view. History is already where it should be; only the page is updated. */
   function showView(mode: "read" | "workshop") {
-    view = mode;
+    view = mode; atEnd = false;
     document.body.classList.toggle("reading", view === "read");
     $("adultUiLanguage").append($("uiLang"));
     closeEditEntry(); showCheck(false); showSettings(false);
