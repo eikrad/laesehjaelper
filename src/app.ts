@@ -38,6 +38,7 @@ import { phraseBoundaries, renderPhraseCues, type PhraseCues } from "./phrases";
 import type { DataPage, EpubFont, EpubPage } from "./epub";
 import type { PdfPage } from "./pdf";
 import { measurePdfPage } from "./pdf-layout";
+import { afterUiChange, chooseBookLanguage, type LangChoice, startLanguages } from "./languages";
 import { type DeletedMark, deletionMark, pendingDeletions, restoreIndex, undoLeft } from "./page-undo";
 import type { Corners, Frame, OcrData, Para, Point } from "./types";
 
@@ -53,6 +54,8 @@ declare global { interface Window { cv: unknown; TRAINEDDATA: Record<string, str
 interface Settings {
   font: string; size: number; ls: number; lh: number; mode: string; colors: string; bg: string;
   gate: string; orig: string; view: string; hyph: string; lang: string; ui: string; rate: string; turn: string; lines: string; together: string;
+  /** Whether the book language follows the app language or was picked by an adult (src/languages.ts). */
+  langChoice: LangChoice;
   /** Syllable colours and arcs on all words ("alle") or only on long words ("lange"). */
   sylWords: string;
   /** Highlight each word while the page is read aloud ("an") or not ("aus"). */
@@ -128,9 +131,13 @@ const Lib = { detectFrame, warpPage, orderCorners };
   // Word highlighting during read-aloud starts off as well: it has not been shown to help, and it can
   // pull children along with the voice (Gerbier, Bailly & Bosse 2018, doi:10.1016/j.csl.2017.07.003).
   // Settings saved before it was a setting keep it on (fromEarlier in src/profiles.ts).
-  const defaults: Settings = { guideLast: "ruler", wordPlayback: "word", phrases: "aus", practice: "aus", guide: "aus", gate: "aus", font: '"Andika", sans-serif', size: 32, ls: DEFAULT_LS, lh: DEFAULT_LH, mode: "aus", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus", sylWords: "alle", highlight: "aus" };
+  const defaults: Settings = { guideLast: "ruler", wordPlayback: "word", phrases: "aus", practice: "aus", guide: "aus", gate: "aus", font: '"Andika", sans-serif', size: 32, ls: DEFAULT_LS, lh: DEFAULT_LH, mode: "aus", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", langChoice: "follow", rate: "normal", turn: "an", lines: "normal", together: "aus", sylWords: "alle", highlight: "aus" };
   const S: Settings = { ...defaults };
-  try { const saved = localStorage.getItem("lesehelfer"); if (saved) Object.assign(S, fromEarlier(JSON.parse(saved))); } catch {}
+  let saved: Record<string, string | number> | null = null;
+  try { const raw = localStorage.getItem("lesehelfer"); if (raw) saved = JSON.parse(raw); } catch {}
+  if (saved) Object.assign(S, fromEarlier(saved));
+  // App and book language: from the device on a first start, then as saved, so a language picked by hand stays (#212).
+  Object.assign(S, startLanguages(saved, navigator.languages ?? [navigator.language]));
   const PROFILES = "laesehjaelper-profiles";
   let prof: ProfileStore | null = null;   // Initialized after the UI strings (first profile name).
   const save = () => {
@@ -391,8 +398,14 @@ const Lib = { detectFrame, warpPage, orderCorners };
   for (const k of ["size", "ls", "lh"] as const) $(k).oninput = e => { S[k] = parseFloat(val(e)); applySettings(); };
   for (const [id, key] of CHOICES)
     $(id).onclick = e => { const b = (e.target as HTMLElement).closest("button"); if (b) {
-      S[key] = b.dataset.v!; if (key === "lines" && S.lines === "kort") S.phrases = "aus"; applySettings();
+      S[key] = b.dataset.v!; if (key === "lines" && S.lines === "kort") S.phrases = "aus";
+      // The book language follows the app language until an adult picks one (src/languages.ts).
+      if (key === "ui") Object.assign(S, afterUiChange(S, S.ui));
+      if (key === "lang") Object.assign(S, chooseBookLanguage(S, S.lang));
+      applySettings();
       if (key === "ui") applyTexts();
+      // Only the sample page follows a new app language; a real book keeps its language and its recognised text.
+      if (key === "ui" && book?.demo && pages[cur] && pages[cur].lang !== S.lang) { relang(pages[cur]); morphCheck(); }
       if ((key === "practice" || key === "view" || key === "lines" || key === "mode" || key === "sylWords" || key === "guide") && pages[cur]) render();
       if (key === "wordPlayback") stopSpeech();
       if (key === "together") renderTogether();
