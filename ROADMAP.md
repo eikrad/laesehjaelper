@@ -17,7 +17,6 @@ Last reviewed: 15 November 2026.
 
 | Issue | What | Epic | Note |
 |---|---|---|---|
-| [#204](https://github.com/eikrad/laesehjaelper/issues/204) | Calmer line help: light veil, fixed label, larger line buttons | Reading aids | |
 | [#205](https://github.com/eikrad/laesehjaelper/issues/205) | Safety nets while making a book: skip a photo, undo deleting a page | Reading and making books | |
 | [#212](https://github.com/eikrad/laesehjaelper/issues/212) | Take the app language from the device; the book language follows it | Photo to book page | |
 
