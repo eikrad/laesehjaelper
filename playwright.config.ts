@@ -16,6 +16,9 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:4173",
     viewport: { width: 820, height: 1180 },   // Portrait tablet.
+    // A Danish device: the app takes its first language from the device (#212). Tests of other
+    // device languages set their own locale.
+    locale: "da-DK",
     acceptDownloads: true,
     trace: "retain-on-failure",
   },

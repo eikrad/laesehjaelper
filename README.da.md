@@ -13,7 +13,7 @@ Alt kører lokalt i browseren. Ingen billeder bliver uploadet.
 ## Funktioner
 
 - To visninger: bogens side med ny skrift på den oprindelige plads, eller kun teksten
-- Brugerflade på dansk, tysk eller engelsk
+- Brugerflade på dansk, tysk eller engelsk. Ved første start bruger appen enhedens sprog (dansk, hvis enheden ikke bruger et af de tre); et sprog valgt under DA / DE / EN gemmes og bliver ved. Bogens sprog er en separat indstilling: vælg det på startsiden („Bogen er på …“), før du fotograferer. Ved første start er det også enhedens sprog; derefter bliver det som valgt og ændrer sig aldrig med appens sprog. Hver bog beholder sit eget sprog, og eksempelsiden bruger bogens sprog.
 - Tekstgenkendelse (dansk, tysk, engelsk) med [Tesseract.js](https://github.com/naptha/tesseract.js)
 - Stavelsesdeling baseret på de danske, tyske og engelske TeX-orddelingsmønstre ([hyphen](https://github.com/ytiurin/hyphen))
 - Stavelser i skiftende farver (blå/rød, farverne kan vælges frit), som buer eller begge dele

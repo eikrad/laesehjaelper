@@ -38,6 +38,7 @@ import { phraseBoundaries, renderPhraseCues, type PhraseCues } from "./phrases";
 import type { DataPage, EpubFont, EpubPage } from "./epub";
 import type { PdfPage } from "./pdf";
 import { measurePdfPage } from "./pdf-layout";
+import { startLanguages } from "./languages";
 import { type DeletedMark, deletionMark, pendingDeletions, restoreIndex, undoLeft } from "./page-undo";
 import type { Corners, Frame, OcrData, Para, Point } from "./types";
 
@@ -130,7 +131,11 @@ const Lib = { detectFrame, warpPage, orderCorners };
   // Settings saved before it was a setting keep it on (fromEarlier in src/profiles.ts).
   const defaults: Settings = { guideLast: "ruler", wordPlayback: "word", phrases: "aus", practice: "aus", guide: "aus", gate: "aus", font: '"Andika", sans-serif', size: 32, ls: DEFAULT_LS, lh: DEFAULT_LH, mode: "aus", colors: "#2f3fe0,#e5412d", bg: "#ffffff", orig: "an", view: "side", hyph: "normal", lang: "da", ui: "da", rate: "normal", turn: "an", lines: "normal", together: "aus", sylWords: "alle", highlight: "aus" };
   const S: Settings = { ...defaults };
-  try { const saved = localStorage.getItem("lesehelfer"); if (saved) Object.assign(S, fromEarlier(JSON.parse(saved))); } catch {}
+  let saved: Record<string, string | number> | null = null;
+  try { const raw = localStorage.getItem("lesehelfer"); if (raw) saved = JSON.parse(raw); } catch {}
+  if (saved) Object.assign(S, fromEarlier(saved));
+  // App language and language of new books: separate, from the device on a first start, then as picked by hand (#212).
+  Object.assign(S, startLanguages(saved, navigator.languages ?? [navigator.language]));
   const PROFILES = "laesehjaelper-profiles";
   let prof: ProfileStore | null = null;   // Initialized after the UI strings (first profile name).
   const save = () => {
