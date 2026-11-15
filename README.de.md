@@ -13,7 +13,7 @@ Alles läuft lokal im Browser. Es werden keine Fotos hochgeladen.
 ## Funktionen
 
 - Zwei Ansichten: die Buchseite mit dem neuen Text an der ursprünglichen Stelle oder nur der Text
-- Oberfläche auf Dänisch, Deutsch oder Englisch. Beim ersten Start übernimmt die App die Sprache des Geräts (Dänisch, wenn das Gerät keine der drei nutzt); eine unter DA / DE / EN gewählte Sprache wird gespeichert und bleibt. Die Sprache neuer Bücher folgt der App-Sprache, bis ein Erwachsener eine wählt, die dann bleibt; jedes Buch behält seine eigene Sprache, und die Beispielseite nutzt die aktuelle Buchsprache.
+- Oberfläche auf Dänisch, Deutsch oder Englisch. Beim ersten Start übernimmt die App die Sprache des Geräts (Dänisch, wenn das Gerät keine der drei nutzt); eine unter DA / DE / EN gewählte Sprache wird gespeichert und bleibt. Die Buchsprache ist eine eigene Einstellung: Wähle sie auf der Startseite („Das Buch ist auf …“), bevor du fotografierst. Beim ersten Start ist auch sie die Sprache des Geräts; danach bleibt sie wie gewählt und ändert sich nie mit der App-Sprache. Jedes Buch behält seine eigene Sprache, und die Beispielseite nutzt die Buchsprache.
 - Texterkennung (Dänisch, Deutsch, Englisch) mit [Tesseract.js](https://github.com/naptha/tesseract.js)
 - Silbentrennung auf Basis der TeX-Trennmuster für Dänisch, Deutsch und Englisch ([hyphen](https://github.com/ytiurin/hyphen))
 - Silben in abwechselnden Farben (blau/rot, Farben frei wählbar), als Bögen oder beides
