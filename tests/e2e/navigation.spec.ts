@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { bookAction, bookTool, fresh, openWorkshop, seedBooks } from "./helpers";
+import { bookAction, checkText, fresh, openWorkshop, seedBooks } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -8,7 +8,7 @@ test("Reading has one quiet workshop entry and Back stays inside the book and sh
   await page.locator(".book").click();
   await expect(page).toHaveURL(/#read\/route\/route-1$/);
   await expect(page.locator("#readingTitle")).toHaveText("En rolig bog");
-  for (const id of ["bookTitle", "bookMenuBtn", "checkTextBtn", "editPagesBtn", "exportBtn", "pdfBtn", "edit", "thumbs", "delBookBtn", "compareBtn"]) {
+  for (const id of ["bookTitle", "bookMenuBtn", "editPagesBtn", "exportBtn", "pdfBtn", "edit", "thumbs", "delBookBtn", "compareBtn"]) {
     await expect(page.locator(`#${id}`)).toBeHidden();
   }
   await expect(page.locator("#editBookBtn")).toHaveText("Til voksne");
@@ -134,7 +134,7 @@ test("Deleting a book leaves no Back step into the deleted book", async ({ page 
 test("Correcting text does not rewrite the browser history while the page stays the same", async ({ page }) => {
   await seedBooks(page, [{ id: "typing", title: "En original bog", texts: ["En original side."] }]);
   await page.locator(".book").click();
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   // Browsers cap how often a page may change its history, so only real changes should count.
   await page.evaluate(() => {
     const w = window as unknown as { historyWrites: number };

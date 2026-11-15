@@ -84,6 +84,24 @@ test("Book settings open from the book menu in a dialog and return to the menu b
   await expect(button).toBeFocused();
 });
 
+test("\"Check and correct the text\" appears once, as the selected page's own action that opens and closes the editor", async ({ page }) => {
+  await seedBooks(page, [{ id: "check", title: "En bog at rette", texts: ["Første side.", "Anden side."] }]);
+  await page.locator(".book").click();
+  await openWorkshop(page);
+  const action = page.getByText("Tjek og ret teksten", { exact: true }).filter({ visible: true });
+  await expect(action).toHaveCount(1);
+  await expect(page.locator(".pagecard #edit > summary")).toHaveText("Tjek og ret teksten");
+  expect((await page.locator("#edit > summary").boundingBox())!.height).toBeGreaterThanOrEqual(48);
+  await expect(page.locator("#text")).toBeVisible();   // The workshop opens with the editor.
+  await page.locator("#edit > summary").click();
+  await expect(page.locator("#text")).toBeHidden();
+  await expect(action, "closed, the action stays to open the editor again").toHaveCount(1);
+  await page.locator(".thumb > button").nth(1).click();
+  await expect(action, "on every page").toHaveCount(1);
+  await page.locator("#edit > summary").click();
+  await expect(page.locator("#text")).toHaveValue("Anden side.");
+});
+
 test("The book menu works with the keyboard: arrows move round, Escape returns to the menu button", async ({ page }) => {
   await seedBooks(page, [{ id: "keys", title: "En bog til tasterne", texts: ["Første side."] }]);
   await page.locator(".book").click();
@@ -134,7 +152,6 @@ test.describe("Workshop recognition status", () => {
     await expect(page.locator(".thumb .recognition")).toHaveText(["Klar", "Teksten genkendes …", "Venter på genkendelse …"]);
     await page.locator(".thumb > button").nth(1).click();
     await expect(page.locator("#edit")).toBeHidden();
-    await expect(page.locator("#checkTextBtn")).toBeDisabled({ timeout: 1500 });
     await page.locator(".thumb > button").first().click();
     await expect(page.locator("#text")).toHaveValue("En klar side.");
   });

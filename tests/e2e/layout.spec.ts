@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { bookAction, bookTool, expectSyllableBowsInsideBoxes, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
+import { bookAction, checkText, expectSyllableBowsInsideBoxes, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
 
 // Layout checks. Unlike the other specs, these run at every screen size the app is
 // designed for: phone, tablet portrait, tablet landscape and laptop (see playwright.config.ts).
@@ -102,7 +102,7 @@ test("OCR region editing fits every screen and supports drawing and keyboard con
   await openRecognisedBook(page, ["side-da.jpg"]);
   for (const ui of ["da", "de", "en"]) {
     await setUiLanguage(page, ui);
-    await bookTool(page, "checkTextBtn"); await page.click("#ocrRegionsBtn");
+    await checkText(page); await page.click("#ocrRegionsBtn");
     const d = page.locator("#ocrRegionsEditor");
     await expect(d).toBeVisible();
     const surface = page.locator("#regionsSurface"); await surface.scrollIntoViewIfNeeded();
@@ -469,7 +469,7 @@ test("On touch screens every control is at least 44 px", async ({ page }, info) 
   await toggleReadingSetup(page);
   await openWorkshop(page);
   await expect.poll(() => smallControls(page), { message: "workshop" }).toEqual([]);
-  await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
+  await checkText(page);
   await page.locator("#moveBtn").evaluate((b: HTMLButtonElement) => b.click());
   await expect.poll(() => smallControls(page), { message: "editing pages and text boxes" }).toEqual([]);
 });
@@ -521,7 +521,7 @@ test("The whole book page is on screen on tablets and laptops; phones use the fu
 test("Scrolled to the end, the toolbar covers nothing that can be tapped", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await openWorkshop(page);   // Editing adds the most controls below the page.
-  await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
+  await checkText(page);
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   const dock = (await page.locator("#dock").boundingBox())!;
   for (const el of await page.locator("#app button:visible, #app summary:visible, #app label:visible").all()) {
@@ -556,7 +556,7 @@ test("Swiping turns the page; taps, scrolling and moving text boxes do not", asy
   await swipeOnReader(page, -60, 200);  // Scrolling.
   await expect(count).toHaveText("1 / 2");
   await openWorkshop(page);
-  await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
+  await checkText(page);
   await page.locator("#moveBtn").evaluate((b: HTMLButtonElement) => b.click());
   await page.evaluate(() => window.scrollTo(0, 0));
   await swipeOnReader(page, -150, 0);

@@ -751,15 +751,14 @@ const Lib = { detectFrame, warpPage, orderCorners };
   // Design inference from distracting storybook extras, not a tested benefit of this navigation:
   // Takacs, Swart & Bus (2015), doi:10.3102/0034654314566989; Bus et al. (2026),
   // doi:10.1080/10409289.2025.2571978.
-  let checking = false;
+  // "Check and correct the text" is the selected page's one main action (#206): the editor's own
+  // heading, which stays in the workshop to open the editor again after closing it.
   function showCheck(on: boolean) {
-    checking = on;
     if (!on) setMoving(false);
-    const d = $<HTMLDetailsElement>("edit"); d.hidden = !on; d.open = on;
+    const d = $<HTMLDetailsElement>("edit"); d.open = on;
     if (on) d.scrollIntoView({ block: "nearest" });
   }
-  $<HTMLButtonElement>("checkTextBtn").onclick = () => showCheck(true);
-  $("edit").addEventListener("toggle", () => { if (!$<HTMLDetailsElement>("edit").open) showCheck(false); });
+  $("edit").addEventListener("toggle", () => { if (!$<HTMLDetailsElement>("edit").open) setMoving(false); });
   // The workshop's book actions sit in one "Book ⋯" menu (#206). Deleting asks to be tapped again
   // in the open menu; closing the menu takes the question back.
   const disarmDelete = () => { $("delBookBtn").classList.remove("armed"); $("delBookBtn").textContent = t("deleteBook"); };
@@ -1294,8 +1293,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     $("pagePhotoTools").hidden = !pg?.id || !book || !!book.demo;
     if (!pg) { showStatus(t("noText")); renderThumbs(); return; }
     const pending = pg.status === "wait" || pg.status === "ocr";
-    $("edit").hidden = !checking || pending;
-    $<HTMLButtonElement>("checkTextBtn").disabled = pending;
+    $("edit").hidden = pending;
     $<HTMLTextAreaElement>("text").disabled = pg.status !== "done";
     $("count").textContent = t("pageOf", { a: cur + 1, b: pages.length });
     if (document.activeElement !== $<HTMLInputElement>("bookTitle")) $<HTMLInputElement>("bookTitle").value = (book && book.title) || "";
@@ -1335,7 +1333,6 @@ const Lib = { detectFrame, warpPage, orderCorners };
       $("reader").classList.remove("comparing");
       renderContent(pg);
       $<HTMLTextAreaElement>("text").value = pg.text;
-      $<HTMLDetailsElement>("edit").hidden = !checking;
       $<HTMLButtonElement>("readBtn").disabled = !pg.text;
       if (!pg.text) showStatus(t("noText"));
     } else if (pg.status === "error") {

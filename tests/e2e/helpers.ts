@@ -191,10 +191,12 @@ async function bookOpen(page: Page) {
   await expect(page.locator("#app")).toBeVisible();
 }
 
-/** Choose a page tool in the workshop. */
-export async function bookTool(page: Page, id: "checkTextBtn") {
+/** Open the selected page's editor through its own heading, "Check and correct the text" (#206). */
+export async function checkText(page: Page) {
   await openWorkshop(page);
-  await page.click(`#${id}`);
+  const editor = page.locator("#edit");
+  await expect(editor).toBeVisible();
+  if (!await editor.evaluate(el => (el as HTMLDetailsElement).open)) await editor.locator(":scope > summary").click();
 }
 
 /** Choose an action from the workshop's "Book ⋯" menu (#206). Delete book asks to be chosen twice. */

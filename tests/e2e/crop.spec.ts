@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { bookTool, fixture, fresh, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, storedPages, waitForText } from "./helpers";
+import { checkText, fixture, fresh, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, storedPages, waitForText } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
@@ -76,7 +76,7 @@ test("A corrected automatic frame and its curved edge survive cropping and reloa
   // Wait for the finished page's transaction before testing restoration from disk.
   await expect.poll(async () => (await storedPages(page)).map(p => `${p.status} ${p.corners}`)).toEqual(["done true"]);
   await page.reload();
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   await page.click("#recropBtn");
   await expect(page.locator("#crop")).toBeVisible();
   await expect(page.locator("#cropMsg")).not.toContainText("…", { timeout: 120_000 });

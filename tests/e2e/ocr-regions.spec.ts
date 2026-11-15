@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { bookAction, bookTool, fixture, fresh, openRecognisedBook } from "./helpers";
+import { bookAction, checkText, fixture, fresh, openRecognisedBook } from "./helpers";
 import type { Page } from "@playwright/test";
 import { strFromU8, unzipSync } from "fflate";
 import fs from "node:fs";
@@ -15,7 +15,7 @@ async function sourceDigest(page: Page) {
 
 test("changing the page crop clears exclusions from the previous input coordinates", async ({ page }) => {
   await fresh(page); await openRecognisedBook(page, ["side-da.jpg"]);
-  await bookTool(page, "checkTextBtn"); await page.click("#ocrRegionsBtn");
+  await checkText(page); await page.click("#ocrRegionsBtn");
   await page.click("#regionAdd"); await page.click("#regionsSave");
   await expect(page.locator("#reocrBtn")).toBeVisible({ timeout: 90000 });
   await page.click("#recropBtn");
@@ -30,7 +30,7 @@ test("an adult excludes a footer, keeps the photo and can restore recognition", 
   await expect(page.locator("#cropMsg")).not.toContainText("…", { timeout: 90000 }); await page.click("#cropWhole");
   await expect(page.locator("#reader")).toContainText("Original test footer", { timeout: 90000 });
   const original = await sourceDigest(page);
-  await bookTool(page, "checkTextBtn"); await page.click("#ocrRegionsBtn");
+  await checkText(page); await page.click("#ocrRegionsBtn");
   await page.click("#regionAdd"); await page.click("#regionsCancel");
   await page.click("#ocrRegionsBtn"); await expect(page.locator("#regionList button")).toHaveCount(0);
   await page.fill("#regionTop", "100"); await page.click("#regionAdd");
@@ -57,7 +57,7 @@ test("an adult excludes a footer, keeps the photo and can restore recognition", 
   expect(data.pages[0].ocrRegions).toEqual([{ x0: 0, y0: 0.85, x1: 1, y1: 1 }]);
   await fresh(page); await page.setInputFiles("#importFile", file);
   await expect(page.locator("#reader")).toContainText("Tara builds a kite.");
-  await bookTool(page, "checkTextBtn"); await page.click("#ocrRegionsBtn");
+  await checkText(page); await page.click("#ocrRegionsBtn");
   await expect(page.locator("#regionList button")).toHaveCount(1);
   await page.click("#regionsClear"); await page.click("#regionsSave");
   await expect(page.locator("#reader")).toContainText("Original test footer", { timeout: 90000 });

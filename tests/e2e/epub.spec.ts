@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 import { strFromU8, unzipSync } from "fflate";
 import fs from "node:fs";
-import { addPhotos, bookAction, bookTool, fresh, openRecognisedBook, openWorkshop, seedBooks, toggleReadingSetup, waitForText } from "./helpers";
+import { addPhotos, bookAction, checkText, fresh, openRecognisedBook, openWorkshop, seedBooks, toggleReadingSetup, waitForText } from "./helpers";
 
 test("Exported page layout is independent of the screen orientation", async ({ page }, info) => {
   await fresh(page);
@@ -44,7 +44,7 @@ test("Exports and reimports an e-book", async ({ page }, info) => {
   await expect(page.locator("#readingTitle")).toHaveText("Eksport");
   await expect(page.locator("#reader")).toHaveClass(/pagemode/);
   expect(await page.locator("#text").inputValue()).toContain("Pindsvinet");
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   await expect(page.locator("#recropBtn")).toBeVisible({ timeout: 1500 });
   await page.click("#recropBtn");
   await expect(page.locator("#crop")).toBeVisible();

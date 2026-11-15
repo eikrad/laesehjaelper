@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 import fs from "node:fs";
-import { bookAction, fixture, fresh, openRecognisedBook, openWorkshop, setUiLanguage, storedPages } from "./helpers";
+import { bookAction, checkText, fixture, fresh, openRecognisedBook, openWorkshop, setUiLanguage, storedPages } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
@@ -85,7 +85,7 @@ test("Book recognition replaces only eligible pages and saves their identity and
     db.close(); return records.map(p => ({ lang: p.lang, question: p.question }));
   });
   expect(metadata).toEqual(["da", "de", "en", "de"].map(lang => ({ lang, question: "En egen prøvefråga" })));
-  await openWorkshop(page); await page.click("#checkTextBtn");
+  await openWorkshop(page); await checkText(page);
   await page.fill("#text", "En manuel original rettelse.");
   await page.goto("/"); await page.locator(".book").click(); await openWorkshop(page);
   await bookAction(page, "reprocessBookBtn");
@@ -126,7 +126,7 @@ test("Cancellation finishes the current page and leaves remaining pages untouche
 test("Single-page recognition establishes a protected-edit history that survives reopening", async ({ page }) => {
   await fakeRecognition(page); await seedBatch(page);
   await page.locator("#thumbs .thumb > button").nth(2).click();
-  await page.click("#checkTextBtn"); await page.click("#reocrBtn");
+  await checkText(page); await page.click("#reocrBtn");
   await expect(page.locator("#reader")).toContainText("Ny original tekst.");
   await page.reload();
   await bookAction(page, "reprocessBookBtn");
@@ -139,7 +139,7 @@ test("Automatic page detection straightens the stored original without visiting 
   await expect(page.locator("#batchProgress")).toContainText("1 succeeded · 0 failed", { timeout: 10000 });
   expect((await storedPages(page))[0].corners).toBe(true);
   await expect(page.locator("#crop")).toBeHidden();
-  await page.click("#batchClose"); await page.reload(); await openWorkshop(page); await page.click("#checkTextBtn");
+  await page.click("#batchClose"); await page.reload(); await openWorkshop(page); await checkText(page);
   await page.click("#recropBtn");
   await expect(page.locator("#crop")).toBeVisible();
   await expect(page.locator("#cropPoly")).toHaveAttribute("d", /Q/);
@@ -162,7 +162,7 @@ for (const action of ["edit", "delete"] as const) {
     await page.click("#batchClose");
     await expect(page.locator("#reader")).toContainText("Søren");
     if (action === "edit") {
-      await page.click("#checkTextBtn"); await page.fill("#text", "Min nyere originale rettelse.");
+      await checkText(page); await page.fill("#text", "Min nyere originale rettelse.");
     } else {
       await page.locator("#thumbs .thumb").first().locator(".x").click();
       await expect(page.locator("#thumbs .thumb")).toHaveCount(3);
@@ -183,7 +183,7 @@ for (const action of ["edit", "delete"] as const) {
     const other = await page.context().newPage();
     await other.goto(page.url()); await openWorkshop(other);
     if (action === "edit") {
-      await other.click("#checkTextBtn"); await other.fill("#text", "Min originale rettelse fra en anden fane.");
+      await checkText(other); await other.fill("#text", "Min originale rettelse fra en anden fane.");
     } else {
       await other.locator("#thumbs .thumb").first().locator(".x").click();
       await expect(other.locator("#thumbs .thumb")).toHaveCount(3);
@@ -202,7 +202,7 @@ test("A page edited before its turn is skipped while other eligible pages contin
   await bookAction(page, "reprocessBookBtn"); await page.locator("#batchIncludeManual").check(); await page.click("#batchStart");
   await page.waitForFunction(() => "batchRelease" in window); await page.click("#batchClose");
   await page.locator("#thumbs .thumb > button").nth(1).click();
-  await page.click("#checkTextBtn"); await page.fill("#text", "Meine neuere eigene Korrektur.");
+  await checkText(page); await page.fill("#text", "Meine neuere eigene Korrektur.");
   await page.evaluate(() => { if ("batchRelease" in window) (window.batchRelease as () => void)(); });
   await expect(page.locator("#batchNotice")).toContainText("2 succeeded · 0 failed · 1 changed or deleted", { timeout: 5000 });
   expect((await storedPages(page)).slice(0, 3).map(p => p.text)).toEqual(["Ny original tekst.", "Meine neuere eigene Korrektur.", "Ny original tekst."]);

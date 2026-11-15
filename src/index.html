@@ -302,7 +302,7 @@ body.workshop .workshop-grid > * { min-width: 0; }
 .bar i { display: block; height: 100%; width: 0; background: var(--blue); border-radius: 99px; transition: width .2s; }
 
 .edit { border-top: 1.5px solid var(--line); padding: 6px 22px 10px; font-family: var(--ui); background: #fff; }
-.edit summary { cursor: pointer; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 10px; min-height: 44px; list-style: none; }
+.edit summary { cursor: pointer; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 10px; min-height: 48px; list-style: none; }
 .edit summary::-webkit-details-marker { display: none; }
 .edit textarea { width: 100%; min-height: 150px; margin-top: 12px; padding: 14px; border-radius: 16px; border: 1.5px solid var(--line); background: var(--sky); font-size: 17px; line-height: 1.5; resize: vertical; }
 .edit .hint { font-size: 14px; color: var(--muted); margin: 8px 0 0; }
@@ -670,9 +670,6 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
     <div class="reading-activities reading-only">
       <button id="phraseToggle" class="btn-ghost small" hidden aria-pressed="false"></button>
       <button id="practiceOpen" class="btn-ghost small" data-t="practiceTitle" hidden></button>
-    </div>
-    <div class="workshop-tools workshop-only">
-      <button class="btn-ghost" id="checkTextBtn"><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></button>
     </div>
     <div class="workshop-grid">
     <div class="thumbs" id="thumbs"></div>
