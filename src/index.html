@@ -234,7 +234,10 @@ body.workshop .workshop-grid > * { min-width: 0; }
 #reader.guide-ruler { position: relative; overflow: clip; }
 #reader.guide-ruler:not(.pagemode) { padding-bottom: 100px; }
 #reader.guide-ruler .w { scroll-margin-top: 100px; scroll-margin-bottom: 180px; }
-.guide-window { position: absolute; pointer-events: none; z-index: 5; border: 2px solid var(--blue); border-radius: 4px; box-shadow: 0 0 0 10000px #0008; }
+/* A light veil in the page colour (#204): the other lines and the picture fade, the page does not turn grey,
+   and the active line inside the window stays exactly as it is. White where color-mix is missing. */
+.guide-window { position: absolute; pointer-events: none; z-index: 5; border: 2px solid var(--blue); border-radius: 4px;
+  box-shadow: 0 0 0 10000px rgba(255,255,255,.65); box-shadow: 0 0 0 10000px color-mix(in srgb, var(--page-bg) 65%, transparent); }
 #reader.guide-single, .pagecard.guide-single .orig { display: none !important; }
 #app.split .pagecard.guide-single { display: block; }
 .reader.guide-line { display: flex; align-items: center; min-height: 50dvh; font-size: max(40px, calc(var(--size) * 1.25)); padding-bottom: 100px; }

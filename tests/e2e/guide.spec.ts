@@ -1,3 +1,4 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { strFromU8, unzipSync } from "fflate";
 import fs from "node:fs";
@@ -26,6 +27,49 @@ test("The reading ruler starts off and follows visual lines when enabled", async
   await page.click("#guidePrev");
   await expect(page.locator("#guideCount")).toHaveText("Linje 1 af 3");
   await expect(page.locator("#guidePrev")).toBeDisabled();
+});
+
+/** The ruler's veil: the spread shadow around the window, as [red, green, blue] (0–255) and alpha (0–1). */
+const veil = (page: Page) => page.locator("#guideWindow").evaluate(el => {
+  const shadow = getComputedStyle(el).boxShadow;
+  const srgb = shadow.match(/color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)(?: \/ ([\d.]+))?\)/);
+  if (srgb) return { rgb: [1, 2, 3].map(i => Math.round(Number(srgb[i]) * 255)), alpha: Number(srgb[4] ?? 1) };
+  const rgb = shadow.match(/rgba?\(([\d.]+), ([\d.]+), ([\d.]+)(?:, ([\d.]+))?\)/)!;
+  return { rgb: [1, 2, 3].map(i => Number(rgb[i])), alpha: Number(rgb[4] ?? 1) };
+});
+
+/** Words of the line inside the ruler window, and whether each (with its punctuation) lies fully inside the clear window. */
+const activeLine = (page: Page) => page.evaluate(() => {
+  const window = document.querySelector("#guideWindow")!, box = window.getBoundingClientRect(), border = parseFloat(getComputedStyle(window).borderTopWidth);
+  const clear = { left: box.left + border, right: box.right - border, top: box.top + border, bottom: box.bottom - border };
+  return [...document.querySelectorAll<HTMLElement>("#reader .w")].flatMap(word => {
+    const r = word.getBoundingClientRect(), middle = (r.top + r.bottom) / 2;
+    if (middle < box.top || middle > box.bottom) return [];
+    let right = r.right;
+    const after = word.nextSibling;
+    if (after?.nodeType === Node.TEXT_NODE && /^\S/.test(after.textContent!)) {
+      const range = document.createRange(); range.setStart(after, 0); range.setEnd(after, after.textContent!.match(/^\S+/)![0].length);
+      right = range.getBoundingClientRect().right;
+    }
+    return [{ word: word.dataset.word, clear: r.left >= clear.left && right <= clear.right && r.top >= clear.top && r.bottom <= clear.bottom }];
+  });
+});
+
+test("The ruler fades the rest of the page with a light veil in the page colour and leaves the active line clear", async ({ page }) => {
+  await fresh(page);
+  await seedBooks(page, [{ id: "light-veil", title: "Linjer", texts: ["Solen skinner.\n\nEn lille fugl synger.\n\nVi går ud."] }]);
+  await page.locator(".book").click();
+  await page.click("#guideBtn");
+  await expect(page.locator("#guideWindow")).toBeVisible();
+  // A light veil instead of the dark one: the other lines and the picture fade, the page does not turn grey (#204).
+  expect(await veil(page)).toEqual({ rgb: [255, 255, 255], alpha: expect.closeTo(.65, 1) });
+  expect(await page.locator("#guideWindow").evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
+  await expect.poll(() => activeLine(page)).toEqual([{ word: "Solen", clear: true }, { word: "skinner", clear: true }]);
+  await page.click("#guideNext");
+  await expect.poll(() => activeLine(page)).toEqual(["En", "lille", "fugl", "synger"].map(word => ({ word, clear: true })));
+  // On a yellow page the veil is yellow too, so the page keeps its colour.
+  await toggleReadingSetup(page); await page.click('#bg button[data-v="#fdf0b8"]'); await toggleReadingSetup(page);
+  await expect.poll(() => veil(page)).toEqual({ rgb: [253, 240, 184], alpha: expect.closeTo(.65, 1) });
 });
 
 test("The ruler follows read-aloud words even when word highlighting is off", async ({ page }) => {
