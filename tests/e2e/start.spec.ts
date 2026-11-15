@@ -77,7 +77,7 @@ test("Settings close with the close button, Escape or a tap outside", async ({ p
   await expect(settings).toHaveClass(/open/);
   await page.click("#setClose");
   await expect(settings).not.toHaveClass(/open/);
-  await expect(page.locator("#setBtn")).not.toHaveClass(/on/);
+  await expect(page.locator("#setBtn")).not.toHaveClass(/\bon\b/);
   await toggleReadingSetup(page);
   await page.keyboard.press("Escape");
   await expect(settings).not.toHaveClass(/open/);
@@ -112,9 +112,10 @@ test("Dismissing settings does not drag a text box underneath", async ({ page })
   await bookTool(page, "checkTextBtn");
   await page.click("#moveBtn");
   const box = page.locator("#reader .tbox").first();
-  await box.scrollIntoViewIfNeeded();
   const before = await box.evaluate((el: HTMLElement) => [el.style.left, el.style.top, el.style.width, el.style.height]);
   await toggleReadingSetup(page);
+  // At the top of the screen, clear of the settings sheet and the reading bar, so the tap lands on the box.
+  await box.evaluate(el => el.scrollIntoView({ block: "start" }));
   const bounds = (await box.boundingBox())!;
   await page.mouse.move(bounds.x + 10, bounds.y + 10);
   await page.mouse.down();

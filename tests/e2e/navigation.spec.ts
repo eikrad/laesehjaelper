@@ -90,10 +90,12 @@ test("A delayed book load cannot reopen after Back to the shelf", async ({ page 
   await expect(page).toHaveURL(/#shelf$/);
 });
 
-test("The workshop Home button returns to the shelf announced by its label", async ({ page }) => {
+test("The workshop leads home through reading, whose Home button is announced by its label", async ({ page }) => {
   await seedBooks(page, [{ id: "home", title: "En original bog", texts: ["En original side."] }]);
   await page.locator(".book").click();
   await openWorkshop(page);
+  await expect(page.locator("#homeBtn"), "the workshop's one header row has no Home button (#206)").toBeHidden();
+  await page.click("#readBookBtn");
   await expect(page.locator("#homeBtn")).toHaveAccessibleName("Til forsiden");
   await page.click("#homeBtn");
   await expect(page.locator("#start")).toBeVisible({ timeout: 1500 });

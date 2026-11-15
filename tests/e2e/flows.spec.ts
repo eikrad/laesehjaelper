@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, closeBookOptions, fixture, fresh, goShelf, openBookOptions, openRecognisedBook, openWorkshop, toggleReadingSetup, waitForText } from "./helpers";
+import { addPhotos, bookTool, fixture, fresh, goShelf, openBookOptions, openRecognisedBook, openWorkshop, readBook, toggleReadingSetup, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -70,7 +70,7 @@ test("Font, syllable hyphens in the book and reading mode", async ({ page }) => 
   await openBookOptions(page);
   await page.click("#hyphSet button[data-v=bog]");
   await expect(page.locator('#reader .w[data-word="skole"] .s')).toHaveText(["sko", "le"]);
-  await closeBookOptions(page);
+  await readBook(page);
   await page.click("#focusBtn");
   await expect(page.locator("body")).toHaveClass(/focus/);
   await expect(page.locator(".thumbs")).toBeHidden();
@@ -111,25 +111,21 @@ test("Closing the text editor also ends moving text boxes", async ({ page }) => 
   await expect(page.locator("#reader")).not.toHaveClass(/moving/);
 });
 
-test("Reading mode keeps page navigation and hides book preparation", async ({ page }) => {
+test("Reading mode keeps page navigation and hides book preparation; the workshop offers no reading mode", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
-  await openWorkshop(page);
   await page.click("#focusBtn");
   await expect(page.locator("#reader")).toBeVisible();
   await expect(page.locator("#readBtn")).toBeVisible();
   await expect(page.locator("#focusBtn")).toBeVisible();
-  for (const id of ["#bookTitle", "#bookMenuBtn", "#editPagesBtn", "#home", "#edit", "#thumbs", "#setBtn"])
+  for (const id of ["#bookTitle", "#bookMenuBtn", "#editPagesBtn", "#home", "#edit", "#thumbs", "#setBtn", "#editBookBtn"])
     await expect(page.locator(id), id).toBeHidden();
   for (const id of ["#prev", "#next"]) await expect(page.locator(id)).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.locator("#bookTitle")).toBeVisible();
-  // Page-management controls must also disappear if editing was already active.
+  await expect(page.locator("#editBookBtn")).toBeVisible();
+  // Reading mode is the child's; the workshop's one header row leaves it out (#206).
   await openWorkshop(page);
   await expect(page.locator("#bookMenuBtn")).toBeVisible();
-  await page.click("#focusBtn");
-  await expect(page.locator("#bookMenuBtn")).toBeHidden();
-  await page.keyboard.press("Escape");
-  await expect(page.locator("#bookMenuBtn")).toBeVisible();
+  await expect(page.locator("#focusBtn")).toBeHidden();
 });
 
 test("Reading aloud highlights the current word", async ({ page }) => {

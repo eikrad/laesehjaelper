@@ -87,7 +87,7 @@ export async function openReadingSetup(page: Page) {
   if (!await settings.evaluate(el => el.classList.contains("open") && el.classList.contains("adult-setup"))) {
     if (await settings.evaluate(el => el.classList.contains("open"))) await page.click("#setClose");
     if (await page.locator("body").evaluate(el => el.classList.contains("workshop"))) {
-      await page.click("#setBtn"); await page.click("#readingSetupLink");
+      await bookAction(page, "bookReadingSetupBtn");
     } else {
       const entry = page.locator("#editBookBtn");
       if (await page.locator('#gateSet button.on').getAttribute("data-v") === "an") {
@@ -133,13 +133,14 @@ export async function openBookOptions(page: Page) {
 }
 
 /** Close the book settings dialog if it is open. */
-export async function closeBookOptions(page: Page) {
+async function closeBookOptions(page: Page) {
   if (await page.locator("#bookSettings").isVisible()) await page.locator("#bookSettings").getByRole("button").last().click();
 }
 
-/** Reading has a compact shelf button; the workshop keeps its app-header home link. */
+/** The shelf button is in reading; the workshop leads back through reading (#206). */
 export async function goShelf(page: Page) {
-  await page.click(await page.locator("#homeBtn").isVisible() ? "#homeBtn" : "#home");
+  await readBook(page);
+  await page.click("#homeBtn");
 }
 
 /** Load photos through the main button and confirm each one in the crop dialog. */

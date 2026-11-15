@@ -119,8 +119,22 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 .book b { display: block; margin-top: 8px; font-size: 16px; line-height: 1.3; }
 .book span { display: block; font-size: 14px; color: var(--muted); }
 .bookbar { display: flex; gap: 10px; align-items: center; margin: 4px 0 12px; }
-.bookbar input { flex: 1; min-width: 0; font-size: 22px; font-weight: 700; border: 0; background: transparent; padding: 6px 2px; border-bottom: 1.5px solid transparent; border-radius: 0; }
-.bookbar input:focus { border-bottom-color: var(--line); outline: none; }
+/* The workshop's one header row (#206): back to reading, the book title and the book menu. The title
+   shows it can be edited: an underline and a pencil, which also puts the cursor in it. */
+body.workshop header.top { display: none; }
+body.workshop .bookbar { flex-wrap: nowrap; gap: 8px; margin-top: 0; }
+.title-edit { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; min-height: 50px; border-bottom: 2px solid var(--line); color: var(--muted); cursor: text; }
+.title-edit:focus-within { border-bottom-color: var(--blue); color: var(--blue); }
+.title-edit input { flex: 1; align-self: stretch; min-width: 0; font-size: 22px; font-weight: 700; color: var(--ink); border: 0; background: transparent; padding: 6px 2px; border-radius: 0; }
+.title-edit input:focus { outline: none; }
+#readBookBtn { gap: 6px; flex: none; }
+body.workshop .bookbar .btn-ghost.small { min-height: 48px; }
+/* Phones keep the title readable: "Back to reading" shows its arrow and keeps its name for screen readers. */
+@media (max-width: 599px) {
+  #readBookBtn { padding: 0; min-width: 48px; }
+  #bookMenuBtn { padding: 10px; }
+  #readBookBtn span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
 .btn-ghost.small { min-height: 44px; justify-content: center; padding: 10px 14px; font-size: 15px; white-space: nowrap; }
 .btn-danger { border: 1.5px solid #c9372c; color: #c9372c; background: #fff; border-radius: 12px; padding: 10px 16px; font-weight: 700; }
 .btn-danger.armed { background: #c9372c; color: #fff; }
@@ -161,14 +175,13 @@ body.workshop .thumbs { gap: 16px; }
 .batch-notice { margin: 0 0 12px; font-size: 15px; color: var(--muted); }
 .batch-notice:empty { display: none; }
 #readingTitle { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-body:not(.workshop) .bookbar input,
+body:not(.workshop) .title-edit,
 body:not(.workshop) #edit, body:not(.workshop) #thumbs,
 body:not(.workshop) #compareBtn, body:not(.workshop) .workshop-only,
 body.workshop .reading-only { display: none !important; }
 body.workshop:not(.focus) .workshop-grid { display: grid; gap: 16px; }
 #pagePhotoTools { padding: 16px; border-bottom: 1px solid var(--line); }
 .page-photo-tools button { min-height: 48px; }
-body.focus #pagePhotoTools { display: none !important; }
 .workshop-tools { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
 body.workshop #thumbs { display: grid; grid-template-columns: repeat(auto-fit, minmax(144px, 1fr)); align-content: start; gap: 16px; overflow: visible; }
 body.workshop #thumbs > .thumb { min-width: 0; }
@@ -472,7 +485,7 @@ body.focus .together { display: none !important; }
 [hidden] { display: none !important; }
 @media (hover: hover) {
   .cta:hover { background: #2b3045; }
-  .bookbar input:hover { border-bottom-color: var(--line); }
+  .title-edit:hover:not(:focus-within) { border-bottom-color: var(--muted); }
   .w:hover { background: rgba(47,63,224,.08); }
   .dock > button:hover:not(:disabled), .reading-tools button:hover:not(:disabled) { background: rgba(255,255,255,.12); }
   .dock .read:hover:not(:disabled) { background: #e9ebf0; }
@@ -624,11 +637,11 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
   <!-- Reader view -->
   <section id="app" hidden>
     <div class="bookbar">
-      <button class="keep" id="homeBtn" data-ta="toStart"><svg class="i"><use href="#i-home"/></svg></button>
+      <button class="keep reading-only" id="homeBtn" data-ta="toStart"><svg class="i"><use href="#i-home"/></svg></button>
       <strong id="readingTitle" class="reading-only"></strong>
-      <span class="count keep" id="count"></span>
-      <button id="setBtn" data-ta="adjust"><svg class="i"><use href="#i-aa"/></svg></button>
-      <button class="keep" id="focusBtn"></button>
+      <span class="count keep reading-only" id="count"></span>
+      <button class="reading-only" id="setBtn" data-ta="adjust"><svg class="i"><use href="#i-aa"/></svg></button>
+      <button class="keep reading-only" id="focusBtn"></button>
       <div class="reading-entry reading-only">
         <button class="btn-ghost small" id="editBookBtn" data-t="forAdults" aria-haspopup="menu" aria-expanded="false" aria-controls="editEntry"></button>
         <div class="entry-menu" id="editEntry" role="menu" hidden>
@@ -637,8 +650,8 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
           <button role="menuitem" id="openWorkshopBtn" data-t="editBook"></button>
         </div>
       </div>
-      <button class="btn-ghost small workshop-only" id="readBookBtn" data-t="readBook"></button>
-      <input id="bookTitle" autocomplete="off" data-tp="titlePh">
+      <button class="btn-ghost small workshop-only" id="readBookBtn"><svg class="i" aria-hidden="true"><use href="#i-prev"/></svg><span data-t="readBook"></span></button>
+      <label class="title-edit workshop-only"><input id="bookTitle" autocomplete="off" data-tp="titlePh" data-ta="titlePh"><svg class="i" aria-hidden="true"><use href="#i-pencil"/></svg></label>
       <div class="book-menu workshop-only">
         <button class="btn-ghost small" id="bookMenuBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="bookMenu"><span data-t="bookMenu"></span><svg class="i" aria-hidden="true"><use href="#i-more"/></svg></button>
         <div class="entry-menu" id="bookMenu" role="menu" aria-labelledby="bookMenuBtn" hidden>

@@ -5,6 +5,8 @@ test.beforeEach(async ({ page }) => {
   await fresh(page);
   await seedBooks(page, [{ id: "gate", title: "En original prøvebog", texts: ["En original prøveside."] }]);
   await page.locator(".book").click();
+  // The book opens asynchronously; until then the language switch is still on the shelf and moves while clicked.
+  await expect(page.locator("#app")).toBeVisible();
 });
 
 test("The optional parent gate requires a deliberate mouse hold and cancels a short hold", async ({ page }) => {

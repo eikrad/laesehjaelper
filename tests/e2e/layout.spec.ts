@@ -709,6 +709,42 @@ test("On wide screens the settings open beside the page, which stays visible; ot
   await expect(page.locator("body")).not.toHaveClass(/focus/);
 });
 
+// One header row in the workshop (#206): back to reading, the editable title and the book menu.
+test("The workshop header is one row with Back to reading, the visibly editable title and the book menu", async ({ page }) => {
+  await seedBooks(page, [{ id: "header", title: "En bog med en ret lang titel om pindsvinet", texts: ["Første side."] }]);
+  await page.locator(".book").click();
+  await expect(page.locator("#app")).toBeVisible();   // The language switch moves once the book is open.
+  const { width } = page.viewportSize()!;
+  for (const [ui, back, menu] of [["da", "Tilbage til læsning", "Bog"], ["de", "Zurück zum Lesen", "Buch"], ["en", "Back to reading", "Book"]]) {
+    await setUiLanguage(page, ui);
+    await openWorkshop(page);
+    for (const hidden of ["header.top", "#homeBtn", "#count", "#setBtn", "#focusBtn"]) await expect(page.locator(hidden), hidden).toBeHidden();
+    const row = ["#readBookBtn", "#bookTitle", "#bookMenuBtn"];
+    await expect(page.locator("#readBookBtn")).toHaveAccessibleName(back);
+    await expect(page.locator("#bookMenuBtn")).toHaveAccessibleName(menu);
+    await expect(page.locator("#bookTitle")).toHaveAccessibleName(/./);
+    const boxes = await Promise.all(row.map(async id => (await page.locator(id).boundingBox())!));
+    const middle = (b: { y: number; height: number }) => b.y + b.height / 2;
+    for (const [i, b] of boxes.entries()) {
+      expect(Math.abs(middle(b) - middle(boxes[0])), `${row[i]} on the same row (${ui})`).toBeLessThanOrEqual(4);
+      expect(b.x, `${row[i]} on screen (${ui})`).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width, `${row[i]} on screen (${ui})`).toBeLessThanOrEqual(width);
+      if (i) expect(b.x, `${row[i]} after ${row[i - 1]} (${ui})`).toBeGreaterThanOrEqual(boxes[i - 1].x + boxes[i - 1].width);
+    }
+    expect(boxes[1].width, `room for about ten letters of the title (${ui})`).toBeGreaterThanOrEqual(140);
+    expect((await page.locator(".bookbar").boundingBox())!.y, "nothing above the header row").toBeLessThanOrEqual(24);
+    // Visibly editable: an underline and a pencil, which also puts the cursor in the title.
+    const field = page.locator(".title-edit");
+    expect(await field.evaluate(el => parseFloat(getComputedStyle(el).borderBottomWidth))).toBeGreaterThanOrEqual(1.5);
+    await expect(field.locator("svg")).toBeVisible();
+    await field.locator("svg").click();
+    await expect(page.locator("#bookTitle")).toBeFocused();
+    await expect.poll(() => smallControls(page, 48, ".bookbar"), { message: `header row (${ui})` }).toEqual([]);
+    expect(await sidewaysScroll(page)).toBe(0);
+    await page.click("#readBookBtn");
+  }
+});
+
 test("The workshop puts the page list beside its editor on wide screens and above it on narrow screens", async ({ page }) => {
   await seedBooks(page, [{ id: "workshop", title: "En bog til værkstedet", texts: ["Første prøveside.", "Anden prøveside."] }]);
   await page.locator(".book").click();
@@ -777,9 +813,6 @@ test("Page photo actions fit the workshop in every language and stay out of read
       expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
     }
     await expect(page.locator("#replacePhotoHint")).toHaveCSS("font-size", "14px");
-    await page.click("#focusBtn");
-    await expect(page.locator("#pagePhotoTools")).toBeHidden();
-    await page.click("#focusBtn");
     await page.click("#readBookBtn");
     await expect(page.locator("#pagePhotoTools")).toBeHidden();
     await goShelf(page);
