@@ -13,7 +13,7 @@ Everything runs locally in the browser. No photos are uploaded anywhere.
 ## Features
 
 - Two views: the book page with the new text in its original place, or text only
-- Interface in Danish, German or English
+- Interface in Danish, German or English. On a first start the app takes the device's language (Danish if the device uses none of the three); a language picked under DA / DE / EN is saved and stays. The language of new books follows the app language until an adult picks one, which then stays; each book keeps its own language, and the sample page uses the current book language.
 - Text recognition (Danish, German, English) with [Tesseract.js](https://github.com/naptha/tesseract.js)
 - Syllable splitting based on the Danish, German and English TeX hyphenation patterns ([hyphen](https://github.com/ytiurin/hyphen))
 - Syllables shown in alternating colors (blue/red, colors adjustable), as arcs, or both
