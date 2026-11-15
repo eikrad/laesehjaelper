@@ -287,18 +287,25 @@ body.workshop .workshop-grid > * { min-width: 0; }
 .thumbs .demo { background: #fff; font-size: 12px; color: var(--muted); }
 .thumbs .add { width: 56px; height: 74px; border-radius: 12px; border: 2px dashed #b7bde6; display: grid; place-items: center; color: var(--muted); cursor: pointer; flex: none; }
 
-/* Wide screens (tablets in landscape, laptops): big page-turn buttons at the screen edges, where
-   the thumbs are when holding a tablet by its sides (Hoober & Shank). Hidden when there is no page. */
+/* Turning the page is the child's most frequent action: round buttons of at least 56 px, "next" filled
+   with ink and "previous" outlined (#202). Children miss small targets more often than adults
+   (Anthony et al. 2012, 2013). A disabled button stays in place, clearly inactive. */
+.dock > #prev, .dock > #next, .edgenav { width: 56px; height: 56px; min-width: 56px; padding: 0; border: 0; border-radius: 50%; flex: none; }
+#prev, #edgePrev { background: var(--surface); color: var(--ink); box-shadow: inset 0 0 0 2px var(--ink); }
+#next, #edgeNext { background: var(--ink); color: #fff; box-shadow: 0 6px 16px -8px rgba(23,25,59,.45); }
+#prev:disabled, #next:disabled, #edgePrev:disabled, #edgeNext:disabled { background: var(--surface); color: var(--muted); box-shadow: inset 0 0 0 2px var(--line); opacity: .45; cursor: default; }
+#prev svg.i, #next svg.i, .edgenav svg.i { width: 28px; height: 28px; }
+
+/* Wide screens (tablets in landscape, laptops): the page-turn buttons sit at the screen edges, centred
+   beside the page, where the thumbs are when holding a tablet by its sides (Hoober & Shank). */
 .edgenav { display: none; }
 @media (min-width: 840px) {
   .edgenav {
-    display: grid; place-items: center; position: fixed; top: 50%; transform: translateY(-50%); z-index: 15;
-    left: max(8px, env(safe-area-inset-left)); width: 52px; height: 52px; padding: 0; border: 0; border-radius: 50%;
-    background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1.5px var(--line), 0 6px 16px -8px rgba(23,25,59,.35);
+    display: grid; place-items: center; position: fixed; z-index: 15; width: 64px; height: 64px;
+    top: calc(50% - var(--reading-controls-height, 64px) / 2); transform: translateY(-50%);
+    left: max(8px, env(safe-area-inset-left));
   }
   .edgenav.next { left: auto; right: max(8px, env(safe-area-inset-right)); }
-  .edgenav:disabled { visibility: hidden; }
-  .edgenav svg.i { width: 28px; height: 28px; }
 }
 
 /* Bottom toolbar */
@@ -448,6 +455,8 @@ body.focus .together { display: none !important; }
   .w:hover { background: rgba(47,63,224,.08); }
   .dock > button:hover:not(:disabled), .reading-tools button:hover:not(:disabled) { background: rgba(255,255,255,.12); }
   .dock .read:hover:not(:disabled) { background: #e9ebf0; }
+  #next:hover:not(:disabled), #edgeNext:hover:not(:disabled) { background: #2b3045; }
+  #prev:hover:not(:disabled), #edgePrev:hover:not(:disabled) { background: var(--sky); }
 }
 .practice-dialog { font-family: var(--ui); color: var(--ink); width: min(560px, calc(100vw - 32px)); max-height: 88dvh; overflow: auto; border: 1px solid var(--line); border-radius: 18px; padding: 20px; box-sizing: border-box; }
 .practice-dialog::backdrop { background: #0007; }
@@ -481,12 +490,26 @@ body.reading #editBookBtn { min-height: 48px; white-space: nowrap; padding: 4px 
 body.reading #editBookBtn.holding { background: linear-gradient(to right, #dfe6ff var(--hold-progress, 0%), transparent var(--hold-progress, 0%)); }
 body.reading .pagecard { border-radius: 2px; }
 body.reading #reader.pagemode .pageview { width: min(100%, calc(var(--available-page-height, calc(100dvh - 128px)) * var(--ar, 1))); margin: 0 auto; }
-body.reading .edgenav { display: none; }
 body.focus .bookbar { display: flex !important; min-height: 48px; margin: 0 0 4px; }
 body.focus .bookbar > :not(.keep) { display: none !important; }
 body.focus .bookbar .count { margin-left: auto; }
 body.focus .reader.pagemode { padding: 0; min-height: 0; }
 body.reading.focus .wrap { padding: 0 0 calc(var(--reading-controls-height, 64px) + 4px); }
+/* The calm end of the book after its last page (#202): the title, "The end" and two choices. */
+/* It fills the page area between the book header (48 px and its margins) and the reading bar. */
+.reader:has(> .book-end) { padding: 0; }
+.book-end { box-sizing: border-box; min-height: calc(100dvh - var(--reading-controls-height, 64px) - 64px); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 24px 16px; text-align: center; letter-spacing: normal; word-spacing: normal; }
+.book-end-book { margin: 0; color: var(--muted); font: 600 18px/1.3 var(--ui); overflow-wrap: anywhere; }
+.book-end h2 { margin: 0 0 14px; font: 700 clamp(44px, 9vw, 72px)/1.1 var(--font); color: var(--ink); }
+.book-end button { width: min(100%, 360px); min-height: 56px; display: inline-flex; align-items: center; justify-content: center; font: 700 18px/1.2 var(--ui); }
+.book-end-books { border: 0; border-radius: 14px; background: var(--ink); color: #fff; }
+/* Wide screens: while reading, the page leaves room for the page-turn buttons at the screen edges, so they
+   never cover it, and the reading bar keeps read aloud and line help (#202). With Aa or the reading setup
+   open, the panel takes the right edge, so the bar turns the pages again. */
+@media (min-width: 840px) {
+  body.reading:not(.settings-open) .wrap { padding-left: 84px; padding-right: 84px; }
+  body.reading:not(.settings-open) .dock > #prev, body.reading:not(.settings-open) .dock > #next { display: none; }
+}
 body.focus .reading-activities { display: none; }
 body.focus .pagecard:has(.pagemode) { min-height: 0; }
 @media (max-width: 400px) { body.reading #readingTitle { font-size: 11px; } }

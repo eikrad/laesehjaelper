@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { bookTool, expectSyllableBowsInsideBoxes, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
 
@@ -6,6 +6,18 @@ import { bookTool, expectSyllableBowsInsideBoxes, fixture, fresh, goShelf, openR
 // designed for: phone, tablet portrait, tablet landscape and laptop (see playwright.config.ts).
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
+
+/**
+ * On wide screens, reading leaves room for the page-turn buttons at the screen edges (#202): `box` uses
+ * all the width between them and nothing more.
+ */
+async function expectBetweenEdgeButtons(page: Page, box: { x: number; width: number }, name: string) {
+  const left = (await page.locator("#edgePrev").boundingBox())!, right = (await page.locator("#edgeNext").boundingBox())!;
+  expect(box.x, `${name} starts right after the previous-page button`).toBeGreaterThanOrEqual(left.x + left.width);
+  expect(box.x, `${name} starts right after the previous-page button`).toBeLessThanOrEqual(left.x + left.width + 16);
+  expect(box.x + box.width, `${name} ends right before the next-page button`).toBeLessThanOrEqual(right.x);
+  expect(box.x + box.width, `${name} ends right before the next-page button`).toBeGreaterThanOrEqual(right.x - 16);
+}
 
 test("The reading page uses the available area above one compact helper bar", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
@@ -133,6 +145,9 @@ test("the word playback choice fits every screen in all interface languages", as
 test("adult phrase editing and large reading cues fit every screen and language", async ({ page }, info) => {
   await seedBooks(page, [{ id: "phrases", title: "Prøvebog", texts: ["En lille mus bor her. Solen skinner."] }]);
   await page.locator(".book").click();
+  // The book opens asynchronously. Until it does, the language switch is still on the shelf header
+  // and moves into the closed adult settings while being clicked.
+  await expect(page.locator("#app")).toBeVisible();
   for (const ui of ["da", "de", "en"]) {
     await setUiLanguage(page, ui); await openWorkshop(page);
     await page.click("#phraseEdit");
@@ -476,19 +491,86 @@ test("Swiping turns the page; taps, scrolling and moving text boxes do not", asy
   await expect(count).toHaveText("1 / 2");
 });
 
-test("Page arrows share the bottom bar and leave the reading page unobstructed", async ({ page }) => {
-  await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
-  await expect(page.locator("#edgePrev")).toBeHidden();
-  await expect(page.locator("#edgeNext")).toBeHidden();
-  const prev = page.locator("#prev"), next = page.locator("#next");
+test("Large page-turn buttons sit below the page on narrow screens and at the screen edges on wide ones, never over the page", async ({ page }) => {
+  await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg", "side-da.jpg"]);
+  // Only the buttons in use are shown; the others are not in the accessibility tree.
+  const prev = page.getByRole("button", { name: "Forrige side", exact: true });
+  const next = page.getByRole("button", { name: "Næste side", exact: true });
+  const viewport = page.viewportSize()!, wide = viewport.width >= 840;
   await expect(prev).toBeDisabled();
-  const box = (await next.boundingBox())!, paper = (await page.locator(".pageview").boundingBox())!;
-  expect(box.y).toBeGreaterThanOrEqual(paper.y + paper.height);
+  expect(Number(await prev.evaluate(b => getComputedStyle(b).opacity)), "a disabled button is clearly inactive").toBeLessThan(.6);
   await next.click();
-  await expect(page.locator("#count")).toHaveText("2 / 2");
-  await expect(next).toBeDisabled();
+  await expect(page.locator("#count")).toHaveText("2 / 3");
+  await expect(prev).toBeEnabled();
+  /** The buttons are large, on screen and beside or below the page area `free`, never over it. */
+  const expectBesidePage = async (free: Locator) => {
+    const area = (await free.boundingBox())!;
+    for (const [name, button] of [["previous", prev], ["next", next]] as const) {
+      const b = (await button.boundingBox())!;
+      expect(Math.min(b.width, b.height), `${name}: at least 56 px`).toBeGreaterThanOrEqual(56);
+      expect(b.x, name).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width, name).toBeLessThanOrEqual(viewport.width);
+      expect(b.y + b.height, `${name} on screen`).toBeLessThanOrEqual(viewport.height);
+      const covers = b.x < area.x + area.width && area.x < b.x + b.width && b.y < area.y + area.height && area.y < b.y + b.height;
+      expect(covers, `${name} covers no part of the page`).toBe(false);
+    }
+  };
+  await expect(async () => {
+    await expectBesidePage(page.locator("#reader .pageview"));
+    const paper = (await page.locator("#reader .pageview").boundingBox())!;
+    const p = (await prev.boundingBox())!, n = (await next.boundingBox())!;
+    if (wide) {
+      // Where the thumbs rest when holding a tablet by its sides (Hoober & Shank).
+      expect(p.x, "previous at the left screen edge").toBeLessThanOrEqual(24);
+      expect(n.x + n.width, "next at the right screen edge").toBeGreaterThanOrEqual(viewport.width - 24);
+      for (const b of [p, n]) expect(Math.abs(b.y + b.height / 2 - (paper.y + paper.height / 2)), "vertically centred beside the page").toBeLessThan(paper.height / 6);
+    } else {
+      for (const b of [p, n]) expect(b.y, "below the page").toBeGreaterThanOrEqual(paper.y + paper.height);
+    }
+  }).toPass({ timeout: 5000 });
+  // "Next" is filled with ink, "previous" is light with an outline.
+  const style = (l: Locator) => l.evaluate(b => { const c = getComputedStyle(b); return { bg: c.backgroundColor, outline: c.boxShadow !== "none" || parseFloat(c.borderTopWidth) > 0 }; });
+  const brightness = (c: string) => { const [r, g, b, a = 1] = c.match(/[\d.]+/g)!.map(Number); return a === 0 ? 765 : r + g + b; };
+  const [p, n] = [await style(prev), await style(next)];
+  expect(brightness(n.bg), "next is filled").toBeLessThan(200);
+  expect(brightness(p.bg), "previous is not filled").toBeGreaterThan(600);
+  expect(p.outline, "previous has an outline").toBe(true);
+  // The reading bar keeps read aloud and line help.
+  await expect(page.locator("#readBtn")).toBeVisible();
+  await expect(page.locator("#guideBtn")).toBeVisible();
+  // With Aa open, pages can still be turned.
+  await page.click("#setBtn");
+  await expect(prev).toBeInViewport();
+  await expect(next).toBeInViewport();
+  await page.click('#viewSet button[data-v="tekst"]');
+  await page.click("#setClose");
+  // On wide screens the text view leaves room for the buttons at the edges too.
+  // (Narrow screens scroll a long text behind the fixed bar, as before.)
+  if (wide) await expect(async () => { await expectBesidePage(page.locator("#reader")); }).toPass({ timeout: 5000 });
   await prev.click();
-  await expect(page.locator("#count")).toHaveText("1 / 2");
+  await expect(page.locator("#count")).toHaveText("1 / 3");
+});
+
+test("The end of the book fits the screen without scrolling, with both choices on screen", async ({ page }) => {
+  await seedBooks(page, [{ id: "end-fits", title: "En prøvebog med en ret lang titel til slutningen", texts: ["Den sidste side."] }]);
+  await page.locator(".book").click();
+  await page.getByRole("button", { name: "Næste side", exact: true }).click();
+  const end = page.getByRole("region", { name: "Slut" });
+  await expect(end).toBeVisible();
+  const viewport = page.viewportSize()!;
+  await expect(async () => {
+    const bar = (await page.locator("#dock").boundingBox())!;
+    for (const name of ["Tilbage til dine bøger", "Læs igen fra starten"]) {
+      const b = (await end.getByRole("button", { name, exact: true }).boundingBox())!;
+      expect(b.height, name).toBeGreaterThanOrEqual(56);
+      expect(b.x, name).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width, name).toBeLessThanOrEqual(viewport.width);
+      expect(b.y + b.height, `${name} above the reading bar`).toBeLessThanOrEqual(bar.y);
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollHeight), "no scrolling").toBeLessThanOrEqual(viewport.height + 1);
+  }).toPass({ timeout: 5000 });
+  // The title is set like the rest of the screen, not with the reader's letter and word spacing.
+  expect(await end.locator(".book-end-book").evaluate(el => getComputedStyle(el).wordSpacing)).toBe("0px");
 });
 
 test("In text view on wide screens the photo sits beside the text, otherwise above it", async ({ page }) => {
@@ -512,7 +594,8 @@ test("In text view on wide screens the photo sits beside the text, otherwise abo
   await expect(photo).toBeHidden();
   const focusedCard = (await page.locator(".pagecard").boundingBox())!, focusedText = (await text.boundingBox())!;
   expect(focusedText.width, "reading-mode text uses the whole card").toBeGreaterThan(focusedCard.width - 4);
-  expect(focusedCard.width, "reading mode uses the screen width").toBeGreaterThan(page.viewportSize()!.width - 4);
+  if (page.viewportSize()!.width >= 840) await expectBetweenEdgeButtons(page, focusedCard, "reading mode");
+  else expect(focusedCard.width, "reading mode uses the screen width").toBeGreaterThan(page.viewportSize()!.width - 4);
   await page.click("#focusBtn");
   // Without the photo, the text uses the whole card.
   await toggleReadingSetup(page);
@@ -548,8 +631,8 @@ test("On wide screens the settings open beside the page, which stays visible; ot
   await page.click("#focusBtn");
   await expect(panel).not.toHaveClass(/open/);
   await expect(page.locator("body")).not.toHaveClass(/settings-open/);
-  const focusedCard = (await page.locator(".pagecard").boundingBox())!;
-  expect(focusedCard.width, "reading mode does not reserve an invisible settings panel").toBeGreaterThan(width - 4);
+  // Reading mode reserves no invisible settings panel: the page uses all the room between the page-turn buttons.
+  await expectBetweenEdgeButtons(page, (await page.locator(".pagecard").boundingBox())!, "reading mode");
   await page.keyboard.press("Escape");
   await expect(page.locator("body")).not.toHaveClass(/focus/);
 });
