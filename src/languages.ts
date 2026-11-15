@@ -1,16 +1,13 @@
-// The app language and the book language (#212). On a first start both come from the device, so
-// a parent's first book is recognised in their language without noticing a setting. A language the
-// adult picks is a saved preference: the app language is saved with the settings and the device is
-// not asked again, and the book language stays as picked. Until a book language has been picked, it
-// follows the app language. Settings saved by earlier versions stay exactly as they were.
+// The app language and the book language (#212) are separate settings. On a first start both are
+// preselected from the device, so a parent's first book is set to their language. After that each
+// is changed only by hand and saved: the app language under DA / DE / EN, the language of new books
+// on the start screen before taking photos. The device is not asked again, and changing one never
+// changes the other. Settings saved by earlier versions stay exactly as they were.
 
 export const LANGUAGES = ["da", "de", "en"] as const;
 export type Language = typeof LANGUAGES[number];
 
-/** Whether the book language follows the app language ("follow") or was picked by an adult ("chosen"). */
-export type LangChoice = "follow" | "chosen";
-
-export interface LanguageSettings { ui: string; lang: string; langChoice: LangChoice }
+export interface LanguageSettings { ui: Language; lang: Language }
 
 const known = (code: unknown): Language | undefined =>
   LANGUAGES.find(l => typeof code === "string" && code.toLowerCase().split("-")[0] === l);
@@ -24,23 +21,11 @@ export function deviceLanguage(preferred: readonly string[]): Language {
   return "da";
 }
 
-/** App and book language at start: from the device on a first start (`saved` is null), otherwise as saved. */
+/** App language and language of new books at start: from the device on a first start (`saved` is null), otherwise as saved. */
 export function startLanguages(saved: Record<string, unknown> | null, device: readonly string[]): LanguageSettings {
   if (!saved) {
     const lang = deviceLanguage(device);
-    return { ui: lang, lang, langChoice: "follow" };
+    return { ui: lang, lang };
   }
-  // Earlier versions had no following book language: their book language counts as chosen.
-  const langChoice: LangChoice = saved.langChoice === "follow" ? "follow" : "chosen";
-  return { ui: known(saved.ui) ?? "da", lang: known(saved.lang) ?? "da", langChoice };
-}
-
-/** The app language changed: the book language follows it, unless an adult picked one. */
-export function afterUiChange(s: LanguageSettings, ui: string): LanguageSettings {
-  return { ...s, ui, lang: s.langChoice === "follow" ? ui : s.lang };
-}
-
-/** An adult picked the book language: it stays as picked. */
-export function chooseBookLanguage(s: LanguageSettings, lang: string): LanguageSettings {
-  return { ...s, lang, langChoice: "chosen" };
+  return { ui: known(saved.ui) ?? "da", lang: known(saved.lang) ?? "da" };
 }
