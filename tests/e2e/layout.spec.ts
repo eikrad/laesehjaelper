@@ -401,6 +401,30 @@ test("The crop footer fits Skip, Whole photo and Use in every language, also on 
   }
 });
 
+test("The undo message for a deleted page fits the screen with a large Undo button in every language", async ({ page }) => {
+  await seedBooks(page, [{ id: "undo-fit", title: "Sider", texts: ["En side.", "To sider.", "Tre sider."] }]);
+  await page.locator(".book").click();
+  await openWorkshop(page);
+  const { width } = page.viewportSize()!;
+  for (const lang of ["de", "da", "en"]) {
+    await setUiLanguage(page, lang);
+    await page.locator(".thumb").first().locator(".x").click();
+    const button = page.locator("#toast button");
+    await expect(button).toBeVisible();
+    await expect(async () => {
+      const toast = (await page.locator("#toast").boundingBox())!, b = (await button.boundingBox())!;
+      expect(toast.x, `toast (${lang})`).toBeGreaterThanOrEqual(0);
+      expect(toast.x + toast.width, `toast (${lang})`).toBeLessThanOrEqual(width);
+      expect(b.height, `Undo (${lang})`).toBeGreaterThanOrEqual(44);
+      expect(b.width, `Undo (${lang})`).toBeGreaterThanOrEqual(44);
+      expect(b.x + b.width, `Undo inside the toast (${lang})`).toBeLessThanOrEqual(toast.x + toast.width);
+    }).toPass({ timeout: 2000 });
+    expect(await sidewaysScroll(page)).toBe(0);
+    await button.click();   // Bring the page back for the next language.
+    await expect(page.locator("#thumbs .thumb")).toHaveCount(3);
+  }
+});
+
 test("The automatic curved frame and its controls fit the crop photo", async ({ page }) => {
   await page.setInputFiles("#file", fixture("foto-curved-auto.jpg"));
   await expect(page.locator("#cropMsg")).toContainText("Siden er fundet", { timeout: 120_000 });
