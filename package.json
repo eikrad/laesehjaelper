@@ -31,13 +31,13 @@
   "private": true,
   "type": "module",
   "devDependencies": {
-    "@biomejs/biome": "2.6.6",
+    "@biomejs/biome": "2.6.7",
     "@playwright/test": "^1.65.0",
     "@types/node": "^26.6.6",
     "@vitest/coverage-v8": "^5.1.0",
     "dictionary-da": "^6.0.0",
-    "fake-indexeddb": "^6.2.7",
-    "monocart-coverage-reports": "^3.2.0",
+    "fake-indexeddb": "^6.2.8",
+    "monocart-coverage-reports": "^3.2.1",
     "typescript": "^7.0.2",
     "vitest": "^5.0.5",
     "vitest-monocart-coverage": "^5.0.0"
