@@ -1,16 +1,16 @@
 import { expect, test } from "./fixtures";
-import { fresh, openWorkshop, setUiLanguage } from "./helpers";
+import { bookAction, fresh, openWorkshop, setUiLanguage } from "./helpers";
 
-test("Adults can open five short reading tips in the workshop and leave them out of reading", async ({ page }) => {
+test("Adults can open five short reading tips from the book menu and leave them out of reading", async ({ page }) => {
   await fresh(page);
   await page.click("#demoBtn");
   const tips = page.locator("#adultTips");
   await expect(tips).toBeHidden();
   await openWorkshop(page);
-  const summary = tips.locator("summary");
-  await expect(summary).toHaveText("Gode råd til fælles læsning", { timeout: 1500 });
-  await expect(tips.locator("ul")).toBeHidden();
-  await summary.click();
+  await expect(tips, "no tips section on the workshop page").toBeHidden();
+  await bookAction(page, "tipsBtn");
+  await expect(tips).toBeVisible();
+  await expect(tips).toHaveAccessibleName("Gode råd til fælles læsning");
   await expect(tips.locator("p")).toHaveText("Dit barn bliver bedre til at læse ved at øve sig.");
   await expect(tips.locator("li")).toHaveText([
     "Lad barnet læse for dig, og lyt.",
@@ -19,14 +19,15 @@ test("Adults can open five short reading tips in the workshop and leave them out
     "Ros indsatsen frem for hurtig eller fejlfri læsning.",
     "Tal om historien. Spørg fx: Hvad tror du, der sker nu?",
   ]);
-  await summary.press("Enter");
-  await expect(tips.locator("ul")).toBeHidden();
-  await summary.press("Enter");
-  await expect(tips.locator("ul")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(tips).toBeHidden();
+  await expect(page.locator("#bookMenuBtn")).toBeFocused();
+  await bookAction(page, "tipsBtn");
+  await tips.getByRole("button", { name: "Luk" }).click();
+  await expect(tips).toBeHidden();
   await page.click("#readBookBtn");
   await expect(tips).toBeHidden();
-  await page.click("#focusBtn");
-  await expect(tips).toBeHidden();
+  await expect(page.locator("#bookMenuBtn")).toBeHidden();
 });
 
 for (const [ui, title, practice, points] of [
@@ -55,9 +56,9 @@ for (const [ui, title, practice, points] of [
   await context.setOffline(true);
   await page.reload();
   const tips = page.locator("#adultTips");
-  await expect(tips.locator("summary")).toHaveText(title, { timeout: 1500 });
-  await expect(tips.locator("ul")).toBeHidden();
-  await tips.locator("summary").click();
+  await expect(tips).toBeHidden();
+  await bookAction(page, "tipsBtn");
+  await expect(tips).toHaveAccessibleName(title);
   await expect(tips.locator("p")).toHaveText(practice);
   await expect(tips.locator("li")).toHaveText([...points]);
 });

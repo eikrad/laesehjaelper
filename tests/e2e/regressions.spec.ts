@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
 import type { Para } from "../../src/types";
-import { bookTool, fresh, goShelf, openBookOptions, toggleReadingSetup } from "./helpers";
+import { checkText, fresh, goShelf, openBookOptions, toggleReadingSetup } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
@@ -27,7 +27,7 @@ async function openStoredBook(page: Page, items: StoredPage[]) {
   }, items);
   await page.reload(); await page.locator(".book").click();
   await expect(page.locator("#text")).toHaveValue(items[0].text);
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
 }
 
 test.beforeEach(async ({ page }) => { await fresh(page); });

@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, fixture, fresh, goShelf, openBookOptions, openRecognisedBook, openWorkshop, toggleReadingSetup, waitForText } from "./helpers";
+import { addPhotos, checkText, fixture, fresh, goShelf, openBookOptions, openRecognisedBook, openWorkshop, readBook, toggleReadingSetup, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -19,7 +19,7 @@ test("Photo of a page on a table: detect and straighten the page", async ({ page
 test("Crops the page again and reruns text recognition", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   await page.click("#recropBtn");
   await expect(page.locator("#crop")).toBeVisible();
   await expect(page.locator("#cropMsg")).not.toContainText("…", { timeout: 120_000 });
@@ -64,13 +64,13 @@ test("Font, syllable hyphens in the book and reading mode", async ({ page }) => 
   await page.selectOption("#font", { label: "OpenDyslexic" });
   expect(await page.locator("#reader").evaluate(el => getComputedStyle(el).fontFamily)).toContain("OpenDyslexic");
   await toggleReadingSetup(page);
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   await page.locator("#text").fill("Vi går i sko-le.");
   await expect(page.locator('#reader .w[data-word="sko-le"]')).toHaveCount(1);
   await openBookOptions(page);
   await page.click("#hyphSet button[data-v=bog]");
   await expect(page.locator('#reader .w[data-word="skole"] .s')).toHaveText(["sko", "le"]);
-  await page.locator("#bookOptions > summary").click();
+  await readBook(page);
   await page.click("#focusBtn");
   await expect(page.locator("body")).toHaveClass(/focus/);
   await expect(page.locator(".thumbs")).toBeHidden();
@@ -83,14 +83,14 @@ test("Workshop tools remain available behind the quiet reading entry", async ({ 
   await expect(page.locator("#bookMenuBtn")).toBeHidden();
   await expect(page.locator("#thumbs")).toBeHidden();
   await openWorkshop(page);
-  for (const id of ["#reader", "#dock", "#thumbs", "#checkTextBtn", "#exportBtn", "#delBookBtn", "#text"]) await expect(page.locator(id), id).toBeVisible();
+  for (const id of ["#reader", "#dock", "#thumbs", "#edit", "#bookMenuBtn", "#text"]) await expect(page.locator(id), id).toBeVisible();
   await page.click("#readBookBtn");
-  for (const id of ["#bookTitle", "#thumbs", "#checkTextBtn", "#exportBtn", "#delBookBtn", "#edit"]) await expect(page.locator(id), id).toBeHidden();
+  for (const id of ["#bookTitle", "#thumbs", "#bookMenuBtn", "#edit"]) await expect(page.locator(id), id).toBeHidden();
 });
 
 test("Opening another book resets its editing tools", async ({ page }) => {
   await page.click("#demoBtn");
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   await expect(page.locator("#edit")).toBeVisible();
   await goShelf(page);
   await expect(page.locator("#start")).toBeVisible();
@@ -102,34 +102,31 @@ test("Opening another book resets its editing tools", async ({ page }) => {
 
 test("Closing the text editor also ends moving text boxes", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   await page.click("#moveBtn");
   await expect(page.locator("#reader .grip").first()).toBeVisible();
   await page.locator("#edit summary").click();
-  await expect(page.locator("#edit")).toBeHidden();
+  await expect(page.locator("#text")).toBeHidden();
+  await expect(page.locator("#edit summary"), "the heading stays to open the editor again").toBeVisible();
   await expect(page.locator("#reader .grip")).toHaveCount(0);
   await expect(page.locator("#reader")).not.toHaveClass(/moving/);
 });
 
-test("Reading mode keeps page navigation and hides book preparation", async ({ page }) => {
+test("Reading mode keeps page navigation and hides book preparation; the workshop offers no reading mode", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
-  await openWorkshop(page);
   await page.click("#focusBtn");
   await expect(page.locator("#reader")).toBeVisible();
   await expect(page.locator("#readBtn")).toBeVisible();
   await expect(page.locator("#focusBtn")).toBeVisible();
-  for (const id of ["#bookTitle", "#exportBtn", "#editPagesBtn", "#home", "#edit", "#thumbs", "#setBtn"])
+  for (const id of ["#bookTitle", "#bookMenuBtn", "#editPagesBtn", "#home", "#edit", "#thumbs", "#setBtn", "#editBookBtn"])
     await expect(page.locator(id), id).toBeHidden();
   for (const id of ["#prev", "#next"]) await expect(page.locator(id)).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.locator("#bookTitle")).toBeVisible();
-  // Page-management controls must also disappear if editing was already active.
+  await expect(page.locator("#editBookBtn")).toBeVisible();
+  // Reading mode is the child's; the workshop's one header row leaves it out (#206).
   await openWorkshop(page);
-  await expect(page.locator("#delBookBtn")).toBeVisible();
-  await page.click("#focusBtn");
-  await expect(page.locator("#delBookBtn")).toBeHidden();
-  await page.keyboard.press("Escape");
-  await expect(page.locator("#delBookBtn")).toBeVisible();
+  await expect(page.locator("#bookMenuBtn")).toBeVisible();
+  await expect(page.locator("#focusBtn")).toBeHidden();
 });
 
 test("Reading aloud highlights the current word", async ({ page }) => {
@@ -172,7 +169,7 @@ test("A broken image file displays a clear message", async ({ page }) => {
 
 test("Preserves corrections when switching the syllable-hyphen setting", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   const t = await page.locator("#text").inputValue();
   await page.locator("#text").fill(t.replace("Pindsvinet", "Pindsvinet Bob-by"));
   await expect(page.locator('#reader .w[data-word="Bob-by"]')).toHaveCount(1);
