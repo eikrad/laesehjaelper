@@ -14,6 +14,7 @@ import { turn } from "./pageturn";
 import { resumePage } from "./bookshelf";
 import { createLibrary } from "./library";
 import { PhotoBatches } from "./photo-batch";
+import { createRecognitionScheduler } from "./recognition-scheduler";
 import { insertIndex, selectedIndex, type Placement } from "./pagelist";
 import { createParentGate } from "./hold";
 import { screenWakeLock } from "./wakelock";
@@ -553,10 +554,10 @@ const Lib = { detectFrame, warpPage, orderCorners };
   }
   function releasePageImages(pg: Page) { releaseImage(pg.img); releaseImage(pg.clean); }
   /** Pages waiting for or in recognition. They outlive leaving their book, and reopening it reuses them. */
-  function recognitionPages(): Page[] { return [active, pendingPage, ...queue].filter((pg): pg is Page => !!pg && !pg.batchDraft); }
+  function recognitionPages(): Page[] { return recognition.pages(); }
   function newBook(demo = false) {
     closeEditEntry(); showCheck(false); hideUndo();
-    // Pages still to be recognised keep their images; runQueue() lets them go when they are done.
+    // Pages still to be recognised keep their images; the scheduler lets them go when they are done.
     // Unsaved pages keep theirs too: reopening the book shows them again.
     const recognising = new Set(recognitionPages());
     pages.forEach(pg => { if (!recognising.has(pg) && !library.isUnsaved(pg)) releasePageImages(pg); });
@@ -640,8 +641,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
     pages.push(...ids.map(id => kept.get(id) ?? pageFromRecord(byId.get(id)!)));
     cur = resumePage(b.lastPage, pages.length);
     if (route.pageId) { const i = pages.findIndex(pg => pg.id === route.pageId); if (i >= 0) cur = i; }
-    pages.filter(p => p.status === "wait" && !queue.includes(p)).forEach(p => queue.push(p));
-    showView(route.view); render(); runQueue();
+    pages.filter(p => p.status === "wait").forEach(p => recognition.enqueue(p));
+    showView(route.view); render(); recognition.run();
     // Undo, also after a reload, for the rest of the time (the same page object in this session).
     const open = deletions.undo;
     if (open) {
@@ -691,8 +692,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     finishDeletion();   // Only the latest deletion can be undone.
     pg.deleted = deletionMark(pages.map(p => p.id), i, Date.now());
     pages.splice(i, 1);
-    const waiting = queue.indexOf(pg);
-    if (waiting >= 0) queue.splice(waiting, 1);
+    recognition.discard(pg);
     if (i === 0) book.cover = null;
     cur = Math.min(cur, pages.length - 1);
     offerUndo(pg, book.id);
@@ -718,8 +718,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
     pages.splice(at, 0, pg);
     if (at === 0) book.cover = null;
     cur = at;
-    if (pg.status === "wait" && !queue.includes(pg)) queue.push(pg);
-    render(); saveBook([pg]); runQueue();
+    if (pg.status === "wait") recognition.enqueue(pg);
+    render(); saveBook([pg]); recognition.run();
   }
   /** The undo time is over, or another page was deleted: the page goes for good. */
   function finishDeletion() {
@@ -1477,7 +1477,15 @@ const Lib = { detectFrame, warpPage, orderCorners };
     });
   }
 
-  const queue: Page[] = [];
+  const recognition = createRecognitionScheduler<Page>({
+    ready: pg => !isRemoved(pg) && pg.status === "wait",
+    process: pg => recognise(pg),
+    released: pg => {
+      // No attempt remains in the scheduler. An open book, an unsaved page or Undo may still own it.
+      if (!pages.includes(pg) && !library.isUnsaved(pg) && pg !== undoable?.pg) releasePageImages(pg);
+    },
+    failed: e => console.error(e),
+  });
   type PhotoInput = { source: Blob | HTMLCanvasElement; start: Frame | null };
   type PreparedPhoto = { canvas: HTMLCanvasElement; start: Frame | null };
   type PhotoAcceptance = (photo: HTMLCanvasElement, crop: CropResult) => Promise<void>;
@@ -1536,12 +1544,12 @@ const Lib = { detectFrame, warpPage, orderCorners };
       const pg: Page = { id: owner.demo ? undefined : uid(), bookId: !owner.demo ? owner.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: target?.lang || S.lang, text: "", status: "wait", progress: 0 };
       // Pages may have been deleted or moved since the last photo: place it by the pages themselves.
       const at = insertIndex(pages, added, target, placement);
-      pages.splice(at, 0, pg); added.push(pg); queue.push(pg);
+      pages.splice(at, 0, pg); added.push(pg); recognition.enqueue(pg);
       if (at === 0) owner.cover = null;
       cur = selectedIndex(pages, added[0], cur); render();
       // Capture the accepted page and book record before yielding to navigation.
       await saveBook([pg]);
-      runQueue();
+      recognition.run();
     }, list.map(source => ({ source, start: null })));
     if (result.status === "cancelled") return;
     // A new book whose photos were all cancelled is not kept: back to where the adult started (#205).
@@ -1945,7 +1953,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     Object.assign(pg, { canvas, corners, ocrRegions: undefined, img: canvas.toDataURL("image/jpeg", 0.88), status: "wait", progress: 0, paras: null, clean: null, inputBlob: null, cleanBlob: null }, change);
     if (pg === pages[0] && book) book.cover = null;
     savePage(pg); saveBook();
-    queue.push(pg); render(); runQueue();
+    recognition.enqueue(pg); render(); recognition.run();
   }
 
   $<HTMLButtonElement>("recropBtn").onclick = async () => {
@@ -1968,16 +1976,9 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     releaseImage(pg.clean);
     Object.assign(pg, { status: "wait", progress: 0, paras: null, clean: null, cleanBlob: null });
     savePage(pg);
-    queue.push(pg); render(); runQueue();
+    recognition.enqueue(pg); render(); recognition.run();
   }
 
-  // Both single-page and book jobs share one worker at a time, including their two OCR passes.
-  let recognitionPipeline: Promise<unknown> = Promise.resolve();
-  function inRecognitionPipeline<T>(process: () => Promise<T>): Promise<T> {
-    const job = recognitionPipeline.then(process);
-    recognitionPipeline = job.catch(() => {});
-    return job;
-  }
   const recognitionStamp = (pg: Page) => JSON.stringify([pg.changeVersion, pg.lang, pg.status, pg.text, pg.rawText, pg.paras, pg.corners, pg.ocrRegions, pg.phraseCues]);
 
   async function reprocessBook(include: boolean, detect: boolean) {
@@ -1988,7 +1989,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
       progress: state => bookRecognition.progress(state),
       process: async job => {
         let fallback = false;
-        const outcome = await inRecognitionPipeline(async (): Promise<RecognitionOutcome> => {
+        const outcome = await recognition.exclusive(async (): Promise<RecognitionOutcome> => {
           const pg = job.pg;
           const valid = () => book === owner && pages.includes(pg) && !isRemoved(pg) && recognitionStamp(pg) === job.stamp && pg.revision === job.revision && pg.canvas === job.canvas && pg.inputBlob === job.input && pg.photoBlob === job.photo;
           if (!valid()) return "changed";
@@ -2137,24 +2138,6 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     if (pages[cur] === pg) render(); else renderThumbStatus(pg);
   }
 
-  let running = false;
-  let pendingPage: Page | null = null;
-  async function runQueue() {
-    if (running) return; running = true;
-    while (queue.length) {
-      const pg = queue.shift()!;
-      // Skip deleted pages, and pages already recognised from an earlier entry in the queue.
-      if (!isRemoved(pg) && pg.status === "wait") {
-        pendingPage = pg;
-        await inRecognitionPipeline(() => recognise(pg));
-        pendingPage = null;
-      }
-      // A page of a book that is no longer open, with no work left: nothing shows it any more.
-      if (!pages.includes(pg) && !queue.includes(pg) && !library.isUnsaved(pg) && pg !== undoable?.pg) releasePageImages(pg);
-    }
-    running = false;
-  }
-
   // ---------- Reading aloud ----------
   const synth = window.speechSynthesis;
   const SPEECH: Record<string, string> = { da: "da-DK", de: "de-DE", en: "en-GB" };
@@ -2243,7 +2226,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   function relang(pg: Page) {
     touchPage(pg);
     pg.lang = S.lang;
-    if (pg.canvas || pg.inputBlob) { pg.status = "wait"; pg.progress = 0; pg.cleanBlob = null; queue.push(pg); render(); runQueue(); }
+    if (pg.canvas || pg.inputBlob) { pg.status = "wait"; pg.progress = 0; pg.cleanBlob = null; recognition.enqueue(pg); render(); recognition.run(); }
     else { if (Object.values(DEMO).includes(pg.text)) pg.text = DEMO[pg.lang]; savePage(pg); render(); }
   }
 
