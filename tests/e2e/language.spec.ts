@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { fresh, openBookOptions, readBook, seedBooks, setUiLanguage } from "./helpers";
+import { fresh, goShelf, openBookOptions, openRecognisedBook, readBook, seedBooks, setUiLanguage, storedPages } from "./helpers";
 
 for (const [language, original, text, word, syllables, speechLanguage] of [
   ["da", "en", "Hunden sover.", "Hunden", ["Hun", "den"], "da-DK"],
@@ -85,5 +85,34 @@ test.describe("On a German device", () => {
     await expect(page.locator('#langStart button[data-v="da"]')).toHaveClass(on);
     await page.click('#uiLang button[data-v="de"]');
     await expect(page.locator('#langStart button[data-v="da"]')).toHaveClass(on);
+  });
+});
+
+test.describe("The book language on the start screen", () => {
+  test.use({ serviceWorkers: "block" });   // The held text recognition must not come from the service worker's cache.
+
+  test("only sets the language of new books, not of the book read last (#241)", async ({ page }) => {
+    // Text recognition never finishes: a page that is recognised again stays in recognition.
+    await page.route("**/tesseract.min.js", route => route.fulfill({ contentType: "text/javascript", body: `
+      window.Tesseract = { createWorker: async () => ({ setParameters: async () => {}, recognize: () => new Promise(() => {}), terminate: async () => {} }) };
+    ` }));
+    await page.addInitScript(() => {
+      const w = window as unknown as { __speechLanguage?: string };
+      Object.defineProperty(window, "speechSynthesis", { configurable: true, value: {
+        speaking: false, getVoices: () => [], cancel: () => {},
+        speak: (u: SpeechSynthesisUtterance) => { w.__speechLanguage = u.lang; },
+      } });
+    });
+    await fresh(page);
+    await openRecognisedBook(page, ["side-da.jpg"]);
+    const before = await storedPages(page);
+    await goShelf(page);
+    await page.click('#langStart button[data-v="de"]');
+    await expect(page.locator('#langStart button[data-v="de"]')).toHaveClass(/\bon\b/);
+    await page.locator(".book").click();
+    await expect(page.locator("#reader .w").first()).toBeVisible({ timeout: 3000 });   // Not recognised again.
+    await page.click("#readBtn");
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __speechLanguage?: string }).__speechLanguage)).toBe("da-DK");
+    expect(await storedPages(page)).toEqual(before);
   });
 });
