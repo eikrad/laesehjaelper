@@ -106,13 +106,13 @@ test("An accepted first photo survives Back during storage and reload", async ({
   await expect(page.locator("#count")).toHaveText("1 / 1");
 });
 
-for (const detection of ["loading", "ready"]) {
+for (const detection of ["loading", "ready", "waiting for suggestion", "waiting for straightening"]) {
   test(`A newer photo selection replaces an unfinished crop while detection is ${detection}`, async ({ page }) => {
     await fresh(page);
     let finishDetection!: () => void;
     const detectionReady = new Promise<void>(resolve => { finishDetection = resolve; });
     await page.route("**/opencv.js", async route => {
-      if (detection === "loading") await detectionReady;
+      if (detection !== "ready") await detectionReady;
       await route.abort();
     });
     await page.route("**/tesseract.min.js", route => route.fulfill({ contentType: "text/javascript", body:
@@ -123,6 +123,17 @@ for (const detection of ["loading", "ready"]) {
     await expect(page.locator("#crop")).toBeVisible();
     await expect(page.locator("#cropMsg")).toContainText("1 af 2");
     if (detection === "ready") await expect(page.locator("#cropMsg")).not.toContainText("…");
+    if (detection === "waiting for straightening") {
+      const box = (await page.locator("#cropStage .h").first().boundingBox())!;
+      const x = box.x + box.width / 2, y = box.y + box.height / 2;
+      await page.mouse.move(x, y); await page.mouse.down();
+      await page.mouse.move(x + 30, y + 35, { steps: 4 }); await page.mouse.up();
+    }
+    if (detection.startsWith("waiting")) {
+      await page.click("#cropOk");
+      await expect(page.locator("#cropOk")).toBeDisabled();
+      await expect(page.locator("#cropCancel")).toBeDisabled();
+    }
     const bytes = [...await readFile(fixture("side-illustration.jpg"))];
     await page.evaluate(bytes => {
       const data = new DataTransfer();
