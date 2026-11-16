@@ -114,6 +114,10 @@ export async function toggleReadingSetup(page: Page) {
 /** Interface language is on the shelf and in adult app settings, outside ordinary reading. */
 export async function setUiLanguage(page: Page, language: string) {
   const selector = `#uiLang button[data-v="${language}"]`;
+  // A book that was just tapped records its link at once but opens asynchronously; meanwhile the
+  // language switch is still on the shelf header and moves into the closed adult settings when the
+  // book appears. Wait for the book first, so the switch is looked for where it will stay.
+  if (/^#(read|edit)\//.test(await page.evaluate(() => location.hash))) await bookOpen(page);
   if (await page.locator(selector).isVisible()) { await page.click(selector); return; }
   const wasOpen = await page.locator("#settings").evaluate(el => el.classList.contains("open"));
   const wasAdult = await page.locator("#settings").evaluate(el => el.classList.contains("adult-setup"));

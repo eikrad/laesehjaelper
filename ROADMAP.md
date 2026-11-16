@@ -54,7 +54,6 @@ Last reviewed: 15 November 2026.
 | [#187](https://github.com/eikrad/laesehjaelper/issues/187) | Optional local neural speech across browsers and devices | Reading aids | |
 | [#168](https://github.com/eikrad/laesehjaelper/issues/168) | Detect and split double-page spreads | Photo to book page | |
 | [#167](https://github.com/eikrad/laesehjaelper/issues/167) | Import scanned books from multipage PDFs | Photo to book page | After #168 |
-| [#241](https://github.com/eikrad/laesehjaelper/issues/241) | Bug: picking the book language on the start screen changes the last opened book | Photo to book page | |
 
 ## Ideas
 
