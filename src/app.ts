@@ -13,6 +13,7 @@ import { swipeDirection } from "./swipe";
 import { turn } from "./pageturn";
 import { resumePage } from "./bookshelf";
 import { createLibrary } from "./library";
+import { PhotoBatches } from "./photo-batch";
 import { insertIndex, selectedIndex, type Placement } from "./pagelist";
 import { createParentGate } from "./hold";
 import { screenWakeLock } from "./wakelock";
@@ -1451,25 +1452,51 @@ const Lib = { detectFrame, warpPage, orderCorners };
   };
 
   // ---------- Loading images ----------
-  function loadImage(file: File) {
+  function loadImage(file: Blob, signal: AbortSignal) {
     return new Promise<{ canvas: HTMLCanvasElement }>((res, rej) => {
+      if (signal.aborted) { rej(signal.reason); return; }
       const url = URL.createObjectURL(file);
       const img = new Image();
+      const cleanup = () => {
+        URL.revokeObjectURL(url); signal.removeEventListener("abort", cancel);
+        img.onload = img.onerror = null;
+      };
+      const cancel = () => { cleanup(); img.removeAttribute("src"); rej(signal.reason); };
+      signal.addEventListener("abort", cancel, { once: true });
       img.onload = () => {
         // Downscale large phone photos for faster processing while retaining enough detail for OCR.
         const max = 2200, k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
         const c = document.createElement("canvas");
         c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
         c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
-        URL.revokeObjectURL(url);
+        cleanup();
         res({ canvas: c });
       };
-      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error(t("imgError"))); };
+      img.onerror = () => { cleanup(); rej(new Error(t("imgError"))); };
       img.src = url;
     });
   }
 
   const queue: Page[] = [];
+  type PhotoInput = { source: Blob | HTMLCanvasElement; start: Frame | null };
+  type PreparedPhoto = { canvas: HTMLCanvasElement; start: Frame | null };
+  type PhotoAcceptance = (photo: HTMLCanvasElement, crop: CropResult) => Promise<void>;
+  let photoNavigation = 0;
+  const photoBatches = new PhotoBatches({
+    load: async ({ source, start }: PhotoInput, signal: AbortSignal): Promise<PreparedPhoto> => ({
+      canvas: source instanceof HTMLCanvasElement ? source : (await loadImage(source, signal)).canvas, start,
+    }),
+    crop: ({ canvas, start }: PreparedPhoto, { index, total }: { index: number; total: number }, signal: AbortSignal) =>
+      cropFlow(canvas, start, total > 1 ? t("cropOf", { a: index + 1, b: total }) : "", signal),
+    // The acceptance callback captures the originating book. It starts its writes synchronously;
+    // the library then owns them even when this batch's remaining preparation is cancelled.
+    accept: (accept: PhotoAcceptance, { canvas }: PreparedPhoto, crop: CropResult) => accept(canvas, crop),
+    error: (e: unknown) => toast(e instanceof Error ? e.message : String(e)),
+  });
+  function preparePhotos(accept: PhotoAcceptance, inputs: PhotoInput[]) {
+    photoNavigation = nav.current();
+    return photoBatches.start(accept, inputs);
+  }
   // Page photo actions in the workshop: insert photos before or after the selected page, or replace its photo.
   // The chooser may stay open while the user moves on, so remember the page by its ID rather than the object,
   // and the navigation step: after any navigation, even one still loading another book, the photo is ignored.
@@ -1503,32 +1530,20 @@ const Lib = { detectFrame, warpPage, orderCorners };
     if (!list.length || !book) return;
     const owner = book;
     show(nav.go({ to: "workshop", bookId: owner.id, pageId: pages[cur]?.id }));
-    const generation = nav.current();
-    const ownsPreparation = () => book === owner && nav.isCurrent(generation);
     const added: Page[] = [];
-    for (const [n, f] of list.entries()) {
-      try {
-        const { canvas: photo } = await loadImage(f);
-        if (!ownsPreparation()) return;
-        const crop = await cropFlow(photo, null, list.length > 1 ? t("cropOf", { a: n + 1, b: list.length }) : "");
-        if (!ownsPreparation()) return;
-        if (!crop) continue;   // Skipped or cancelled: no page.
-        const { canvas, corners } = crop;
-        // A stored book's page gets its ID right away: page actions refer to pages by ID.
-        const pg: Page = { id: owner.demo ? undefined : uid(), bookId: !owner.demo ? owner.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: target?.lang || S.lang, text: "", status: "wait", progress: 0 };
-        // Pages may have been deleted or moved since the last photo: place it by the pages themselves.
-        const at = insertIndex(pages, added, target, placement);
-        pages.splice(at, 0, pg); added.push(pg); queue.push(pg);
-        if (at === 0) owner.cover = null;
-        cur = selectedIndex(pages, added[0], cur); render();
-        // Photo acceptance: the page is saved with its book record in one step, so navigation that
-        // cancels the rest of the batch cannot leave it out of its book.
-        await saveBook([pg]);
-        runQueue();
-        if (!ownsPreparation()) return;
-      } catch (e) { toast(e instanceof Error ? e.message : String(e)); }
-    }
-    if (!ownsPreparation()) return;
+    const result = await preparePhotos(async (photo, { canvas, corners }) => {
+      // A stored book's page gets its ID right away: page actions refer to pages by ID.
+      const pg: Page = { id: owner.demo ? undefined : uid(), bookId: !owner.demo ? owner.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: target?.lang || S.lang, text: "", status: "wait", progress: 0 };
+      // Pages may have been deleted or moved since the last photo: place it by the pages themselves.
+      const at = insertIndex(pages, added, target, placement);
+      pages.splice(at, 0, pg); added.push(pg); queue.push(pg);
+      if (at === 0) owner.cover = null;
+      cur = selectedIndex(pages, added[0], cur); render();
+      // Capture the accepted page and book record before yielding to navigation.
+      await saveBook([pg]);
+      runQueue();
+    }, list.map(source => ({ source, start: null })));
+    if (result.status === "cancelled") return;
     // A new book whose photos were all cancelled is not kept: back to where the adult started (#205).
     if (!pages.length) { goHome(); return; }
     if (!added.length) return;
@@ -1538,16 +1553,9 @@ const Lib = { detectFrame, warpPage, orderCorners };
 
   /** Give a page a new photo: same page, position and link; its text is recognised again. */
   async function replacePhoto(pg: Page, file: File) {
-    const owner = book, generation = nav.current();
-    const owns = () => book === owner && nav.isCurrent(generation) && pages.includes(pg);
-    try {
-      const { canvas: photo } = await loadImage(file);
-      if (!owns()) return;
-      const crop = await cropFlow(photo, null, "");
-      // Only an accepted crop of a readable photo replaces anything.
-      if (!owns() || !crop) return;
-      restartPage(pg, crop, { photo, photoBlob: null, text: "", rawText: "" });
-    } catch (e) { toast(e instanceof Error ? e.message : String(e)); }
+    await preparePhotos(async (photo, crop) => {
+      if (pages.includes(pg)) restartPage(pg, crop, { photo, photoBlob: null, text: "", rawText: "" });
+    }, [{ source: file, start: null }]);
   }
 
 
@@ -1777,7 +1785,8 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   // Four corners plus one point per edge: edge points follow curved pages,
   // for example near the book gutter.
   /** Let the adult frame the page. Resolves with the crop, or null when the photo was cancelled (or skipped, in a batch). */
-  async function cropFlow(photo: HTMLCanvasElement, start: Frame | null, counter: string): Promise<CropResult | null> {
+  async function cropFlow(photo: HTMLCanvasElement, start: Frame | null, counter: string, signal: AbortSignal): Promise<CropResult | null> {
+    if (signal.aborted) return null;
     const W = photo.width, H = photo.height;
     const full = frameFromCorners([[0, 0], [W, 0], [W, H], [0, H]]);
     const init = start || full;
@@ -1860,10 +1869,10 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     const okBtn = $<HTMLButtonElement>("cropOk"), wholeBtn = $<HTMLButtonElement>("cropWhole"), cancelBtn = $<HTMLButtonElement>("cropCancel");
     // A batch (with a counter) skips this photo and goes on; a single photo is cancelled.
     cancelBtn.textContent = t(counter ? "cropSkip" : "cropCancel");
-    let decided = false, searched = false;
+    let decided = false, searched = false, closed = false;
     // Look for the page alongside: the user may adjust or accept the frame before the search is done.
     const search = cvReady.then((cv) => {
-      if (decided) return;
+      if (decided || closed) return;
       try {
         if (cv && !start && !adjusted) {
           const found = Lib.detectFrame(cv, photo);
@@ -1878,6 +1887,8 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     const buttons = [okBtn, wholeBtn, cancelBtn];
     const result = new Promise<CropResult | null>((resolve) => {
       const close = () => {
+        closed = true;
+        signal.removeEventListener("abort", abort);
         ro.disconnect(); handles.forEach(h => h.remove()); dlg.hidden = true;
         window.removeEventListener("resize", fitDialog);
         window.visualViewport?.removeEventListener("resize", fitDialog);
@@ -1885,7 +1896,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
         for (const b of buttons) { b.onclick = null; b.disabled = false; }
       };
       const finish = async (frame: Frame | null) => {
-        if (decided) return;
+        if (decided || closed) return;
         decided = true;
         const all = (f: Frame) => [...f.corners, ...f.mids];
         const isFull = !frame || all(frame).every((p, i) => Math.hypot(p[0] - all(full)[i][0], p[1] - all(full)[i][1]) < 2);
@@ -1895,10 +1906,15 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
           msg("cropStraightening");
           cv = await cvReady;
         }
+        if (closed) return;
         close();
         if (isFull || !cv) return resolve({ canvas: photo, corners: null });
         resolve({ canvas: Lib.warpPage(cv, photo, frame!), corners: frame });
       };
+      // Supersession also settles a crop waiting for detection/straightening. Its late continuation
+      // must never close or redraw the replacement dialog.
+      const abort = () => { close(); resolve(null); };
+      signal.addEventListener("abort", abort, { once: true });
       // Cancel or skip: nothing is made from this photo (#205). Not once the adult chose to use it.
       const cancel = () => {
         if (decided || cancelBtn.disabled) return;
@@ -1935,9 +1951,9 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   $<HTMLButtonElement>("recropBtn").onclick = async () => {
     const pg = pages[cur];
     if (!pg || !(pg.photo || pg.photoBlob)) return;
-    if (!pg.photo) pg.photo = await blobToCanvas(pg.photoBlob!);
-    const crop = await cropFlow(pg.photo, toFrame(pg.corners), "");
-    if (crop) restartPage(pg, crop);   // Cancel keeps the page as it was.
+    await preparePhotos(async (photo, crop) => {
+      if (pages.includes(pg)) restartPage(pg, crop, { photo });
+    }, [{ source: pg.photo || pg.photoBlob!, start: toFrame(pg.corners) }]);
   };
 
   // Recognize the current page again, for example after an app update improves OCR.
@@ -2255,6 +2271,9 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   }
   /** Show where a move, a link or a Back step leads (src/navigation.ts). A book already at hand saves a lookup. */
   async function show(route: Route, known?: Book) {
+    // A blocked Back step leaves the ticket unchanged; an actual move stops preparation immediately,
+    // including while decoding or accepted storage is pending. Accepted writes belong to the library.
+    if (!nav.isCurrent(photoNavigation)) photoBatches.cancel();
     if (route.to === "stay") return;
     if (route.to === "shelf") { showShelf(); return; }
     if (route.to === "open") {
