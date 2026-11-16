@@ -5,8 +5,8 @@ import { CoverageReport } from "monocart-coverage-reports";
 
 const inputDir = process.argv.length > 2 ? process.argv.slice(2) : ["coverage/unit/raw", "coverage/e2e/raw"];
 
-/** Keep a margin below the November 16, 2026 baseline: 94.00 / 88.05 / 95.86. */
-const MIN = { lines: 93, branches: 86, functions: 94 };
+/** Keep a margin below the November 16, 2026 baseline: 94.04 / 88.07 / 95.89. */
+const MIN = { lines: 93, branches: 87, functions: 95 };
 
 const results = await new CoverageReport({
   name: "Læsehjælper – Combined test coverage",
