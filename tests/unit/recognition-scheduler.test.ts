@@ -178,4 +178,25 @@ describe("Recognition scheduling", () => {
     expect(recognised).toEqual(["a", "b", "c"]);
   });
 
+
+  it("Rechecks a pending page when the execution slot opens after a book job", async () => {
+    const bookStarted = deferred<void>(), finishBook = deferred<void>();
+    const page = { waiting: true };
+    const recognised: typeof page[] = [], released: typeof page[] = [];
+    const scheduler = createRecognitionScheduler({
+      ready: (page: { waiting: boolean }) => page.waiting,
+      process: async (page: { waiting: boolean }) => { recognised.push(page); },
+      released: (page: { waiting: boolean }) => { released.push(page); }, failed: () => {},
+    });
+    const book = scheduler.exclusive(async () => { bookStarted.resolve(); await finishBook.promise; });
+    await bookStarted.promise;
+    scheduler.enqueue(page);
+    const running = scheduler.run();
+    page.waiting = false; // A newer correction makes this pending OCR attempt unnecessary.
+    finishBook.resolve(); await book; await running;
+    expect(recognised).toEqual([]);
+    expect(released).toEqual([page]);
+    expect(scheduler.pages()).toEqual([]);
+  });
+
 });
