@@ -15,6 +15,7 @@ import { resumePage } from "./bookshelf";
 import { createLibrary } from "./library";
 import { PhotoBatches } from "./photo-batch";
 import { createRecognitionScheduler } from "./recognition-scheduler";
+import { recognitionGuard } from "./recognition-guard";
 import { insertIndex, selectedIndex, type Placement } from "./pagelist";
 import { createParentGate } from "./hold";
 import { screenWakeLock } from "./wakelock";
@@ -1441,6 +1442,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
     const pg = pages[cur]; if (!pg) return;
     // Capture the page and value immediately: render() replaces the textarea when turning pages.
     pg.manualEdits = true; touchPage(pg);
+    // New manual text is usable now; an older queued or running OCR attempt must not replace it.
+    if (pg.status === "wait" || pg.status === "ocr") pg.status = "done";
     pg.text = val(e); syncParas(pg);
     pg.rawText = pg.text;
     pg.paras?.forEach(pa => { pa.raw = pa.text || ""; });
@@ -1979,11 +1982,13 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     recognition.enqueue(pg); render(); recognition.run();
   }
 
-  const recognitionStamp = (pg: Page) => JSON.stringify([pg.changeVersion, pg.lang, pg.status, pg.text, pg.rawText, pg.paras, pg.corners, pg.ocrRegions, pg.phraseCues]);
-
   async function reprocessBook(include: boolean, detect: boolean) {
     const owner = book;
-    const selected = planRecognition(batchCandidates(), include).pages.map(({ pg }) => ({ pg, revision: pg.revision, number: pages.indexOf(pg) + 1, stamp: recognitionStamp(pg), canvas: pg.canvas, input: pg.inputBlob, photo: pg.photoBlob }));
+    const selected = planRecognition(batchCandidates(), include).pages.map(({ pg }) => {
+      const revision = pg.revision;
+      return { pg, revision, number: pages.indexOf(pg) + 1,
+        current: recognitionGuard(pg, () => book === owner && pages.includes(pg) && !isRemoved(pg) && pg.revision === revision) };
+    });
     await runRecognitionBatch(selected, {
       cancelled: () => { if (book !== owner) bookRecognition.cancelled = true; return bookRecognition.cancelled; },
       progress: state => bookRecognition.progress(state),
@@ -1991,7 +1996,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
         let fallback = false;
         const outcome = await recognition.exclusive(async (): Promise<RecognitionOutcome> => {
           const pg = job.pg;
-          const valid = () => book === owner && pages.includes(pg) && !isRemoved(pg) && recognitionStamp(pg) === job.stamp && pg.revision === job.revision && pg.canvas === job.canvas && pg.inputBlob === job.input && pg.photoBlob === job.photo;
+          const valid = job.current;
           if (!valid()) return "changed";
           // The draft owns no display URLs. The usable page remains untouched until replacement succeeds.
           const draft: Page = { ...pg, batchDraft: true, paras: null, clean: null, cleanBlob: null, img: null, phraseCues: undefined };
@@ -2081,12 +2086,13 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     return workers[code];
   }
 
-  // A recognition job owns its page while the page's status is "ocr". Anything that gives the page a new
-  // picture or language sets it back to "wait" and queues it again; the old job then drops its result.
+  // A job may update only the content and source it started with (src/recognition-guard.ts).
+  // Single-page work can finish after leaving its book; book jobs also keep their captured ownership rule.
   // Results are committed in one step after the last await, so a page never mixes two pictures.
   async function recognise(pg: Page, valid = () => true) {
-    const stale = () => isRemoved(pg) || pg.status !== "ocr" || !valid();
     active = pg; pg.status = "ocr"; pg.stage = "loadingCore";
+    const current = recognitionGuard(pg, () => !isRemoved(pg) && valid());
+    const stale = () => !current();
     if (pages[cur] === pg) render(); else renderThumbStatus(pg);
     try {
       const w = await getWorker(pg.lang);

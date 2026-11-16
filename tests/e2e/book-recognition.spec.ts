@@ -236,3 +236,45 @@ test("Single-page recognition waits for a book job's two passes before using the
   expect(await page.evaluate(() => (window as unknown as { scheduledPasses: string[] }).scheduledPasses))
     .toEqual(["dan", "dan", "eng", "eng"]);
 });
+
+test("A single-page job cannot overwrite a correction entered while recognition is pending", async ({ page }) => {
+  await fakeRecognition(page, 0, true);
+  await seedBatch(page);
+  await checkText(page);
+  await page.click("#reocrBtn");
+  await page.waitForFunction(() => "batchRelease" in window);
+  // Enter the correction and release OCR in one browser task, before the editor's delayed redraw.
+  await page.evaluate(() => {
+    const input = document.getElementById("text") as HTMLTextAreaElement;
+    input.value = "Min nyere originale rettelse.";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    (window as unknown as { batchRelease: () => void }).batchRelease();
+  });
+  await expect(page.locator("#reader")).toContainText("Min nyere originale rettelse.", { timeout: 2500 });
+  await expect.poll(async () => (await storedPages(page))[0]?.text).toBe("Min nyere originale rettelse.");
+  await page.reload();
+  await expect(page.locator("#reader")).toContainText("Min nyere originale rettelse.");
+});
+
+test("A single-page job queued behind a book job cannot overwrite a newer correction", async ({ page }) => {
+  await fakeRecognition(page, 0, true);
+  await seedBatch(page);
+  await bookAction(page, "reprocessBookBtn"); await page.click("#batchStart");
+  await page.waitForFunction(() => "batchRelease" in window);
+  await page.click("#batchClose");
+  await page.locator("#thumbs .thumb > button").nth(2).click();
+  await checkText(page); await page.click("#reocrBtn");
+  await expect(page.locator("#reader .status")).toContainText("Waiting for recognition");
+  await page.evaluate(() => {
+    const input = document.getElementById("text") as HTMLTextAreaElement;
+    input.value = "En nyere rettelse før sidens tur.";
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+    (window as unknown as { batchRelease: () => void }).batchRelease();
+  });
+  await expect(page.locator("#batchNotice")).toContainText("1 succeeded · 0 failed");
+  await expect(page.locator("#reader")).toContainText("En nyere rettelse før sidens tur.", { timeout: 2500 });
+  expect(await page.evaluate(() => (window as unknown as { batchCalls: unknown[] }).batchCalls.length)).toBe(2);
+  await expect.poll(async () => (await storedPages(page))[2]?.text).toBe("En nyere rettelse før sidens tur.");
+  await page.reload();
+  await expect(page.locator("#reader")).toContainText("En nyere rettelse før sidens tur.");
+});

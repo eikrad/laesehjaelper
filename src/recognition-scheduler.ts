@@ -1,5 +1,5 @@
 interface RecognitionWork<P> {
-  /** Is the page still waiting for recognition when it leaves the queue? */
+  /** Is the page still waiting, before requesting and after acquiring its execution slot? */
   ready(page: P): boolean;
   process(page: P): Promise<void>;
   /** No attempt for this page remains in the scheduler; the caller may release its images. */
@@ -38,7 +38,9 @@ export function createRecognitionScheduler<P>(work: RecognitionWork<P>) {
           try {
             if (work.ready(page)) {
               pending = page;
-              await exclusive(() => work.process(page));
+              await exclusive(async () => {
+                if (work.ready(page)) await work.process(page);
+              });
             }
           }
           catch (error) { work.failed(error); }
