@@ -87,7 +87,7 @@ export async function openReadingSetup(page: Page) {
   if (!await settings.evaluate(el => el.classList.contains("open") && el.classList.contains("adult-setup"))) {
     if (await settings.evaluate(el => el.classList.contains("open"))) await page.click("#setClose");
     if (await page.locator("body").evaluate(el => el.classList.contains("workshop"))) {
-      await page.click("#setBtn"); await page.click("#readingSetupLink");
+      await bookAction(page, "bookReadingSetupBtn");
     } else {
       const entry = page.locator("#editBookBtn");
       if (await page.locator('#gateSet button.on').getAttribute("data-v") === "an") {
@@ -129,16 +129,22 @@ export async function setUiLanguage(page: Page, language: string) {
   }
 }
 
-/** Book-language and printed-hyphen choices belong to preparation. */
+/** Book-language and printed-hyphen choices belong to preparation: "Book ⋯" → "Book settings". */
 export async function openBookOptions(page: Page) {
-  await openWorkshop(page);
-  const options = page.locator("#bookOptions");
-  if (!await options.evaluate(el => (el as HTMLDetailsElement).open)) await options.locator("summary").click();
+  if (await page.locator("#bookSettings").isVisible()) return;
+  await bookAction(page, "bookSettingsBtn");
+  await expect(page.locator("#bookSettings")).toBeVisible();
 }
 
-/** Reading has a compact shelf button; the workshop keeps its app-header home link. */
+/** Close the book settings dialog if it is open. */
+async function closeBookOptions(page: Page) {
+  if (await page.locator("#bookSettings").isVisible()) await page.locator("#bookSettings").getByRole("button").last().click();
+}
+
+/** The shelf button is in reading; the workshop leads back through reading (#206). */
 export async function goShelf(page: Page) {
-  await page.click(await page.locator("#homeBtn").isVisible() ? "#homeBtn" : "#home");
+  await readBook(page);
+  await page.click("#homeBtn");
 }
 
 /** Load photos through the main button and confirm each one in the crop dialog. */
@@ -180,6 +186,7 @@ export async function openWorkshop(page: Page) {
 /** Return from preparing the selected page to reading it. */
 export async function readBook(page: Page) {
   await bookOpen(page);
+  await closeBookOptions(page);
   if (await page.locator("#readBookBtn").isVisible()) await page.click("#readBookBtn");
 }
 
@@ -188,8 +195,17 @@ async function bookOpen(page: Page) {
   await expect(page.locator("#app")).toBeVisible();
 }
 
-/** Choose a page or book tool in the workshop. */
-export async function bookTool(page: Page, id: "checkTextBtn" | "exportBtn") {
+/** Open the selected page's editor through its own heading, "Check and correct the text" (#206). */
+export async function checkText(page: Page) {
   await openWorkshop(page);
+  const editor = page.locator("#edit");
+  await expect(editor).toBeVisible();
+  if (!await editor.evaluate(el => (el as HTMLDetailsElement).open)) await editor.locator(":scope > summary").click();
+}
+
+/** Choose an action from the workshop's "Book ⋯" menu (#206). Delete book asks to be chosen twice. */
+export async function bookAction(page: Page, id: "exportBtn" | "pdfBtn" | "reprocessBookBtn" | "bookSettingsBtn" | "bookReadingSetupBtn" | "tipsBtn" | "delBookBtn") {
+  await openWorkshop(page);
+  if (await page.locator("#bookMenu").isHidden()) await page.click("#bookMenuBtn");
   await page.click(`#${id}`);
 }

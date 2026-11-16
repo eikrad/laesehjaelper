@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { bookTool, fresh, openWorkshop, seedBooks } from "./helpers";
+import { bookAction, checkText, fresh, openWorkshop, seedBooks } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -8,7 +8,7 @@ test("Reading has one quiet workshop entry and Back stays inside the book and sh
   await page.locator(".book").click();
   await expect(page).toHaveURL(/#read\/route\/route-1$/);
   await expect(page.locator("#readingTitle")).toHaveText("En rolig bog");
-  for (const id of ["bookTitle", "bookMenuBtn", "checkTextBtn", "editPagesBtn", "exportBtn", "pdfBtn", "edit", "thumbs", "delBookBtn", "compareBtn"]) {
+  for (const id of ["bookTitle", "bookMenuBtn", "editPagesBtn", "exportBtn", "pdfBtn", "edit", "thumbs", "delBookBtn", "compareBtn"]) {
     await expect(page.locator(`#${id}`)).toBeHidden();
   }
   await expect(page.locator("#editBookBtn")).toHaveText("Til voksne");
@@ -90,10 +90,12 @@ test("A delayed book load cannot reopen after Back to the shelf", async ({ page 
   await expect(page).toHaveURL(/#shelf$/);
 });
 
-test("The workshop Home button returns to the shelf announced by its label", async ({ page }) => {
+test("The workshop leads home through reading, whose Home button is announced by its label", async ({ page }) => {
   await seedBooks(page, [{ id: "home", title: "En original bog", texts: ["En original side."] }]);
   await page.locator(".book").click();
   await openWorkshop(page);
+  await expect(page.locator("#homeBtn"), "the workshop's one header row has no Home button (#206)").toBeHidden();
+  await page.click("#readBookBtn");
   await expect(page.locator("#homeBtn")).toHaveAccessibleName("Til forsiden");
   await page.click("#homeBtn");
   await expect(page.locator("#start")).toBeVisible({ timeout: 1500 });
@@ -120,8 +122,8 @@ test("Deleting a book leaves no Back step into the deleted book", async ({ page 
   await seedBooks(page, [{ id: "gone", title: "En original bog", texts: ["En original side."] }]);
   await page.locator(".book").click();
   await openWorkshop(page);
-  await page.click("#delBookBtn");
-  await page.click("#delBookBtn");
+  await bookAction(page, "delBookBtn");
+  await bookAction(page, "delBookBtn");
   await expect(page.locator("#start")).toBeVisible();
   await expect(page).toHaveURL(/#shelf$/);
   // Back from the shelf leaves the app, as it does after the Home button.
@@ -132,7 +134,7 @@ test("Deleting a book leaves no Back step into the deleted book", async ({ page 
 test("Correcting text does not rewrite the browser history while the page stays the same", async ({ page }) => {
   await seedBooks(page, [{ id: "typing", title: "En original bog", texts: ["En original side."] }]);
   await page.locator(".book").click();
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   // Browsers cap how often a page may change its history, so only real changes should count.
   await page.evaluate(() => {
     const w = window as unknown as { historyWrites: number };

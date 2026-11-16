@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { bookTool, fixture, fresh, storedPages, waitForText } from "./helpers";
+import { checkText, fixture, fresh, storedPages, waitForText } from "./helpers";
 
 test("Curved page: drag an edge point and flatten the page", async ({ page }) => {
   await fresh(page);
@@ -45,7 +45,7 @@ test("A curved page is suggested and straightened without dragging, and its fram
   await expect(page.locator("#reader")).toContainText("lille fugl");
   await expect.poll(async () => (await storedPages(page))[0]?.status).toBe("done");
   await page.reload();
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   await page.click("#recropBtn");
   await expect(page.locator("#crop")).toBeVisible();
   await expect(page.locator("#cropPoly")).toHaveAttribute("d", suggested!);
@@ -60,7 +60,7 @@ test("A curved page is suggested and straightened without dragging, and its fram
   await waitForText(page);
   await expect.poll(async () => (await storedPages(page))[0]?.status).toBe("done");
   await page.reload();
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   await page.click("#recropBtn");
   await expect(page.locator("#cropPoly")).toHaveAttribute("d", adjusted!);
   await page.click("#cropWhole");

@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
 import { strFromU8, unzipSync } from "fflate";
 import fs from "node:fs";
-import { bookTool, fresh, openRecognisedBook, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
+import { bookAction, fresh, openRecognisedBook, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
 
 test("The reading ruler starts off and follows visual lines when enabled", async ({ page }) => {
   await fresh(page);
@@ -202,7 +202,7 @@ test("Line guides use the UI language and keep every line when exporting a book"
     await expect(page.locator("#guideBtn")).toHaveAccessibleName(help);
     await expect(page.locator("#guideBtn")).toHaveAttribute("aria-pressed", "true");
   }
-  const [download] = await Promise.all([page.waitForEvent("download"), bookTool(page, "exportBtn")]);
+  const [download] = await Promise.all([page.waitForEvent("download"), bookAction(page, "exportBtn")]);
   const file = info.outputPath("guide.epub"); await download.saveAs(file);
   const files = unzipSync(new Uint8Array(fs.readFileSync(file)));
   const text = strFromU8(files["OEBPS/page1.xhtml"]);

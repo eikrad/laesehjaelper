@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { bookTool, expectSyllableBowsInsideBoxes, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
+import { bookAction, checkText, expectSyllableBowsInsideBoxes, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
 
 // Layout checks. Unlike the other specs, these run at every screen size the app is
 // designed for: phone, tablet portrait, tablet landscape and laptop (see playwright.config.ts).
@@ -80,7 +80,8 @@ test("Book recognition options fit every screen in all interface languages", asy
   await openRecognisedBook(page, ["side-da.jpg"]);
   for (const [ui, title] of [["da", "Genkend hele bogen igen"], ["de", "Gesamtes Buch neu erkennen"], ["en", "Recognise the entire book again"]]) {
     await setUiLanguage(page, ui); await openWorkshop(page);
-    await page.getByRole("button", { name: title, exact: true }).click();
+    await page.click("#bookMenuBtn");
+    await page.getByRole("menuitem", { name: title, exact: true }).click();
     const dialog = page.locator("#bookRecognition");
     await expect(dialog).toBeVisible();
     await expect(dialog).toHaveAccessibleName(title);
@@ -92,7 +93,7 @@ test("Book recognition options fit every screen in all interface languages", asy
     await expect.poll(() => smallControls(page, 44, "#bookRecognition")).toEqual([]);
     await dialog.screenshot({ path: info.outputPath(`book-recognition-${ui}.png`) });
     await page.keyboard.press("Escape");
-    await expect(page.locator("#reprocessBookBtn")).toBeFocused();
+    await expect(page.locator("#bookMenuBtn"), "back on the menu that opened it").toBeFocused();
     await page.click("#readBookBtn");
   }
 });
@@ -101,7 +102,7 @@ test("OCR region editing fits every screen and supports drawing and keyboard con
   await openRecognisedBook(page, ["side-da.jpg"]);
   for (const ui of ["da", "de", "en"]) {
     await setUiLanguage(page, ui);
-    await bookTool(page, "checkTextBtn"); await page.click("#ocrRegionsBtn");
+    await checkText(page); await page.click("#ocrRegionsBtn");
     const d = page.locator("#ocrRegionsEditor");
     await expect(d).toBeVisible();
     const surface = page.locator("#regionsSurface"); await surface.scrollIntoViewIfNeeded();
@@ -191,25 +192,28 @@ test("word practice fits every screen in each interface language", async ({ page
   }
 });
 
-test("Adult reading tips fit every screen in every interface language", async ({ page }, info) => {
+test("Adult reading tips and book settings fit every screen in every interface language", async ({ page }, info) => {
   await page.click("#demoBtn");
   await openWorkshop(page);
-  const tips = page.locator("#adultTips");
   for (const ui of ["da", "de", "en"]) {
     await setUiLanguage(page, ui);
-    const summary = tips.locator("summary");
-    await summary.click();
-    await expect(tips.locator("li")).toHaveCount(5);
-    const bounds = (await tips.boundingBox())!;
-    expect(bounds.x).toBeGreaterThanOrEqual(0);
-    expect(bounds.x + bounds.width).toBeLessThanOrEqual(page.viewportSize()!.width);
-    expect(await sidewaysScroll(page)).toBe(0);
-    await expect.poll(() => smallControls(page, 44, "#adultTips")).toEqual([]);
-    await tips.screenshot({ path: info.outputPath(`adult-tips-${ui}.png`) });
-    await summary.click();
+    for (const [action, id] of [["tipsBtn", "adultTips"], ["bookSettingsBtn", "bookSettings"]] as const) {
+      await bookAction(page, action);
+      const dialog = page.locator(`#${id}`);
+      await expect(dialog).toBeVisible();
+      const bounds = (await dialog.boundingBox())!;
+      expect(bounds.x, id).toBeGreaterThanOrEqual(0);
+      expect(bounds.x + bounds.width, id).toBeLessThanOrEqual(page.viewportSize()!.width);
+      expect(bounds.y + bounds.height, `${id} needs no scrolling`).toBeLessThanOrEqual(page.viewportSize()!.height);
+      expect(await dialog.evaluate(e => e.scrollWidth - e.clientWidth), id).toBeLessThanOrEqual(1);
+      await expect.poll(() => smallControls(page, 44, `#${id}`), { message: id }).toEqual([]);
+      await dialog.screenshot({ path: info.outputPath(`${id}-${ui}.png`) });
+      await page.keyboard.press("Escape");
+      await expect(dialog).toBeHidden();
+    }
   }
   await page.click("#readBookBtn");
-  await expect(tips).toBeHidden();
+  await expect(page.locator("#adultTips")).toBeHidden();
 });
 
 test("Reading guides fit every screen with usable controls and a single large row", async ({ page }, info) => {
@@ -465,7 +469,7 @@ test("On touch screens every control is at least 44 px", async ({ page }, info) 
   await toggleReadingSetup(page);
   await openWorkshop(page);
   await expect.poll(() => smallControls(page), { message: "workshop" }).toEqual([]);
-  await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
+  await checkText(page);
   await page.locator("#moveBtn").evaluate((b: HTMLButtonElement) => b.click());
   await expect.poll(() => smallControls(page), { message: "editing pages and text boxes" }).toEqual([]);
 });
@@ -517,7 +521,7 @@ test("The whole book page is on screen on tablets and laptops; phones use the fu
 test("Scrolled to the end, the toolbar covers nothing that can be tapped", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await openWorkshop(page);   // Editing adds the most controls below the page.
-  await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
+  await checkText(page);
   await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
   const dock = (await page.locator("#dock").boundingBox())!;
   for (const el of await page.locator("#app button:visible, #app summary:visible, #app label:visible").all()) {
@@ -552,7 +556,7 @@ test("Swiping turns the page; taps, scrolling and moving text boxes do not", asy
   await swipeOnReader(page, -60, 200);  // Scrolling.
   await expect(count).toHaveText("1 / 2");
   await openWorkshop(page);
-  await page.locator("#checkTextBtn").evaluate((b: HTMLButtonElement) => b.click());
+  await checkText(page);
   await page.locator("#moveBtn").evaluate((b: HTMLButtonElement) => b.click());
   await page.evaluate(() => window.scrollTo(0, 0));
   await swipeOnReader(page, -150, 0);
@@ -705,14 +709,53 @@ test("On wide screens the settings open beside the page, which stays visible; ot
   await expect(page.locator("body")).not.toHaveClass(/focus/);
 });
 
+// One header row in the workshop (#206): back to reading, the editable title and the book menu.
+test("The workshop header is one row with Back to reading, the visibly editable title and the book menu", async ({ page }) => {
+  await seedBooks(page, [{ id: "header", title: "En bog med en ret lang titel om pindsvinet", texts: ["Første side."] }]);
+  await page.locator(".book").click();
+  await expect(page.locator("#app")).toBeVisible();   // The language switch moves once the book is open.
+  const { width } = page.viewportSize()!;
+  for (const [ui, back, menu] of [["da", "Tilbage til læsning", "Bog"], ["de", "Zurück zum Lesen", "Buch"], ["en", "Back to reading", "Book"]]) {
+    await setUiLanguage(page, ui);
+    await openWorkshop(page);
+    for (const hidden of ["header.top", "#homeBtn", "#count", "#setBtn", "#focusBtn"]) await expect(page.locator(hidden), hidden).toBeHidden();
+    const row = ["#readBookBtn", "#bookTitle", "#bookMenuBtn"];
+    await expect(page.locator("#readBookBtn")).toHaveAccessibleName(back);
+    await expect(page.locator("#bookMenuBtn")).toHaveAccessibleName(menu);
+    await expect(page.locator("#bookTitle")).toHaveAccessibleName(/./);
+    const boxes = await Promise.all(row.map(async id => (await page.locator(id).boundingBox())!));
+    const middle = (b: { y: number; height: number }) => b.y + b.height / 2;
+    for (const [i, b] of boxes.entries()) {
+      expect(Math.abs(middle(b) - middle(boxes[0])), `${row[i]} on the same row (${ui})`).toBeLessThanOrEqual(4);
+      expect(b.x, `${row[i]} on screen (${ui})`).toBeGreaterThanOrEqual(0);
+      expect(b.x + b.width, `${row[i]} on screen (${ui})`).toBeLessThanOrEqual(width);
+      if (i) expect(b.x, `${row[i]} after ${row[i - 1]} (${ui})`).toBeGreaterThanOrEqual(boxes[i - 1].x + boxes[i - 1].width);
+    }
+    expect(boxes[1].width, `room for about ten letters of the title (${ui})`).toBeGreaterThanOrEqual(140);
+    expect((await page.locator(".bookbar").boundingBox())!.y, "nothing above the header row").toBeLessThanOrEqual(24);
+    // Visibly editable: an underline and a pencil, which also puts the cursor in the title.
+    const field = page.locator(".title-edit");
+    expect(await field.evaluate(el => parseFloat(getComputedStyle(el).borderBottomWidth))).toBeGreaterThanOrEqual(1.5);
+    await expect(field.locator("svg")).toBeVisible();
+    await field.locator("svg").click();
+    await expect(page.locator("#bookTitle")).toBeFocused();
+    await expect.poll(() => smallControls(page, 48, ".bookbar"), { message: `header row (${ui})` }).toEqual([]);
+    expect(await sidewaysScroll(page)).toBe(0);
+    await page.click("#readBookBtn");
+  }
+});
+
 test("The workshop puts the page list beside its editor on wide screens and above it on narrow screens", async ({ page }) => {
   await seedBooks(page, [{ id: "workshop", title: "En bog til værkstedet", texts: ["Første prøveside.", "Anden prøveside."] }]);
   await page.locator(".book").click();
   await openWorkshop(page);
-  await expect(page.locator("#pdfBtn")).toBeVisible();
-  const pdf = (await page.locator("#pdfBtn").boundingBox())!;
-  expect(pdf.x).toBeGreaterThanOrEqual(0);
-  expect(pdf.x + pdf.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  await page.click("#bookMenuBtn");
+  const menu = (await page.locator("#bookMenu").boundingBox())!;
+  expect(menu.x, "the book menu fits the screen").toBeGreaterThanOrEqual(0);
+  expect(menu.x + menu.width, "the book menu fits the screen").toBeLessThanOrEqual(page.viewportSize()!.width);
+  expect(menu.y + menu.height, "the book menu fits the screen").toBeLessThanOrEqual(page.viewportSize()!.height);
+  await expect.poll(() => smallControls(page, 48, "#bookMenu"), { message: "book menu items" }).toEqual([]);
+  await page.keyboard.press("Escape");
   const list = (await page.locator("#thumbs").boundingBox())!, editor = (await page.locator(".pagecard").boundingBox())!;
   if (page.viewportSize()!.width >= 840) {
     expect(list.x + list.width, "list left of editor").toBeLessThanOrEqual(editor.x);
@@ -724,7 +767,7 @@ test("The workshop puts the page list beside its editor on wide screens and abov
   await page.locator(".thumb > button").nth(1).click();
   await page.click("#readBookBtn");
   await expect(page.locator("#reader")).toContainText("Anden prøveside.");
-  await expect(page.locator("#pdfBtn")).toBeHidden();
+  await expect(page.locator("#bookMenuBtn")).toBeHidden();
   await expect(page).toHaveURL(/#read\/workshop\/workshop-1$/);
 });
 
@@ -770,9 +813,6 @@ test("Page photo actions fit the workshop in every language and stay out of read
       expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
     }
     await expect(page.locator("#replacePhotoHint")).toHaveCSS("font-size", "14px");
-    await page.click("#focusBtn");
-    await expect(page.locator("#pagePhotoTools")).toBeHidden();
-    await page.click("#focusBtn");
     await page.click("#readBookBtn");
     await expect(page.locator("#pagePhotoTools")).toBeHidden();
     await goShelf(page);

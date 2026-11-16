@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
-import { fresh, seedBooks, toggleReadingSetup } from "./helpers";
-import { bookTool, openWorkshop } from "./helpers";
+import { bookAction, fresh, seedBooks, toggleReadingSetup } from "./helpers";
+import { openWorkshop } from "./helpers";
 import { unzipSync, strFromU8 } from "fflate";
 import fs from "node:fs";
 
@@ -36,13 +36,13 @@ test("word practice works from the one-line guide with a keyboard", async ({ pag
 test("practice stays with its book and reader, is excluded from exports, and is removed with its book", async ({ page }, info) => {
   await saveMouse(page);
   await openWorkshop(page);
-  const [download] = await Promise.all([page.waitForEvent("download"), bookTool(page, "exportBtn")]);
+  const [download] = await Promise.all([page.waitForEvent("download"), bookAction(page, "exportBtn")]);
   const path = info.outputPath("private-practice.epub"); await download.saveAs(path);
   const archive = unzipSync(new Uint8Array(fs.readFileSync(path)));
   for (const [name, bytes] of Object.entries(archive)) if (/\.(json|xhtml|css)$/.test(name)) {
     expect(strFromU8(bytes)).not.toMatch(/readerId|familiar|practiceReview|tabindex|role="button"/);
   }
-  await page.click("#delBookBtn"); await page.click("#delBookBtn");
+  await bookAction(page, "delBookBtn"); await bookAction(page, "delBookBtn");
   await expect(page.locator("#start")).toBeVisible();
   await seedBooks(page, [{ id: "other", title: "Anden bog", lang: "de", texts: ["Eine Maus schläft."] }]);
   await page.locator(".book").click();

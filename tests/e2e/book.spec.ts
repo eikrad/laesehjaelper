@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "./fixtures";
-import { addPhotos, bookTool, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, readBook, storedPages, toggleReadingSetup, waitForText } from "./helpers";
+import { addPhotos, bookAction, checkText, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, readBook, storedPages, toggleReadingSetup, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -112,8 +112,8 @@ test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
   await expect(page.locator("#text")).toHaveValue(/Søren går en tur/);
   await page.locator(".thumb").nth(0).locator(".ctl .x").click();               // Delete the page.
   await expect(page.locator("#count")).toHaveText("1 / 1");
-  await page.click("#delBookBtn");
-  await page.click("#delBookBtn");                                              // Click twice to confirm.
+  await bookAction(page, "delBookBtn");
+  await bookAction(page, "delBookBtn");                                              // Click twice to confirm.
   await expect(page.locator("#start")).toBeVisible();
   await expect(page.locator("#shelf")).toBeHidden();
   await expect(page.locator("#drop")).toContainText("Tag et billede af en side");
@@ -121,7 +121,7 @@ test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
 
 test("Saves text corrections", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   const t = await page.locator("#text").inputValue();
   await page.fill("#text", t.replace("Pindsvinet", "Pind·svi·net"));
   await expect(page.locator('.w[data-word="Pindsvinet"] .s')).toHaveCount(3);
@@ -145,7 +145,7 @@ test("Keeps headings larger and bold words bold", async ({ page }) => {
 
 test("Moves, saves and resets text boxes on the book page", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   await page.click("#moveBtn");
   await expect(page.locator("#reader")).toHaveClass(/moving/);
   const box = page.locator("#reader .tbox").first();
@@ -171,7 +171,7 @@ test("Moves, saves and resets text boxes on the book page", async ({ page }) => 
   const top2 = await page.locator("#reader .tbox").first().evaluate(el => el.getBoundingClientRect().top - el.parentElement!.getBoundingClientRect().top);
   expect(Math.abs(top2 - top1)).toBeLessThan(3);
   // Reset the position.
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   await page.click("#resetPlaceBtn");
   const top3 = await page.locator("#reader .tbox").first().evaluate(el => el.getBoundingClientRect().top - el.parentElement!.getBoundingClientRect().top);
   expect(Math.abs(top3 - top0)).toBeLessThan(3);

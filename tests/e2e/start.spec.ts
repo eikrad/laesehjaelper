@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { bookTool, fresh, openBookOptions, openRecognisedBook, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
+import { checkText, fresh, openBookOptions, openRecognisedBook, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -77,7 +77,7 @@ test("Settings close with the close button, Escape or a tap outside", async ({ p
   await expect(settings).toHaveClass(/open/);
   await page.click("#setClose");
   await expect(settings).not.toHaveClass(/open/);
-  await expect(page.locator("#setBtn")).not.toHaveClass(/on/);
+  await expect(page.locator("#setBtn")).not.toHaveClass(/\bon\b/);
   await toggleReadingSetup(page);
   await page.keyboard.press("Escape");
   await expect(settings).not.toHaveClass(/open/);
@@ -100,7 +100,7 @@ test("Each hint in the settings sits under its own choice", async ({ page }) => 
 
 test("Escape closes settings while the text editor has focus", async ({ page }) => {
   await page.click("#demoBtn");
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   await toggleReadingSetup(page);
   await page.locator("#text").focus();
   await page.keyboard.press("Escape");
@@ -109,12 +109,13 @@ test("Escape closes settings while the text editor has focus", async ({ page }) 
 
 test("Dismissing settings does not drag a text box underneath", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   await page.click("#moveBtn");
   const box = page.locator("#reader .tbox").first();
-  await box.scrollIntoViewIfNeeded();
   const before = await box.evaluate((el: HTMLElement) => [el.style.left, el.style.top, el.style.width, el.style.height]);
   await toggleReadingSetup(page);
+  // At the top of the screen, clear of the settings sheet and the reading bar, so the tap lands on the box.
+  await box.evaluate(el => el.scrollIntoView({ block: "start" }));
   const bounds = (await box.boundingBox())!;
   await page.mouse.move(bounds.x + 10, bounds.y + 10);
   await page.mouse.down();
@@ -290,7 +291,7 @@ test("Reading together: two open questions and a custom question per page, behin
 
 test("Text marked with *word* appears bold without asterisks", async ({ page }) => {
   await page.click("#demoBtn");
-  await bookTool(page, "checkTextBtn");
+  await checkText(page);
   const t = await page.locator("#text").inputValue();
   await page.fill("#text", t.replace("pindsvin", "*pindsvin*"));
   await expect(page.locator('#reader .w.b[data-word="pindsvin"]')).toHaveCount(1);
