@@ -14,6 +14,7 @@ import { turn } from "./pageturn";
 import { resumePage } from "./bookshelf";
 import { createLibrary } from "./library";
 import { PhotoBatches } from "./photo-batch";
+import { createCropSession } from "./crop-session";
 import { createRecognitionScheduler } from "./recognition-scheduler";
 import { recognitionGuard } from "./recognition-guard";
 import { insertIndex, selectedIndex, type Placement } from "./pagelist";
@@ -1865,6 +1866,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
           adjusted = true;
           pts[i] = [Math.min(W, Math.max(0, (ev.clientX - r.left - ox) / scale)), Math.min(H, Math.max(0, (ev.clientY - r.top - oy) / scale))];
           if (i >= 4) midMoved[i - 4] = true; else followMids();
+          session.adjust({ corners: pts.slice(0, 4) as Corners, mids: pts.slice(4, 8) as Corners });
           draw();
         };
         h.onpointerup = () => { h.onpointermove = null; };
@@ -1873,80 +1875,43 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     const ro = new ResizeObserver(layout); ro.observe(stage);
     layout();
 
-    // The buttons work at once. The whole photo needs no page search; "Use" on the untouched frame
-    // of a new photo means the suggestion and waits for the search; "Use" on an adjusted frame waits
-    // for OpenCV only to straighten the page. A search that finishes after the user decided changes nothing.
-    const cvReady: Promise<CV | null> = getCv().catch((e) => { console.error(e); return null; });
+    // The session owns decisions and pending detection; this adapter owns drawing and DOM resources.
     const okBtn = $<HTMLButtonElement>("cropOk"), wholeBtn = $<HTMLButtonElement>("cropWhole"), cancelBtn = $<HTMLButtonElement>("cropCancel");
+    const buttons = [okBtn, wholeBtn, cancelBtn];
     // A batch (with a counter) skips this photo and goes on; a single photo is cancelled.
     cancelBtn.textContent = t(counter ? "cropSkip" : "cropCancel");
-    let decided = false, searched = false, closed = false;
-    // Look for the page alongside: the user may adjust or accept the frame before the search is done.
-    const search = cvReady.then((cv) => {
-      if (decided || closed) return;
-      try {
-        if (cv && !start && !adjusted) {
-          const found = Lib.detectFrame(cv, photo);
-          if (found) { pts = [...found.corners, ...found.mids]; keepCurves(found); draw(); }
-          msg(found ? "cropFound" : "cropNone");
-        } else msg("cropNone");
-      } catch (e) {
-        console.error(e);
-        msg("cropNone");
-      }
-    }).finally(() => { searched = true; });
-    const buttons = [okBtn, wholeBtn, cancelBtn];
-    const result = new Promise<CropResult | null>((resolve) => {
-      const close = () => {
-        closed = true;
-        signal.removeEventListener("abort", abort);
+    okBtn.onclick = () => session.use();
+    wholeBtn.onclick = () => session.whole();
+    cancelBtn.onclick = () => session.cancel();
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      e.preventDefault(); e.stopPropagation(); session.cancel();
+    }
+    document.addEventListener("keydown", onKey, true);
+    const session = createCropSession(full, start, signal, {
+      ready: getCv(),
+      detect: cv => Lib.detectFrame(cv, photo),
+      preview: found => {
+        if (found) { pts = [...found.corners, ...found.mids]; keepCurves(found); draw(); }
+        msg(found ? "cropFound" : "cropNone");
+      },
+      waiting: step => {
+        for (const b of buttons) b.disabled = true;
+        if (step === "straighten") msg("cropStraightening");
+      },
+      make: (frame, cv): CropResult => frame && cv
+        ? { canvas: Lib.warpPage(cv, photo, frame), corners: frame }
+        : { canvas: photo, corners: null },
+      close: () => {
         ro.disconnect(); handles.forEach(h => h.remove()); dlg.hidden = true;
         window.removeEventListener("resize", fitDialog);
         window.visualViewport?.removeEventListener("resize", fitDialog);
         document.removeEventListener("keydown", onKey, true);
         for (const b of buttons) { b.onclick = null; b.disabled = false; }
-      };
-      const finish = async (frame: Frame | null) => {
-        if (decided || closed) return;
-        decided = true;
-        const all = (f: Frame) => [...f.corners, ...f.mids];
-        const isFull = !frame || all(frame).every((p, i) => Math.hypot(p[0] - all(full)[i][0], p[1] - all(full)[i][1]) < 2);
-        let cv: CV = null;
-        if (!isFull) {
-          for (const b of buttons) b.disabled = true;
-          msg("cropStraightening");
-          cv = await cvReady;
-        }
-        if (closed) return;
-        close();
-        if (isFull || !cv) return resolve({ canvas: photo, corners: null });
-        resolve({ canvas: Lib.warpPage(cv, photo, frame!), corners: frame });
-      };
-      // Supersession also settles a crop waiting for detection/straightening. Its late continuation
-      // must never close or redraw the replacement dialog.
-      const abort = () => { close(); resolve(null); };
-      signal.addEventListener("abort", abort, { once: true });
-      // Cancel or skip: nothing is made from this photo (#205). Not once the adult chose to use it.
-      const cancel = () => {
-        if (decided || cancelBtn.disabled) return;
-        decided = true; close(); resolve(null);
-      };
-      function onKey(e: KeyboardEvent) {
-        if (e.key !== "Escape") return;
-        e.preventDefault(); e.stopPropagation(); cancel();
-      }
-      document.addEventListener("keydown", onKey, true);
-      okBtn.onclick = async () => {
-        if (!start && !adjusted && !searched) {
-          for (const b of buttons) b.disabled = true;
-          await search;
-        }
-        finish({ corners: pts.slice(0, 4) as Corners, mids: pts.slice(4, 8) as Corners });
-      };
-      wholeBtn.onclick = () => finish(null);
-      cancelBtn.onclick = cancel;
+      },
+      error: error => console.error(error),
     });
-    return result;
+    return session.result;
   }
 
   /** A page has a new picture (cropped again or replaced): show it and recognise its text again. */
