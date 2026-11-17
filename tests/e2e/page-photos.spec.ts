@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { fixture, fresh, goShelf, openWorkshop, seedBooks, storedPages, waitForText } from "./helpers";
+import { pageAction, fixture, fresh, goShelf, openWorkshop, seedBooks, storedPages, waitForText } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 test.beforeEach(async ({ page }) => { await fresh(page); });
@@ -13,9 +13,9 @@ async function openOriginalBook(page: Page) {
 
 /** Open the photo chooser of a page action and pick files, without cropping them yet. */
 async function pickPhotos(page: Page, button: string, files: string[]) {
-  await expect(page.locator(button)).toBeVisible();
   const chooser = page.waitForEvent("filechooser");
-  await page.click(button);
+  await pageAction(page, button.slice(1));
+  if (button === "#replacePhotoBtn") await page.click("#chooseReplacementBtn");
   await (await chooser).setFiles(files.map(fixture));
 }
 
@@ -70,10 +70,14 @@ type Ocr = { ocrCalls: number; ocrReleases: Record<number, () => void> };
 
 test("Reordering keeps the selected page and persists, with disabled end arrows", async ({ page }) => {
   await openOriginalBook(page);
-  await expect(page.locator(".thumb .ctl").first().locator("button").first()).toBeDisabled();
-  await expect(page.locator(".thumb .ctl").last().locator("button").last()).toBeDisabled();
-  await page.locator(".thumb > button").nth(1).click();
-  await page.locator(".thumb .ctl").nth(1).locator("button").first().click();
+  await page.click("#pageMenuBtn");
+  await expect(page.locator("#pageEarlierBtn")).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await page.locator(".thumb > button").last().click();
+  await page.click("#pageMenuBtn");
+  await expect(page.locator("#pageLaterBtn")).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await pageAction(page, "pageEarlierBtn", 1);
   await expect(page.locator("#count")).toHaveText("1 / 3");
   await expect(page.locator("#reader")).toContainText("Anden originale side.");
   await expect.poll(async () => (await storedPages(page)).map(p => p.id)).toEqual(["photos-1", "photos-0", "photos-2"]);
@@ -122,8 +126,8 @@ test("Replacing a page photo keeps its identity and position and survives reload
 test("A broken replacement image leaves the existing page untouched", async ({ page }) => {
   await openOriginalBook(page);
   const chooser = page.waitForEvent("filechooser");
-  await expect(page.locator("#replacePhotoBtn")).toBeVisible();
-  await page.click("#replacePhotoBtn");
+  await expect(page.locator("#replacePhotoBtn")).toBeEnabled();
+  await pageAction(page, "replacePhotoBtn"); await page.click("#chooseReplacementBtn");
   await (await chooser).setFiles({ name: "broken.jpg", mimeType: "image/jpeg", buffer: Buffer.from("not an image") });
   await expect(page.locator("#toast")).toHaveText("Billedet kunne ikke åbnes.");
   await expect(page.locator("#reader")).toContainText("Første originale side.");
@@ -168,8 +172,8 @@ test("A superseded recognition job cannot write old text over the replacement ph
 test("A cancelled photo chooser leaves the book unchanged and can be opened again", async ({ page }) => {
   await openOriginalBook(page);
   const chooser = page.waitForEvent("filechooser");
-  await expect(page.locator("#replacePhotoBtn")).toBeVisible();
-  await page.click("#replacePhotoBtn");
+  await expect(page.locator("#replacePhotoBtn")).toBeEnabled();
+  await pageAction(page, "replacePhotoBtn"); await page.click("#chooseReplacementBtn");
   await (await chooser).setFiles([]);
   await expect(page.locator("#crop")).toBeHidden();
   await expect(page.locator("#reader")).toContainText("Første originale side.");
@@ -201,7 +205,7 @@ test("A photo chosen after leaving a book cannot change another book", async ({ 
   await page.locator(".book", { hasText: "Book A" }).click();
   await openWorkshop(page);
   const chooser = page.waitForEvent("filechooser");
-  await page.click("#replacePhotoBtn");
+  await pageAction(page, "replacePhotoBtn"); await page.click("#chooseReplacementBtn");
   const dialog = await chooser;
   await goShelf(page);
   await expect(page.locator("#start")).toBeVisible();
@@ -248,7 +252,7 @@ test("Deleting a new page during a batch keeps the rest of the batch and a page 
   try {
     await acceptCrop(page);
     await expect(page.locator("#crop")).toBeHidden();
-    await page.locator(".thumb").nth(2).locator(".x").click();
+    await pageAction(page, "deletePageBtn", 2);
   } finally { await release(); }
   await acceptCrop(page);
   await expect(page.locator("#count")).toHaveText("3 / 4");
@@ -335,4 +339,18 @@ test("Recognition left over from an earlier visit cannot overwrite a page after 
   await openWorkshop(page);
   await page.locator(".thumb > button").nth(1).click();
   await expect.poll(() => page.locator("#origImg").evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(1200);
+});
+
+test("Photo replacement explains the change only in its replacement step and can be cancelled", async ({ page }) => {
+  await openOriginalBook(page);
+  await expect(page.locator("#replacePhotoHint")).toBeHidden();
+  await page.click("#pageMenuBtn");
+  await pageAction(page, "replacePhotoBtn");
+  await expect(page.locator("#replacePhotoDialog")).toBeVisible({ timeout: 1500 });
+  await expect(page.locator("#replacePhotoHint")).toContainText("manuelle tekstrettelser");
+  await page.keyboard.press("Escape");
+  await expect(page.locator("#replacePhotoDialog")).toBeHidden();
+  await expect(page.locator("#pageMenuBtn")).toBeFocused();
+  await expect(page.locator("#reader")).toContainText("Første originale side.");
+  await expect.poll(async () => (await storedPages(page)).map(p => p.id)).toEqual(["photos-0", "photos-1", "photos-2"]);
 });

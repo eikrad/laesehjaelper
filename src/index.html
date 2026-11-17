@@ -139,13 +139,7 @@ body.workshop .bookbar .btn-ghost.small { min-height: 48px; }
 .btn-danger { border: 1.5px solid #c9372c; color: #c9372c; background: #fff; border-radius: 12px; padding: 10px 16px; font-weight: 700; }
 .btn-danger.armed { background: #c9372c; color: #fff; }
 .thumb { position: relative; flex: 0 0 auto; }
-.thumb .ctl { display: none; gap: 4px; margin-top: 6px; }
 body.workshop .thumb { display: flex; flex-direction: column; align-items: center; }
-body.workshop .thumb .ctl { display: flex; }
-.thumb .ctl button { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--ink); color: #fff; font-size: 22px; line-height: 1; padding: 0; box-shadow: none; }
-.thumb .ctl button:disabled { opacity: .35; cursor: default; }
-.thumb .ctl .x { background: #c9372c; }
-body.workshop .thumbs { gap: 16px; }
 .btn-ghost { display: inline-flex; align-items: center; gap: 10px; border: 1.5px solid var(--ink); background: #fff; color: var(--ink); border-radius: 12px; padding: 11px 18px; font-weight: 700; }
 
 .how { list-style: none; counter-reset: s; margin: 48px 0 0; padding: 22px 0 0; display: grid; gap: 16px; border-top: 1px solid var(--line); }
@@ -180,21 +174,28 @@ body:not(.workshop) #edit, body:not(.workshop) #thumbs,
 body:not(.workshop) #compareBtn, body:not(.workshop) .workshop-only,
 body.workshop .reading-only { display: none !important; }
 body.workshop:not(.focus) .workshop-grid { display: grid; gap: 16px; }
-#pagePhotoTools { padding: 16px; border-bottom: 1px solid var(--line); }
-.page-photo-tools button { min-height: 48px; }
-.workshop-tools { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
-body.workshop #thumbs { display: grid; grid-template-columns: repeat(auto-fit, minmax(144px, 1fr)); align-content: start; gap: 16px; overflow: visible; }
+.page-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+.page-toolbar > button, #pageMenuBtn { min-height: 48px; }
+#checkTextBtn { background: var(--blue); border-color: var(--blue); color: white; }
+.page-menu { position: relative; }
+#pageMenu { max-height: var(--page-menu-height, 60dvh); overflow-y: auto; overscroll-behavior: contain; }
+#pagePhotoTools { display: grid; }
+.entry-menu button:disabled { opacity: .45; cursor: default; }
+body.workshop #thumbs { display: flex; align-items: start; gap: 12px; overflow-x: auto; padding: 4px; margin: 0; }
+body.workshop #thumbs > .thumb { width: 88px; }
+.page-number { font-size: 13px; font-weight: 700; }
 body.workshop #thumbs > .thumb { min-width: 0; }
 body.workshop .thumb > button { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; }
 .recognition { max-width: 160px; font-size: 13px; overflow-wrap: anywhere; }
 .unsaved { color: #b3261e; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
 .thumb .save-again { min-height: 44px; margin-top: 6px; padding: 0 14px; border: 0; border-radius: 22px; background: #b3261e; color: #fff; font-size: 14px; }
-body.workshop .thumbs .add { width: 100%; min-height: 74px; height: auto; }
+body.workshop .thumbs .add { width: 56px; min-height: 74px; height: auto; }
 body.workshop .workshop-grid > * { min-width: 0; }
 @media (min-width: 840px) {
   body.workshop:not(.focus) .wrap { max-width: min(1280px, calc(100vw - 136px)); }
   body.workshop:not(.focus) .workshop-grid { grid-template-columns: 192px minmax(0, 1fr); align-items: start; }
-  body.workshop:not(.focus) #thumbs { flex-wrap: wrap; margin: 0; }
+  body.workshop:not(.focus) #thumbs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: visible; }
+  body.workshop:not(.focus) #thumbs > .thumb { width: 100%; }
 }
 /* Reader view */
 .pagecard { background: var(--page-bg); border-radius: 16px; overflow: hidden; overflow: clip; box-shadow: 0 0 0 1px var(--line); }   /* clip: keeps the photo sticky beside the text */
@@ -437,7 +438,8 @@ input[type=range] { width: 100%; height: 44px; margin: 0; accent-color: var(--bl
 .crop-foot button:disabled { opacity: .35; cursor: default; }
 .crop-foot .btn-ghost { background: transparent; color: #fff; border-color: rgba(255,255,255,.5); }
 .cta-sm { border: 0; background: #fff; color: var(--ink); border-radius: 12px; padding: 11px 22px; font-weight: 700; }
-.editactions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.edit:not([open]) { display: none; }
+.dialog-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
 .installrow { margin: 18px 0 0; }
 .importrow { margin: 10px 0 0; }
 .importrow .linkbtn { cursor: pointer; }
@@ -456,7 +458,7 @@ input[type=range] { width: 100%; height: 44px; margin: 0; accent-color: var(--bl
 @media (max-width: 480px) { .own { margin-left: 0; padding-left: 0; border-left: 0; } }
 
 /* Reading mode keeps the page and reading controls, with preparation and settings hidden. */
-body.focus .workshop-tools, body.focus header.top, body.focus .bookbar, body.focus .orig, body.focus .edit, body.focus .thumbs, body.focus .settings, body.focus .foot, body.focus .dock > :not(.keep) { display: none !important; }
+body.focus .page-toolbar, body.focus header.top, body.focus .bookbar, body.focus .orig, body.focus .edit, body.focus .thumbs, body.focus .settings, body.focus .foot, body.focus .dock > :not(.keep) { display: none !important; }
 body.focus .wrap { max-width: none; padding: 0; }
 body.focus .pagecard { border-radius: 0; box-shadow: none; min-height: 100vh; }
 body.focus .reader { padding: 48px 7vw 120px; min-height: 100vh; }
@@ -526,6 +528,7 @@ body.reading #readingTitle { overflow: hidden; white-space: nowrap; text-overflo
 body.reading #editBookBtn { min-height: 48px; white-space: nowrap; padding: 4px 8px; font-size: 12px; border: 0; background: transparent; }
 body.reading #editBookBtn.holding { background: linear-gradient(to right, #dfe6ff var(--hold-progress, 0%), transparent var(--hold-progress, 0%)); }
 body.reading .pagecard { border-radius: 2px; }
+body.workshop #reader.pagemode .pageview,
 body.reading #reader.pagemode .pageview { width: min(100%, calc(var(--available-page-height, calc(100dvh - 128px)) * var(--ar, 1))); margin: 0 auto; }
 body.focus .bookbar { display: flex !important; min-height: 48px; margin: 0 0 4px; }
 body.focus .bookbar > :not(.keep) { display: none !important; }
@@ -673,38 +676,53 @@ body.focus .pagecard:has(.pagemode) { min-height: 0; }
     </div>
     <div class="workshop-grid">
     <div class="thumbs" id="thumbs"></div>
-    <article class="pagecard">
-      <div class="workshop-only"><button class="btn-ghost" id="phraseEdit" data-t="phraseEdit"></button></div>
-      <div class="workshop-only" id="pagePhotoTools" hidden>
-        <div class="workshop-tools page-photo-tools">
-          <button class="btn-ghost" id="insertBeforeBtn" data-t="insertBefore"></button>
-          <button class="btn-ghost" id="insertAfterBtn" data-t="insertAfter"></button>
-          <button class="btn-ghost" id="replacePhotoBtn" aria-describedby="replacePhotoHint" data-t="replacePhoto"></button>
-          <input id="pagePhotoFile" type="file" accept="image/*" hidden>
+    <section class="selected-page">
+      <div class="page-toolbar workshop-only">
+        <button class="btn-ghost" id="checkTextBtn" data-t="editSummary" aria-controls="edit" aria-expanded="true"></button>
+        <div class="page-menu">
+          <button class="btn-ghost" id="pageMenuBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="pageMenu"><span data-t="pageMenu"></span><svg class="i" aria-hidden="true"><use href="#i-more"/></svg></button>
+          <div class="entry-menu" id="pageMenu" role="menu" aria-labelledby="pageMenuBtn" hidden>
+            <button role="menuitem" id="recropBtn" data-t="cropAgain"></button>
+            <button role="menuitem" id="reocrBtn" data-t="ocrAgain"></button>
+            <button role="menuitem" id="ocrRegionsBtn" data-t="regionsTitle"></button>
+            <button role="menuitem" id="moveBtn"><span data-t="moveBoxes"></span></button>
+            <button role="menuitem" id="resetPlaceBtn" data-t="resetPlace"></button>
+            <button role="menuitem" id="phraseEdit" data-t="phraseEdit"></button>
+            <div id="pagePhotoTools" role="group">
+              <button role="menuitem" id="replacePhotoBtn" data-t="replacePhoto"></button>
+              <button role="menuitem" id="insertBeforeBtn" data-t="insertBefore"></button>
+              <button role="menuitem" id="insertAfterBtn" data-t="insertAfter"></button>
+            </div>
+            <button role="menuitem" id="pageEarlierBtn" data-t="moveEarlier"></button>
+            <button role="menuitem" id="pageLaterBtn" data-t="moveLater"></button>
+            <div role="separator"></div>
+            <button role="menuitem" class="danger" id="deletePageBtn" data-t="deletePage"></button>
+          </div>
         </div>
-        <p class="fhint" id="replacePhotoHint" data-t="replacePhotoHint"></p>
       </div>
+      <input id="pagePhotoFile" type="file" accept="image/*" hidden>
+    <article class="pagecard">
       <div class="orig" id="orig"><img id="origImg" alt=""></div>
       <div class="reader" id="reader"></div>
-      <details class="edit" id="edit" hidden>
-        <summary><svg class="i"><use href="#i-pencil"/></svg><span data-t="editSummary"></span></summary>
+      <details class="edit" id="edit" aria-labelledby="checkTextBtn" hidden>
+        <summary hidden></summary>
         <textarea id="text" spellcheck="true"></textarea>
         <p class="hint" data-th="editHint"></p>
-        <div class="editactions">
-          <button class="btn-ghost" id="recropBtn"><svg class="i"><use href="#i-crop"/></svg><span data-t="cropAgain"></span></button>
-          <button class="btn-ghost" id="reocrBtn"><svg class="i"><use href="#i-redo"/></svg><span data-t="ocrAgain"></span></button>
-          <button class="btn-ghost" id="ocrRegionsBtn" data-t="regionsTitle"></button>
-          <button class="btn-ghost" id="moveBtn"><svg class="i"><use href="#i-crop"/></svg><span data-t="moveBoxes"></span></button>
-          <button class="btn-ghost" id="resetPlaceBtn"><svg class="i"><use href="#i-redo"/></svg><span data-t="resetPlace"></span></button>
-        </div>
       </details>
     </article>
+    </section>
     </div>
 
     <button class="edgenav" id="edgePrev" data-ta="prevPage"><svg class="i"><use href="#i-prev"/></svg></button>
     <button class="edgenav next" id="edgeNext" data-ta="nextPage"><svg class="i"><use href="#i-next"/></svg></button>
   </section>
 </div>
+
+<dialog class="book-dialog" id="replacePhotoDialog" aria-labelledby="replacePhotoTitle">
+  <h2 id="replacePhotoTitle" data-t="replacePhoto"></h2>
+  <p class="fhint" id="replacePhotoHint" data-t="replacePhotoHint"></p>
+  <div class="dialog-actions"><button class="btn-ghost" id="chooseReplacementBtn" data-t="choosePhoto"></button><button class="btn-ghost close" data-t="close"></button></div>
+</dialog>
 
 <!-- Opened from the workshop's "Book ⋯" menu (#206). -->
 <dialog class="book-dialog" id="bookSettings" aria-labelledby="bookSettingsTitle">

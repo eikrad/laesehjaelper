@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { checkText, fresh, openBookOptions, openRecognisedBook, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
+import { pageAction, checkText, fresh, openBookOptions, openRecognisedBook, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -110,13 +110,20 @@ test("Escape closes settings while the text editor has focus", async ({ page }) 
 test("Dismissing settings does not drag a text box underneath", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   await checkText(page);
-  await page.click("#moveBtn");
+  await pageAction(page, "moveBtn");
   const box = page.locator("#reader .tbox").first();
   const before = await box.evaluate((el: HTMLElement) => [el.style.left, el.style.top, el.style.width, el.style.height]);
   await toggleReadingSetup(page);
+  // No choices are needed here. Collapse the groups so the page has an exposed box above the sheet,
+  // even when the compact workshop fits the whole photo inside the viewport.
+  for (const group of await page.locator("#adultSettings > details").all()) {
+    if (await group.evaluate(el => (el as HTMLDetailsElement).open)) await group.locator(":scope > summary").click();
+  }
   // At the top of the screen, clear of the settings sheet and the reading bar, so the tap lands on the box.
   await box.evaluate(el => el.scrollIntoView({ block: "start" }));
   const bounds = (await box.boundingBox())!;
+  const sheet = (await page.locator("#settings").boundingBox())!;
+  expect(bounds.y + 30, "the outside gesture starts and ends above the settings sheet").toBeLessThan(sheet.y);
   await page.mouse.move(bounds.x + 10, bounds.y + 10);
   await page.mouse.down();
   await page.mouse.move(bounds.x + 50, bounds.y + 30, { steps: 4 });
