@@ -13,6 +13,10 @@ import { swipeDirection } from "./swipe";
 import { turn } from "./pageturn";
 import { resumePage } from "./bookshelf";
 import { createLibrary } from "./library";
+import { PhotoBatches } from "./photo-batch";
+import { createCropSession } from "./crop-session";
+import { createRecognitionScheduler } from "./recognition-scheduler";
+import { recognitionGuard } from "./recognition-guard";
 import { insertIndex, selectedIndex, type Placement } from "./pagelist";
 import { createParentGate } from "./hold";
 import { screenWakeLock } from "./wakelock";
@@ -552,10 +556,10 @@ const Lib = { detectFrame, warpPage, orderCorners };
   }
   function releasePageImages(pg: Page) { releaseImage(pg.img); releaseImage(pg.clean); }
   /** Pages waiting for or in recognition. They outlive leaving their book, and reopening it reuses them. */
-  function recognitionPages(): Page[] { return [active, pendingPage, ...queue].filter((pg): pg is Page => !!pg && !pg.batchDraft); }
+  function recognitionPages(): Page[] { return recognition.pages(); }
   function newBook(demo = false) {
     closeEditEntry(); showCheck(false); hideUndo();
-    // Pages still to be recognised keep their images; runQueue() lets them go when they are done.
+    // Pages still to be recognised keep their images; the scheduler lets them go when they are done.
     // Unsaved pages keep theirs too: reopening the book shows them again.
     const recognising = new Set(recognitionPages());
     pages.forEach(pg => { if (!recognising.has(pg) && !library.isUnsaved(pg)) releasePageImages(pg); });
@@ -639,8 +643,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
     pages.push(...ids.map(id => kept.get(id) ?? pageFromRecord(byId.get(id)!)));
     cur = resumePage(b.lastPage, pages.length);
     if (route.pageId) { const i = pages.findIndex(pg => pg.id === route.pageId); if (i >= 0) cur = i; }
-    pages.filter(p => p.status === "wait" && !queue.includes(p)).forEach(p => queue.push(p));
-    showView(route.view); render(); runQueue();
+    pages.filter(p => p.status === "wait").forEach(p => recognition.enqueue(p));
+    showView(route.view); render(); recognition.run();
     // Undo, also after a reload, for the rest of the time (the same page object in this session).
     const open = deletions.undo;
     if (open) {
@@ -690,8 +694,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     finishDeletion();   // Only the latest deletion can be undone.
     pg.deleted = deletionMark(pages.map(p => p.id), i, Date.now());
     pages.splice(i, 1);
-    const waiting = queue.indexOf(pg);
-    if (waiting >= 0) queue.splice(waiting, 1);
+    recognition.discard(pg);
     if (i === 0) book.cover = null;
     cur = Math.min(cur, pages.length - 1);
     offerUndo(pg, book.id);
@@ -717,8 +720,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
     pages.splice(at, 0, pg);
     if (at === 0) book.cover = null;
     cur = at;
-    if (pg.status === "wait" && !queue.includes(pg)) queue.push(pg);
-    render(); saveBook([pg]); runQueue();
+    if (pg.status === "wait") recognition.enqueue(pg);
+    render(); saveBook([pg]); recognition.run();
   }
   /** The undo time is over, or another page was deleted: the page goes for good. */
   function finishDeletion() {
@@ -1440,6 +1443,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
     const pg = pages[cur]; if (!pg) return;
     // Capture the page and value immediately: render() replaces the textarea when turning pages.
     pg.manualEdits = true; touchPage(pg);
+    // New manual text is usable now; an older queued or running OCR attempt must not replace it.
+    if (pg.status === "wait" || pg.status === "ocr") pg.status = "done";
     pg.text = val(e); syncParas(pg);
     pg.rawText = pg.text;
     pg.paras?.forEach(pa => { pa.raw = pa.text || ""; });
@@ -1451,25 +1456,59 @@ const Lib = { detectFrame, warpPage, orderCorners };
   };
 
   // ---------- Loading images ----------
-  function loadImage(file: File) {
+  function loadImage(file: Blob, signal: AbortSignal) {
     return new Promise<{ canvas: HTMLCanvasElement }>((res, rej) => {
+      if (signal.aborted) { rej(signal.reason); return; }
       const url = URL.createObjectURL(file);
       const img = new Image();
+      const cleanup = () => {
+        URL.revokeObjectURL(url); signal.removeEventListener("abort", cancel);
+        img.onload = img.onerror = null;
+      };
+      const cancel = () => { cleanup(); img.removeAttribute("src"); rej(signal.reason); };
+      signal.addEventListener("abort", cancel, { once: true });
       img.onload = () => {
         // Downscale large phone photos for faster processing while retaining enough detail for OCR.
         const max = 2200, k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
         const c = document.createElement("canvas");
         c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
         c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
-        URL.revokeObjectURL(url);
+        cleanup();
         res({ canvas: c });
       };
-      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error(t("imgError"))); };
+      img.onerror = () => { cleanup(); rej(new Error(t("imgError"))); };
       img.src = url;
     });
   }
 
-  const queue: Page[] = [];
+  const recognition = createRecognitionScheduler<Page>({
+    ready: pg => !isRemoved(pg) && pg.status === "wait",
+    process: pg => recognise(pg),
+    released: pg => {
+      // No attempt remains in the scheduler. An open book, an unsaved page or Undo may still own it.
+      if (!pages.includes(pg) && !library.isUnsaved(pg) && pg !== undoable?.pg) releasePageImages(pg);
+    },
+    failed: e => console.error(e),
+  });
+  type PhotoInput = { source: Blob | HTMLCanvasElement; start: Frame | null };
+  type PreparedPhoto = { canvas: HTMLCanvasElement; start: Frame | null };
+  type PhotoAcceptance = (photo: HTMLCanvasElement, crop: CropResult) => Promise<void>;
+  let photoNavigation = 0;
+  const photoBatches = new PhotoBatches({
+    load: async ({ source, start }: PhotoInput, signal: AbortSignal): Promise<PreparedPhoto> => ({
+      canvas: source instanceof HTMLCanvasElement ? source : (await loadImage(source, signal)).canvas, start,
+    }),
+    crop: ({ canvas, start }: PreparedPhoto, { index, total }: { index: number; total: number }, signal: AbortSignal) =>
+      cropFlow(canvas, start, total > 1 ? t("cropOf", { a: index + 1, b: total }) : "", signal),
+    // The acceptance callback captures the originating book. It starts its writes synchronously;
+    // the library then owns them even when this batch's remaining preparation is cancelled.
+    accept: (accept: PhotoAcceptance, { canvas }: PreparedPhoto, crop: CropResult) => accept(canvas, crop),
+    error: (e: unknown) => toast(e instanceof Error ? e.message : String(e)),
+  });
+  function preparePhotos(accept: PhotoAcceptance, inputs: PhotoInput[]) {
+    photoNavigation = nav.current();
+    return photoBatches.start(accept, inputs);
+  }
   // Page photo actions in the workshop: insert photos before or after the selected page, or replace its photo.
   // The chooser may stay open while the user moves on, so remember the page by its ID rather than the object,
   // and the navigation step: after any navigation, even one still loading another book, the photo is ignored.
@@ -1503,32 +1542,20 @@ const Lib = { detectFrame, warpPage, orderCorners };
     if (!list.length || !book) return;
     const owner = book;
     show(nav.go({ to: "workshop", bookId: owner.id, pageId: pages[cur]?.id }));
-    const generation = nav.current();
-    const ownsPreparation = () => book === owner && nav.isCurrent(generation);
     const added: Page[] = [];
-    for (const [n, f] of list.entries()) {
-      try {
-        const { canvas: photo } = await loadImage(f);
-        if (!ownsPreparation()) return;
-        const crop = await cropFlow(photo, null, list.length > 1 ? t("cropOf", { a: n + 1, b: list.length }) : "");
-        if (!ownsPreparation()) return;
-        if (!crop) continue;   // Skipped or cancelled: no page.
-        const { canvas, corners } = crop;
-        // A stored book's page gets its ID right away: page actions refer to pages by ID.
-        const pg: Page = { id: owner.demo ? undefined : uid(), bookId: !owner.demo ? owner.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: target?.lang || S.lang, text: "", status: "wait", progress: 0 };
-        // Pages may have been deleted or moved since the last photo: place it by the pages themselves.
-        const at = insertIndex(pages, added, target, placement);
-        pages.splice(at, 0, pg); added.push(pg); queue.push(pg);
-        if (at === 0) owner.cover = null;
-        cur = selectedIndex(pages, added[0], cur); render();
-        // Photo acceptance: the page is saved with its book record in one step, so navigation that
-        // cancels the rest of the batch cannot leave it out of its book.
-        await saveBook([pg]);
-        runQueue();
-        if (!ownsPreparation()) return;
-      } catch (e) { toast(e instanceof Error ? e.message : String(e)); }
-    }
-    if (!ownsPreparation()) return;
+    const result = await preparePhotos(async (photo, { canvas, corners }) => {
+      // A stored book's page gets its ID right away: page actions refer to pages by ID.
+      const pg: Page = { id: owner.demo ? undefined : uid(), bookId: !owner.demo ? owner.id : null, photo, corners, img: canvas.toDataURL("image/jpeg", 0.88), canvas, lang: target?.lang || S.lang, text: "", status: "wait", progress: 0 };
+      // Pages may have been deleted or moved since the last photo: place it by the pages themselves.
+      const at = insertIndex(pages, added, target, placement);
+      pages.splice(at, 0, pg); added.push(pg); recognition.enqueue(pg);
+      if (at === 0) owner.cover = null;
+      cur = selectedIndex(pages, added[0], cur); render();
+      // Capture the accepted page and book record before yielding to navigation.
+      await saveBook([pg]);
+      recognition.run();
+    }, list.map(source => ({ source, start: null })));
+    if (result.status === "cancelled") return;
     // A new book whose photos were all cancelled is not kept: back to where the adult started (#205).
     if (!pages.length) { goHome(); return; }
     if (!added.length) return;
@@ -1538,16 +1565,9 @@ const Lib = { detectFrame, warpPage, orderCorners };
 
   /** Give a page a new photo: same page, position and link; its text is recognised again. */
   async function replacePhoto(pg: Page, file: File) {
-    const owner = book, generation = nav.current();
-    const owns = () => book === owner && nav.isCurrent(generation) && pages.includes(pg);
-    try {
-      const { canvas: photo } = await loadImage(file);
-      if (!owns()) return;
-      const crop = await cropFlow(photo, null, "");
-      // Only an accepted crop of a readable photo replaces anything.
-      if (!owns() || !crop) return;
-      restartPage(pg, crop, { photo, photoBlob: null, text: "", rawText: "" });
-    } catch (e) { toast(e instanceof Error ? e.message : String(e)); }
+    await preparePhotos(async (photo, crop) => {
+      if (pages.includes(pg)) restartPage(pg, crop, { photo, photoBlob: null, text: "", rawText: "" });
+    }, [{ source: file, start: null }]);
   }
 
 
@@ -1777,7 +1797,8 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   // Four corners plus one point per edge: edge points follow curved pages,
   // for example near the book gutter.
   /** Let the adult frame the page. Resolves with the crop, or null when the photo was cancelled (or skipped, in a batch). */
-  async function cropFlow(photo: HTMLCanvasElement, start: Frame | null, counter: string): Promise<CropResult | null> {
+  async function cropFlow(photo: HTMLCanvasElement, start: Frame | null, counter: string, signal: AbortSignal): Promise<CropResult | null> {
+    if (signal.aborted) return null;
     const W = photo.width, H = photo.height;
     const full = frameFromCorners([[0, 0], [W, 0], [W, H], [0, H]]);
     const init = start || full;
@@ -1845,6 +1866,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
           adjusted = true;
           pts[i] = [Math.min(W, Math.max(0, (ev.clientX - r.left - ox) / scale)), Math.min(H, Math.max(0, (ev.clientY - r.top - oy) / scale))];
           if (i >= 4) midMoved[i - 4] = true; else followMids();
+          session.adjust({ corners: pts.slice(0, 4) as Corners, mids: pts.slice(4, 8) as Corners });
           draw();
         };
         h.onpointerup = () => { h.onpointermove = null; };
@@ -1853,73 +1875,43 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     const ro = new ResizeObserver(layout); ro.observe(stage);
     layout();
 
-    // The buttons work at once. The whole photo needs no page search; "Use" on the untouched frame
-    // of a new photo means the suggestion and waits for the search; "Use" on an adjusted frame waits
-    // for OpenCV only to straighten the page. A search that finishes after the user decided changes nothing.
-    const cvReady: Promise<CV | null> = getCv().catch((e) => { console.error(e); return null; });
+    // The session owns decisions and pending detection; this adapter owns drawing and DOM resources.
     const okBtn = $<HTMLButtonElement>("cropOk"), wholeBtn = $<HTMLButtonElement>("cropWhole"), cancelBtn = $<HTMLButtonElement>("cropCancel");
+    const buttons = [okBtn, wholeBtn, cancelBtn];
     // A batch (with a counter) skips this photo and goes on; a single photo is cancelled.
     cancelBtn.textContent = t(counter ? "cropSkip" : "cropCancel");
-    let decided = false, searched = false;
-    // Look for the page alongside: the user may adjust or accept the frame before the search is done.
-    const search = cvReady.then((cv) => {
-      if (decided) return;
-      try {
-        if (cv && !start && !adjusted) {
-          const found = Lib.detectFrame(cv, photo);
-          if (found) { pts = [...found.corners, ...found.mids]; keepCurves(found); draw(); }
-          msg(found ? "cropFound" : "cropNone");
-        } else msg("cropNone");
-      } catch (e) {
-        console.error(e);
-        msg("cropNone");
-      }
-    }).finally(() => { searched = true; });
-    const buttons = [okBtn, wholeBtn, cancelBtn];
-    const result = new Promise<CropResult | null>((resolve) => {
-      const close = () => {
+    okBtn.onclick = () => session.use();
+    wholeBtn.onclick = () => session.whole();
+    cancelBtn.onclick = () => session.cancel();
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      e.preventDefault(); e.stopPropagation(); session.cancel();
+    }
+    document.addEventListener("keydown", onKey, true);
+    const session = createCropSession(full, start, signal, {
+      ready: getCv(),
+      detect: cv => Lib.detectFrame(cv, photo),
+      preview: found => {
+        if (found) { pts = [...found.corners, ...found.mids]; keepCurves(found); draw(); }
+        msg(found ? "cropFound" : "cropNone");
+      },
+      waiting: step => {
+        for (const b of buttons) b.disabled = true;
+        if (step === "straighten") msg("cropStraightening");
+      },
+      make: (frame, cv): CropResult => frame && cv
+        ? { canvas: Lib.warpPage(cv, photo, frame), corners: frame }
+        : { canvas: photo, corners: null },
+      close: () => {
         ro.disconnect(); handles.forEach(h => h.remove()); dlg.hidden = true;
         window.removeEventListener("resize", fitDialog);
         window.visualViewport?.removeEventListener("resize", fitDialog);
         document.removeEventListener("keydown", onKey, true);
         for (const b of buttons) { b.onclick = null; b.disabled = false; }
-      };
-      const finish = async (frame: Frame | null) => {
-        if (decided) return;
-        decided = true;
-        const all = (f: Frame) => [...f.corners, ...f.mids];
-        const isFull = !frame || all(frame).every((p, i) => Math.hypot(p[0] - all(full)[i][0], p[1] - all(full)[i][1]) < 2);
-        let cv: CV = null;
-        if (!isFull) {
-          for (const b of buttons) b.disabled = true;
-          msg("cropStraightening");
-          cv = await cvReady;
-        }
-        close();
-        if (isFull || !cv) return resolve({ canvas: photo, corners: null });
-        resolve({ canvas: Lib.warpPage(cv, photo, frame!), corners: frame });
-      };
-      // Cancel or skip: nothing is made from this photo (#205). Not once the adult chose to use it.
-      const cancel = () => {
-        if (decided || cancelBtn.disabled) return;
-        decided = true; close(); resolve(null);
-      };
-      function onKey(e: KeyboardEvent) {
-        if (e.key !== "Escape") return;
-        e.preventDefault(); e.stopPropagation(); cancel();
-      }
-      document.addEventListener("keydown", onKey, true);
-      okBtn.onclick = async () => {
-        if (!start && !adjusted && !searched) {
-          for (const b of buttons) b.disabled = true;
-          await search;
-        }
-        finish({ corners: pts.slice(0, 4) as Corners, mids: pts.slice(4, 8) as Corners });
-      };
-      wholeBtn.onclick = () => finish(null);
-      cancelBtn.onclick = cancel;
+      },
+      error: error => console.error(error),
     });
-    return result;
+    return session.result;
   }
 
   /** A page has a new picture (cropped again or replaced): show it and recognise its text again. */
@@ -1929,15 +1921,15 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     Object.assign(pg, { canvas, corners, ocrRegions: undefined, img: canvas.toDataURL("image/jpeg", 0.88), status: "wait", progress: 0, paras: null, clean: null, inputBlob: null, cleanBlob: null }, change);
     if (pg === pages[0] && book) book.cover = null;
     savePage(pg); saveBook();
-    queue.push(pg); render(); runQueue();
+    recognition.enqueue(pg); render(); recognition.run();
   }
 
   $<HTMLButtonElement>("recropBtn").onclick = async () => {
     const pg = pages[cur];
     if (!pg || !(pg.photo || pg.photoBlob)) return;
-    if (!pg.photo) pg.photo = await blobToCanvas(pg.photoBlob!);
-    const crop = await cropFlow(pg.photo, toFrame(pg.corners), "");
-    if (crop) restartPage(pg, crop);   // Cancel keeps the page as it was.
+    await preparePhotos(async (photo, crop) => {
+      if (pages.includes(pg)) restartPage(pg, crop, { photo });
+    }, [{ source: pg.photo || pg.photoBlob!, start: toFrame(pg.corners) }]);
   };
 
   // Recognize the current page again, for example after an app update improves OCR.
@@ -1952,29 +1944,24 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     releaseImage(pg.clean);
     Object.assign(pg, { status: "wait", progress: 0, paras: null, clean: null, cleanBlob: null });
     savePage(pg);
-    queue.push(pg); render(); runQueue();
+    recognition.enqueue(pg); render(); recognition.run();
   }
-
-  // Both single-page and book jobs share one worker at a time, including their two OCR passes.
-  let recognitionPipeline: Promise<unknown> = Promise.resolve();
-  function inRecognitionPipeline<T>(process: () => Promise<T>): Promise<T> {
-    const job = recognitionPipeline.then(process);
-    recognitionPipeline = job.catch(() => {});
-    return job;
-  }
-  const recognitionStamp = (pg: Page) => JSON.stringify([pg.changeVersion, pg.lang, pg.status, pg.text, pg.rawText, pg.paras, pg.corners, pg.ocrRegions, pg.phraseCues]);
 
   async function reprocessBook(include: boolean, detect: boolean) {
     const owner = book;
-    const selected = planRecognition(batchCandidates(), include).pages.map(({ pg }) => ({ pg, revision: pg.revision, number: pages.indexOf(pg) + 1, stamp: recognitionStamp(pg), canvas: pg.canvas, input: pg.inputBlob, photo: pg.photoBlob }));
+    const selected = planRecognition(batchCandidates(), include).pages.map(({ pg }) => {
+      const revision = pg.revision;
+      return { pg, revision, number: pages.indexOf(pg) + 1,
+        current: recognitionGuard(pg, () => book === owner && pages.includes(pg) && !isRemoved(pg) && pg.revision === revision) };
+    });
     await runRecognitionBatch(selected, {
       cancelled: () => { if (book !== owner) bookRecognition.cancelled = true; return bookRecognition.cancelled; },
       progress: state => bookRecognition.progress(state),
       process: async job => {
         let fallback = false;
-        const outcome = await inRecognitionPipeline(async (): Promise<RecognitionOutcome> => {
+        const outcome = await recognition.exclusive(async (): Promise<RecognitionOutcome> => {
           const pg = job.pg;
-          const valid = () => book === owner && pages.includes(pg) && !isRemoved(pg) && recognitionStamp(pg) === job.stamp && pg.revision === job.revision && pg.canvas === job.canvas && pg.inputBlob === job.input && pg.photoBlob === job.photo;
+          const valid = job.current;
           if (!valid()) return "changed";
           // The draft owns no display URLs. The usable page remains untouched until replacement succeeds.
           const draft: Page = { ...pg, batchDraft: true, paras: null, clean: null, cleanBlob: null, img: null, phraseCues: undefined };
@@ -2064,12 +2051,13 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     return workers[code];
   }
 
-  // A recognition job owns its page while the page's status is "ocr". Anything that gives the page a new
-  // picture or language sets it back to "wait" and queues it again; the old job then drops its result.
+  // A job may update only the content and source it started with (src/recognition-guard.ts).
+  // Single-page work can finish after leaving its book; book jobs also keep their captured ownership rule.
   // Results are committed in one step after the last await, so a page never mixes two pictures.
   async function recognise(pg: Page, valid = () => true) {
-    const stale = () => isRemoved(pg) || pg.status !== "ocr" || !valid();
     active = pg; pg.status = "ocr"; pg.stage = "loadingCore";
+    const current = recognitionGuard(pg, () => !isRemoved(pg) && valid());
+    const stale = () => !current();
     if (pages[cur] === pg) render(); else renderThumbStatus(pg);
     try {
       const w = await getWorker(pg.lang);
@@ -2119,24 +2107,6 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
       active = null;
     }
     if (pages[cur] === pg) render(); else renderThumbStatus(pg);
-  }
-
-  let running = false;
-  let pendingPage: Page | null = null;
-  async function runQueue() {
-    if (running) return; running = true;
-    while (queue.length) {
-      const pg = queue.shift()!;
-      // Skip deleted pages, and pages already recognised from an earlier entry in the queue.
-      if (!isRemoved(pg) && pg.status === "wait") {
-        pendingPage = pg;
-        await inRecognitionPipeline(() => recognise(pg));
-        pendingPage = null;
-      }
-      // A page of a book that is no longer open, with no work left: nothing shows it any more.
-      if (!pages.includes(pg) && !queue.includes(pg) && !library.isUnsaved(pg) && pg !== undoable?.pg) releasePageImages(pg);
-    }
-    running = false;
   }
 
   // ---------- Reading aloud ----------
@@ -2227,7 +2197,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   function relang(pg: Page) {
     touchPage(pg);
     pg.lang = S.lang;
-    if (pg.canvas || pg.inputBlob) { pg.status = "wait"; pg.progress = 0; pg.cleanBlob = null; queue.push(pg); render(); runQueue(); }
+    if (pg.canvas || pg.inputBlob) { pg.status = "wait"; pg.progress = 0; pg.cleanBlob = null; recognition.enqueue(pg); render(); recognition.run(); }
     else { if (Object.values(DEMO).includes(pg.text)) pg.text = DEMO[pg.lang]; savePage(pg); render(); }
   }
 
@@ -2255,6 +2225,9 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   }
   /** Show where a move, a link or a Back step leads (src/navigation.ts). A book already at hand saves a lookup. */
   async function show(route: Route, known?: Book) {
+    // A blocked Back step leaves the ticket unchanged; an actual move stops preparation immediately,
+    // including while decoding or accepted storage is pending. Accepted writes belong to the library.
+    if (!nav.isCurrent(photoNavigation)) photoBatches.cancel();
     if (route.to === "stay") return;
     if (route.to === "shelf") { showShelf(); return; }
     if (route.to === "open") {
