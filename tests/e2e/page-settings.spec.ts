@@ -1,7 +1,7 @@
 import type { Page } from "@playwright/test";
 import type { Para } from "../../src/types";
 import { expect, test } from "./fixtures";
-import { checkText, expectSyllableBowsInsideBoxes, fresh, toggleReadingSetup } from "./helpers";
+import { pageAction, checkText, expectSyllableBowsInsideBoxes, fresh, toggleReadingSetup } from "./helpers";
 
 // Text size and spacing settings in the book-page view (text set on the photo).
 
@@ -54,7 +54,7 @@ test("resizing a small speech box releases its font from unrelated fine print", 
     para("Original test note. These invented words form a long small-print paragraph used only to test independent text-box sizing.", box(100, 1200, 500, 1270), 9, 2),
   ]);
   const before = (await style(page, 0)).size;
-  await checkText(page); await page.click("#moveBtn");
+  await checkText(page); await pageAction(page, "moveBtn");
   const resized = page.locator("#reader .tbox").first(); await resized.scrollIntoViewIfNeeded();
   const bounds = (await resized.boundingBox())!;
   const grip = (await resized.locator(".grip").boundingBox())!;

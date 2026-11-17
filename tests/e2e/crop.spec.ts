@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { checkText, fixture, fresh, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, storedPages, waitForText } from "./helpers";
+import { pageAction, checkText, fixture, fresh, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, storedPages, waitForText } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
@@ -77,7 +77,7 @@ test("A corrected automatic frame and its curved edge survive cropping and reloa
   await expect.poll(async () => (await storedPages(page)).map(p => `${p.status} ${p.corners}`)).toEqual(["done true"]);
   await page.reload();
   await checkText(page);
-  await page.click("#recropBtn");
+  await pageAction(page, "recropBtn");
   await expect(page.locator("#crop")).toBeVisible();
   await expect(page.locator("#cropMsg")).not.toContainText("…", { timeout: 120_000 });
   await expect(page.locator("#cropPoly")).toHaveAttribute("d", corrected!);
@@ -206,7 +206,7 @@ test("Cancelling a new crop or new photos keeps the book as it was, in the works
   await openRecognisedBook(page, ["side-da.jpg"]);
   await openWorkshop(page);
   const before = await storedPages(page);
-  await page.click("#recropBtn");
+  await pageAction(page, "recropBtn");
   await expect(page.locator("#crop")).toBeVisible();
   await expect(page.locator("#cropCancel")).toHaveText("Annuller");
   await page.click("#cropCancel");

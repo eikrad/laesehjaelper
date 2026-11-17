@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { checkText, fresh, openBookOptions, openRecognisedBook, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
+import { pageAction, checkText, fresh, openBookOptions, openRecognisedBook, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -110,7 +110,7 @@ test("Escape closes settings while the text editor has focus", async ({ page }) 
 test("Dismissing settings does not drag a text box underneath", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   await checkText(page);
-  await page.click("#moveBtn");
+  await pageAction(page, "moveBtn");
   const box = page.locator("#reader .tbox").first();
   const before = await box.evaluate((el: HTMLElement) => [el.style.left, el.style.top, el.style.width, el.style.height]);
   await toggleReadingSetup(page);

@@ -1,5 +1,5 @@
 import { test, expect } from "./fixtures";
-import { bookAction, fresh, openWorkshop, seedBooks, toggleReadingSetup } from "./helpers";
+import { pageAction, bookAction, fresh, openWorkshop, seedBooks, toggleReadingSetup } from "./helpers";
 
 test("an adult marks phrases and the child shows or hides them without changing the words", async ({ page }) => {
   await fresh(page);
@@ -7,7 +7,7 @@ test("an adult marks phrases and the child shows or hides them without changing 
   await page.locator(".book").click();
   await expect(page.locator("#reader .phrase-cue")).toHaveCount(0);
   await openWorkshop(page);
-  await page.click("#phraseEdit");
+  await pageAction(page, "phraseEdit");
   await page.locator('#phraseChoices button[data-after="2"]').click();
   await expect(page.locator("#phrasePreview .phrase-cue")).toHaveCount(1);
   await page.click("#phraseSave");
@@ -25,7 +25,7 @@ test("an adult marks phrases and the child shows or hides them without changing 
 
 test("phrase annotations survive an app EPUB round trip while remaining off for a new reader", async ({ page }, info) => {
   await fresh(page); await seedBooks(page, [{ id: "roundtrip", title: "Læsegrupper", texts: ["En lille mus bor her."] }]);
-  await page.locator(".book").click(); await openWorkshop(page); await page.click("#phraseEdit");
+  await page.locator(".book").click(); await openWorkshop(page); await pageAction(page, "phraseEdit");
   await page.locator('#phraseChoices button[data-after="2"]').click(); await page.click("#phraseSave");
   const [download] = await Promise.all([page.waitForEvent("download"), bookAction(page, "exportBtn")]);
   const file = info.outputPath("phrases.epub"); await download.saveAs(file);
@@ -44,7 +44,7 @@ test("phrase cues yield to short lines, retain word help, and become unavailable
     Object.defineProperty(window, "speechSynthesis", { configurable: true, value: { getVoices: () => [], cancel: () => {}, speak: (u: SpeechSynthesisUtterance) => { w.said.push(u.text); } } });
   });
   await seedBooks(page, [{ id: "phrases", title: "Prøvebog", texts: ["En lille mus bor her."] }]);
-  await page.locator(".book").click(); await openWorkshop(page); await page.click("#phraseEdit");
+  await page.locator(".book").click(); await openWorkshop(page); await pageAction(page, "phraseEdit");
   await page.locator('#phraseChoices button[data-after="2"]').focus(); await page.keyboard.press("Space");
   await page.click("#phraseSave"); await page.click("#readBookBtn"); await page.click("#phraseToggle");
   await page.click("#readBtn");
