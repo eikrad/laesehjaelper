@@ -15,6 +15,7 @@ import { resumePage } from "./bookshelf";
 import { createLibrary } from "./library";
 import { PhotoBatches } from "./photo-batch";
 import { createCropSession } from "./crop-session";
+import { pageActions } from "./page-actions";
 import { createRecognitionScheduler } from "./recognition-scheduler";
 import { recognitionGuard } from "./recognition-guard";
 import { insertIndex, selectedIndex, type Placement } from "./pagelist";
@@ -172,7 +173,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       guideLabel: "Linjehjælp", guideRuler: "Læselineal", guideLine: "Én linje", guideHint: "Brug pilene, eller stryg op eller ned over linjetælleren.", guidePrev: "Forrige linje", guideNext: "Næste linje", guideCount: "Linje {a} af {b}",
       licenses: "Licenser og skrifter",
       pdfBook: "Gem som PDF", pdfExporting: "Laver PDF-filen …", pdfSaved: "PDF-filen er gemt: {name}", pdfFallback: "PDF-filen er gemt med OpenDyslexic, fordi den valgte skrift ikke var tilgængelig: {name}", pdfFailed: "PDF-filen kunne ikke laves. Prøv igen.",
-      insertBefore: "Indsæt side før", insertAfter: "Indsæt side efter", replacePhoto: "Erstat foto", replacePhotoHint: "Når du erstatter et foto, erstattes også sidens tekst og manuelle tekstrettelser. Fotoet bruges først, når du har godkendt beskæringen.",
+      pageMenu: "Side", moveEarlier: "Flyt mod starten", moveLater: "Flyt mod slutningen", choosePhoto: "Vælg foto", insertBefore: "Indsæt side før", insertAfter: "Indsæt side efter", replacePhoto: "Erstat foto", replacePhotoHint: "Når du erstatter et foto, erstattes også sidens tekst og manuelle tekstrettelser. Fotoet bruges først, når du har godkendt beskæringen.",
       brand1: "Læse", brand2: "hjælper", docTitle: "Læsehjælper",
       startTitle: "Gør bogsider lettere at læse",
       heroWord: "Læ·se·hjæl·per", startIntro: "Børnebøger sat op, så de er lettere at læse: stor skrift, god luft og farvede stavelser.",
@@ -193,7 +194,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       sylColors: "Stavelsesfarver", cBlueRed: "Blå og rød", cBlueBlack: "Blå og sort", cRedBlack: "Rød og sort", cPurpleGreen: "Lilla og grøn", syl1: "1. stavelse", syl2: "2. stavelse", view: "Visning", viewPage: "Bogens side", viewText: "Kun teksten", hyph: "Bindestreger i bogen", hyphNormal: "Almindelige", hyphBook: "Stavelsesdeling", hyphHint: "Vælg „Stavelsesdeling“, hvis bogen selv deler ord med bindestreg eller prik, f.eks. „sko-le“ eller „sko·le“.",
       background: "Baggrund", bWhite: "Hvid", bCream: "Creme", bYellow: "Gul", bBlue: "Lyseblå", bGreen: "Lysegrøn",
       original: "Originalside", show: "Vis", hide: "Skjul", origAlt: "Originalside",
-      editSummary: "Tjek og ret teksten", bookTools: "Bogværktøjer", editBook: "Rediger bog", bookMenu: "Bog", readBook: "Tilbage til læsning", correctPage: "Ret denne side", parentGate: "Forældresikring", gateOn: "Til", gateOff: "Fra", holdToEdit: "Hold knappen nede i to sekunder for at åbne voksenområdet.", gateHint: "Forebygger utilsigtede tryk. Det er ikke en sikkerhedslås.",
+      editSummary: "Tjek teksten", bookTools: "Bogværktøjer", editBook: "Rediger bog", bookMenu: "Bog", readBook: "Tilbage til læsning", correctPage: "Ret denne side", parentGate: "Forældresikring", gateOn: "Til", gateOff: "Fra", holdToEdit: "Hold knappen nede i to sekunder for at åbne voksenområdet.", gateHint: "Forebygger utilsigtede tryk. Det er ikke en sikkerhedslås.",
       editHint: "Tom linje = nyt afsnit. Du kan selv sætte stavelsesgrænser med ·, f.eks. <b>hun·den</b>. Fed skrift: *ord*.",
       foot: "Alt foregår på din egen telefon eller computer. Billederne bliver ikke sendt nogen steder hen.",
       noText: "Der blev ikke fundet nogen tekst på denne side.<br>Åbn „Tjek og ret teksten“ og skriv den selv.",
@@ -221,7 +222,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       guideLabel: "Line guide", guideRuler: "Reading ruler", guideLine: "One line", guideHint: "Use the arrows or swipe up or down over the line counter.", guidePrev: "Previous line", guideNext: "Next line", guideCount: "Line {a} of {b}",
       licenses: "Licences and fonts",
       pdfBook: "Save as PDF", pdfExporting: "Creating the PDF …", pdfSaved: "PDF saved: {name}", pdfFallback: "PDF saved with OpenDyslexic because the selected font was unavailable: {name}", pdfFailed: "The PDF could not be created. Try again.",
-      insertBefore: "Insert page before", insertAfter: "Insert page after", replacePhoto: "Replace photo", replacePhotoHint: "Replacing a photo also replaces the page’s text and manual corrections. The new photo is used after you accept the crop.",
+      pageMenu: "Page", moveEarlier: "Move earlier", moveLater: "Move later", choosePhoto: "Choose photo", insertBefore: "Insert page before", insertAfter: "Insert page after", replacePhoto: "Replace photo", replacePhotoHint: "Replacing a photo also replaces the page’s text and manual corrections. The new photo is used after you accept the crop.",
       brand1: "Læse", brand2: "hjælper", docTitle: "Læsehjælper",
       startTitle: "Make book pages easier to read",
       heroWord: "Læ·se·hjæl·per", startIntro: "Children's books set to be easier to read: large type, generous spacing and coloured syllables.",
@@ -242,7 +243,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       sylColors: "Syllable colours", cBlueRed: "Blue and red", cBlueBlack: "Blue and black", cRedBlack: "Red and black", cPurpleGreen: "Purple and green", syl1: "1st syllable", syl2: "2nd syllable", view: "View", viewPage: "Book page", viewText: "Text only", hyph: "Hyphens in the book", hyphNormal: "Normal", hyphBook: "Syllable breaks", hyphHint: "Choose “Syllable breaks” if the book itself splits words with hyphens or dots, e.g. “gar-den” or “gar·den”.",
       background: "Background", bWhite: "White", bCream: "Cream", bYellow: "Yellow", bBlue: "Light blue", bGreen: "Light green",
       original: "Original page", show: "Show", hide: "Hide", origAlt: "Original page",
-      editSummary: "Check and correct the text", bookTools: "Book tools", editBook: "Edit book", bookMenu: "Book", readBook: "Back to reading", correctPage: "Correct this page", parentGate: "Parent gate", gateOn: "On", gateOff: "Off", holdToEdit: "Hold for two seconds to open the adult area.", gateHint: "Prevents accidental taps. This is not a security lock.",
+      editSummary: "Check text", bookTools: "Book tools", editBook: "Edit book", bookMenu: "Book", readBook: "Back to reading", correctPage: "Correct this page", parentGate: "Parent gate", gateOn: "On", gateOff: "Off", holdToEdit: "Hold for two seconds to open the adult area.", gateHint: "Prevents accidental taps. This is not a security lock.",
       editHint: "Empty line = new paragraph. Set your own syllable breaks with ·, e.g. <b>gar·den</b>. Bold: *word*.",
       foot: "Everything happens on your own phone or computer. Your photos are not sent anywhere.",
       noText: "No text was found on this page.<br>Open “Check and correct the text” and type it in yourself.",
@@ -270,7 +271,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       guideLabel: "Zeilenhilfe", guideRuler: "Leselineal", guideLine: "Eine Zeile", guideHint: "Nutze die Pfeile oder wische über die Zeilenanzeige nach oben oder unten.", guidePrev: "Vorherige Zeile", guideNext: "Nächste Zeile", guideCount: "Zeile {a} von {b}",
       licenses: "Lizenzen und Schriften",
       pdfBook: "Als PDF speichern", pdfExporting: "PDF wird erstellt …", pdfSaved: "PDF gespeichert: {name}", pdfFallback: "PDF mit OpenDyslexic gespeichert, da die gewählte Schrift nicht verfügbar war: {name}", pdfFailed: "Das PDF konnte nicht erstellt werden. Versuche es erneut.",
-      insertBefore: "Seite davor einfügen", insertAfter: "Seite danach einfügen", replacePhoto: "Foto ersetzen", replacePhotoHint: "Beim Ersetzen eines Fotos gehen die bisherigen Textkorrekturen verloren. Übernommen wird das neue Foto erst nach dem Bestätigen des Zuschnitts.",
+      pageMenu: "Seite", moveEarlier: "Nach vorne", moveLater: "Nach hinten", choosePhoto: "Foto auswählen", insertBefore: "Seite davor einfügen", insertAfter: "Seite danach einfügen", replacePhoto: "Foto ersetzen", replacePhotoHint: "Beim Ersetzen eines Fotos gehen die bisherigen Textkorrekturen verloren. Übernommen wird das neue Foto erst nach dem Bestätigen des Zuschnitts.",
       brand1: "Lese", brand2: "helfer", docTitle: "Lesehelfer",
       startTitle: "Buchseiten leichter lesbar machen",
       heroWord: "Le·se·hel·fer", startIntro: "Kinderbücher so gesetzt, dass sie leichter zu lesen sind: große Schrift, viel Luft und farbige Silben.",
@@ -291,7 +292,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       sylColors: "Silbenfarben", cBlueRed: "Blau und Rot", cBlueBlack: "Blau und Schwarz", cRedBlack: "Rot und Schwarz", cPurpleGreen: "Lila und Grün", syl1: "1. Silbe", syl2: "2. Silbe", view: "Ansicht", viewPage: "Buchseite", viewText: "Nur Text", hyph: "Bindestriche im Buch", hyphNormal: "Normal", hyphBook: "Silbentrennung", hyphHint: "„Silbentrennung“ wählen, wenn das Buch Wörter selbst mit Bindestrich oder Punkt trennt, z. B. „Scho-ko-la-de“ oder „Scho·ko·la·de“.",
       background: "Hintergrund", bWhite: "Weiß", bCream: "Creme", bYellow: "Gelb", bBlue: "Hellblau", bGreen: "Hellgrün",
       original: "Originalseite", show: "Zeigen", hide: "Verbergen", origAlt: "Originalseite",
-      editSummary: "Text prüfen und korrigieren", bookTools: "Buchwerkzeuge", editBook: "Buch bearbeiten", bookMenu: "Buch", readBook: "Zurück zum Lesen", correctPage: "Diese Seite korrigieren", parentGate: "Elternschutz", gateOn: "An", gateOff: "Aus", holdToEdit: "Zum Öffnen des Erwachsenenbereichs die Taste zwei Sekunden gedrückt halten.", gateHint: "Verhindert versehentliches Tippen. Dies ist keine Sicherheitssperre.",
+      editSummary: "Text prüfen", bookTools: "Buchwerkzeuge", editBook: "Buch bearbeiten", bookMenu: "Buch", readBook: "Zurück zum Lesen", correctPage: "Diese Seite korrigieren", parentGate: "Elternschutz", gateOn: "An", gateOff: "Aus", holdToEdit: "Zum Öffnen des Erwachsenenbereichs die Taste zwei Sekunden gedrückt halten.", gateHint: "Verhindert versehentliches Tippen. Dies ist keine Sicherheitssperre.",
       editHint: "Leere Zeile = neuer Absatz. Eigene Silbengrenzen mit · setzen, z.&nbsp;B. <b>O·ma</b>. Fett: *Wort*.",
       foot: "Alles passiert auf deinem eigenen Handy oder Computer. Die Fotos werden nirgendwohin geschickt.",
       noText: "Auf dieser Seite wurde kein Text gefunden.<br>Öffne „Text prüfen“ und tippe ihn selbst ein.",
@@ -756,14 +757,42 @@ const Lib = { detectFrame, warpPage, orderCorners };
   // Design inference from distracting storybook extras, not a tested benefit of this navigation:
   // Takacs, Swart & Bus (2015), doi:10.3102/0034654314566989; Bus et al. (2026),
   // doi:10.1080/10409289.2025.2571978.
-  // "Check and correct the text" is the selected page's one main action (#206): the editor's own
-  // heading, which stays in the workshop to open the editor again after closing it.
+  // Check text is the selected page's main action (#207); the secondary tools share its Page menu.
   function showCheck(on: boolean) {
     if (!on) setMoving(false);
     const d = $<HTMLDetailsElement>("edit"); d.open = on;
     if (on) d.scrollIntoView({ block: "nearest" });
   }
-  $("edit").addEventListener("toggle", () => { if (!$<HTMLDetailsElement>("edit").open) setMoving(false); });
+  $("edit").addEventListener("toggle", () => {
+    const open = $<HTMLDetailsElement>("edit").open;
+    $("checkTextBtn").setAttribute("aria-expanded", String(open));
+    if (!open) setMoving(false);
+  });
+  $("checkTextBtn").onclick = () => {
+    const open = !$<HTMLDetailsElement>("edit").open; showCheck(open);
+    if (open) $("text").focus();
+  };
+  const pageMenuButton = $<HTMLButtonElement>("pageMenuBtn");
+  const fitPageMenu = () => $("pageMenu").style.setProperty("--page-menu-height", Math.max(48, window.innerHeight - pageMenuButton.getBoundingClientRect().bottom - 20) + "px");
+  pageMenuButton.addEventListener("click", fitPageMenu, true);
+  pageMenuButton.addEventListener("keydown", fitPageMenu, true);
+  const pageMenu = new MenuButton(pageMenuButton, $("pageMenu"));
+  $("pageEarlierBtn").onclick = () => movePage(cur, -1);
+  $("pageLaterBtn").onclick = () => movePage(cur, 1);
+  $("deletePageBtn").onclick = () => deletePage(cur);
+  function renderPageTools() {
+    const pg = pages[cur];
+    const actions = pageActions(pg, { index: cur, count: pages.length, editable: !!book && !book.demo, pageView: !!pg && isPageMode(pg) && !comparing });
+    for (const [id, enabled] of Object.entries({
+      recropBtn: actions.crop, reocrBtn: actions.recognise, ocrRegionsBtn: actions.regions, moveBtn: actions.move,
+      resetPlaceBtn: actions.reset, phraseEdit: actions.phrases, checkTextBtn: actions.check,
+      replacePhotoBtn: actions.photos, insertBeforeBtn: actions.photos, insertAfterBtn: actions.photos,
+      pageEarlierBtn: actions.earlier, pageLaterBtn: actions.later, deletePageBtn: actions.delete,
+    })) $<HTMLButtonElement>(id).disabled = !enabled;
+    $("pagePhotoTools").hidden = !actions.photos;
+    pageMenuButton.disabled = !pg;
+    $("deletePageBtn").title = actions.delete ? t("deletePage") : t("deleteOnlyPage");
+  }
   // The workshop's book actions sit in one "Book ⋯" menu (#206). Deleting asks to be tapped again
   // in the open menu; closing the menu takes the question back.
   const disarmDelete = () => { $("delBookBtn").classList.remove("armed"); $("delBookBtn").textContent = t("deleteBook"); };
@@ -1036,7 +1065,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       el.classList.remove("dragging");
       if (pa && (cur0.x0 !== start.x0 || cur0.y0 !== start.y0 || cur0.x1 !== start.x1 || cur0.y1 !== start.y1)) {
         pg.manualEdits = true; touchPage(pg); pa.place = cur0; el.dataset.manual = String(hasCustomSize(pa, W, H)); savePage(pg);
-        $<HTMLButtonElement>("resetPlaceBtn").hidden = false;
+        renderPageTools();
         fitPage();
       }
     };
@@ -1052,7 +1081,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
     const reader = $("reader");
     // The bar's height also places the settings sheet above it, in the workshop too.
     if (!$("dock").hidden) document.documentElement.style.setProperty("--reading-controls-height", $("dock").getBoundingClientRect().height + "px");
-    if (view === "read" && !$("app").hidden) {
+    if (!$("app").hidden) {
       const dock = $("dock").getBoundingClientRect();
       if (reader.classList.contains("pagemode")) {
         const top = reader.getBoundingClientRect().top + window.scrollY;
@@ -1060,6 +1089,7 @@ const Lib = { detectFrame, warpPage, orderCorners };
       }
     }
     $("sizeHint").hidden = !fitBoxes(document, S.size) || !$("reader").classList.contains("pagemode");
+    if (pageMenu.isOpen) fitPageMenu();
     guide.refresh();
   }
 
@@ -1284,8 +1314,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
     ocrRegionEditor.close();
     phraseEditor.close();
     practice.close();
+    pageMenu.close(); renderPageTools();
     const phrasePage = pages[cur];
-    $<HTMLButtonElement>("phraseEdit").disabled = phrasePage?.status !== "done";
     const phraseToggle = $<HTMLButtonElement>("phraseToggle");
     phraseToggle.hidden = view !== "read" || atEnd || !phrasePage || phrasePage.status !== "done" || isPageMode(phrasePage) || !phraseBoundaries(phrasePage.text, phrasePage.phraseCues).length;
     phraseToggle.textContent = t(S.phrases === "an" ? "phraseHide" : "phraseShow");
@@ -1295,7 +1325,6 @@ const Lib = { detectFrame, warpPage, orderCorners };
     $<HTMLButtonElement>("correctPageBtn").disabled = pg?.status !== "done";
     $("readingTitle").textContent = book?.title || t("untitled");
     if (!$("app").hidden) syncLocation();
-    $("pagePhotoTools").hidden = !pg?.id || !book || !!book.demo;
     if (!pg) { showStatus(t("noText")); renderThumbs(); return; }
     const pending = pg.status === "wait" || pg.status === "ocr";
     $("edit").hidden = pending;
@@ -1308,13 +1337,8 @@ const Lib = { detectFrame, warpPage, orderCorners };
     $<HTMLButtonElement>("prev").disabled = $<HTMLButtonElement>("edgePrev").disabled = !turnTo("prev");
     $<HTMLButtonElement>("next").disabled = $<HTMLButtonElement>("edgeNext").disabled = !turnTo("next");
     if (pg.img) $<HTMLImageElement>("origImg").src = pg.img;
-    $<HTMLButtonElement>("recropBtn").hidden = !(pg.photo || pg.photoBlob);
     const pageView = pg.status === "done" && isPageMode(pg) && !comparing;
     if (!pageView) setMoving(false);
-    $<HTMLButtonElement>("moveBtn").hidden = !pageView;
-    $<HTMLButtonElement>("resetPlaceBtn").hidden = !pageView || !(pg.paras || []).some(pa => pa.place);
-    $<HTMLButtonElement>("ocrRegionsBtn").hidden = !(pg.canvas || pg.inputBlob) || pending;
-    $<HTMLButtonElement>("reocrBtn").hidden = !(pg.canvas || pg.inputBlob) || pg.status === "wait" || pg.status === "ocr";
     stopSpeech();
     renderTogether();
     morphCheck(false);
@@ -1362,20 +1386,15 @@ const Lib = { detectFrame, warpPage, orderCorners };
       const wrap = document.createElement("div"); wrap.className = "thumb";
       const b = document.createElement("button");
       b.className = i === cur ? "on" : ""; b.title = t("page") + " " + (i + 1);
-      b.innerHTML = pg.img ? `<img src="${pg.img}" alt="">` : `<span class="demo">${b.title}</span>`;
+      b.innerHTML = pg.img ? `<img src="${pg.img}" alt="">` : `<span class="demo" aria-hidden="true">${icon("pencil")}</span>`;
+      const number = document.createElement("span"); number.className = "page-number"; number.textContent = b.title; b.append(number);
       const state = document.createElement("span"); state.className = "recognition"; b.append(state);
       if (library.isUnsaved(pg)) {
         const unsaved = document.createElement("span"); unsaved.className = "unsaved"; unsaved.textContent = t("notSaved"); b.append(unsaved);
       }
       setThumbStatus(b, pg);
       b.onclick = () => { cur = i; render(); saveBook(); };
-      const ctl = document.createElement("div"); ctl.className = "ctl";
-      ctl.innerHTML = `<button title="${t("moveLeft")}">‹</button><button class="x" title="${t("deletePage")}">×</button><button title="${t("moveRight")}">›</button>`;
-      const [l, x, r] = ctl.querySelectorAll("button");
-      l.disabled = i === 0; r.disabled = i === pages.length - 1;
-      if (pages.length < 2) { x.disabled = true; x.title = t("deleteOnlyPage"); }
-      l.onclick = () => movePage(i, -1); r.onclick = () => movePage(i, 1); x.onclick = () => deletePage(i);
-      wrap.append(b, ctl);
+      wrap.append(b);
       if (library.isUnsaved(pg)) {
         const again = document.createElement("button"); again.className = "save-again"; again.textContent = t("saveAgain");
         // The open book's current record goes with its unsaved pages (src/library.ts).
@@ -1513,18 +1532,29 @@ const Lib = { detectFrame, warpPage, orderCorners };
   // The chooser may stay open while the user moves on, so remember the page by its ID rather than the object,
   // and the navigation step: after any navigation, even one still loading another book, the photo is ignored.
   type PhotoAction = Exclude<Placement, "end"> | "replace";
-  let photoRequest: { bookId: string; pageId: string; action: PhotoAction; navigation: number } | null = null;
+  type PhotoRequest = { bookId: string; pageId: string; action: PhotoAction; navigation: number };
+  let photoRequest: PhotoRequest | null = null, replacementRequest: PhotoRequest | null = null;
+  const replacementDialog = $<HTMLDialogElement>("replacePhotoDialog");
+  replacementDialog.addEventListener("close", () => { replacementRequest = null; });
   const pagePhotoFile = $in("pagePhotoFile");
   for (const [id, action] of [["insertBeforeBtn", "before"], ["insertAfterBtn", "after"], ["replacePhotoBtn", "replace"]] as const) {
     $(id).onclick = () => {
       const pageId = pages[cur]?.id;
       if (!book || book.demo || !pageId) return;
-      photoRequest = { bookId: book.id, pageId, action, navigation: nav.current() };
-      pagePhotoFile.value = "";
-      pagePhotoFile.multiple = action !== "replace";
-      pagePhotoFile.click();
+      const request = { bookId: book.id, pageId, action, navigation: nav.current() };
+      if (action === "replace") { replacementRequest = request; replacementDialog.showModal(); }
+      else choosePagePhoto(request);
     };
   }
+  function choosePagePhoto(request: PhotoRequest) {
+    photoRequest = request;
+    pagePhotoFile.value = ""; pagePhotoFile.multiple = request.action !== "replace";
+    pagePhotoFile.click();
+  }
+  $("chooseReplacementBtn").onclick = () => {
+    const request = replacementRequest; replacementRequest = null; replacementDialog.close();
+    if (request && nav.isCurrent(request.navigation) && book?.id === request.bookId) choosePagePhoto(request);
+  };
   pagePhotoFile.oncancel = () => { photoRequest = null; };
   pagePhotoFile.onchange = () => {
     const request = photoRequest; photoRequest = null;
@@ -2219,7 +2249,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
     comparing = false; setCompareBtn();
     $("start").hidden = true; $("app").hidden = false; $("dock").hidden = false; window.scrollTo(0, 0);
     syncLocation();
-    bookMenu.close();
+    bookMenu.close(); pageMenu.close();
     showCheck(mode === "workshop"); window.scrollTo(0, 0);
     wake.keepOn(true);
   }
@@ -2256,7 +2286,7 @@ ${colors ? `.s1::after { border-color: ${c1}; }` : ""}` : ""}
   function showShelf() {
     closeEditors();
     wake.keepOn(false);
-    stopSpeech(); closeEditEntry(); bookMenu.close(); showCheck(false); hideUndo();
+    stopSpeech(); closeEditEntry(); bookMenu.close(); pageMenu.close(); showCheck(false); hideUndo();
     document.body.classList.remove("workshop", "reading"); setReadingMode(false);
     document.querySelector("header.top")!.append($("uiLang"));
     $("app").hidden = true; $("start").hidden = false; $("dock").hidden = true; showSettings(false);

@@ -1,6 +1,6 @@
 import { expect, test } from "./fixtures";
 import fs from "node:fs";
-import { bookAction, checkText, fixture, fresh, openRecognisedBook, openWorkshop, setUiLanguage, storedPages } from "./helpers";
+import { pageAction, bookAction, checkText, fixture, fresh, openRecognisedBook, openWorkshop, setUiLanguage, storedPages } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
@@ -126,7 +126,7 @@ test("Cancellation finishes the current page and leaves remaining pages untouche
 test("Single-page recognition establishes a protected-edit history that survives reopening", async ({ page }) => {
   await fakeRecognition(page); await seedBatch(page);
   await page.locator("#thumbs .thumb > button").nth(2).click();
-  await checkText(page); await page.click("#reocrBtn");
+  await checkText(page); await pageAction(page, "reocrBtn");
   await expect(page.locator("#reader")).toContainText("Ny original tekst.");
   await page.reload();
   await bookAction(page, "reprocessBookBtn");
@@ -140,7 +140,7 @@ test("Automatic page detection straightens the stored original without visiting 
   expect((await storedPages(page))[0].corners).toBe(true);
   await expect(page.locator("#crop")).toBeHidden();
   await page.click("#batchClose"); await page.reload(); await openWorkshop(page); await checkText(page);
-  await page.click("#recropBtn");
+  await pageAction(page, "recropBtn");
   await expect(page.locator("#crop")).toBeVisible();
   await expect(page.locator("#cropPoly")).toHaveAttribute("d", /Q/);
 });
@@ -164,7 +164,7 @@ for (const action of ["edit", "delete"] as const) {
     if (action === "edit") {
       await checkText(page); await page.fill("#text", "Min nyere originale rettelse.");
     } else {
-      await page.locator("#thumbs .thumb").first().locator(".x").click();
+      await pageAction(page, "deletePageBtn", 0);
       await expect(page.locator("#thumbs .thumb")).toHaveCount(3);
     }
     await page.evaluate(() => { if ("batchRelease" in window) (window.batchRelease as () => void)(); });
@@ -185,7 +185,7 @@ for (const action of ["edit", "delete"] as const) {
     if (action === "edit") {
       await checkText(other); await other.fill("#text", "Min originale rettelse fra en anden fane.");
     } else {
-      await other.locator("#thumbs .thumb").first().locator(".x").click();
+      await pageAction(other, "deletePageBtn", 0);
       await expect(other.locator("#thumbs .thumb")).toHaveCount(3);
     }
     await page.evaluate(() => { if ("batchRelease" in window) (window.batchRelease as () => void)(); });
@@ -228,7 +228,7 @@ test("Single-page recognition waits for a book job's two passes before using the
   await page.waitForFunction(() => "releaseBookPass" in window);
   await page.click("#batchClose");
   await page.locator("#thumbs .thumb > button").nth(2).click();
-  await page.click("#reocrBtn");
+  await pageAction(page, "reocrBtn");
   await expect(page.locator("#reader .status")).toContainText("Waiting for recognition");
   await page.evaluate(() => (window as unknown as { releaseBookPass: () => void }).releaseBookPass());
   await expect(page.locator("#reader")).toContainText("Single page result.");
@@ -241,7 +241,7 @@ test("A single-page job cannot overwrite a correction entered while recognition 
   await fakeRecognition(page, 0, true);
   await seedBatch(page);
   await checkText(page);
-  await page.click("#reocrBtn");
+  await pageAction(page, "reocrBtn");
   await page.waitForFunction(() => "batchRelease" in window);
   // Enter the correction and release OCR in one browser task, before the editor's delayed redraw.
   await page.evaluate(() => {
@@ -263,7 +263,7 @@ test("A single-page job queued behind a book job cannot overwrite a newer correc
   await page.waitForFunction(() => "batchRelease" in window);
   await page.click("#batchClose");
   await page.locator("#thumbs .thumb > button").nth(2).click();
-  await checkText(page); await page.click("#reocrBtn");
+  await checkText(page); await pageAction(page, "reocrBtn");
   await expect(page.locator("#reader .status")).toContainText("Waiting for recognition");
   await page.evaluate(() => {
     const input = document.getElementById("text") as HTMLTextAreaElement;

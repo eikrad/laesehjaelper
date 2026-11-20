@@ -1,7 +1,7 @@
 import { expect, test } from "./fixtures";
 import type { Page } from "@playwright/test";
 import type { Para } from "../../src/types";
-import { checkText, fresh, goShelf, openBookOptions, toggleReadingSetup } from "./helpers";
+import { pageAction, checkText, fresh, goShelf, openBookOptions, toggleReadingSetup } from "./helpers";
 
 test.use({ serviceWorkers: "block" });
 
@@ -134,7 +134,7 @@ test("A page deleted during OCR stays deleted after reopening", async ({ page })
   await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await page.waitForFunction(() => "finishRecognition" in window);
   await openWorkshop(page);
-  await page.locator(".thumb").first().locator(".ctl .x").click();
+  await pageAction(page, "deletePageBtn", 0);
   await expect(page.locator(".thumb")).toHaveCount(1);
   await page.evaluate(() => (window as unknown as { finishRecognition: () => void }).finishRecognition());
   await waitForText(page);

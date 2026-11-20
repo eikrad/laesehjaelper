@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { addPhotos, bookAction, fresh, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, storedPages } from "./helpers";
+import { pageAction, addPhotos, bookAction, fresh, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, storedPages } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -13,7 +13,7 @@ test("The workshop exposes book and selected-page tools, with recognition status
   await expect(page.locator(".thumb .recognition")).toHaveText(["Klar", "Klar"]);
   await page.locator(".thumb > button").nth(1).click();
   await expect(page.locator("#text")).toHaveValue("Anden originale side.");
-  await page.locator(".thumb").nth(1).locator(".ctl button").first().click();
+  await pageAction(page, "pageEarlierBtn", 1);
   await expect(page.locator("#count")).toHaveText("1 / 2");
   await page.fill("#text", "En rettet original side.");
   await page.click("#readBookBtn");
@@ -84,21 +84,21 @@ test("Book settings open from the book menu in a dialog and return to the menu b
   await expect(button).toBeFocused();
 });
 
-test("\"Check and correct the text\" appears once, as the selected page's own action that opens and closes the editor", async ({ page }) => {
+test("\"Check text\" appears once, as the selected page's own action that opens and closes the editor", async ({ page }) => {
   await seedBooks(page, [{ id: "check", title: "En bog at rette", texts: ["Første side.", "Anden side."] }]);
   await page.locator(".book").click();
   await openWorkshop(page);
-  const action = page.getByText("Tjek og ret teksten", { exact: true }).filter({ visible: true });
+  const action = page.getByText("Tjek teksten", { exact: true }).filter({ visible: true });
   await expect(action).toHaveCount(1);
-  await expect(page.locator(".pagecard #edit > summary")).toHaveText("Tjek og ret teksten");
-  expect((await page.locator("#edit > summary").boundingBox())!.height).toBeGreaterThanOrEqual(48);
+  await expect(page.locator("#checkTextBtn")).toHaveText("Tjek teksten");
+  expect((await page.locator("#checkTextBtn").boundingBox())!.height).toBeGreaterThanOrEqual(48);
   await expect(page.locator("#text")).toBeVisible();   // The workshop opens with the editor.
-  await page.locator("#edit > summary").click();
+  await page.locator("#checkTextBtn").click();
   await expect(page.locator("#text")).toBeHidden();
   await expect(action, "closed, the action stays to open the editor again").toHaveCount(1);
   await page.locator(".thumb > button").nth(1).click();
   await expect(action, "on every page").toHaveCount(1);
-  await page.locator("#edit > summary").click();
+  await page.locator("#checkTextBtn").click();
   await expect(page.locator("#text")).toHaveValue("Anden side.");
 });
 
@@ -187,11 +187,11 @@ test.describe("Workshop recognition recovery", () => {
     await page.reload();
     await addPhotos(page, ["side-da.jpg"]);
     await expect(page.locator("#reader")).toContainText("Genkendelsen mislykkedes.");
-    await expect(page.locator("#reocrBtn")).toBeVisible({ timeout: 1500 });
-    await expect(page.locator("#recropBtn")).toBeVisible();
-    await page.click("#reocrBtn");
+    await expect(page.locator("#reocrBtn")).toBeEnabled({ timeout: 1500 });
+    await expect(page.locator("#recropBtn")).toBeEnabled();
+    await pageAction(page, "reocrBtn");
     await expect(page.locator("#reader")).toContainText("Genkendelsen mislykkedes.");
-    await page.click("#recropBtn");
+    await pageAction(page, "recropBtn");
     await expect(page.locator("#crop")).toBeVisible();
   });
 });
@@ -228,7 +228,7 @@ test("Undo brings a deleted page back at its place with its photo, text, manual 
   await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"], [{ manualEdits: true, text: "Min egen rettelse." }]);
   await openWorkshop(page);
   const before = await pageRecords(page);
-  await page.locator(".thumb").first().locator(".x").click();
+  await pageAction(page, "deletePageBtn", 0);
   await expect(page.locator("#thumbs .thumb")).toHaveCount(1);
   await expect(page.locator("#toast")).toContainText("Siden er slettet");
   await expect.poll(async () => (await storedPages(page)).map(p => p.id)).toEqual(["recognised-1"]);
@@ -267,7 +267,7 @@ test.describe("Recognition and Undo", () => {
     await addPhotos(page, ["side-da.jpg", "side-overskrift.jpg"]);
     await page.waitForFunction(() => "finishRecognition" in window);
     await openWorkshop(page);
-    await page.locator(".thumb").nth(1).locator(".x").click();   // The second page, still waiting.
+    await pageAction(page, "deletePageBtn", 1);   // The second page, still waiting.
     await expect(page.locator("#thumbs .thumb")).toHaveCount(1);
     await page.evaluate(() => (window as unknown as { finishRecognition: () => void }).finishRecognition());
     await expect.poll(async () => (await storedPages(page)).map(p => p.status)).toEqual(["done"]);
@@ -280,7 +280,7 @@ test.describe("Recognition and Undo", () => {
 test("Undo still works after a reload within the undo time", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await openWorkshop(page);
-  await page.locator(".thumb").nth(1).locator(".x").click();
+  await pageAction(page, "deletePageBtn", 1);
   await expect(page.locator("#toast")).toContainText("Siden er slettet");
   await expect.poll(async () => (await storedPages(page)).map(p => p.id)).toEqual(["recognised-0"]);
   await page.reload();
@@ -295,7 +295,7 @@ test("After the undo time a deleted page is gone for good, also from the device"
   await page.clock.install();
   await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await openWorkshop(page);
-  await page.locator(".thumb").first().locator(".x").click();
+  await pageAction(page, "deletePageBtn", 0);
   await expect(undo(page)).toBeVisible();
   await page.clock.fastForward(11_000);
   await expect(undo(page)).toBeHidden();
@@ -308,7 +308,7 @@ test("After the undo time a deleted page is gone for good, also from the device"
 test("A deletion whose undo time ran out while the app was closed is final when the book opens", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
   await openWorkshop(page);
-  await page.locator(".thumb").first().locator(".x").click();
+  await pageAction(page, "deletePageBtn", 0);
   await expect.poll(async () => (await pageRecords(page)).map(r => r.deleted)).toEqual([true, false]);
   await letUndoTimeRunOut(page);
   await page.reload();
@@ -321,9 +321,9 @@ test("Only the latest deletion can be undone; deleting another page makes the ea
   await seedBooks(page, [{ id: "three", title: "Tre sider", texts: ["Første side.", "Anden side.", "Tredje side."] }]);
   await page.locator(".book").click();
   await openWorkshop(page);
-  await page.locator(".thumb").first().locator(".x").click();
+  await pageAction(page, "deletePageBtn", 0);
   await expect(page.locator("#thumbs .thumb")).toHaveCount(2);
-  await page.locator(".thumb").first().locator(".x").click();
+  await pageAction(page, "deletePageBtn", 0);
   await expect(page.locator("#thumbs .thumb")).toHaveCount(1);
   await undo(page).click();
   await expect(page.locator("#thumbs .thumb")).toHaveCount(2);
@@ -335,7 +335,8 @@ test("The only page cannot be deleted; deleting the book still asks to tap again
   await seedBooks(page, [{ id: "one", title: "Én side", texts: ["Den eneste side."] }]);
   await page.locator(".book").click();
   await openWorkshop(page);
-  const x = page.locator(".thumb .x");
+  await page.click("#pageMenuBtn");
+  const x = page.locator("#deletePageBtn");
   await expect(x).toBeDisabled();
   await expect(x).toHaveAttribute("title", /Slet bogen i stedet/);
   await bookAction(page, "delBookBtn");
@@ -351,8 +352,64 @@ test("The undo message is in the interface language", async ({ page }) => {
   await openWorkshop(page);
   for (const [lang, message, action] of [["de", "Seite gelöscht", "Rückgängig"], ["en", "Page deleted", "Undo"], ["da", "Siden er slettet", "Fortryd"]]) {
     await setUiLanguage(page, lang);
-    await page.locator(".thumb").first().locator(".x").click();
+    await pageAction(page, "deletePageBtn", 0);
     await expect(page.locator("#toast")).toContainText(message);
     await expect(undo(page, action)).toBeVisible();
   }
+});
+
+test("The selected page has one Check text action and one page menu, with no thumbnail tools", async ({ page }) => {
+  await openRecognisedBook(page, ["side-da.jpg", "side-overskrift.jpg"]);
+  await openWorkshop(page);
+  const button = page.locator("#pageMenuBtn"), menu = page.locator("#pageMenu");
+  await expect(page.locator("#checkTextBtn")).toHaveAccessibleName("Tjek teksten");
+  await expect(page.locator("#replacePhotoHint")).toBeHidden();
+  await expect(page.locator(".thumb .ctl")).toHaveCount(0);
+  await expect(page.locator(".thumb .page-number")).toHaveText(["Side 1", "Side 2"]);
+  await button.click();
+  await expect(button).toHaveAttribute("aria-expanded", "true");
+  await expect(menu.getByRole("menuitem")).toHaveCount(12);
+  await expect(menu.getByRole("menuitem").last()).toHaveText("Slet side");
+  await expect(page.locator("#pageEarlierBtn")).toBeDisabled();
+  await expect(page.locator("#pageLaterBtn")).toBeEnabled();
+  await page.keyboard.press("Escape");
+  await expect(menu).toBeHidden();
+  await expect(button).toBeFocused();
+  await page.click("#checkTextBtn");
+  await expect(page.locator("#text")).toBeHidden();
+  await page.click("#checkTextBtn");
+  await expect(page.locator("#text")).toBeFocused();
+});
+
+test("The page menu supports keyboard navigation, skips unavailable actions and closes when the page changes", async ({ page }) => {
+  await seedBooks(page, [{ id: "page-keys", title: "Original pages", texts: ["Første side.", "Anden side."] }]);
+  await page.locator(".book").click(); await openWorkshop(page);
+  const button = page.locator("#pageMenuBtn");
+  await button.focus(); await page.keyboard.press("ArrowDown");
+  await expect(page.locator("#phraseEdit")).toBeFocused();   // No photo or text-box tools for a text-only page.
+  await page.keyboard.press("ArrowUp");
+  await expect(page.locator("#deletePageBtn")).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(page.locator("#phraseEdit")).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(page.locator("#deletePageBtn")).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator("#count")).toHaveText("1 / 2");
+  await page.keyboard.press("Tab");
+  await expect(page.locator("#pageMenu")).toBeHidden();
+  await button.click();
+  await page.locator(".thumb > button").nth(1).click();
+  await expect(page.locator("#pageMenu")).toBeHidden();
+  await button.click();
+  await expect(page.locator("#pageLaterBtn")).toBeDisabled();
+  await page.mouse.click(5, 600);
+  await expect(page.locator("#pageMenu")).toBeHidden();
+});
+
+test("The sample's page menu skips photo actions that cannot change a saved book", async ({ page }) => {
+  await page.click("#demoBtn"); await openWorkshop(page);
+  const button = page.locator("#pageMenuBtn");
+  await button.focus(); await page.keyboard.press("ArrowUp");
+  await expect(page.locator("#phraseEdit")).toBeFocused({ timeout: 1500 });
+  await expect(page.locator("#pagePhotoTools")).toBeHidden();
 });

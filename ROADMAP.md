@@ -22,7 +22,6 @@ Last reviewed: 15 November 2026.
 
 | Issue | What | Epic | Note |
 |---|---|---|---|
-| [#207](https://github.com/eikrad/laesehjaelper/issues/207) | Workshop: page actions in one menu and a compact page list | Reading and making books | After #206 |
 | [#208](https://github.com/eikrad/laesehjaelper/issues/208) | Check view: photo and recognised text together, page by page | Reading and making books | |
 | [#209](https://github.com/eikrad/laesehjaelper/issues/209) | Guided finish for a new book: check each page, then add a title | Reading and making books | After #208 |
 | [#203](https://github.com/eikrad/laesehjaelper/issues/203) | Quiet reading header: icon entry for adults, parent gate on by default, readable page position | Reading and making books | Changes the gate default from #107 |

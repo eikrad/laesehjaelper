@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "./fixtures";
-import { addPhotos, bookAction, checkText, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, readBook, storedPages, toggleReadingSetup, waitForText } from "./helpers";
+import { pageAction, addPhotos, bookAction, checkText, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, readBook, storedPages, toggleReadingSetup, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -107,10 +107,10 @@ test("Bookshelf: save, reload, reorder and delete", async ({ page }) => {
   await expect(page.locator("#count")).toHaveText("2 / 2");   // Resume where reading stopped.
 
   await openWorkshop(page);
-  await page.locator(".thumb").nth(1).locator(".ctl button").first().click();   // Move page 2 to the left.
+  await pageAction(page, "pageEarlierBtn", 1);   // Move page 2 to the left.
   await expect(page.locator("#count")).toHaveText("1 / 2");
   await expect(page.locator("#text")).toHaveValue(/Søren går en tur/);
-  await page.locator(".thumb").nth(0).locator(".ctl .x").click();               // Delete the page.
+  await pageAction(page, "deletePageBtn", 0);               // Delete the page.
   await expect(page.locator("#count")).toHaveText("1 / 1");
   await bookAction(page, "delBookBtn");
   await bookAction(page, "delBookBtn");                                              // Click twice to confirm.
@@ -146,7 +146,7 @@ test("Keeps headings larger and bold words bold", async ({ page }) => {
 test("Moves, saves and resets text boxes on the book page", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   await checkText(page);
-  await page.click("#moveBtn");
+  await pageAction(page, "moveBtn");
   await expect(page.locator("#reader")).toHaveClass(/moving/);
   const box = page.locator("#reader .tbox").first();
   const top0 = await box.evaluate(el => el.getBoundingClientRect().top - el.parentElement!.getBoundingClientRect().top);
@@ -172,7 +172,7 @@ test("Moves, saves and resets text boxes on the book page", async ({ page }) => 
   expect(Math.abs(top2 - top1)).toBeLessThan(3);
   // Reset the position.
   await checkText(page);
-  await page.click("#resetPlaceBtn");
+  await pageAction(page, "resetPlaceBtn");
   const top3 = await page.locator("#reader .tbox").first().evaluate(el => el.getBoundingClientRect().top - el.parentElement!.getBoundingClientRect().top);
   expect(Math.abs(top3 - top0)).toBeLessThan(3);
 });

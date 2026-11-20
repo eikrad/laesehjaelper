@@ -195,17 +195,25 @@ async function bookOpen(page: Page) {
   await expect(page.locator("#app")).toBeVisible();
 }
 
-/** Open the selected page's editor through its own heading, "Check and correct the text" (#206). */
+/** Open the selected page's editor through its Check text action (#207). */
 export async function checkText(page: Page) {
   await openWorkshop(page);
   const editor = page.locator("#edit");
   await expect(editor).toBeVisible();
-  if (!await editor.evaluate(el => (el as HTMLDetailsElement).open)) await editor.locator(":scope > summary").click();
+  if (!await editor.evaluate(el => (el as HTMLDetailsElement).open)) await page.click("#checkTextBtn");
 }
 
 /** Choose an action from the workshop's "Book ⋯" menu (#206). Delete book asks to be chosen twice. */
 export async function bookAction(page: Page, id: "exportBtn" | "pdfBtn" | "reprocessBookBtn" | "bookSettingsBtn" | "bookReadingSetupBtn" | "tipsBtn" | "delBookBtn") {
   await openWorkshop(page);
   if (await page.locator("#bookMenu").isHidden()) await page.click("#bookMenuBtn");
+  await page.click(`#${id}`);
+}
+
+/** Choose a tool for the selected page, optionally selecting another page first. */
+export async function pageAction(page: Page, id: string, index?: number) {
+  await openWorkshop(page);
+  if (index !== undefined) await page.locator(".thumb > button").nth(index).click();
+  if (await page.locator("#pageMenu").isHidden()) await page.click("#pageMenuBtn");
   await page.click(`#${id}`);
 }

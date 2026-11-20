@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
-import { bookAction, checkText, expectSyllableBowsInsideBoxes, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
+import { pageAction, bookAction, checkText, expectSyllableBowsInsideBoxes, fixture, fresh, goShelf, openRecognisedBook, openWorkshop, seedBooks, setUiLanguage, toggleReadingSetup } from "./helpers";
 
 // Layout checks. Unlike the other specs, these run at every screen size the app is
 // designed for: phone, tablet portrait, tablet landscape and laptop (see playwright.config.ts).
@@ -102,7 +102,7 @@ test("OCR region editing fits every screen and supports drawing and keyboard con
   await openRecognisedBook(page, ["side-da.jpg"]);
   for (const ui of ["da", "de", "en"]) {
     await setUiLanguage(page, ui);
-    await checkText(page); await page.click("#ocrRegionsBtn");
+    await checkText(page); await pageAction(page, "ocrRegionsBtn");
     const d = page.locator("#ocrRegionsEditor");
     await expect(d).toBeVisible();
     const surface = page.locator("#regionsSurface"); await surface.scrollIntoViewIfNeeded();
@@ -125,7 +125,7 @@ test("OCR region editing fits every screen and supports drawing and keyboard con
     await d.evaluate(e => { e.scrollTop = 0; });
     await d.screenshot({ path: info.outputPath(`ocr-regions-${ui}.png`) });
     await page.keyboard.press("Escape");
-    await expect(page.locator("#ocrRegionsBtn")).toBeFocused();
+    await expect(page.locator("#pageMenuBtn")).toBeFocused();
     await page.click("#readBookBtn");
   }
 });
@@ -151,7 +151,7 @@ test("adult phrase editing and large reading cues fit every screen and language"
   await expect(page.locator("#app")).toBeVisible();
   for (const ui of ["da", "de", "en"]) {
     await setUiLanguage(page, ui); await openWorkshop(page);
-    await page.click("#phraseEdit");
+    await pageAction(page, "phraseEdit");
     const d = page.locator("#phraseEditor");
     const boundary = d.locator('button[data-after="2"]');
     await boundary.click(); await expect(boundary).toHaveAttribute("aria-pressed", "true");
@@ -164,7 +164,7 @@ test("adult phrase editing and large reading cues fit every screen and language"
     await expect(page.locator("#reader .phrase-cue")).toHaveCount(1);
     expect(await sidewaysScroll(page)).toBe(0);
     // The next pass starts without old boundaries.
-    await openWorkshop(page); await page.click("#phraseEdit"); await page.click("#phraseClear"); await page.click("#phraseSave"); await page.click("#readBookBtn");
+    await openWorkshop(page); await pageAction(page, "phraseEdit"); await page.click("#phraseClear"); await page.click("#phraseSave"); await page.click("#readBookBtn");
   }
 });
 
@@ -415,7 +415,7 @@ test("The undo message for a deleted page fits the screen with a large Undo butt
   const { width } = page.viewportSize()!;
   for (const lang of ["de", "da", "en"]) {
     await setUiLanguage(page, lang);
-    await page.locator(".thumb").first().locator(".x").click();
+    await pageAction(page, "deletePageBtn", 0);
     const button = page.locator("#toast button");
     await expect(button).toBeVisible();
     await expect(async () => {
@@ -470,7 +470,7 @@ test("On touch screens every control is at least 44 px", async ({ page }, info) 
   await openWorkshop(page);
   await expect.poll(() => smallControls(page), { message: "workshop" }).toEqual([]);
   await checkText(page);
-  await page.locator("#moveBtn").evaluate((b: HTMLButtonElement) => b.click());
+  await pageAction(page, "moveBtn");
   await expect.poll(() => smallControls(page), { message: "editing pages and text boxes" }).toEqual([]);
 });
 
@@ -557,7 +557,7 @@ test("Swiping turns the page; taps, scrolling and moving text boxes do not", asy
   await expect(count).toHaveText("1 / 2");
   await openWorkshop(page);
   await checkText(page);
-  await page.locator("#moveBtn").evaluate((b: HTMLButtonElement) => b.click());
+  await pageAction(page, "moveBtn");
   await page.evaluate(() => window.scrollTo(0, 0));
   await swipeOnReader(page, -150, 0);
   await expect(count).toHaveText("1 / 2");
@@ -803,6 +803,7 @@ test("Page photo actions fit the workshop in every language and stay out of read
     await page.locator(".book").click();
     await expect(page.locator("#pagePhotoTools")).toBeHidden();
     await openWorkshop(page);
+    await page.click("#pageMenuBtn");
     for (const [i, id] of ["insertBeforeBtn", "insertAfterBtn", "replacePhotoBtn"].entries()) {
       const button = page.locator(`#${id}`);
       await expect(button).toHaveText(labels[i]);
@@ -812,10 +813,41 @@ test("Page photo actions fit the workshop in every language and stay out of read
       expect(box.x).toBeGreaterThanOrEqual(0);
       expect(box.x + box.width).toBeLessThanOrEqual(page.viewportSize()!.width);
     }
+    await pageAction(page, "replacePhotoBtn");
+    await expect(page.locator("#replacePhotoDialog")).toBeVisible();
     await expect(page.locator("#replacePhotoHint")).toHaveCSS("font-size", "14px");
+    await page.keyboard.press("Escape");
     await page.click("#readBookBtn");
     await expect(page.locator("#pagePhotoTools")).toBeHidden();
     await goShelf(page);
     await expect(page.locator("#start")).toBeVisible();
   }
+});
+
+
+test("The compact page list leaves the page and Check text visible on a portrait tablet", async ({ page }) => {
+  await openRecognisedBook(page, Array.from({ length: 10 }, () => "side-da.jpg"));
+  await openWorkshop(page);
+  await expect(page.locator(".thumb .ctl")).toHaveCount(0);
+  const list = (await page.locator("#thumbs").boundingBox())!;
+  if (page.viewportSize()!.width < 840) expect(list.height).toBeLessThanOrEqual(165);
+  const check = (await page.locator("#checkTextBtn").boundingBox())!;
+  expect(check.height).toBeGreaterThanOrEqual(48);
+  expect(check.y).toBeGreaterThanOrEqual(0);
+  expect(check.y + check.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  if (page.viewportSize()!.width === 820) {
+    await expect.poll(async () => {
+      const photo = (await page.locator("#reader .pageview").boundingBox())!;
+      return photo.y + photo.height;
+    }).toBeLessThanOrEqual(page.viewportSize()!.height);
+  }
+  await page.click("#pageMenuBtn");
+  const menu = (await page.locator("#pageMenu").boundingBox())!;
+  expect(menu.x).toBeGreaterThanOrEqual(0);
+  expect(menu.x + menu.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+  expect(menu.y + menu.height).toBeLessThanOrEqual(page.viewportSize()!.height);
+  for (const item of await page.locator('#pageMenu [role="menuitem"]').all()) {
+    expect((await item.boundingBox())!.height).toBeGreaterThanOrEqual(48);
+  }
+  expect(await sidewaysScroll(page)).toBe(0);
 });

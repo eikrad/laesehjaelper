@@ -1,5 +1,5 @@
 import { expect, test } from "./fixtures";
-import { addPhotos, checkText, fixture, fresh, goShelf, openBookOptions, openRecognisedBook, openWorkshop, readBook, toggleReadingSetup, waitForText } from "./helpers";
+import { pageAction, addPhotos, checkText, fixture, fresh, goShelf, openBookOptions, openRecognisedBook, openWorkshop, readBook, toggleReadingSetup, waitForText } from "./helpers";
 
 test.beforeEach(async ({ page }) => { await fresh(page); });
 
@@ -20,14 +20,14 @@ test("Crops the page again and reruns text recognition", async ({ page }) => {
   await addPhotos(page, ["side-da.jpg"]);
   await waitForText(page);
   await checkText(page);
-  await page.click("#recropBtn");
+  await pageAction(page, "recropBtn");
   await expect(page.locator("#crop")).toBeVisible();
   await expect(page.locator("#cropMsg")).not.toContainText("…", { timeout: 120_000 });
   await page.click("#cropWhole");
   await waitForText(page);
   expect(await page.locator("#text").inputValue()).toContain("Pindsvinet");
   await page.locator("#text").fill("Falsk tekst");
-  await page.click("#reocrBtn");
+  await pageAction(page, "reocrBtn");
   await expect.poll(() => page.locator("#text").inputValue(), { timeout: 200_000 }).toContain("Pindsvinet");
 });
 
@@ -51,9 +51,9 @@ test("Book with multiple pages: navigate, add, reorder and delete pages", async 
   // Edit pages: move the first page to the right, then delete it.
   await openWorkshop(page);
   const first = await page.locator(".thumb img").first().getAttribute("src");
-  await page.locator(".thumb").first().locator(".ctl button").last().click();
+  await pageAction(page, "pageLaterBtn", 0);
   expect(await page.locator(".thumb img").nth(1).getAttribute("src")).toBe(first);
-  await page.locator(".thumb").nth(1).locator(".ctl .x").click();
+  await pageAction(page, "deletePageBtn", 1);
   await expect(page.locator(".thumb")).toHaveCount(2);
   await page.click("#readBookBtn");
 });
@@ -103,11 +103,11 @@ test("Opening another book resets its editing tools", async ({ page }) => {
 test("Closing the text editor also ends moving text boxes", async ({ page }) => {
   await openRecognisedBook(page, ["side-da.jpg"]);
   await checkText(page);
-  await page.click("#moveBtn");
+  await pageAction(page, "moveBtn");
   await expect(page.locator("#reader .grip").first()).toBeVisible();
-  await page.locator("#edit summary").click();
+  await page.locator("#checkTextBtn").click();
   await expect(page.locator("#text")).toBeHidden();
-  await expect(page.locator("#edit summary"), "the heading stays to open the editor again").toBeVisible();
+  await expect(page.locator("#checkTextBtn"), "the action stays to open the editor again").toBeVisible();
   await expect(page.locator("#reader .grip")).toHaveCount(0);
   await expect(page.locator("#reader")).not.toHaveClass(/moving/);
 });
